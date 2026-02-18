@@ -11,15 +11,15 @@ Research Chain is a blockchain-backed academic publishing and peer review platfo
 ## Common Commands
 
 ```bash
-pnpm dev                    # Start dev server (http://localhost:3000)
-pnpm build                  # Production build
-pnpm lint                   # ESLint
-pnpm test                   # Run all tests
-pnpm test -- --watch        # Watch mode
-pnpm db:generate            # Generate Drizzle migrations from schema changes
-pnpm db:migrate             # Apply migrations to database
-pnpm db:studio              # Open Drizzle Studio (visual DB browser)
-pnpm hedera:init-topics     # Create HCS topics on Hedera (one-time setup)
+npm run dev                    # Start dev server (http://localhost:3000)
+npm run build                  # Production build
+npm run lint                   # ESLint
+npm test                       # Run all tests
+npm test -- --watch            # Watch mode
+npm run db:generate            # Generate Drizzle migrations from schema changes
+npm run db:migrate             # Apply migrations to database
+npm run db:studio              # Open Drizzle Studio (visual DB browser)
+npm run hedera:init-topics     # Create HCS topics on Hedera (one-time setup)
 ```
 
 ## Architecture
@@ -127,7 +127,7 @@ PostgreSQL via Neon with Drizzle ORM. Schema is in `lib/db/schema.ts`.
 - `reviewer_ratings` deliberately has NO author reference column (anonymity by design, FR-6.3).
 - Paper status enum: `draft` → `registered` → `contract_pending` → `submitted` → `under_review` → `revision_requested` → `published` → `retracted`.
 
-When modifying schema, run `pnpm db:generate` then `pnpm db:migrate`.
+When modifying schema, run `npm run db:generate` then `npm run db:migrate`.
 
 ## Key Implementation Details
 

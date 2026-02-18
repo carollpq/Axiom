@@ -92,7 +92,7 @@ For the full architecture document, see [`docs/architecture.md`](docs/architectu
 ### Prerequisites
 
 - Node.js 18+
-- pnpm (recommended) or npm
+- npm
 - A Hedera testnet account ([portal.hedera.com](https://portal.hedera.com))
 - HashPack or MetaMask browser extension
 - An ORCID account ([orcid.org](https://orcid.org))
@@ -141,17 +141,17 @@ git clone https://github.com/your-org/research-chain.git
 cd research-chain
 
 # Install dependencies
-pnpm install
+npm install
 
 # Set up the database
-pnpm db:generate   # Generate Drizzle migrations
-pnpm db:migrate    # Run migrations
+npm run db:generate   # Generate Drizzle migrations
+npm run db:migrate    # Run migrations
 
 # Initialize Hedera HCS topics (one-time setup)
-pnpm hedera:init-topics
+npm run hedera:init-topics
 
 # Start the development server
-pnpm dev
+npm run dev
 ```
 
 The app will be available at `http://localhost:3000`.
@@ -231,14 +231,14 @@ research-chain/
 
 | Command | Description |
 |---|---|
-| `pnpm dev` | Start development server |
-| `pnpm build` | Production build |
-| `pnpm db:generate` | Generate Drizzle migrations from schema |
-| `pnpm db:migrate` | Run database migrations |
-| `pnpm db:studio` | Open Drizzle Studio (DB browser) |
-| `pnpm hedera:init-topics` | Create HCS topics on Hedera testnet |
-| `pnpm lint` | Run ESLint |
-| `pnpm test` | Run test suite |
+| `npm run dev` | Start development server |
+| `npm run build` | Production build |
+| `npm run db:generate` | Generate Drizzle migrations from schema |
+| `npm run db:migrate` | Run database migrations |
+| `npm run db:studio` | Open Drizzle Studio (DB browser) |
+| `npm run hedera:init-topics` | Create HCS topics on Hedera testnet |
+| `npm run lint` | Run ESLint |
+| `npm test` | Run test suite |
 
 ---
 
@@ -248,7 +248,7 @@ The application is designed for Vercel deployment:
 
 ```bash
 # Install Vercel CLI
-pnpm i -g vercel
+npm i -g vercel
 
 # Deploy
 vercel --prod
