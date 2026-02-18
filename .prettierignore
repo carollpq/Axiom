@@ -1,0 +1,15 @@
+# Ignore everything
+*
+
+# Re-allow folders
+!src/
+!src/**
+
+!apps/
+!apps/web/
+!apps/web/**
+
+# Still ignore common junk anywhere
+**/node_modules/**
+**/.next/**
+**/dist/**
