@@ -8,7 +8,7 @@ import {
   PapersTable,
   PendingActionsList,
   ActivityFeed,
-} from "@/components/dashboard";
+} from "@/components/author-dashboard";
 
 export default function AuthorDashboard() {
   const {
