@@ -48,8 +48,6 @@ export interface ReputationScores {
   postPub: number;
 }
 
-export interface ReviewerTabConfig {
-  key: ReviewerTab;
-  label: string;
-  count: number;
-}
+import type { TabConfig } from "./shared";
+
+export type ReviewerTabConfig = TabConfig<ReviewerTab>;

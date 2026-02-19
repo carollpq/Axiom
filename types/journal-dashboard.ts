@@ -40,17 +40,7 @@ export interface ReviewCriterion {
   type: string;
 }
 
-export interface StageColorConfig {
-  bg: string;
-  text: string;
-  border: string;
-}
-
-export interface JournalStatCardData {
-  label: string;
-  value: string | number;
-  sub?: string;
-  alert?: boolean;
-}
+export type { BadgeColorConfig as StageColorConfig } from "./shared";
+export type { StatCardProps as JournalStatCardData } from "./shared";
 
 export type PipelineCounts = Record<SubmissionStage, number>;

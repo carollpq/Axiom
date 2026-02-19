@@ -35,15 +35,4 @@ export interface StatCardData {
   icon: string;
 }
 
-export interface NavItemData {
-  label: string;
-  href: string;
-}
-
-export interface UserProfile {
-  name: string;
-  initials: string;
-  wallet: string;
-  role: string;
-  notificationCount: number;
-}
+export type { NavItemData, UserProfile } from "./shared";

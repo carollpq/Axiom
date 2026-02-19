@@ -3,6 +3,38 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Surface */
+  --surface-base: #1a1816;
+  --surface-card: linear-gradient(145deg, rgba(45,42,38,0.9), rgba(35,32,28,0.9));
+  --surface-overlay: rgba(25,23,20,0.9);
+  --surface-hover: rgba(120,110,95,0.08);
+  --surface-input: rgba(120,110,95,0.1);
+  --surface-nav: rgba(120,110,95,0.1);
+
+  /* Text */
+  --text-primary: #e8e0d4;
+  --text-secondary: #d4ccc0;
+  --text-muted: #c9b89e;
+  --text-subtle: #8a8070;
+  --text-faint: #6a6050;
+  --text-ghost: #4a4238;
+
+  /* Borders */
+  --border-default: rgba(120,110,95,0.2);
+  --border-medium: rgba(120,110,95,0.25);
+  --border-strong: rgba(120,110,95,0.35);
+  --border-accent: #c9b89e;
+
+  /* Accents */
+  --accent-gold: #c9a44a;
+  --accent-green: #8fbc8f;
+  --accent-red: #d4645a;
+  --accent-blue: #5a7a9a;
+
+  /* Gradients */
+  --gradient-card: linear-gradient(145deg, rgba(45,42,38,0.9), rgba(35,32,28,0.9));
+  --gradient-page: radial-gradient(ellipse at 20% 0%, rgba(60,55,45,0.3) 0%, transparent 50%), radial-gradient(ellipse at 80% 100%, rgba(50,45,35,0.2) 0%, transparent 50%);
 }
 
 @theme inline {

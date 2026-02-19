@@ -58,8 +58,4 @@ export interface ExplorerPaper {
   retractionComponent?: string;
 }
 
-export interface StatusColor {
-  bg: string;
-  text: string;
-  border: string;
-}
+export type { BadgeColorConfig as StatusColor } from "./shared";

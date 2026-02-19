@@ -1,6 +1,8 @@
 import type { PaperStatus } from "@/types/dashboard";
+import type { BadgeColorConfig } from "@/types/shared";
+import { Badge } from "@/components/shared";
 
-const statusStyles: Record<PaperStatus, { bg: string; text: string; border: string }> = {
+const statusStyles: Record<PaperStatus, BadgeColorConfig> = {
   Published: { bg: "rgba(120,180,120,0.15)", text: "#8fbc8f", border: "rgba(120,180,120,0.3)" },
   "Under Review": { bg: "rgba(180,180,120,0.15)", text: "#c9b458", border: "rgba(180,180,120,0.3)" },
   "Contract Pending": { bg: "rgba(180,140,100,0.15)", text: "#c4956a", border: "rgba(180,140,100,0.3)" },
@@ -11,12 +13,5 @@ const statusStyles: Record<PaperStatus, { bg: string; text: string; border: stri
 
 export function StatusBadge({ status }: { status: PaperStatus }) {
   const c = statusStyles[status] || statusStyles.Draft;
-  return (
-    <span
-      className="px-2.5 py-0.5 rounded-[3px] text-[11px] tracking-[0.5px] font-serif whitespace-nowrap"
-      style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}` }}
-    >
-      {status}
-    </span>
-  );
+  return <Badge label={status} colors={c} />;
 }
