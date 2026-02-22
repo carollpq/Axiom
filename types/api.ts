@@ -9,6 +9,7 @@ export interface ApiPaperVersion {
   codeRepoUrl?: string | null;
   codeCommitHash?: string | null;
   envSpecHash?: string | null;
+  fileStorageKey?: string | null;
   hederaTxId?: string | null;
   hederaTimestamp?: string | null;
   createdAt: string;

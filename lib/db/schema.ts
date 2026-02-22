@@ -106,6 +106,7 @@ export const paperVersions = sqliteTable("paper_versions", {
   codeRepoUrl: text("code_repo_url"),
   codeCommitHash: text("code_commit_hash"),
   envSpecHash: text("env_spec_hash"),
+  fileStorageKey: text("file_storage_key"),
   hederaTxId: text("hedera_tx_id"),
   hederaTimestamp: text("hedera_timestamp"),
   createdAt: text("created_at")

@@ -33,6 +33,7 @@ export async function POST(
     codeRepoUrl: body.codeRepoUrl ?? null,
     codeCommitHash: body.codeCommitHash ?? null,
     envSpecHash: body.envSpecHash ?? null,
+    fileStorageKey: body.fileStorageKey ?? null,
   });
 
   if (!version) {

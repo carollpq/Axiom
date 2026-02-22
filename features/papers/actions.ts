@@ -78,6 +78,7 @@ export interface CreatePaperVersionInput {
   codeRepoUrl?: string | null;
   codeCommitHash?: string | null;
   envSpecHash?: string | null;
+  fileStorageKey?: string | null;
 }
 
 export function createPaperVersion(input: CreatePaperVersionInput) {
@@ -100,6 +101,7 @@ export function createPaperVersion(input: CreatePaperVersionInput) {
       codeRepoUrl: input.codeRepoUrl ?? null,
       codeCommitHash: input.codeCommitHash ?? null,
       envSpecHash: input.envSpecHash ?? null,
+      fileStorageKey: input.fileStorageKey ?? null,
     })
     .returning()
     .get();

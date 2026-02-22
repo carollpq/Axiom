@@ -39,6 +39,7 @@ export function usePaperRegistration() {
   const [abstract, setAbstract] = useState("");
   const [fileName, setFileName] = useState("");
   const [fileHash, setFileHash] = useState("");
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [visibility, setVisibility] = useState<Visibility>("private");
   const [keywords, setKeywords] = useState(["machine learning", "reproducibility"]);
   const [keywordInput, setKeywordInput] = useState("");
@@ -46,9 +47,11 @@ export function usePaperRegistration() {
   // Step 2: Provenance
   const [datasetHash, setDatasetHash] = useState("");
   const [datasetUrl, setDatasetUrl] = useState("");
+  const [uploadedDatasetFile, setUploadedDatasetFile] = useState<File | null>(null);
   const [codeRepo, setCodeRepo] = useState("");
   const [codeCommit, setCodeCommit] = useState("");
   const [envHash, setEnvHash] = useState("");
+  const [uploadedEnvFile, setUploadedEnvFile] = useState<File | null>(null);
   const [githubConnected, setGithubConnected] = useState(false);
 
   // Step 3: Contract
@@ -89,6 +92,7 @@ export function usePaperRegistration() {
   const handleFileUpload = useCallback(async (file: File) => {
     setFileName(file.name);
     setFileHash("");
+    setUploadedFile(file);
     setIsHashing(true);
     try {
       const hash = await hashFile(file);
@@ -101,9 +105,11 @@ export function usePaperRegistration() {
   const removeFile = () => {
     setFileName("");
     setFileHash("");
+    setUploadedFile(null);
   };
 
   const handleDatasetUpload = useCallback(async (file: File) => {
+    setUploadedDatasetFile(file);
     setIsHashing(true);
     try {
       const hash = await hashFile(file);
@@ -114,6 +120,7 @@ export function usePaperRegistration() {
   }, []);
 
   const handleEnvUpload = useCallback(async (file: File) => {
+    setUploadedEnvFile(file);
     setIsHashing(true);
     try {
       const hash = await hashFile(file);
@@ -140,6 +147,41 @@ export function usePaperRegistration() {
     setKeywords(prev => prev.filter((_, j) => j !== index));
   };
 
+  // Upload a file to R2 via presigned URL. Returns the object key, or null if
+  // storage is not configured or the upload fails (non-fatal).
+  const uploadToR2 = async (
+    file: File,
+    hash: string,
+    folder: "papers" | "datasets" | "environments",
+  ): Promise<string | null> => {
+    try {
+      const { uploadUrl, objectKey } = await fetchApi<{
+        uploadUrl: string;
+        objectKey: string;
+      }>("/api/upload/presigned", {
+        method: "POST",
+        body: JSON.stringify({
+          hash,
+          contentType: file.type || "application/octet-stream",
+          folder,
+        }),
+      });
+
+      const r2Response = await fetch(uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type || "application/octet-stream" },
+      });
+
+      if (!r2Response.ok) throw new Error(`R2 PUT failed: ${r2Response.status}`);
+      return objectKey;
+    } catch (err) {
+      // Non-fatal — gracefully skip if storage is not configured or unavailable
+      console.warn("[R2] Upload skipped:", err);
+      return null;
+    }
+  };
+
   const handleRegister = async () => {
     if (!isConnected || !user) {
       // Fall back to mock behavior when not connected
@@ -151,7 +193,20 @@ export function usePaperRegistration() {
 
     setRegistering(true);
     try {
-      // 1. Create the paper
+      // 1. Upload files to R2 (non-fatal if storage not configured).
+      // Dataset and env keys are derivable as `{folder}/{hash}` so we don't
+      // need to store them separately — just ensure the objects are in R2.
+      const fileStorageKey = uploadedFile
+        ? await uploadToR2(uploadedFile, fileHash, "papers")
+        : null;
+      if (uploadedDatasetFile && datasetHash) {
+        await uploadToR2(uploadedDatasetFile, datasetHash, "datasets");
+      }
+      if (uploadedEnvFile && envHash) {
+        await uploadToR2(uploadedEnvFile, envHash, "environments");
+      }
+
+      // 2. Create the paper
       const paper = await fetchApi<{ id: string }>("/api/papers", {
         method: "POST",
         body: JSON.stringify({
@@ -161,13 +216,14 @@ export function usePaperRegistration() {
         }),
       });
 
-      // 2. Create the first version + anchor on HCS (server-side, non-fatal if unconfigured)
+      // 3. Create the first version + anchor on HCS (server-side, non-fatal if unconfigured)
       const version = await fetchApi<ApiPaperVersion>(
         `/api/papers/${paper.id}/versions`,
         {
           method: "POST",
           body: JSON.stringify({
             paperHash: fileHash,
+            fileStorageKey,
             datasetHash: datasetHash || null,
             codeRepoUrl: codeRepo || null,
             codeCommitHash: codeCommit || null,
