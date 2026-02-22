@@ -31,6 +31,14 @@ export type ContractStatusDb =
 
 export type ContributorStatusDb = "pending" | "signed" | "declined";
 
+export type SubmissionStatusDb =
+  | "submitted"
+  | "under_review"
+  | "revision_requested"
+  | "accepted"
+  | "rejected"
+  | "published";
+
 // ── Tables ─────────────────────────────────────────────────────────────────
 
 export const users = sqliteTable("users", {
@@ -153,6 +161,58 @@ export const contractContributors = sqliteTable("contract_contributors", {
     .default(sql`(datetime('now'))`),
 });
 
+export const journals = sqliteTable("journals", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  editorWallet: text("editor_wallet").notNull(),
+  reputationScore: text("reputation_score").default("4.3"),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+export const submissions = sqliteTable("submissions", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  paperId: text("paper_id")
+    .notNull()
+    .references(() => papers.id),
+  journalId: text("journal_id")
+    .notNull()
+    .references(() => journals.id),
+  versionId: text("version_id").references(() => paperVersions.id),
+  status: text("status")
+    .notNull()
+    .$type<SubmissionStatusDb>()
+    .default("submitted"),
+  // Reviewer wallets assigned to this submission
+  reviewerWallets: text("reviewer_wallets", { mode: "json" })
+    .$type<string[]>()
+    .default([]),
+  reviewDeadline: text("review_deadline"),
+  // On-chain anchoring for criteria
+  criteriaHash: text("criteria_hash"),
+  criteriaTxId: text("criteria_tx_id"),
+  criteriaMet: integer("criteria_met", { mode: "boolean" }),
+  // Decision
+  decision: text("decision"),
+  decisionJustification: text("decision_justification"),
+  decisionTxId: text("decision_tx_id"),
+  // Hedera anchoring for submission event
+  hederaTxId: text("hedera_tx_id"),
+  hederaTimestamp: text("hedera_timestamp"),
+  submittedAt: text("submitted_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  decidedAt: text("decided_at"),
+});
+
 // ── Relations ──────────────────────────────────────────────────────────────
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -197,3 +257,22 @@ export const contractContributorsRelations = relations(
     }),
   }),
 );
+
+export const journalsRelations = relations(journals, ({ many }) => ({
+  submissions: many(submissions),
+}));
+
+export const submissionsRelations = relations(submissions, ({ one }) => ({
+  paper: one(papers, {
+    fields: [submissions.paperId],
+    references: [papers.id],
+  }),
+  journal: one(journals, {
+    fields: [submissions.journalId],
+    references: [journals.id],
+  }),
+  version: one(paperVersions, {
+    fields: [submissions.versionId],
+    references: [paperVersions.id],
+  }),
+}));
