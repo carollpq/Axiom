@@ -10,6 +10,7 @@ import {
 } from "@/lib/mock-data/contract";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { fetchApi } from "@/lib/api";
+import { hashString, canonicalJson } from "@/lib/hashing";
 
 interface DbPaper {
   id: string;
@@ -56,7 +57,7 @@ function mapDbContributors(dbContribs: DbContractContributor[]): Contributor[] {
 }
 
 export function useContractBuilder() {
-  const { user, isConnected } = useCurrentUser();
+  const { user, isConnected, account } = useCurrentUser();
 
   const [selectedDraft, setSelectedDraft] = useState<number | null>(null);
   const [newTitle, setNewTitle] = useState("");
@@ -70,6 +71,7 @@ export function useContractBuilder() {
   // DB-fetched drafts and contracts
   const [dbDrafts, setDbDrafts] = useState<ExistingDraft[] | null>(null);
   const [dbContracts, setDbContracts] = useState<DbContract[] | null>(null);
+  const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
 
   // Fetch papers (drafts) from API when connected
   useEffect(() => {
@@ -127,6 +129,9 @@ export function useContractBuilder() {
 
     if (matchingContract && matchingContract.contributors.length > 0) {
       setContributors(mapDbContributors(matchingContract.contributors));
+      setSelectedContractId(matchingContract.id);
+    } else {
+      setSelectedContractId(null);
     }
   }, [selectedDraft, dbContracts, drafts]);
 
@@ -174,15 +179,68 @@ export function useContractBuilder() {
     setShowAddRow(false);
   };
 
-  const handleSign = (id: number) => {
-    setContributors(prev => prev.map(c =>
-      c.id === id ? {
-        ...c,
-        status: "signed" as const,
-        txHash: "0x" + Math.random().toString(16).slice(2, 6) + "..." + Math.random().toString(16).slice(2, 6),
-        signedAt: "2026-02-08 10:15 UTC",
-      } : c
-    ));
+  const handleSign = async (id: number) => {
+    const contributor = contributors.find((c) => c.id === id);
+
+    // Fallback: mock signing when wallet not connected or no DB contract
+    if (!contributor || !selectedContractId || !account || !user) {
+      setContributors((prev) =>
+        prev.map((c) =>
+          c.id === id
+            ? {
+                ...c,
+                status: "signed" as const,
+                txHash:
+                  "0x" +
+                  Math.random().toString(16).slice(2, 6) +
+                  "..." +
+                  Math.random().toString(16).slice(2, 6),
+                signedAt: new Date().toISOString(),
+              }
+            : c,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Hash the contract content so the signature commits to the exact terms
+      const contractPayload = {
+        paperTitle: draft?.title ?? "",
+        contributors: contributors.map((c) => ({
+          wallet: c.wallet,
+          name: c.name,
+          pct: c.pct,
+          role: c.role,
+        })),
+      };
+      const contractHash = await hashString(canonicalJson(contractPayload));
+      const signature = await account.signMessage({ message: contractHash });
+
+      await fetchApi(`/api/contracts/${selectedContractId}/sign`, {
+        method: "POST",
+        body: JSON.stringify({
+          contributorWallet: contributor.wallet,
+          signature,
+          contractHash,
+        }),
+      });
+
+      // Refresh contract data from DB
+      const updatedContracts = await fetchApi<DbContract[]>(
+        `/api/contracts?wallet=${user.walletAddress}`,
+      );
+      setDbContracts(updatedContracts);
+
+      const matchingContract = updatedContracts.find(
+        (c) => c.id === selectedContractId,
+      );
+      if (matchingContract) {
+        setContributors(mapDbContributors(matchingContract.contributors));
+      }
+    } catch (err) {
+      console.error("Signing failed:", err);
+    }
   };
 
   const handleInvite = () => {

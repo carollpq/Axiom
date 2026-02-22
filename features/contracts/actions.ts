@@ -1,5 +1,11 @@
 import { db } from "@/lib/db";
-import { authorshipContracts, contractContributors, users } from "@/lib/db/schema";
+import {
+  authorshipContracts,
+  contractContributors,
+  users,
+  type ContractStatusDb,
+  type ContributorStatusDb,
+} from "@/lib/db/schema";
 import { and, eq } from "drizzle-orm";
 
 export interface CreateContractInput {
@@ -66,4 +72,58 @@ export function removeContributor(contractId: string, contributorId: string) {
       .returning()
       .get() ?? null
   );
+}
+
+export interface SignContributorInput {
+  contractId: string;
+  contributorWallet: string;
+  signature: string;
+  contractHash?: string;
+}
+
+export function signContributor(input: SignContributorInput) {
+  const now = new Date().toISOString();
+
+  const updated = db
+    .update(contractContributors)
+    .set({
+      signature: input.signature,
+      status: "signed" as ContributorStatusDb,
+      signedAt: now,
+    })
+    .where(
+      and(
+        eq(contractContributors.contractId, input.contractId),
+        eq(
+          contractContributors.contributorWallet,
+          input.contributorWallet.toLowerCase(),
+        ),
+      ),
+    )
+    .returning()
+    .get();
+
+  if (!updated) return null;
+
+  // Check if all contributors are now signed — auto-advance contract status
+  const allContribs = db
+    .select()
+    .from(contractContributors)
+    .where(eq(contractContributors.contractId, input.contractId))
+    .all();
+
+  const allSigned = allContribs.every((c) => c.status === "signed");
+
+  db.update(authorshipContracts)
+    .set({
+      status: (allSigned
+        ? "fully_signed"
+        : "pending_signatures") as ContractStatusDb,
+      contractHash: allSigned ? (input.contractHash ?? null) : undefined,
+      updatedAt: now,
+    })
+    .where(eq(authorshipContracts.id, input.contractId))
+    .run();
+
+  return updated;
 }

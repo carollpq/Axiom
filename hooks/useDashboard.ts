@@ -5,6 +5,8 @@ import type {
   DashboardTab,
   PaperStatus,
   Paper,
+  PendingAction,
+  ActivityItem,
   StatCardData,
 } from "@/types/dashboard";
 import {
@@ -74,27 +76,43 @@ export function useDashboard() {
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
 
   const [dbPapers, setDbPapers] = useState<Paper[] | null>(null);
+  const [dbPendingActions, setDbPendingActions] = useState<PendingAction[] | null>(null);
+  const [dbActivity, setDbActivity] = useState<ActivityItem[] | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Fetch papers from API when user is connected
+  // Fetch papers + activity from API when user is connected
   useEffect(() => {
     if (!isConnected || !user) {
       setDbPapers(null);
+      setDbPendingActions(null);
+      setDbActivity(null);
       return;
     }
 
     let cancelled = false;
     setLoading(true);
 
-    fetchApi<DbPaper[]>(`/api/papers?wallet=${user.walletAddress}`)
-      .then((data) => {
+    const wallet = user.walletAddress;
+
+    Promise.all([
+      fetchApi<DbPaper[]>(`/api/papers?wallet=${wallet}`),
+      fetchApi<{ pendingActions: PendingAction[]; activity: ActivityItem[] }>(
+        `/api/activity?wallet=${wallet}`,
+      ),
+    ])
+      .then(([papersData, activityData]) => {
         if (!cancelled) {
-          setDbPapers(data.map(mapDbPaperToFrontend));
+          setDbPapers(papersData.map(mapDbPaperToFrontend));
+          setDbPendingActions(activityData.pendingActions);
+          setDbActivity(activityData.activity);
         }
       })
       .catch(() => {
-        // Fall back to mock data on error
-        if (!cancelled) setDbPapers(null);
+        if (!cancelled) {
+          setDbPapers(null);
+          setDbPendingActions(null);
+          setDbActivity(null);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -122,12 +140,15 @@ export function useDashboard() {
     });
   }, [papers, statusFilter, searchQuery]);
 
+  const pendingActions = dbPendingActions ?? mockPendingActions;
+  const activity = dbActivity ?? mockActivity;
+
   const tabs = [
     { key: "papers" as const, label: "Papers", count: papers.length },
     {
       key: "pending" as const,
       label: "Pending Actions",
-      count: mockPendingActions.length,
+      count: pendingActions.length,
     },
     { key: "activity" as const, label: "Recent Activity", count: null },
   ];
@@ -144,8 +165,8 @@ export function useDashboard() {
     filteredPapers,
     tabs,
     papers,
-    pendingActions: mockPendingActions,
-    activity: mockActivity,
+    pendingActions,
+    activity,
     stats,
     paperStatuses,
     loading,
