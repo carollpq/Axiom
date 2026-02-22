@@ -45,11 +45,11 @@ export function useContractBuilder() {
   const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
 
   const { data: rawPapers } = useAuthFetch<ApiPaper[]>(
-    (wallet) => fetchApi<ApiPaper[]>(`/api/papers?wallet=${wallet}`),
+    () => fetchApi<ApiPaper[]>("/api/papers"),
   );
 
   const { data: dbContracts, refetch: refetchContracts } = useAuthFetch<ApiContract[]>(
-    (wallet) => fetchApi<ApiContract[]>(`/api/contracts?wallet=${wallet}`),
+    () => fetchApi<ApiContract[]>("/api/contracts"),
   );
 
   const dbDrafts: ExistingDraft[] | null = rawPapers
@@ -107,7 +107,6 @@ export function useContractBuilder() {
       body: JSON.stringify({
         paperTitle: titleForContract,
         paperId: draft?.dbId ?? null,
-        wallet: user.walletAddress,
       }),
     });
 

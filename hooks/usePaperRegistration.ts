@@ -64,7 +64,7 @@ export function usePaperRegistration() {
 
   // DB-fetched contracts
   const { data: rawContracts } = useAuthFetch<ApiContract[]>(
-    (wallet) => fetchApi<ApiContract[]>(`/api/contracts?wallet=${wallet}`),
+    () => fetchApi<ApiContract[]>("/api/contracts"),
   );
 
   const dbContracts: SignedContract[] | null = rawContracts
@@ -157,7 +157,6 @@ export function usePaperRegistration() {
         body: JSON.stringify({
           title,
           abstract,
-          wallet: user.walletAddress,
           studyType: "original",
         }),
       });

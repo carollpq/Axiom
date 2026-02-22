@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { useActiveAccount } from "thirdweb/react";
 import { fetchApi } from "@/lib/api";
+import { doLogout } from "@/app/actions/auth";
 import type { DbUser } from "@/types/api";
 
 interface UserContextValue {
@@ -19,16 +20,26 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<DbUser | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Restore session on mount (page refresh, SSR rehydration)
+  useEffect(() => {
+    setLoading(true);
+    fetchApi<DbUser>("/api/auth/me")
+      .then(setUser)
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
+  }, []);
+
+  // React to wallet connect/disconnect
   useEffect(() => {
     if (!account?.address) {
-      setUser(null);
+      doLogout().then(() => setUser(null));
       return;
     }
 
     let cancelled = false;
     setLoading(true);
 
-    fetchApi<DbUser>(`/api/auth/me?wallet=${account.address}`)
+    fetchApi<DbUser>("/api/auth/me")
       .then((data) => {
         if (!cancelled) setUser(data);
       })

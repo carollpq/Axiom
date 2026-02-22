@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
 import { signContributor, updateContractHedera, getContractById } from "@/features/contracts";
 import { isHederaConfigured } from "@/lib/hedera/client";
 import { submitHcsMessage } from "@/lib/hedera/hcs";
@@ -9,6 +10,11 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const sessionWallet = await getSession();
+  if (!sessionWallet) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { id } = await params;
   const body = await req.json();
   const { contributorWallet, signature, contractHash } = body as {
@@ -21,6 +27,14 @@ export async function POST(
     return NextResponse.json(
       { error: "contributorWallet and signature are required" },
       { status: 400 },
+    );
+  }
+
+  // Verify the session wallet matches the contributor wallet being signed
+  if (contributorWallet.toLowerCase() !== sessionWallet) {
+    return NextResponse.json(
+      { error: "Session wallet does not match contributor wallet" },
+      { status: 403 },
     );
   }
 

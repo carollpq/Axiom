@@ -1,12 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
 import { getOrCreateUser } from "@/features/users";
 
 export const runtime = "nodejs";
 
-export async function GET(req: NextRequest) {
-  const wallet = req.nextUrl.searchParams.get("wallet");
+export async function GET() {
+  const wallet = await getSession();
   if (!wallet) {
-    return NextResponse.json({ error: "wallet param required" }, { status: 400 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const user = getOrCreateUser(wallet);

@@ -1,28 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
 import { listUserPapers } from "@/features/papers";
 import { listUserContracts } from "@/features/contracts";
 import type { PendingAction, ActivityItem } from "@/types/dashboard";
+import { formatRelativeTime } from "@/lib/format";
 
 export const runtime = "nodejs";
 
-function formatRelativeTime(isoDate: string): string {
-  const diffMs = Date.now() - new Date(isoDate).getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays} days ago`;
-  if (diffDays < 14) return "1 week ago";
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-  if (diffDays < 60) return "1 month ago";
-  return `${Math.floor(diffDays / 30)} months ago`;
-}
-
-export async function GET(req: NextRequest) {
-  const wallet = req.nextUrl.searchParams.get("wallet");
+export async function GET() {
+  const wallet = await getSession();
   if (!wallet) {
     return NextResponse.json(
-      { error: "wallet query param required" },
-      { status: 400 },
+      { error: "Unauthorized" },
+      { status: 401 },
     );
   }
 

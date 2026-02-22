@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
 import { listUserContracts, createContract } from "@/features/contracts";
 
 export const runtime = "nodejs";
 
-export async function GET(req: NextRequest) {
-  const wallet = req.nextUrl.searchParams.get("wallet");
+export async function GET() {
+  const wallet = await getSession();
   if (!wallet) {
-    return NextResponse.json({ error: "wallet param required" }, { status: 400 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const result = listUserContracts(wallet);
@@ -14,17 +15,22 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const { paperTitle, wallet } = body;
+  const wallet = await getSession();
+  if (!wallet) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  if (!paperTitle || !wallet) {
+  const body = await req.json();
+  const { paperTitle } = body;
+
+  if (!paperTitle) {
     return NextResponse.json(
-      { error: "paperTitle and wallet are required" },
+      { error: "paperTitle is required" },
       { status: 400 },
     );
   }
 
-  const contract = createContract(body);
+  const contract = createContract({ ...body, wallet });
   if (!contract) {
     return NextResponse.json({ error: "user not found" }, { status: 404 });
   }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
 import { addContributor, removeContributor } from "@/features/contracts";
 
 export const runtime = "nodejs";
@@ -7,6 +8,11 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const wallet = await getSession();
+  if (!wallet) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { id: contractId } = await params;
   const body = await req.json();
   const { contributorWallet, contributionPct } = body;
@@ -26,6 +32,11 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const wallet = await getSession();
+  if (!wallet) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { id: contractId } = await params;
   const contributorId = req.nextUrl.searchParams.get("contributorId");
   if (!contributorId) {

@@ -5,6 +5,12 @@ import { usePathname } from "next/navigation";
 import { useActiveAccount } from "thirdweb/react";
 import { ConnectButton } from "thirdweb/react";
 import { client } from "@/lib/thirdweb";
+import {
+  getLoginPayload,
+  doLogin,
+  doLogout,
+  isLoggedIn,
+} from "@/app/actions/auth";
 import type { NavItemData, UserProfile } from "@/types/shared";
 
 function NavItem({ label, href, active }: { label: string; href: string; active: boolean }) {
@@ -74,30 +80,30 @@ export function TopBar({ navItems, user }: { navItems: NavItemData[]; user: User
         </div>
       </div>
       <div className="flex items-center gap-5">
-        {account ? (
+        {account && (
           <>
             <NotificationBell count={user.notificationCount} />
             <UserBadge user={user} />
           </>
-        ) : (
-          <ConnectButton
-            client={client}
-            theme="dark"
-            connectButton={{
-              label: "Connect Wallet",
-              style: {
-                backgroundColor: "rgba(201, 164, 74, 0.15)",
-                color: "#c9a44a",
-                border: "1px solid rgba(201, 164, 74, 0.3)",
-                borderRadius: "6px",
-                fontSize: "13px",
-                fontFamily: "Georgia, serif",
-                padding: "6px 16px",
-                height: "34px",
-              },
-            }}
-          />
         )}
+        <ConnectButton
+          client={client}
+          auth={{ isLoggedIn, getLoginPayload, doLogin, doLogout }}
+          theme="dark"
+          connectButton={{
+            label: "Connect Wallet",
+            style: {
+              backgroundColor: "rgba(201, 164, 74, 0.15)",
+              color: "#c9a44a",
+              border: "1px solid rgba(201, 164, 74, 0.3)",
+              borderRadius: "6px",
+              fontSize: "13px",
+              fontFamily: "Georgia, serif",
+              padding: "6px 16px",
+              height: "34px",
+            },
+          }}
+        />
       </div>
     </nav>
   );

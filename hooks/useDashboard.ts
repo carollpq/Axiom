@@ -66,11 +66,11 @@ export function useDashboard() {
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
 
   const { data: dashboardData, loading } = useAuthFetch(
-    async (wallet) => {
+    async () => {
       const [papersData, activityData] = await Promise.all([
-        fetchApi<ApiPaper[]>(`/api/papers?wallet=${wallet}`),
+        fetchApi<ApiPaper[]>("/api/papers"),
         fetchApi<{ pendingActions: PendingAction[]; activity: ActivityItem[] }>(
-          `/api/activity?wallet=${wallet}`,
+          "/api/activity",
         ),
       ]);
       return { papersData, activityData };

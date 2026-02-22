@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
 import { createPaperVersion, updatePaperVersionHedera } from "@/features/papers";
 import { isHederaConfigured } from "@/lib/hedera/client";
 import { submitHcsMessage } from "@/lib/hedera/hcs";
@@ -9,6 +10,11 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const wallet = await getSession();
+  if (!wallet) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { id } = await params;
   const body = await req.json();
   const { paperHash } = body;

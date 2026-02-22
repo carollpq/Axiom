@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
 import { listUserPapers, createPaper } from "@/features/papers";
 
 export const runtime = "nodejs";
 
-export async function GET(req: NextRequest) {
-  const wallet = req.nextUrl.searchParams.get("wallet");
+export async function GET() {
+  const wallet = await getSession();
   if (!wallet) {
-    return NextResponse.json({ error: "wallet param required" }, { status: 400 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const result = listUserPapers(wallet);
@@ -14,17 +15,19 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const { title, wallet } = body;
-
-  if (!title || !wallet) {
-    return NextResponse.json(
-      { error: "title and wallet are required" },
-      { status: 400 },
-    );
+  const wallet = await getSession();
+  if (!wallet) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const paper = createPaper(body);
+  const body = await req.json();
+  const { title } = body;
+
+  if (!title) {
+    return NextResponse.json({ error: "title is required" }, { status: 400 });
+  }
+
+  const paper = createPaper({ ...body, wallet });
   if (!paper) {
     return NextResponse.json({ error: "user not found" }, { status: 404 });
   }
