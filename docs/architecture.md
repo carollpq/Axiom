@@ -1788,6 +1788,10 @@ npx hardhat deploy --network hedera-testnet
 - ✅ Earnings dashboard (new page)
 - ✅ Hedera System Contracts (hybrid HTS + EVM)
 
+**Quick Wins (NEW):**
+- ✅ External Paper Verification Tool (public hash checker)
+- ✅ Negative Result / Replication Study tagging with funder escrow support
+
 **Deferred:**
 - ❌ FR-5.5 (Sybil resistance) — v2
 - ❌ FR-7 write/management — v2
@@ -1795,6 +1799,9 @@ npx hardhat deploy --network hedera-testnet
 - ❌ FR-9 (Fraud insurance) — v3
 - ❌ FR-10 (Commercial IP) — v2
 - ❌ FR-11 (AI review detection) — v2
+- ❌ Post-publication commentary system — v2
+- ❌ On-chain readership analytics per journal — v2
+- ❌ Algorithmic reviewer matching with auditability — v2
 
 ## Appendix C: Hedera Service Usage Map
 
@@ -1809,3 +1816,227 @@ npx hardhat deploy --network hedera-testnet
 | **x402** | HTTP-native micropayments for paper access | Hedera's x402 payment scheme |
 
 This demonstrates breadth and depth across Hedera's service offerings — important for hackathon judging.
+
+---
+
+## Appendix D: Quick Win Features
+
+### D.1 External Paper Verification Tool
+
+**Purpose:** Allow anyone — researchers, institutions, courts, journalists — to verify whether a paper has been registered on-chain, without needing an account or wallet. This demonstrates the platform's value even to non-users and is a powerful live demo feature.
+
+**Page:** `/verify` (added to the public route group, no auth required)
+
+**How it works:**
+
+```
+Visitor                         Browser                    API                Mirror Node
+  │                                │                        │                     │
+  │  1. Upload PDF or paste hash   │                        │                     │
+  │─────────────────────────────►  │                        │                     │
+  │                                │  2. If PDF: compute    │                     │
+  │                                │     SHA-256 client-side│                     │
+  │                                │     → paperHash        │                     │
+  │                                │                        │                     │
+  │                                │── 3. GET /api/hedera/ ─►                     │
+  │                                │       verify?hash=...  │                     │
+  │                                │                        │── 4. Query HCS ────►│
+  │                                │                        │   papers topic      │
+  │                                │                        │   for matching hash │
+  │                                │                        │                     │
+  │                                │                        │◄── 5. Results ──────│
+  │                                │                        │                     │
+  │  ◄── 6. Verification results ──│◄───────────────────────│                     │
+  │                                │                        │                     │
+  │  Results display:              │                        │                     │
+  │  ✅ MATCH FOUND                │                        │                     │
+  │  • Registered: 2026-01-15      │                        │                     │
+  │  • Authors: A (40%), B (35%),  │                        │                     │
+  │    C (25%)                     │                        │                     │
+  │  • Hedera Tx: 0.0.xxxxx       │                        │                     │
+  │  • Status: Published           │                        │                     │
+  │  • Contract: [View on-chain]   │                        │                     │
+  │  • Provenance: dataset ✓       │                        │                     │
+  │    code ✓ environment ✓        │                        │                     │
+  │                                │                        │                     │
+  │  OR                            │                        │                     │
+  │  ❌ NO MATCH                   │                        │                     │
+  │  This paper has not been       │                        │                     │
+  │  registered on Research Chain. │                        │                     │
+```
+
+**UI sections:**
+
+1. **Input area:** Drag-and-drop PDF upload OR paste a SHA-256 hash directly. PDF hashing happens entirely client-side — the file never leaves the browser.
+
+2. **Verification result (match found):**
+   - Registration timestamp with Hedera transaction link
+   - Authorship contract: list of authors with contribution percentages
+   - Paper status (Draft / Registered / Published / Retracted)
+   - Provenance checklist: which hashes are linked (dataset ✓, code ✓, environment ✓)
+   - Version history count
+   - If published: journal name, review outcome, access link (x402 gated)
+
+3. **Verification result (no match):**
+   - Clear "not found" message
+   - CTA: "Want to register your research? Connect wallet to get started."
+
+4. **Batch verification (stretch):**
+   - Upload multiple PDFs, get a verification report
+   - Useful for institutions auditing a researcher's claims
+
+**Implementation cost:** ~0.5 days. One new page, one new API endpoint, reuses existing hashing utilities and mirror node queries.
+
+**Functional requirements:**
+
+| ID | Requirement |
+|---|---|
+| VT-1 | Verification page shall be accessible without authentication. |
+| VT-2 | System shall accept PDF upload and compute SHA-256 client-side. |
+| VT-3 | System shall accept direct hash input (64-char hex string). |
+| VT-4 | System shall query on-chain records and return match/no-match within 3 seconds. |
+| VT-5 | Match results shall display authorship, timestamp, status, and provenance completeness. |
+| VT-6 | All on-chain claims shall include Hedera transaction explorer links. |
+| VT-7 | No uploaded file content shall leave the browser — only the computed hash is sent to the API. |
+
+**Page added to frontend structure:**
+
+```
+app/
+├── (public)/
+│   ├── page.tsx                    # Landing Page
+│   ├── verify/page.tsx             # NEW: External Paper Verification Tool
+│   └── explore/
+│       ├── page.tsx                # Public Explorer
+│       └── [paperId]/page.tsx      # Paper Detail View
+```
+
+**Why this matters for the hackathon demo:**
+
+This is the perfect "wow moment" in a live presentation. You take a published paper PDF, drag it onto the verification page, and within seconds it shows the full on-chain provenance — who wrote it, when it was first registered, what dataset and code it's linked to, who reviewed it, and when. No login required. Anyone can verify. That's a compelling 30-second demo that judges will remember.
+
+---
+
+### D.2 Negative Result & Replication Study Tagging
+
+**Purpose:** Combat publication bias by creating explicit support for negative results and replication studies — two categories of essential scientific work that are systematically suppressed by the current publishing model.
+
+**The problem:** Journals prefer positive, novel findings. A study that says "we tried X and it didn't work" or "we repeated Y's experiment and got the same result" struggles to get published even though both are critical for science. This leads to wasted resources (researchers repeating failed experiments they never heard about) and a replication crisis (results that have never been independently verified).
+
+**How our architecture addresses it:**
+
+The pre-registered review criteria (FR-4) already help — reviewers evaluate methodology, not results, and if criteria are met, publication is obligated. But we can go further by making negative results and replications first-class citizens.
+
+**Implementation:**
+
+1. **Paper tagging at registration (Step 1 of Page 5):**
+
+   Add a `study_type` field to paper registration:
+
+   ```typescript
+   type StudyType = 
+       | 'original'           // Standard novel research
+       | 'negative_result'    // Hypothesis tested, result negative
+       | 'replication'        // Independent replication of existing study
+       | 'replication_failed' // Replication attempt that did not reproduce
+       | 'meta_analysis';     // Systematic review / meta-analysis
+   ```
+
+   For replication types, an additional field links to the original paper:
+
+   ```typescript
+   interface ReplicationMetadata {
+       originalPaperHash: string;    // Hash of the paper being replicated
+       originalPaperId?: string;     // If registered on our platform
+       originalDoi?: string;         // If external
+       deviations: string;           // Free text: what differed from original
+   }
+   ```
+
+2. **Schema additions:**
+
+   ```sql
+   -- Add to papers table
+   ALTER TABLE papers ADD COLUMN study_type TEXT DEFAULT 'original';
+   ALTER TABLE papers ADD COLUMN replication_of_hash TEXT;  -- Original paper hash
+   ALTER TABLE papers ADD COLUMN replication_of_doi TEXT;   -- External DOI
+   ALTER TABLE papers ADD COLUMN replication_deviations TEXT;
+   ```
+
+3. **On-chain recording:**
+
+   The HCS paper registration message already includes paper metadata. Add `studyType` to the message schema:
+
+   ```json
+   {
+       "type": "register",
+       "paperHash": "abc123...",
+       "studyType": "replication_failed",
+       "replicationOf": "def456...",
+       "authorDid": "did:hedera:...",
+       ...
+   }
+   ```
+
+   This makes the study type immutable and verifiable. A paper registered as a negative result can't later be re-tagged by a journal.
+
+4. **Public Explorer filtering:**
+
+   Add study type as a filter on the Paper Explorer (Page 6):
+
+   ```
+   Filters: Research field | Status | Date range | Journal | Study Type
+                                                              ├── All
+                                                              ├── Original Research
+                                                              ├── Negative Results
+                                                              ├── Replications
+                                                              └── Meta-analyses
+   ```
+
+   This makes negative results and replications *discoverable* — a researcher can search specifically for "has anyone tried X and failed?" before starting their own experiment.
+
+5. **Replication chains (visual):**
+
+   On the Paper Detail View, if a paper has been replicated (or is a replication), show a replication chain:
+
+   ```
+   Original Study (Smith et al., 2025)
+       ├── Replication ✅ (Jones et al., 2025) — Reproduced
+       ├── Replication ✅ (Lee et al., 2026) — Reproduced  
+       └── Replication ❌ (Park et al., 2026) — Failed to reproduce
+   ```
+
+   This gives instant visual evidence of how robust a finding is — far more useful than any single p-value.
+
+6. **Funder escrow for open access (architecture-ready for v2):**
+
+   Funders who want to incentivize negative result reporting or replication studies can create escrow contracts that specifically subsidize access to these paper types:
+
+   ```
+   Funder Escrow Configuration:
+   - Eligible study types: [negative_result, replication, replication_failed]
+   - Eligible research fields: [all | specific fields]
+   - Subsidy: Set reader price to $0 (funder covers author + reviewer revenue)
+   - Budget: $50,000 USDC
+   - Draws from escrow per access until depleted
+   ```
+
+   This is the funder escrow pattern from §2 with a filter on study type. No new architecture — just a configuration option on the existing escrow mechanism.
+
+**Functional requirements:**
+
+| ID | Requirement |
+|---|---|
+| NR-1 | Authors shall be able to tag papers with a study type at registration. |
+| NR-2 | Replication studies shall link to the original paper (by hash or DOI). |
+| NR-3 | Study type shall be recorded on-chain in the HCS paper registration message. |
+| NR-4 | Study type shall be immutable once registered. |
+| NR-5 | Public Explorer shall support filtering by study type. |
+| NR-6 | Paper Detail View shall display replication chains when applicable. |
+| NR-7 | Funder escrows shall support filtering by study type (v2, architecture-ready). |
+
+**Implementation cost:** ~1 day. Schema addition, form field on Page 5, filter on Page 6, replication chain visual on Paper Detail. No new services or integrations.
+
+**Why this matters:**
+
+This is a small feature with outsized narrative impact. When presenting to hackathon judges, you can say: *"Our platform doesn't just make publishing transparent — it incentivizes the science that the current system actively suppresses. Negative results and replications are searchable, discoverable, and financially supported. A researcher can look up whether an experiment has been tried and failed before spending six months on it."* That's a story about fixing science, not just fixing infrastructure.
