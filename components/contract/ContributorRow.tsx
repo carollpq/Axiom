@@ -10,8 +10,8 @@ interface ContributorRowProps {
   isLast: boolean;
   showAddRow: boolean;
   onUpdate: (id: number, field: string, value: string | number) => void;
-  onRemove: (id: number) => void;
-  onSign: (id: number) => void;
+  onRemove: (id: number) => void | Promise<void>;
+  onSign: (id: number) => void | Promise<void>;
 }
 
 export function ContributorRow({ contributor: c, isValid, hasSigned, isCurrentUser, isLast, showAddRow, onUpdate, onRemove, onSign }: ContributorRowProps) {

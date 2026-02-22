@@ -17,6 +17,7 @@ import { useAuthFetch } from "@/hooks/useAuthFetch";
 function mapDbContributors(dbContribs: ApiContractContributor[]): Contributor[] {
   return dbContribs.map((c, i) => ({
     id: i + 1,
+    dbId: c.id,
     wallet: c.contributorWallet,
     did: c.contributorWallet,
     name: c.contributorName ?? "Unknown user",
@@ -56,9 +57,9 @@ export function useContractBuilder() {
         .filter((p) => p.status === "draft" || p.status === "contract_pending")
         .map((p, i) => ({
           id: i + 1,
+          dbId: p.id,
           title: p.title,
           hash: p.versions?.[0]?.paperHash ?? "\u2014",
-          _dbId: p.id,
         }))
     : null;
 
@@ -94,6 +95,46 @@ export function useContractBuilder() {
   const hasSigned = contributors.some(c => c.status === "signed");
   const draft = drafts.find(d => d.id === selectedDraft);
 
+  // Create contract + persist all current contributors to DB.
+  // Returns the new contract ID, or null on failure.
+  async function handleCreateContract(): Promise<string | null> {
+    if (!user) return null;
+    const titleForContract = draft?.title ?? newTitle.trim();
+    if (!titleForContract) return null;
+
+    const newContract = await fetchApi<ApiContract>("/api/contracts", {
+      method: "POST",
+      body: JSON.stringify({
+        paperTitle: titleForContract,
+        paperId: draft?.dbId ?? null,
+        wallet: user.walletAddress,
+      }),
+    });
+
+    // Persist all current contributors
+    const addResults = await Promise.all(
+      contributors.map((c) =>
+        fetchApi<{ id: string }>(`/api/contracts/${newContract.id}/contributors`, {
+          method: "POST",
+          body: JSON.stringify({
+            contributorWallet: c.wallet,
+            contributorName: c.name !== "Unknown user" ? c.name : null,
+            contributionPct: Number(c.pct) || 0,
+            roleDescription: c.role || null,
+            isCreator: c.isCreator,
+          }),
+        }),
+      ),
+    );
+
+    // Stamp each contributor with its DB UUID for future API calls
+    setContributors((prev) =>
+      prev.map((c, i) => ({ ...c, dbId: addResults[i]?.id })),
+    );
+    setSelectedContractId(newContract.id);
+    return newContract.id;
+  }
+
   const updateContributor = (id: number, field: string, value: string | number) => {
     setContributors(prev => prev.map(c => {
       if (c.id !== id) return c;
@@ -105,24 +146,66 @@ export function useContractBuilder() {
     }));
   };
 
-  const removeContributor = (id: number) => {
+  const removeContributor = async (id: number) => {
+    const contributor = contributors.find((c) => c.id === id);
+    // If contract exists in DB and contributor has a DB record, remove via API
+    if (selectedContractId && contributor?.dbId) {
+      try {
+        await fetchApi(
+          `/api/contracts/${selectedContractId}/contributors?contributorId=${contributor.dbId}`,
+          { method: "DELETE" },
+        );
+      } catch (err) {
+        console.error("Remove contributor failed:", err);
+        return; // Don't remove from local state if API failed
+      }
+    }
     setContributors(prev => prev.filter(c => c.id !== id));
   };
 
-  const addContributor = () => {
+  const addContributor = async () => {
     const found = mockKnownUsers.find(u => u.wallet === addWallet || u.did === addWallet);
-    const newId = Math.max(...contributors.map(c => c.id)) + 1;
-    if (found) {
-      setContributors(prev => [...prev, {
-        id: newId, wallet: found.wallet, did: found.did, name: found.name,
-        orcid: found.orcid, pct: 0, role: "", status: "pending" as const, txHash: null, signedAt: null, isCreator: false,
-      }]);
-    } else if (addWallet.trim()) {
-      setContributors(prev => [...prev, {
-        id: newId, wallet: addWallet, did: addWallet, name: "Unknown user",
-        orcid: "\u2014", pct: 0, role: "", status: "pending" as const, txHash: null, signedAt: null, isCreator: false,
-      }]);
+    const newId = Math.max(...contributors.map(c => c.id), 0) + 1;
+    const newContributor: Contributor = found
+      ? {
+          id: newId, wallet: found.wallet, did: found.did, name: found.name,
+          orcid: found.orcid, pct: 0, role: "", status: "pending" as const,
+          txHash: null, signedAt: null, isCreator: false,
+        }
+      : addWallet.trim()
+      ? {
+          id: newId, wallet: addWallet, did: addWallet, name: "Unknown user",
+          orcid: "\u2014", pct: 0, role: "", status: "pending" as const,
+          txHash: null, signedAt: null, isCreator: false,
+        }
+      : null;
+
+    if (!newContributor) return;
+
+    // If a contract already exists, persist to DB immediately
+    if (selectedContractId) {
+      try {
+        const result = await fetchApi<{ id: string }>(
+          `/api/contracts/${selectedContractId}/contributors`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              contributorWallet: newContributor.wallet,
+              contributorName: newContributor.name !== "Unknown user" ? newContributor.name : null,
+              contributionPct: 0,
+              roleDescription: null,
+              isCreator: false,
+            }),
+          },
+        );
+        newContributor.dbId = result.id;
+      } catch (err) {
+        console.error("Add contributor failed:", err);
+        return;
+      }
     }
+
+    setContributors(prev => [...prev, newContributor]);
     setAddWallet("");
     setShowAddRow(false);
   };
@@ -130,8 +213,8 @@ export function useContractBuilder() {
   const handleSign = async (id: number) => {
     const contributor = contributors.find((c) => c.id === id);
 
-    // Fallback: mock signing when wallet not connected or no DB contract
-    if (!contributor || !selectedContractId || !account || !user) {
+    // Fallback: mock signing when wallet not connected
+    if (!contributor || !account || !user) {
       setContributors((prev) =>
         prev.map((c) =>
           c.id === id
@@ -152,8 +235,15 @@ export function useContractBuilder() {
     }
 
     try {
+      // Ensure contract exists in DB before signing
+      const contractId = selectedContractId ?? await handleCreateContract();
+      if (!contractId) {
+        console.error("Could not create contract before signing");
+        return;
+      }
+
       const contractPayload = {
-        paperTitle: draft?.title ?? "",
+        paperTitle: draft?.title ?? newTitle,
         contributors: contributors.map((c) => ({
           wallet: c.wallet,
           name: c.name,
@@ -164,7 +254,7 @@ export function useContractBuilder() {
       const contractHash = await hashString(canonicalJson(contractPayload));
       const signature = await account.signMessage({ message: contractHash });
 
-      await fetchApi(`/api/contracts/${selectedContractId}/sign`, {
+      await fetchApi(`/api/contracts/${contractId}/sign`, {
         method: "POST",
         body: JSON.stringify({
           contributorWallet: contributor.wallet,
@@ -173,14 +263,9 @@ export function useContractBuilder() {
         }),
       });
 
-      // Refresh contract data from DB
-      await refetchContracts();
-
-      // Update contributors from the refreshed data
-      const freshContracts = dbContracts;
-      const matchingContract = freshContracts?.find(
-        (c) => c.id === selectedContractId,
-      );
+      // Refresh + update local contributors from DB
+      const freshContracts = await refetchContracts();
+      const matchingContract = freshContracts?.find((c) => c.id === contractId);
       if (matchingContract) {
         setContributors(mapDbContributors(matchingContract.contributors));
       }

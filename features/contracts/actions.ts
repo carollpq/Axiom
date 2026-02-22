@@ -49,7 +49,7 @@ export function addContributor(input: AddContributorInput) {
     .insert(contractContributors)
     .values({
       contractId: input.contractId,
-      contributorWallet: input.contributorWallet,
+      contributorWallet: input.contributorWallet.toLowerCase(),
       contributorName: input.contributorName ?? null,
       contributionPct: input.contributionPct,
       roleDescription: input.roleDescription ?? null,

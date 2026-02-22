@@ -13,9 +13,9 @@ interface ContributorTableProps {
   showAddRow: boolean;
   addWallet: string;
   onUpdate: (id: number, field: string, value: string | number) => void;
-  onRemove: (id: number) => void;
-  onSign: (id: number) => void;
-  onAdd: () => void;
+  onRemove: (id: number) => void | Promise<void>;
+  onSign: (id: number) => void | Promise<void>;
+  onAdd: () => void | Promise<void>;
   onInvite: () => void;
   onSetShowAddRow: (show: boolean) => void;
   onSetAddWallet: (wallet: string) => void;

@@ -14,7 +14,7 @@ import { useUser } from "@/context/UserContext";
 export function useAuthFetch<T>(
   fetcher: (wallet: string) => Promise<T>,
   deps: unknown[] = [],
-): { data: T | null; loading: boolean; refetch: () => Promise<void> } {
+): { data: T | null; loading: boolean; refetch: () => Promise<T | null> } {
   const { user, isConnected } = useUser();
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(false);
@@ -22,13 +22,15 @@ export function useAuthFetch<T>(
   const fetcherRef = useRef(fetcher);
   fetcherRef.current = fetcher;
 
-  const runFetch = useCallback(async (wallet: string, signal: { cancelled: boolean }) => {
+  const runFetch = useCallback(async (wallet: string, signal: { cancelled: boolean }): Promise<T | null> => {
     setLoading(true);
     try {
       const result = await fetcherRef.current(wallet);
       if (!signal.cancelled) setData(result);
+      return result;
     } catch {
       if (!signal.cancelled) setData(null);
+      return null;
     } finally {
       if (!signal.cancelled) setLoading(false);
     }
@@ -49,10 +51,10 @@ export function useAuthFetch<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected, user, runFetch, ...deps]);
 
-  const refetch = useCallback(async () => {
-    if (!isConnected || !user) return;
+  const refetch = useCallback(async (): Promise<T | null> => {
+    if (!isConnected || !user) return null;
     const signal = { cancelled: false };
-    await runFetch(user.walletAddress, signal);
+    return runFetch(user.walletAddress, signal);
   }, [isConnected, user, runFetch]);
 
   return { data, loading, refetch };

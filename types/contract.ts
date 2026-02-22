@@ -2,6 +2,7 @@ export type ContributorStatus = "pending" | "signed" | "declined";
 
 export interface Contributor {
   id: number;
+  dbId?: string; // DB UUID — present once the contract has been persisted
   wallet: string;
   did: string;
   name: string;
@@ -16,6 +17,7 @@ export interface Contributor {
 
 export interface ExistingDraft {
   id: number;
+  dbId?: string; // DB UUID of the paper record
   title: string;
   hash: string;
 }
