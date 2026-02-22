@@ -2,11 +2,16 @@
 // Import these in hooks instead of re-declaring local interfaces.
 
 export interface ApiPaperVersion {
+  id: string;
+  versionNumber: number;
   paperHash: string;
   datasetHash?: string | null;
   codeRepoUrl?: string | null;
   codeCommitHash?: string | null;
   envSpecHash?: string | null;
+  hederaTxId?: string | null;
+  hederaTimestamp?: string | null;
+  createdAt: string;
 }
 
 export interface ApiContractContributor {

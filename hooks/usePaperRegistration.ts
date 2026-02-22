@@ -9,7 +9,7 @@ import {
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { fetchApi } from "@/lib/api";
 import { hashFile } from "@/lib/hashing";
-import type { ApiContract } from "@/types/api";
+import type { ApiContract, ApiPaperVersion } from "@/types/api";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 
 const STEP_LABELS = ["Paper Details", "Provenance", "Contract", "Register / Submit"];
@@ -162,30 +162,37 @@ export function usePaperRegistration() {
         }),
       });
 
-      // 2. Create the first version with hashes
-      await fetchApi(`/api/papers/${paper.id}/versions`, {
-        method: "POST",
-        body: JSON.stringify({
-          paperHash: fileHash,
-          datasetHash: datasetHash || null,
-          codeRepoUrl: codeRepo || null,
-          codeCommitHash: codeCommit || null,
-          envSpecHash: envHash || null,
-        }),
-      });
+      // 2. Create the first version + anchor on HCS (server-side, non-fatal if unconfigured)
+      const version = await fetchApi<ApiPaperVersion>(
+        `/api/papers/${paper.id}/versions`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            paperHash: fileHash,
+            datasetHash: datasetHash || null,
+            codeRepoUrl: codeRepo || null,
+            codeCommitHash: codeCommit || null,
+            envSpecHash: envHash || null,
+          }),
+        },
+      );
 
       // 3. Update paper status to registered + set visibility
       await fetchApi(`/api/papers/${paper.id}`, {
         method: "PATCH",
-        body: JSON.stringify({
-          status: "registered",
-          visibility,
-        }),
+        body: JSON.stringify({ status: "registered", visibility }),
       });
 
-      // Mock tx values until Hedera is wired
-      setTxHash("0x" + Math.random().toString(16).slice(2, 10) + "..." + Math.random().toString(16).slice(2, 6));
-      setTxTimestamp(new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC");
+      // Use real HCS receipt if anchored, otherwise show a pending note
+      setTxHash(
+        version.hederaTxId ??
+          "pending — configure HEDERA_OPERATOR_ID/KEY to anchor on-chain",
+      );
+      setTxTimestamp(
+        version.hederaTimestamp
+          ? version.hederaTimestamp.replace("T", " ").slice(0, 19) + " UTC"
+          : new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC",
+      );
       setRegistered(true);
     } catch (err) {
       console.error("Registration failed:", err);
