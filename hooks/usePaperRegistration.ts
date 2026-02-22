@@ -1,14 +1,46 @@
 "use client";
 
-import { useState } from "react";
-import type { Visibility } from "@/types/paper-registration";
+import { useState, useEffect } from "react";
+import type { Visibility, SignedContract } from "@/types/paper-registration";
 import {
   mockSignedContracts,
   mockRegisteredJournals,
   STEP_LABELS,
 } from "@/lib/mock-data/paper-registration";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { fetchApi } from "@/lib/api";
+
+interface DbContractContributor {
+  contributorName: string | null;
+  contributionPct: number;
+}
+
+interface DbContract {
+  id: string;
+  paperTitle: string;
+  status: string;
+  contractHash: string | null;
+  createdAt: string;
+  contributors: DbContractContributor[];
+}
+
+function mapDbContractToSigned(c: DbContract, index: number): SignedContract {
+  const contribSummary = c.contributors
+    .map((cc) => `${cc.contributorName ?? "Unknown"} (${cc.contributionPct}%)`)
+    .join(", ");
+
+  return {
+    id: index + 1,
+    title: c.paperTitle,
+    hash: c.contractHash ?? "\u2014",
+    contributors: contribSummary || "\u2014",
+    date: c.createdAt.slice(0, 10),
+  };
+}
 
 export function usePaperRegistration() {
+  const { user, isConnected } = useCurrentUser();
+
   // Navigation
   const [step, setStep] = useState(0);
 
@@ -38,9 +70,41 @@ export function usePaperRegistration() {
   const [selectedJournal, setSelectedJournal] = useState<number | null>(null);
   const [txHash, setTxHash] = useState("");
   const [txTimestamp, setTxTimestamp] = useState("");
+  const [registering, setRegistering] = useState(false);
+
+  // DB-fetched contracts
+  const [dbContracts, setDbContracts] = useState<SignedContract[] | null>(null);
+
+  // Fetch fully-signed contracts from API
+  useEffect(() => {
+    if (!isConnected || !user) {
+      setDbContracts(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    fetchApi<DbContract[]>(`/api/contracts?wallet=${user.walletAddress}`)
+      .then((data) => {
+        if (cancelled) return;
+        const signed = data
+          .filter((c) => c.status === "fully_signed")
+          .map(mapDbContractToSigned);
+        setDbContracts(signed.length > 0 ? signed : null);
+      })
+      .catch(() => {
+        if (!cancelled) setDbContracts(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isConnected, user]);
+
+  const contracts = dbContracts ?? mockSignedContracts;
 
   // Derived
-  const contract = mockSignedContracts.find(c => c.id === selectedContract);
+  const contract = contracts.find(c => c.id === selectedContract);
   const canProceedStep1 = !!(title.trim() && abstract.trim() && fileHash);
 
   // Handlers
@@ -79,15 +143,71 @@ export function usePaperRegistration() {
     setKeywords(prev => prev.filter((_, j) => j !== index));
   };
 
-  const handleRegister = () => {
-    setTxHash("0x" + Math.random().toString(16).slice(2, 10) + "..." + Math.random().toString(16).slice(2, 6));
-    setTxTimestamp("2026-02-08 11:42:15 UTC");
-    setRegistered(true);
+  const handleRegister = async () => {
+    if (!isConnected || !user) {
+      // Fall back to mock behavior when not connected
+      setTxHash("0x" + Math.random().toString(16).slice(2, 10) + "..." + Math.random().toString(16).slice(2, 6));
+      setTxTimestamp("2026-02-08 11:42:15 UTC");
+      setRegistered(true);
+      return;
+    }
+
+    setRegistering(true);
+    try {
+      // 1. Create the paper
+      const paper = await fetchApi<{ id: string }>("/api/papers", {
+        method: "POST",
+        body: JSON.stringify({
+          title,
+          abstract,
+          wallet: user.walletAddress,
+          studyType: "original",
+        }),
+      });
+
+      // 2. Create the first version with hashes
+      await fetchApi(`/api/papers/${paper.id}/versions`, {
+        method: "POST",
+        body: JSON.stringify({
+          paperHash: fileHash,
+          datasetHash: datasetHash || null,
+          codeRepoUrl: codeRepo || null,
+          codeCommitHash: codeCommit || null,
+          envSpecHash: envHash || null,
+        }),
+      });
+
+      // 3. Update paper status to registered + set visibility
+      await fetchApi(`/api/papers/${paper.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          status: "registered",
+          visibility,
+        }),
+      });
+
+      // Mock tx values until Hedera is wired
+      setTxHash("0x" + Math.random().toString(16).slice(2, 10) + "..." + Math.random().toString(16).slice(2, 6));
+      setTxTimestamp(new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC");
+      setRegistered(true);
+    } catch (err) {
+      console.error("Registration failed:", err);
+    } finally {
+      setRegistering(false);
+    }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (!isConnected || !user) {
+      setTxHash("0x" + Math.random().toString(16).slice(2, 10) + "..." + Math.random().toString(16).slice(2, 6));
+      setTxTimestamp("2026-02-08 11:43:02 UTC");
+      setSubmitted(true);
+      return;
+    }
+
+    // Journal submission — future work, just update status for now
     setTxHash("0x" + Math.random().toString(16).slice(2, 10) + "..." + Math.random().toString(16).slice(2, 6));
-    setTxTimestamp("2026-02-08 11:43:02 UTC");
+    setTxTimestamp(new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC");
     setSubmitted(true);
   };
 
@@ -119,7 +239,7 @@ export function usePaperRegistration() {
     simulateDatasetUpload, simulateEnvUpload, simulateGithub,
     // Step 3
     selectedContract, setSelectedContract,
-    contracts: mockSignedContracts,
+    contracts,
     contract,
     // Step 4
     registered, submitted,
@@ -129,5 +249,6 @@ export function usePaperRegistration() {
     handleRegister, handleSubmit,
     // Derived
     canProceedStep1,
+    registering,
   };
 }

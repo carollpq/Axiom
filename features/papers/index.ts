@@ -1,3 +1,3 @@
 export { listUserPapers, getPaperById } from "./queries";
-export { createPaper, updatePaper } from "./actions";
-export type { CreatePaperInput, UpdatePaperInput } from "./actions";
+export { createPaper, updatePaper, createPaperVersion } from "./actions";
+export type { CreatePaperInput, UpdatePaperInput, CreatePaperVersionInput } from "./actions";

@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { papers, users } from "@/lib/db/schema";
+import { papers, paperVersions, users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import type { PaperStatusDb, StudyTypeDb, VisibilityDb } from "@/lib/db/schema";
 
@@ -54,4 +54,46 @@ export function updatePaper(id: string, input: UpdatePaperInput) {
     db.update(papers).set(updates).where(eq(papers.id, id)).returning().get() ??
     null
   );
+}
+
+export interface CreatePaperVersionInput {
+  paperId: string;
+  paperHash: string;
+  datasetHash?: string | null;
+  codeRepoUrl?: string | null;
+  codeCommitHash?: string | null;
+  envSpecHash?: string | null;
+}
+
+export function createPaperVersion(input: CreatePaperVersionInput) {
+  const paper = db
+    .select()
+    .from(papers)
+    .where(eq(papers.id, input.paperId))
+    .limit(1)
+    .get();
+
+  if (!paper) return null;
+
+  const version = db
+    .insert(paperVersions)
+    .values({
+      paperId: input.paperId,
+      versionNumber: paper.currentVersion,
+      paperHash: input.paperHash,
+      datasetHash: input.datasetHash ?? null,
+      codeRepoUrl: input.codeRepoUrl ?? null,
+      codeCommitHash: input.codeCommitHash ?? null,
+      envSpecHash: input.envSpecHash ?? null,
+    })
+    .returning()
+    .get();
+
+  // Bump the paper's current version
+  db.update(papers)
+    .set({ currentVersion: paper.currentVersion + 1, updatedAt: new Date().toISOString() })
+    .where(eq(papers.id, input.paperId))
+    .run();
+
+  return version;
 }

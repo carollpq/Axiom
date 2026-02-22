@@ -1,15 +1,63 @@
 "use client";
 
-import { useState } from "react";
-import type { Contributor } from "@/types/contract";
+import { useState, useEffect } from "react";
+import type { Contributor, ExistingDraft } from "@/types/contract";
 import {
   mockDrafts,
   mockKnownUsers,
   mockContributors,
   CURRENT_USER_WALLET,
 } from "@/lib/mock-data/contract";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { fetchApi } from "@/lib/api";
+
+interface DbPaper {
+  id: string;
+  title: string;
+  status: string;
+  versions?: { paperHash: string }[];
+}
+
+interface DbContractContributor {
+  id: string;
+  contributorWallet: string;
+  contributorName: string | null;
+  contributionPct: number;
+  roleDescription: string | null;
+  status: string;
+  signature: string | null;
+  signedAt: string | null;
+  isCreator: boolean;
+}
+
+interface DbContract {
+  id: string;
+  paperTitle: string;
+  paperId: string | null;
+  status: string;
+  contractHash: string | null;
+  contributors: DbContractContributor[];
+}
+
+function mapDbContributors(dbContribs: DbContractContributor[]): Contributor[] {
+  return dbContribs.map((c, i) => ({
+    id: i + 1,
+    wallet: c.contributorWallet,
+    did: c.contributorWallet,
+    name: c.contributorName ?? "Unknown user",
+    orcid: "\u2014",
+    pct: c.contributionPct,
+    role: c.roleDescription ?? "",
+    status: c.status as Contributor["status"],
+    txHash: c.signature ?? null,
+    signedAt: c.signedAt ?? null,
+    isCreator: c.isCreator,
+  }));
+}
 
 export function useContractBuilder() {
+  const { user, isConnected } = useCurrentUser();
+
   const [selectedDraft, setSelectedDraft] = useState<number | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [contributors, setContributors] = useState<Contributor[]>(mockContributors);
@@ -19,12 +67,79 @@ export function useContractBuilder() {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteLink, setInviteLink] = useState("");
 
+  // DB-fetched drafts and contracts
+  const [dbDrafts, setDbDrafts] = useState<ExistingDraft[] | null>(null);
+  const [dbContracts, setDbContracts] = useState<DbContract[] | null>(null);
+
+  // Fetch papers (drafts) from API when connected
+  useEffect(() => {
+    if (!isConnected || !user) {
+      setDbDrafts(null);
+      setDbContracts(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    fetchApi<DbPaper[]>(`/api/papers?wallet=${user.walletAddress}`)
+      .then((data) => {
+        if (cancelled) return;
+        const drafts = data
+          .filter((p) => p.status === "draft" || p.status === "contract_pending")
+          .map((p, i) => ({
+            id: i + 1,
+            title: p.title,
+            hash: p.versions?.[0]?.paperHash ?? "\u2014",
+            _dbId: p.id,
+          }));
+        setDbDrafts(drafts);
+      })
+      .catch(() => {
+        if (!cancelled) setDbDrafts(null);
+      });
+
+    fetchApi<DbContract[]>(`/api/contracts?wallet=${user.walletAddress}`)
+      .then((data) => {
+        if (!cancelled) setDbContracts(data);
+      })
+      .catch(() => {
+        if (!cancelled) setDbContracts(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isConnected, user]);
+
+  const drafts = dbDrafts ?? mockDrafts;
+
+  // When a draft is selected, load its contract contributors if available
+  useEffect(() => {
+    if (selectedDraft === null || !dbContracts) return;
+
+    const draft = drafts[selectedDraft - 1];
+    if (!draft) return;
+
+    // Find a contract matching this paper title
+    const matchingContract = dbContracts.find(
+      (c) => c.paperTitle === draft.title
+    );
+
+    if (matchingContract && matchingContract.contributors.length > 0) {
+      setContributors(mapDbContributors(matchingContract.contributors));
+    }
+  }, [selectedDraft, dbContracts, drafts]);
+
+  const currentUserWallet = isConnected && user
+    ? user.walletAddress
+    : CURRENT_USER_WALLET;
+
   const totalPct = contributors.reduce((s, c) => s + (Number(c.pct) || 0), 0);
   const isValid = totalPct === 100;
   const signedCount = contributors.filter(c => c.status === "signed").length;
   const allSigned = signedCount === contributors.length;
   const hasSigned = contributors.some(c => c.status === "signed");
-  const draft = mockDrafts.find(d => d.id === selectedDraft);
+  const draft = drafts.find(d => d.id === selectedDraft);
 
   const updateContributor = (id: number, field: string, value: string | number) => {
     setContributors(prev => prev.map(c => {
@@ -94,8 +209,8 @@ export function useContractBuilder() {
     allSigned,
     hasSigned,
     draft,
-    drafts: mockDrafts,
-    currentUserWallet: CURRENT_USER_WALLET,
+    drafts,
+    currentUserWallet,
     // Handlers
     setSelectedDraft,
     setNewTitle,

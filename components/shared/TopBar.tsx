@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useActiveAccount } from "thirdweb/react";
+import { ConnectButton } from "thirdweb/react";
+import { client } from "@/lib/thirdweb";
 import type { NavItemData, UserProfile } from "@/types/shared";
 
 function NavItem({ label, href, active }: { label: string; href: string; active: boolean }) {
@@ -51,6 +54,7 @@ function UserBadge({ user }: { user: UserProfile }) {
 
 export function TopBar({ navItems, user }: { navItems: NavItemData[]; user: UserProfile }) {
   const pathname = usePathname();
+  const account = useActiveAccount();
 
   return (
     <nav className="flex items-center justify-between px-10 h-14 border-b border-[rgba(120,110,95,0.2)] bg-[rgba(25,23,20,0.9)] backdrop-blur-[10px] sticky top-0 z-[100]">
@@ -70,8 +74,30 @@ export function TopBar({ navItems, user }: { navItems: NavItemData[]; user: User
         </div>
       </div>
       <div className="flex items-center gap-5">
-        <NotificationBell count={user.notificationCount} />
-        <UserBadge user={user} />
+        {account ? (
+          <>
+            <NotificationBell count={user.notificationCount} />
+            <UserBadge user={user} />
+          </>
+        ) : (
+          <ConnectButton
+            client={client}
+            theme="dark"
+            connectButton={{
+              label: "Connect Wallet",
+              style: {
+                backgroundColor: "rgba(201, 164, 74, 0.15)",
+                color: "#c9a44a",
+                border: "1px solid rgba(201, 164, 74, 0.3)",
+                borderRadius: "6px",
+                fontSize: "13px",
+                fontFamily: "Georgia, serif",
+                padding: "6px 16px",
+                height: "34px",
+              },
+            }}
+          />
+        )}
       </div>
     </nav>
   );

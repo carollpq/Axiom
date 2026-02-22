@@ -2,10 +2,10 @@ import { createThirdwebClient } from "thirdweb";
 
 const clientId = process.env.NEXT_PUBLIC_TEMPLATE_CLIENT_ID;
 
-if (!clientId) {
-  throw new Error("No client ID provided");
+if (!clientId && typeof window !== "undefined") {
+  console.warn("NEXT_PUBLIC_TEMPLATE_CLIENT_ID is not set — wallet features will not work");
 }
 
 export const client = createThirdwebClient({
-  clientId: clientId,
+  clientId: clientId ?? "placeholder",
 });
