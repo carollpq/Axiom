@@ -4,6 +4,7 @@ export {
   addContributor,
   removeContributor,
   signContributor,
+  updateContractHedera,
 } from "./actions";
 export type {
   CreateContractInput,

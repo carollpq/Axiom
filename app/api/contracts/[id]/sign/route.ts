@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { signContributor } from "@/features/contracts";
+import { signContributor, updateContractHedera, getContractById } from "@/features/contracts";
+import { isHederaConfigured } from "@/lib/hedera/client";
+import { submitHcsMessage } from "@/lib/hedera/hcs";
 
 export const runtime = "nodejs";
 
@@ -34,6 +36,46 @@ export async function POST(
       { error: "Contributor not found or wallet mismatch" },
       { status: 404 },
     );
+  }
+
+  // Anchor on Hedera HCS — skipped gracefully if credentials are not configured
+  if (isHederaConfigured() && process.env.HCS_TOPIC_CONTRACTS) {
+    try {
+      // Re-fetch contract to check final status after the sign
+      const contract = getContractById(id) as unknown as {
+        status: string;
+        contractHash: string | null;
+      } | null;
+      const isFullySigned = contract?.status === "fully_signed";
+
+      const hcsPayload = isFullySigned
+        ? {
+            type: "fullySigned",
+            contractId: id,
+            contractHash: contractHash ?? contract?.contractHash,
+            timestamp: new Date().toISOString(),
+          }
+        : {
+            type: "signed",
+            contractId: id,
+            contractHash: contractHash ?? null,
+            signerWallet: contributorWallet,
+            timestamp: new Date().toISOString(),
+          };
+
+      const { txId, consensusTimestamp } = await submitHcsMessage(
+        process.env.HCS_TOPIC_CONTRACTS,
+        hcsPayload,
+      );
+
+      // Store HCS receipt on the contract (only on fully-signed — the definitive event)
+      if (isFullySigned) {
+        updateContractHedera(id, txId, consensusTimestamp);
+      }
+    } catch (err) {
+      // HCS failure is non-fatal
+      console.error("[HCS] Contract sign failed:", err);
+    }
   }
 
   return NextResponse.json(result);

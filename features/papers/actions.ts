@@ -3,6 +3,21 @@ import { papers, paperVersions, users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import type { PaperStatusDb, StudyTypeDb, VisibilityDb } from "@/lib/db/schema";
 
+export function updatePaperVersionHedera(
+  versionId: string,
+  hederaTxId: string,
+  hederaTimestamp: string,
+) {
+  return (
+    db
+      .update(paperVersions)
+      .set({ hederaTxId, hederaTimestamp })
+      .where(eq(paperVersions.id, versionId))
+      .returning()
+      .get() ?? null
+  );
+}
+
 export interface CreatePaperInput {
   title: string;
   abstract?: string | null;

@@ -74,6 +74,21 @@ export function removeContributor(contractId: string, contributorId: string) {
   );
 }
 
+export function updateContractHedera(
+  contractId: string,
+  hederaTxId: string,
+  hederaTimestamp: string,
+) {
+  return (
+    db
+      .update(authorshipContracts)
+      .set({ hederaTxId, hederaTimestamp, updatedAt: new Date().toISOString() })
+      .where(eq(authorshipContracts.id, contractId))
+      .returning()
+      .get() ?? null
+  );
+}
+
 export interface SignContributorInput {
   contractId: string;
   contributorWallet: string;
