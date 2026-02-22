@@ -9,6 +9,9 @@ import {
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { fetchApi } from "@/lib/api";
 import { hashFile } from "@/lib/hashing";
+import { isLitConfigured, getLitClient } from "@/lib/lit/client";
+import { buildWalletListConditions } from "@/lib/lit/access-control";
+import { encryptFileWithLit } from "@/lib/lit/encrypt";
 import type { ApiContract, ApiPaperVersion } from "@/types/api";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 
@@ -29,7 +32,7 @@ function mapDbContractToSigned(c: ApiContract, index: number): SignedContract {
 }
 
 export function usePaperRegistration() {
-  const { user, isConnected } = useCurrentUser();
+  const { user, isConnected, account } = useCurrentUser();
 
   // Navigation
   const [step, setStep] = useState(0);
@@ -193,11 +196,40 @@ export function usePaperRegistration() {
 
     setRegistering(true);
     try {
-      // 1. Upload files to R2 (non-fatal if storage not configured).
+      // 1. Lit-encrypt the paper PDF before upload (non-fatal if not configured).
+      // The access condition is author-only (private draft).
+      // NOTE: fileHash is always the hash of the ORIGINAL plaintext — it is
+      // computed before encryption and is what gets anchored on HCS.
+      let fileToUpload = uploadedFile;
+      let litDataToEncryptHash: string | null = null;
+      let litAccessConditionsJson: string | null = null;
+
+      if (uploadedFile && fileHash && isLitConfigured() && account?.address) {
+        try {
+          // Pre-connect so subnetPubKey is ready (no user action required)
+          await getLitClient();
+          const conditions = buildWalletListConditions([account.address]);
+          const encrypted = await encryptFileWithLit(uploadedFile, conditions);
+          // Replace the plaintext file with the encrypted blob for R2 upload
+          fileToUpload = new File(
+            [encrypted.ciphertext],
+            uploadedFile.name + ".enc",
+            { type: "application/octet-stream" },
+          );
+          litDataToEncryptHash = encrypted.dataToEncryptHash;
+          litAccessConditionsJson = encrypted.accessConditionsJson;
+        } catch (litErr) {
+          // Non-fatal — fall back to uploading plaintext
+          console.warn("[Lit] Encryption skipped:", litErr);
+          fileToUpload = uploadedFile;
+        }
+      }
+
+      // 2. Upload files to R2 (non-fatal if storage not configured).
       // Dataset and env keys are derivable as `{folder}/{hash}` so we don't
       // need to store them separately — just ensure the objects are in R2.
-      const fileStorageKey = uploadedFile
-        ? await uploadToR2(uploadedFile, fileHash, "papers")
+      const fileStorageKey = fileToUpload
+        ? await uploadToR2(fileToUpload, fileHash, "papers")
         : null;
       if (uploadedDatasetFile && datasetHash) {
         await uploadToR2(uploadedDatasetFile, datasetHash, "datasets");
@@ -206,17 +238,19 @@ export function usePaperRegistration() {
         await uploadToR2(uploadedEnvFile, envHash, "environments");
       }
 
-      // 2. Create the paper
+      // 3. Create the paper (with Lit metadata if encryption succeeded)
       const paper = await fetchApi<{ id: string }>("/api/papers", {
         method: "POST",
         body: JSON.stringify({
           title,
           abstract,
           studyType: "original",
+          litDataToEncryptHash,
+          litAccessConditionsJson,
         }),
       });
 
-      // 3. Create the first version + anchor on HCS (server-side, non-fatal if unconfigured)
+      // 4. Create the first version + anchor on HCS (server-side, non-fatal if unconfigured)
       const version = await fetchApi<ApiPaperVersion>(
         `/api/papers/${paper.id}/versions`,
         {
@@ -232,7 +266,7 @@ export function usePaperRegistration() {
         },
       );
 
-      // 3. Update paper status to registered + set visibility
+      // 5. Update paper status to registered + set visibility
       await fetchApi(`/api/papers/${paper.id}`, {
         method: "PATCH",
         body: JSON.stringify({ status: "registered", visibility }),

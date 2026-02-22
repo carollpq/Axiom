@@ -41,6 +41,8 @@ export interface ApiPaper {
   id: string;
   title: string;
   status: string;
+  litDataToEncryptHash?: string | null;
+  litAccessConditionsJson?: string | null;
   createdAt: string;
   updatedAt: string;
   versions?: ApiPaperVersion[];

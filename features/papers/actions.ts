@@ -23,6 +23,8 @@ export interface CreatePaperInput {
   abstract?: string | null;
   studyType?: StudyTypeDb;
   wallet: string;
+  litDataToEncryptHash?: string | null;
+  litAccessConditionsJson?: string | null;
 }
 
 export function createPaper(input: CreatePaperInput) {
@@ -42,6 +44,8 @@ export function createPaper(input: CreatePaperInput) {
       abstract: input.abstract ?? null,
       studyType: input.studyType ?? "original",
       ownerId: user.id,
+      litDataToEncryptHash: input.litDataToEncryptHash ?? null,
+      litAccessConditionsJson: input.litAccessConditionsJson ?? null,
     })
     .returning()
     .get();
