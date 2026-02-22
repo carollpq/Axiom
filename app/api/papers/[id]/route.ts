@@ -1,0 +1,33 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getPaperById, updatePaper } from "@/features/papers";
+
+export const runtime = "nodejs";
+
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+  const paper = getPaperById(id);
+
+  if (!paper) {
+    return NextResponse.json({ error: "not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(paper);
+}
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+  const body = await req.json();
+
+  const updated = updatePaper(id, body);
+  if (!updated) {
+    return NextResponse.json({ error: "not found or no valid fields" }, { status: 404 });
+  }
+
+  return NextResponse.json(updated);
+}
