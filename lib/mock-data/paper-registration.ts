@@ -12,4 +12,3 @@ export const mockRegisteredJournals: RegisteredJournal[] = [
   { id: 4, name: "ACL Rolling Review", field: "NLP", score: 4.5 },
 ];
 
-export const STEP_LABELS = ["Paper Details", "Provenance", "Contract", "Register / Submit"];

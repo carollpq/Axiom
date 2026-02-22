@@ -11,36 +11,10 @@ import {
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { fetchApi } from "@/lib/api";
 import { hashString, canonicalJson } from "@/lib/hashing";
+import type { ApiPaper, ApiContract, ApiContractContributor } from "@/types/api";
+import { useAuthFetch } from "@/hooks/useAuthFetch";
 
-interface DbPaper {
-  id: string;
-  title: string;
-  status: string;
-  versions?: { paperHash: string }[];
-}
-
-interface DbContractContributor {
-  id: string;
-  contributorWallet: string;
-  contributorName: string | null;
-  contributionPct: number;
-  roleDescription: string | null;
-  status: string;
-  signature: string | null;
-  signedAt: string | null;
-  isCreator: boolean;
-}
-
-interface DbContract {
-  id: string;
-  paperTitle: string;
-  paperId: string | null;
-  status: string;
-  contractHash: string | null;
-  contributors: DbContractContributor[];
-}
-
-function mapDbContributors(dbContribs: DbContractContributor[]): Contributor[] {
+function mapDbContributors(dbContribs: ApiContractContributor[]): Contributor[] {
   return dbContribs.map((c, i) => ({
     id: i + 1,
     wallet: c.contributorWallet,
@@ -67,51 +41,26 @@ export function useContractBuilder() {
   const [showPreview, setShowPreview] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteLink, setInviteLink] = useState("");
-
-  // DB-fetched drafts and contracts
-  const [dbDrafts, setDbDrafts] = useState<ExistingDraft[] | null>(null);
-  const [dbContracts, setDbContracts] = useState<DbContract[] | null>(null);
   const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
 
-  // Fetch papers (drafts) from API when connected
-  useEffect(() => {
-    if (!isConnected || !user) {
-      setDbDrafts(null);
-      setDbContracts(null);
-      return;
-    }
+  const { data: rawPapers } = useAuthFetch<ApiPaper[]>(
+    (wallet) => fetchApi<ApiPaper[]>(`/api/papers?wallet=${wallet}`),
+  );
 
-    let cancelled = false;
+  const { data: dbContracts, refetch: refetchContracts } = useAuthFetch<ApiContract[]>(
+    (wallet) => fetchApi<ApiContract[]>(`/api/contracts?wallet=${wallet}`),
+  );
 
-    fetchApi<DbPaper[]>(`/api/papers?wallet=${user.walletAddress}`)
-      .then((data) => {
-        if (cancelled) return;
-        const drafts = data
-          .filter((p) => p.status === "draft" || p.status === "contract_pending")
-          .map((p, i) => ({
-            id: i + 1,
-            title: p.title,
-            hash: p.versions?.[0]?.paperHash ?? "\u2014",
-            _dbId: p.id,
-          }));
-        setDbDrafts(drafts);
-      })
-      .catch(() => {
-        if (!cancelled) setDbDrafts(null);
-      });
-
-    fetchApi<DbContract[]>(`/api/contracts?wallet=${user.walletAddress}`)
-      .then((data) => {
-        if (!cancelled) setDbContracts(data);
-      })
-      .catch(() => {
-        if (!cancelled) setDbContracts(null);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isConnected, user]);
+  const dbDrafts: ExistingDraft[] | null = rawPapers
+    ? rawPapers
+        .filter((p) => p.status === "draft" || p.status === "contract_pending")
+        .map((p, i) => ({
+          id: i + 1,
+          title: p.title,
+          hash: p.versions?.[0]?.paperHash ?? "\u2014",
+          _dbId: p.id,
+        }))
+    : null;
 
   const drafts = dbDrafts ?? mockDrafts;
 
@@ -122,9 +71,8 @@ export function useContractBuilder() {
     const draft = drafts[selectedDraft - 1];
     if (!draft) return;
 
-    // Find a contract matching this paper title
     const matchingContract = dbContracts.find(
-      (c) => c.paperTitle === draft.title
+      (c) => c.paperTitle === draft.title,
     );
 
     if (matchingContract && matchingContract.contributors.length > 0) {
@@ -204,7 +152,6 @@ export function useContractBuilder() {
     }
 
     try {
-      // Hash the contract content so the signature commits to the exact terms
       const contractPayload = {
         paperTitle: draft?.title ?? "",
         contributors: contributors.map((c) => ({
@@ -227,12 +174,11 @@ export function useContractBuilder() {
       });
 
       // Refresh contract data from DB
-      const updatedContracts = await fetchApi<DbContract[]>(
-        `/api/contracts?wallet=${user.walletAddress}`,
-      );
-      setDbContracts(updatedContracts);
+      await refetchContracts();
 
-      const matchingContract = updatedContracts.find(
+      // Update contributors from the refreshed data
+      const freshContracts = dbContracts;
+      const matchingContract = freshContracts?.find(
         (c) => c.id === selectedContractId,
       );
       if (matchingContract) {

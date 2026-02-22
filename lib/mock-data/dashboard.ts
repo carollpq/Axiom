@@ -3,7 +3,6 @@ import type {
   PendingAction,
   ActivityItem,
   StatCardData,
-  NavItemData,
   UserProfile,
   PaperStatus,
 } from "@/types/dashboard";
@@ -44,13 +43,6 @@ export const mockUser: UserProfile = {
   role: "Author",
   notificationCount: 3,
 };
-
-export const navItems: NavItemData[] = [
-  { label: "Dashboard", href: "/" },
-  { label: "Papers", href: "/paper_registration" },
-  { label: "Contracts", href: "/contract_builder" },
-  { label: "Settings", href: "/settings" },
-];
 
 export const paperStatuses: PaperStatus[] = [
   "Draft",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import type {
   DashboardTab,
   PaperStatus,
@@ -16,21 +16,12 @@ import {
   mockStats,
   paperStatuses,
 } from "@/lib/mock-data/dashboard";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { fetchApi } from "@/lib/api";
 import { toDisplayStatus } from "@/lib/status-map";
+import type { ApiPaper } from "@/types/api";
+import { useAuthFetch } from "@/hooks/useAuthFetch";
 
-interface DbPaper {
-  id: string;
-  title: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  versions?: { paperHash: string }[];
-  contracts?: { contributors?: { contributorName: string | null }[] }[];
-}
-
-function mapDbPaperToFrontend(p: DbPaper, index: number): Paper {
+function mapDbPaperToFrontend(p: ApiPaper, index: number): Paper {
   const coauthors =
     p.contracts
       ?.flatMap((c) => c.contributors ?? [])
@@ -69,61 +60,31 @@ function computeStats(papers: Paper[]): StatCardData[] {
 }
 
 export function useDashboard() {
-  const { user, isConnected } = useCurrentUser();
   const [activeTab, setActiveTab] = useState<DashboardTab>("papers");
   const [statusFilter, setStatusFilter] = useState<"All" | PaperStatus>("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
 
-  const [dbPapers, setDbPapers] = useState<Paper[] | null>(null);
-  const [dbPendingActions, setDbPendingActions] = useState<PendingAction[] | null>(null);
-  const [dbActivity, setDbActivity] = useState<ActivityItem[] | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { data: dashboardData, loading } = useAuthFetch(
+    async (wallet) => {
+      const [papersData, activityData] = await Promise.all([
+        fetchApi<ApiPaper[]>(`/api/papers?wallet=${wallet}`),
+        fetchApi<{ pendingActions: PendingAction[]; activity: ActivityItem[] }>(
+          `/api/activity?wallet=${wallet}`,
+        ),
+      ]);
+      return { papersData, activityData };
+    },
+    [],
+  );
 
-  // Fetch papers + activity from API when user is connected
-  useEffect(() => {
-    if (!isConnected || !user) {
-      setDbPapers(null);
-      setDbPendingActions(null);
-      setDbActivity(null);
-      return;
-    }
+  const dbPapers = dashboardData
+    ? dashboardData.papersData.map(mapDbPaperToFrontend)
+    : null;
+  const dbPendingActions = dashboardData?.activityData.pendingActions ?? null;
+  const dbActivity = dashboardData?.activityData.activity ?? null;
 
-    let cancelled = false;
-    setLoading(true);
-
-    const wallet = user.walletAddress;
-
-    Promise.all([
-      fetchApi<DbPaper[]>(`/api/papers?wallet=${wallet}`),
-      fetchApi<{ pendingActions: PendingAction[]; activity: ActivityItem[] }>(
-        `/api/activity?wallet=${wallet}`,
-      ),
-    ])
-      .then(([papersData, activityData]) => {
-        if (!cancelled) {
-          setDbPapers(papersData.map(mapDbPaperToFrontend));
-          setDbPendingActions(activityData.pendingActions);
-          setDbActivity(activityData.activity);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setDbPapers(null);
-          setDbPendingActions(null);
-          setDbActivity(null);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isConnected, user]);
-
-  // Use DB papers when available, fall back to mock
+  // Use DB data when available, fall back to mock
   const papers = dbPapers ?? mockPapers;
   const stats = dbPapers ? computeStats(dbPapers) : mockStats;
 

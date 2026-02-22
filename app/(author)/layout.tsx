@@ -2,7 +2,8 @@
 
 import { RoleShell } from "@/components/shared";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { navItems, mockUser } from "@/lib/mock-data/dashboard";
+import { mockUser } from "@/lib/mock-data/dashboard";
+import { navItems } from "@/lib/nav";
 import { truncateWallet, getInitials } from "@/lib/format";
 import type { UserProfile } from "@/types/shared";
 

@@ -1,31 +1,20 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import type { Visibility, SignedContract } from "@/types/paper-registration";
 import {
   mockSignedContracts,
   mockRegisteredJournals,
-  STEP_LABELS,
 } from "@/lib/mock-data/paper-registration";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { fetchApi } from "@/lib/api";
 import { hashFile } from "@/lib/hashing";
+import type { ApiContract } from "@/types/api";
+import { useAuthFetch } from "@/hooks/useAuthFetch";
 
-interface DbContractContributor {
-  contributorName: string | null;
-  contributionPct: number;
-}
+const STEP_LABELS = ["Paper Details", "Provenance", "Contract", "Register / Submit"];
 
-interface DbContract {
-  id: string;
-  paperTitle: string;
-  status: string;
-  contractHash: string | null;
-  createdAt: string;
-  contributors: DbContractContributor[];
-}
-
-function mapDbContractToSigned(c: DbContract, index: number): SignedContract {
+function mapDbContractToSigned(c: ApiContract, index: number): SignedContract {
   const contribSummary = c.contributors
     .map((cc) => `${cc.contributorName ?? "Unknown"} (${cc.contributionPct}%)`)
     .join(", ");
@@ -74,33 +63,18 @@ export function usePaperRegistration() {
   const [registering, setRegistering] = useState(false);
 
   // DB-fetched contracts
-  const [dbContracts, setDbContracts] = useState<SignedContract[] | null>(null);
+  const { data: rawContracts } = useAuthFetch<ApiContract[]>(
+    (wallet) => fetchApi<ApiContract[]>(`/api/contracts?wallet=${wallet}`),
+  );
 
-  // Fetch fully-signed contracts from API
-  useEffect(() => {
-    if (!isConnected || !user) {
-      setDbContracts(null);
-      return;
-    }
-
-    let cancelled = false;
-
-    fetchApi<DbContract[]>(`/api/contracts?wallet=${user.walletAddress}`)
-      .then((data) => {
-        if (cancelled) return;
-        const signed = data
+  const dbContracts: SignedContract[] | null = rawContracts
+    ? (() => {
+        const signed = rawContracts
           .filter((c) => c.status === "fully_signed")
           .map(mapDbContractToSigned);
-        setDbContracts(signed.length > 0 ? signed : null);
-      })
-      .catch(() => {
-        if (!cancelled) setDbContracts(null);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isConnected, user]);
+        return signed.length > 0 ? signed : null;
+      })()
+    : null;
 
   const contracts = dbContracts ?? mockSignedContracts;
 

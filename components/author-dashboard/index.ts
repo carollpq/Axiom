@@ -1,9 +1,6 @@
+export { StatCard, TabBar, Footer, TopBar } from "@/components/shared";
 export { StatusBadge } from "./StatusBadge";
-export { StatCard } from "./StatCard";
-export { Footer } from "./Footer";
-export { TopBar } from "./TopBar";
 export { QuickActions } from "./QuickActions";
-export { TabBar } from "./TabBar";
 export { PapersTable } from "./PapersTable";
 export { PendingActionsList } from "./PendingActionsList";
 export { ActivityFeed } from "./ActivityFeed";
