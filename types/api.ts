@@ -46,6 +46,27 @@ export interface ApiPaper {
   contracts?: { contributors?: ApiContractContributor[] }[];
 }
 
+/** Shape returned by GET /api/papers/public */
+export interface ApiPublicPaper {
+  id: string;
+  title: string;
+  abstract: string | null;
+  status: string;
+  visibility: string;
+  updatedAt: string;
+  createdAt: string;
+  versions: ApiPaperVersion[];
+  contracts: {
+    contractHash: string | null;
+    contributors: ApiContractContributor[];
+  }[];
+  owner: {
+    displayName: string | null;
+    walletAddress: string;
+    orcidId: string | null;
+  } | null;
+}
+
 export interface DbUser {
   id: string;
   walletAddress: string;

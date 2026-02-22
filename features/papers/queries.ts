@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { papers, users } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, ne } from "drizzle-orm";
 
 export function listUserPapers(walletAddress: string) {
   const user = db
@@ -21,6 +21,21 @@ export function listUserPapers(walletAddress: string) {
       },
     },
     orderBy: (papers, { desc }) => [desc(papers.updatedAt)],
+  });
+}
+
+/** All publicly visible papers — used by the public explorer, no auth required. */
+export function listPublicPapers() {
+  return db.query.papers.findMany({
+    where: eq(papers.visibility, "public"),
+    with: {
+      versions: true,
+      contracts: {
+        with: { contributors: true },
+      },
+      owner: true,
+    },
+    orderBy: (p, { desc }) => [desc(p.updatedAt)],
   });
 }
 
