@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import type { ProvenanceItem } from "@/types/paper-registration";
 
 interface ProvenanceStepProps {
@@ -15,8 +16,8 @@ interface ProvenanceStepProps {
   onCodeRepoChange: (v: string) => void;
   onCodeCommitChange: (v: string) => void;
   onEnvHashChange: (v: string) => void;
-  onDatasetUpload: () => void;
-  onEnvUpload: () => void;
+  onDatasetUpload: (file: File) => void;
+  onEnvUpload: (file: File) => void;
   onGithubConnect: () => void;
 }
 
@@ -44,6 +45,20 @@ export function ProvenanceStep({
   onDatasetHashChange, onDatasetUrlChange, onCodeRepoChange, onCodeCommitChange, onEnvHashChange,
   onDatasetUpload, onEnvUpload, onGithubConnect,
 }: ProvenanceStepProps) {
+  const datasetInputRef = useRef<HTMLInputElement>(null);
+  const envInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDatasetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) onDatasetUpload(file);
+    e.target.value = "";
+  };
+
+  const handleEnvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) onEnvUpload(file);
+    e.target.value = "";
+  };
   const provenanceItems: ProvenanceItem[] = [
     { label: "Paper", connected: !!fileHash, icon: "\uD83D\uDCC4" },
     { label: "Dataset", connected: !!datasetHash, icon: "\uD83D\uDDC3" },
@@ -64,6 +79,12 @@ export function ProvenanceStep({
           </div>
           <div className="mb-2.5">
             <label style={labelStyle}>SHA-256 Hash</label>
+            <input
+              ref={datasetInputRef}
+              type="file"
+              onChange={handleDatasetChange}
+              className="hidden"
+            />
             <div className="flex gap-2">
               <input
                 type="text" placeholder="Enter dataset hash or upload to compute..."
@@ -71,7 +92,7 @@ export function ProvenanceStep({
                 style={{ ...inputStyle, flex: 1, fontFamily: "monospace", fontSize: 12 }}
               />
               <button
-                onClick={onDatasetUpload}
+                onClick={() => datasetInputRef.current?.click()}
                 className="rounded py-0 px-3.5 text-[#8a8070] text-[11px] cursor-pointer font-serif whitespace-nowrap"
                 style={{ background: "rgba(120,110,95,0.1)", border: "1px solid rgba(120,110,95,0.2)" }}
               >Upload</button>
@@ -144,6 +165,13 @@ export function ProvenanceStep({
             <label className="text-xs text-[#c9b89e]">Environment Specification</label>
             <span className="text-[10px] text-[#4a4238]">Optional</span>
           </div>
+          <input
+            ref={envInputRef}
+            type="file"
+            accept=".json,.yaml,.yml,.toml"
+            onChange={handleEnvChange}
+            className="hidden"
+          />
           <div className="flex gap-2">
             <input
               type="text" placeholder="Hash of Dockerfile or environment.yml..."
@@ -151,7 +179,7 @@ export function ProvenanceStep({
               style={{ ...inputStyle, flex: 1, fontFamily: "monospace", fontSize: 12 }}
             />
             <button
-              onClick={onEnvUpload}
+              onClick={() => envInputRef.current?.click()}
               className="rounded py-0 px-3.5 text-[#8a8070] text-[11px] cursor-pointer font-serif whitespace-nowrap"
               style={{ background: "rgba(120,110,95,0.1)", border: "1px solid rgba(120,110,95,0.2)" }}
             >Upload</button>

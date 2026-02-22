@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { Visibility, SignedContract } from "@/types/paper-registration";
 import {
   mockSignedContracts,
@@ -9,6 +9,7 @@ import {
 } from "@/lib/mock-data/paper-registration";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { fetchApi } from "@/lib/api";
+import { hashFile } from "@/lib/hashing";
 
 interface DbContractContributor {
   contributorName: string | null;
@@ -103,28 +104,50 @@ export function usePaperRegistration() {
 
   const contracts = dbContracts ?? mockSignedContracts;
 
+  // Hashing state
+  const [isHashing, setIsHashing] = useState(false);
+
   // Derived
   const contract = contracts.find(c => c.id === selectedContract);
   const canProceedStep1 = !!(title.trim() && abstract.trim() && fileHash);
 
   // Handlers
-  const simulateFileUpload = () => {
-    setFileName("paper_draft_v1.pdf");
-    setFileHash("a3f7c9e1b2d84056e9f1a7b3c2d5e8f0" + "1a2b3c4d5e6f7890");
-  };
+  const handleFileUpload = useCallback(async (file: File) => {
+    setFileName(file.name);
+    setFileHash("");
+    setIsHashing(true);
+    try {
+      const hash = await hashFile(file);
+      setFileHash(hash);
+    } finally {
+      setIsHashing(false);
+    }
+  }, []);
 
   const removeFile = () => {
     setFileName("");
     setFileHash("");
   };
 
-  const simulateDatasetUpload = () => {
-    setDatasetHash("d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9" + "0b1c2d3e4f5a6b7c");
-  };
+  const handleDatasetUpload = useCallback(async (file: File) => {
+    setIsHashing(true);
+    try {
+      const hash = await hashFile(file);
+      setDatasetHash(hash);
+    } finally {
+      setIsHashing(false);
+    }
+  }, []);
 
-  const simulateEnvUpload = () => {
-    setEnvHash("e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0" + "c1d2e3f4a5b6c7d8");
-  };
+  const handleEnvUpload = useCallback(async (file: File) => {
+    setIsHashing(true);
+    try {
+      const hash = await hashFile(file);
+      setEnvHash(hash);
+    } finally {
+      setIsHashing(false);
+    }
+  }, []);
 
   const simulateGithub = () => {
     setGithubConnected(true);
@@ -227,7 +250,7 @@ export function usePaperRegistration() {
     fileName, fileHash,
     visibility, setVisibility,
     keywords, keywordInput, setKeywordInput,
-    simulateFileUpload, removeFile,
+    handleFileUpload, removeFile, isHashing,
     addKeyword, removeKeyword,
     // Step 2
     datasetHash, setDatasetHash,
@@ -236,7 +259,7 @@ export function usePaperRegistration() {
     codeCommit, setCodeCommit,
     envHash, setEnvHash,
     githubConnected,
-    simulateDatasetUpload, simulateEnvUpload, simulateGithub,
+    handleDatasetUpload, handleEnvUpload, simulateGithub,
     // Step 3
     selectedContract, setSelectedContract,
     contracts,

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import type { Visibility } from "@/types/paper-registration";
 
 interface PaperDetailsStepProps {
@@ -7,6 +8,7 @@ interface PaperDetailsStepProps {
   abstract: string;
   fileName: string;
   fileHash: string;
+  isHashing: boolean;
   visibility: Visibility;
   keywords: string[];
   keywordInput: string;
@@ -16,7 +18,7 @@ interface PaperDetailsStepProps {
   onKeywordInputChange: (v: string) => void;
   onAddKeyword: () => void;
   onRemoveKeyword: (i: number) => void;
-  onFileUpload: () => void;
+  onFileUpload: (file: File) => void;
   onFileRemove: () => void;
 }
 
@@ -35,10 +37,18 @@ const visibilityOptions = [
 ];
 
 export function PaperDetailsStep({
-  title, abstract, fileName, fileHash, visibility, keywords, keywordInput,
+  title, abstract, fileName, fileHash, isHashing, visibility, keywords, keywordInput,
   onTitleChange, onAbstractChange, onVisibilityChange, onKeywordInputChange,
   onAddKeyword, onRemoveKeyword, onFileUpload, onFileRemove,
 }: PaperDetailsStepProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) onFileUpload(file);
+    e.target.value = "";
+  };
+
   return (
     <div
       className="rounded-lg p-6 mb-5"
@@ -70,6 +80,13 @@ export function PaperDetailsStep({
       {/* File upload */}
       <div className="mb-[18px]">
         <label style={labelStyle}>Paper File (PDF) <span className="text-[#d4645a]">*</span></label>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf"
+          onChange={handleFileChange}
+          className="hidden"
+        />
         <div
           className="rounded-md text-center cursor-pointer transition-all duration-300"
           style={{
@@ -77,7 +94,7 @@ export function PaperDetailsStep({
             padding: fileName ? "14px 18px" : "32px 18px",
             background: fileName ? "rgba(120,180,120,0.04)" : "transparent",
           }}
-          onClick={!fileName ? onFileUpload : undefined}
+          onClick={!fileName ? () => fileInputRef.current?.click() : undefined}
         >
           {fileName ? (
             <div className="flex justify-between items-center">
@@ -85,9 +102,13 @@ export function PaperDetailsStep({
                 <div className="text-[13px] text-[#d4ccc0] flex items-center gap-1.5">
                   <span>{"\uD83D\uDCC4"}</span> {fileName}
                 </div>
-                <div className="text-[10px] text-[#5a7a9a] font-mono mt-1">
-                  SHA-256: {fileHash.slice(0, 16)}...{fileHash.slice(-8)}
-                </div>
+                {isHashing ? (
+                  <div className="text-[10px] text-[#c9a44a] font-mono mt-1">Computing SHA-256...</div>
+                ) : (
+                  <div className="text-[10px] text-[#5a7a9a] font-mono mt-1">
+                    SHA-256: {fileHash.slice(0, 16)}...{fileHash.slice(-8)}
+                  </div>
+                )}
               </div>
               <button
                 onClick={e => { e.stopPropagation(); onFileRemove(); }}

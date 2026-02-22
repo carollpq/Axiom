@@ -17,11 +17,11 @@ export default function PaperRegistration() {
     title, setTitle, abstract, setAbstract,
     fileName, fileHash, visibility, setVisibility,
     keywords, keywordInput, setKeywordInput,
-    simulateFileUpload, removeFile, addKeyword, removeKeyword,
+    handleFileUpload, removeFile, isHashing, addKeyword, removeKeyword,
     datasetHash, setDatasetHash, datasetUrl, setDatasetUrl,
     codeRepo, setCodeRepo, codeCommit, setCodeCommit,
     envHash, setEnvHash, githubConnected,
-    simulateDatasetUpload, simulateEnvUpload, simulateGithub,
+    handleDatasetUpload, handleEnvUpload, simulateGithub,
     selectedContract, setSelectedContract, contracts, contract,
     registered, submitted,
     selectedJournal, setSelectedJournal, journals,
@@ -55,13 +55,13 @@ export default function PaperRegistration() {
       {step === 0 && (
         <PaperDetailsStep
           title={title} abstract={abstract}
-          fileName={fileName} fileHash={fileHash}
+          fileName={fileName} fileHash={fileHash} isHashing={isHashing}
           visibility={visibility} keywords={keywords} keywordInput={keywordInput}
           onTitleChange={setTitle} onAbstractChange={setAbstract}
           onVisibilityChange={setVisibility}
           onKeywordInputChange={setKeywordInput}
           onAddKeyword={addKeyword} onRemoveKeyword={removeKeyword}
-          onFileUpload={simulateFileUpload} onFileRemove={removeFile}
+          onFileUpload={handleFileUpload} onFileRemove={removeFile}
         />
       )}
 
@@ -75,8 +75,8 @@ export default function PaperRegistration() {
           onDatasetHashChange={setDatasetHash} onDatasetUrlChange={setDatasetUrl}
           onCodeRepoChange={setCodeRepo} onCodeCommitChange={setCodeCommit}
           onEnvHashChange={setEnvHash}
-          onDatasetUpload={simulateDatasetUpload}
-          onEnvUpload={simulateEnvUpload}
+          onDatasetUpload={handleDatasetUpload}
+          onEnvUpload={handleEnvUpload}
           onGithubConnect={simulateGithub}
         />
       )}
