@@ -12,7 +12,7 @@ export default function AuthorLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isConnected } = useCurrentUser();
+  const { user } = useCurrentUser();
 
   const profile: UserProfile = user
     ? {

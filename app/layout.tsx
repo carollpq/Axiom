@@ -7,7 +7,7 @@ import { UserProvider } from "@/context/UserContext";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Axiom.",
+  title: "Axiom",
   description:
     "",
 };
