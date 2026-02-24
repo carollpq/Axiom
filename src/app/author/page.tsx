@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { getSession } from "@/src/shared/lib/auth/auth";
 import { listUserPapers } from "@/src/features/papers/queries";
 import { listUserContracts } from "@/src/features/contracts/queries";
-import { DashboardHeader } from "@/src/features/author/components/dashboard/dashboard.header";
+import { DashboardHeader } from "@/src/shared/components";
 import { StatsSection } from "@/src/features/author/components/dashboard/stats.section";
 import { PapersSection } from "@/src/features/author/components/dashboard/papers.section";
 import { PendingSection } from "@/src/features/author/components/dashboard/pending.section";
@@ -30,7 +30,7 @@ export default async function AuthorDashboard() {
 
   return (
     <div className="max-w-[1200px] mx-auto px-10 py-8">
-      <DashboardHeader />
+      <DashboardHeader role="author" />
 
       <Suspense fallback={<StatsSkeleton />}>
         <StatsSection papersPromise={papersPromise} />

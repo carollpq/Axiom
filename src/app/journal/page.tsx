@@ -1,6 +1,7 @@
 "use client";
 
 import { useJournalDashboard } from "@/src/shared/hooks/useJournalDashboard";
+import { DashboardHeader } from "@/src/shared/components";
 import {
   StatsRow,
   PipelineSummary,
@@ -43,15 +44,7 @@ export default function JournalDashboard() {
 
   return (
     <div className="max-w-[1280px] mx-auto px-10 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-[28px] font-normal italic text-[#e8e0d4] m-0">
-          Journal Dashboard
-        </h1>
-        <p className="text-[13px] text-[#6a6050] mt-1.5 italic">
-          Manage submissions, review criteria, and publication decisions
-        </p>
-      </div>
+      <DashboardHeader role="journal" />
 
       <StatsRow stats={stats} />
 

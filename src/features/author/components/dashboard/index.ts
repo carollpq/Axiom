@@ -4,7 +4,6 @@ export { QuickActions } from "./QuickActions";
 export { PapersTable } from "./PapersTable";
 export { PendingActionsList } from "./PendingActionsList";
 export { ActivityFeed } from "./ActivityFeed";
-export { DashboardHeader } from "./dashboard.header";
 export { StatsSection } from "./stats.section";
 export { PapersSection } from "./papers.section";
 export { PapersTableClient } from "./papers-table.client";

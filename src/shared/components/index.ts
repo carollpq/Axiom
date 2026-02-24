@@ -5,3 +5,4 @@ export { TopBar } from "./TopBar";
 export { Footer } from "./Footer";
 export { RoleShell } from "./RoleShell";
 export { StatusBadge } from "./StatusBadge";
+export { DashboardHeader } from "./DashboardHeader";

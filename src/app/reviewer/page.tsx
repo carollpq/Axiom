@@ -1,6 +1,7 @@
 "use client";
 
 import { useReviewerDashboard } from "@/src/shared/hooks/useReviewerDashboard";
+import { DashboardHeader } from "@/src/shared/components";
 import {
   ReputationSection,
   TabBar,
@@ -34,15 +35,7 @@ export default function ReviewerDashboard() {
 
   return (
     <div className="max-w-[1200px] mx-auto px-10 py-8">
-      {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-[28px] font-normal italic text-[#e8e0d4] m-0 tracking-[0.5px]">
-          Reviewer Dashboard
-        </h1>
-        <p className="text-[13px] text-[#6a6050] mt-1.5 italic">
-          Track reviews, build reputation, view feedback
-        </p>
-      </div>
+      <DashboardHeader role="reviewer" />
 
       {/* Reputation Score Card */}
       <ReputationSection
