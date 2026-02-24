@@ -1,4 +1,12 @@
+"use client";
+
+import { useRouter } from "next/navigation";
 import type { UserRole } from "@/src/features/author/hooks/useOnboarding";
+
+const ROLE_ROUTES: Record<NonNullable<UserRole>, string> = {
+  researcher: "/author",
+  reviewer: "/reviewer",
+};
 
 interface CompleteStepProps {
   walletAddress: string;
@@ -13,6 +21,13 @@ export function CompleteStep({
   selectedRole,
   isExistingUser,
 }: CompleteStepProps) {
+  const router = useRouter();
+
+  function handleGoToDashboard() {
+    const route = selectedRole ? ROLE_ROUTES[selectedRole] : "/author";
+    router.push(route);
+  }
+
   return (
     <div className="w-full max-w-md bg-zinc-900 p-6 rounded-lg border border-zinc-800">
       <div className="text-center">
@@ -56,10 +71,7 @@ export function CompleteStep({
         </div>
 
         <button
-          onClick={() => {
-            // TODO: Navigate to dashboard
-            console.log("Navigate to dashboard");
-          }}
+          onClick={handleGoToDashboard}
           className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
         >
           Go to Dashboard

@@ -29,13 +29,11 @@ export function useOnboarding() {
     }
   }, [account?.address]);
 
-  // Check if user exists in smart contract
-  const checkExistingUser = async (walletAddress: string) => {
+  // Check if user is already registered via existing auth session
+  const checkExistingUser = async (_walletAddress: string) => {
     try {
-      // TODO: Call smart contract to check if user exists
-      const userExists = false;
-
-      if (userExists) {
+      const res = await fetch("/api/auth/me");
+      if (res.ok) {
         setOnboardingStep("complete");
         setIsExistingUser(true);
       } else {
