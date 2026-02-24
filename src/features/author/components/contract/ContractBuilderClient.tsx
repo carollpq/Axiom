@@ -8,24 +8,20 @@ import { ContractPreview } from "./ContractPreview";
 import { ModificationWarning } from "./ModificationWarning";
 import { SubmissionGate } from "./SubmissionGate";
 import { InviteModal } from "./InviteModal";
-import type { ApiPaper, ApiContract } from "@/src/shared/types/api";
+import type { ExistingDraft } from "@/src/features/author/types/contract";
 
 interface ContractBuilderClientProps {
-  initialPapers: ApiPaper[];
-  initialContracts: ApiContract[];
+  initialDrafts: ExistingDraft[];
 }
 
-export function ContractBuilderClient({
-  initialPapers,
-  initialContracts,
-}: ContractBuilderClientProps) {
+export function ContractBuilderClient({ initialDrafts }: ContractBuilderClientProps) {
   const {
     selectedDraft, newTitle, contributors, showAddRow, addWallet,
     showPreview, showInviteModal, inviteLink,
     totalPct, isValid, signedCount, allSigned, hasSigned, draft, drafts, currentUserWallet,
     setSelectedDraft, setNewTitle, setShowAddRow, setAddWallet, setShowPreview,
     updateContributor, removeContributor, addContributor, handleSign, handleInvite, closeInviteModal,
-  } = useContractBuilder(initialPapers, initialContracts);
+  } = useContractBuilder(initialDrafts);
 
   return (
     <>

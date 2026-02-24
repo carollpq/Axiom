@@ -1,31 +1,21 @@
 import { redirect } from "next/navigation";
-import { Suspense } from "react";
 import { getSession } from "@/src/shared/lib/auth/auth";
-import { listUserPapers } from "@/src/features/papers";
-import { listUserContracts } from "@/src/features/contracts";
+import { listUserPapers } from "@/src/features/papers/queries";
+import { listUserContracts } from "@/src/features/contracts/queries";
+import { mapApiPapersToDrafts } from "@/src/features/author/mappers/contract";
 import { ContractBuilderClient } from "@/src/features/author/components/contract";
-import { ContractBuilderSkeleton } from "@/src/features/author/components/skeletons";
 import type { ApiPaper, ApiContract } from "@/src/shared/types/api";
 
-async function ContractBuilderContent() {
+export default async function ContractBuilder() {
   const wallet = await getSession();
   if (!wallet) redirect("/login");
 
-  const papers = listUserPapers(wallet) as unknown as ApiPaper[];
-  const contracts = listUserContracts(wallet) as unknown as ApiContract[];
+  const [papers, contracts] = await Promise.all([
+    listUserPapers(wallet) as Promise<ApiPaper[]>,
+    listUserContracts(wallet) as Promise<ApiContract[]>,
+  ]);
 
-  return (
-    <ContractBuilderClient
-      initialPapers={papers}
-      initialContracts={contracts}
-    />
-  );
-}
+  const initialDrafts = mapApiPapersToDrafts(papers, contracts);
 
-export default function ContractBuilder() {
-  return (
-    <Suspense fallback={<ContractBuilderSkeleton />}>
-      <ContractBuilderContent />
-    </Suspense>
-  );
+  return <ContractBuilderClient initialDrafts={initialDrafts} />;
 }

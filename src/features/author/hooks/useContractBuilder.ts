@@ -5,30 +5,11 @@ import type { Contributor, ExistingDraft } from "@/src/features/author/types/con
 import { useCurrentUser } from "@/src/shared/hooks/useCurrentUser";
 import { fetchApi } from "@/src/shared/lib/api";
 import { hashString, canonicalJson } from "@/src/shared/lib/hashing";
-import type { ApiPaper, ApiContract, ApiContractContributor } from "@/src/shared/types/api";
+import { mapApiContributors } from "@/src/features/author/mappers/contract";
+import type { ApiContract } from "@/src/shared/types/api";
 
-function mapDbContributors(dbContribs: ApiContractContributor[]): Contributor[] {
-  return dbContribs.map((c, i) => ({
-    id: i + 1,
-    dbId: c.id,
-    wallet: c.contributorWallet,
-    did: c.contributorWallet,
-    name: c.contributorName ?? "Unknown user",
-    orcid: "\u2014",
-    pct: c.contributionPct,
-    role: c.roleDescription ?? "",
-    status: c.status as Contributor["status"],
-    txHash: c.signature ?? null,
-    signedAt: c.signedAt ?? null,
-    isCreator: c.isCreator,
-  }));
-}
-
-export function useContractBuilder(
-  initialPapers: ApiPaper[],
-  initialContracts: ApiContract[],
-) {
-  const { user, isConnected, account } = useCurrentUser();
+export function useContractBuilder(initialDrafts: ExistingDraft[]) {
+  const { user, account } = useCurrentUser();
 
   const [selectedDraft, setSelectedDraft] = useState<number | null>(null);
   const [newTitle, setNewTitle] = useState("");
@@ -39,52 +20,37 @@ export function useContractBuilder(
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteLink, setInviteLink] = useState("");
   const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
-  const [dbContracts, setDbContracts] = useState<ApiContract[]>(initialContracts);
 
-  const dbDrafts: ExistingDraft[] = initialPapers
-    .filter((p) => p.status === "draft" || p.status === "contract_pending")
-    .map((p, i) => ({
-      id: i + 1,
-      dbId: p.id,
-      title: p.title,
-      hash: p.versions?.[0]?.paperHash ?? "\u2014",
-    }));
-
-  const drafts = dbDrafts;
-
-  // When a draft is selected, load its contract contributors if available
+  // When a draft is selected, load its pre-mapped contributors
   useEffect(() => {
-    if (selectedDraft === null || !dbContracts) return;
-
-    const draft = drafts[selectedDraft - 1];
+    if (selectedDraft === null) return;
+    const draft = initialDrafts.find((d) => d.id === selectedDraft);
     if (!draft) return;
 
-    const matchingContract = dbContracts.find(
-      (c) => c.paperTitle === draft.title,
-    );
-
-    if (matchingContract && matchingContract.contributors.length > 0) {
-      setContributors(mapDbContributors(matchingContract.contributors));
-      setSelectedContractId(matchingContract.id);
+    if (draft.contributors && draft.contributors.length > 0) {
+      setContributors(draft.contributors);
+      setSelectedContractId(draft.contractId ?? null);
     } else {
+      setContributors([]);
       setSelectedContractId(null);
     }
-  }, [selectedDraft, dbContracts, drafts]);
+  }, [selectedDraft, initialDrafts]);
 
   const currentUserWallet = user?.walletAddress ?? "";
 
   const totalPct = contributors.reduce((s, c) => s + (Number(c.pct) || 0), 0);
   const isValid = totalPct === 100;
-  const signedCount = contributors.filter(c => c.status === "signed").length;
-  const allSigned = signedCount === contributors.length;
-  const hasSigned = contributors.some(c => c.status === "signed");
-  const draft = drafts.find(d => d.id === selectedDraft);
+  const signedCount = contributors.filter((c) => c.status === "signed").length;
+  const allSigned = contributors.length > 0 && signedCount === contributors.length;
+  const hasSigned = contributors.some((c) => c.status === "signed");
+  const draft = initialDrafts.find((d) => d.id === selectedDraft);
 
-  // Refresh contracts from API after any mutation
-  async function refreshContracts(): Promise<ApiContract[]> {
+  async function refreshContributors(contractId: string): Promise<void> {
     const fresh = await fetchApi<ApiContract[]>("/api/contracts");
-    setDbContracts(fresh);
-    return fresh;
+    const match = fresh?.find((c) => c.id === contractId);
+    if (match) {
+      setContributors(mapApiContributors(match.contributors));
+    }
   }
 
   async function handleCreateContract(): Promise<string | null> {
@@ -123,14 +89,19 @@ export function useContractBuilder(
   }
 
   const updateContributor = (id: number, field: string, value: string | number) => {
-    setContributors(prev => prev.map(c => {
-      if (c.id !== id) return c;
-      const updated = { ...c, [field]: field === "pct" ? (value === "" ? "" : Number(value)) : value };
-      if (hasSigned && c.status === "signed" && c.id !== id) {
-        return { ...c, status: "pending" as const, txHash: null, signedAt: null };
-      }
-      return updated;
-    }));
+    setContributors((prev) =>
+      prev.map((c) => {
+        if (c.id !== id) return c;
+        const updated = {
+          ...c,
+          [field]: field === "pct" ? (value === "" ? "" : Number(value)) : value,
+        };
+        if (hasSigned && c.status === "signed" && c.id !== id) {
+          return { ...c, status: "pending" as const, txHash: null, signedAt: null };
+        }
+        return updated;
+      }),
+    );
   };
 
   const removeContributor = async (id: number) => {
@@ -146,16 +117,24 @@ export function useContractBuilder(
         return;
       }
     }
-    setContributors(prev => prev.filter(c => c.id !== id));
+    setContributors((prev) => prev.filter((c) => c.id !== id));
   };
 
   const addContributor = async () => {
-    const newId = Math.max(...contributors.map(c => c.id), 0) + 1;
+    const newId = Math.max(...contributors.map((c) => c.id), 0) + 1;
     const newContributor: Contributor | null = addWallet.trim()
       ? {
-          id: newId, wallet: addWallet, did: addWallet, name: "Unknown user",
-          orcid: "\u2014", pct: 0, role: "", status: "pending" as const,
-          txHash: null, signedAt: null, isCreator: false,
+          id: newId,
+          wallet: addWallet,
+          did: addWallet,
+          name: "Unknown user",
+          orcid: "\u2014",
+          pct: 0,
+          role: "",
+          status: "pending" as const,
+          txHash: null,
+          signedAt: null,
+          isCreator: false,
         }
       : null;
 
@@ -169,7 +148,7 @@ export function useContractBuilder(
             method: "POST",
             body: JSON.stringify({
               contributorWallet: newContributor.wallet,
-              contributorName: newContributor.name !== "Unknown user" ? newContributor.name : null,
+              contributorName: null,
               contributionPct: 0,
               roleDescription: null,
               isCreator: false,
@@ -183,7 +162,7 @@ export function useContractBuilder(
       }
     }
 
-    setContributors(prev => [...prev, newContributor]);
+    setContributors((prev) => [...prev, newContributor]);
     setAddWallet("");
     setShowAddRow(false);
   };
@@ -212,7 +191,7 @@ export function useContractBuilder(
     }
 
     try {
-      const contractId = selectedContractId ?? await handleCreateContract();
+      const contractId = selectedContractId ?? (await handleCreateContract());
       if (!contractId) {
         console.error("Could not create contract before signing");
         return;
@@ -239,11 +218,7 @@ export function useContractBuilder(
         }),
       });
 
-      const freshContracts = await refreshContracts();
-      const matchingContract = freshContracts?.find((c) => c.id === contractId);
-      if (matchingContract) {
-        setContributors(mapDbContributors(matchingContract.contributors));
-      }
+      await refreshContributors(contractId);
     } catch (err) {
       console.error("Signing failed:", err);
     }
@@ -273,7 +248,7 @@ export function useContractBuilder(
     allSigned,
     hasSigned,
     draft,
-    drafts,
+    drafts: initialDrafts,
     currentUserWallet,
     // Handlers
     setSelectedDraft,

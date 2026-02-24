@@ -1,5 +1,44 @@
 import type { SignedContract } from "@/src/features/author/types/paper-registration";
-import type { ApiContract } from "@/src/shared/types/api";
+import type { Contributor, ExistingDraft } from "@/src/features/author/types/contract";
+import type { ApiContract, ApiContractContributor, ApiPaper } from "@/src/shared/types/api";
+
+export function mapApiContributors(dbContribs: ApiContractContributor[]): Contributor[] {
+  return dbContribs.map((c, i) => ({
+    id: i + 1,
+    dbId: c.id,
+    wallet: c.contributorWallet,
+    did: c.contributorWallet,
+    name: c.contributorName ?? "Unknown user",
+    orcid: "\u2014",
+    pct: c.contributionPct,
+    role: c.roleDescription ?? "",
+    status: c.status as Contributor["status"],
+    txHash: c.signature ?? null,
+    signedAt: c.signedAt ?? null,
+    isCreator: c.isCreator,
+  }));
+}
+
+export function mapApiPapersToDrafts(
+  papers: ApiPaper[],
+  contracts: ApiContract[],
+): ExistingDraft[] {
+  return papers
+    .filter((p) => p.status === "draft" || p.status === "contract_pending")
+    .map((p, i) => {
+      const match = contracts.find((c) => c.paperTitle === p.title);
+      return {
+        id: i + 1,
+        dbId: p.id,
+        title: p.title,
+        hash: p.versions?.[0]?.paperHash ?? "\u2014",
+        contractId: match?.id,
+        contributors: match?.contributors.length
+          ? mapApiContributors(match.contributors)
+          : undefined,
+      };
+    });
+}
 
 export function mapDbContractToSigned(c: ApiContract, index: number): SignedContract {
   const contribSummary = c.contributors
