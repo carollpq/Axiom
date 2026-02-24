@@ -8,8 +8,8 @@ export type PaperStatus =
 
 export type DashboardTab = "papers" | "pending" | "activity";
 
-export interface Paper {
-  id: number;
+export interface PaperRow {
+  id: string;
   title: string;
   status: PaperStatus;
   coauthors: string;

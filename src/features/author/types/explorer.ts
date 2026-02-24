@@ -31,7 +31,7 @@ export interface PaperReview {
 }
 
 export interface ExplorerPaper {
-  id: number;
+  id: string;
   title: string;
   authors: PaperAuthor[];
   status: string;

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Paper, PaperStatus } from "@/src/features/author/types/dashboard";
+import type { PaperRow, PaperStatus } from "@/src/features/author/types/dashboard";
 import { StatusBadge } from "./StatusBadge";
 
 export function PapersTable({
@@ -13,14 +13,14 @@ export function PapersTable({
   hoveredRow,
   onHoverRow,
 }: {
-  papers: Paper[];
+  papers: PaperRow[];
   statuses: PaperStatus[];
   statusFilter: "All" | PaperStatus;
   onStatusFilter: (s: "All" | PaperStatus) => void;
   searchQuery: string;
   onSearchChange: (q: string) => void;
-  hoveredRow: number | null;
-  onHoverRow: (id: number | null) => void;
+  hoveredRow: string | null;
+  onHoverRow: (id: string | null) => void;
 }) {
   const allStatuses: ("All" | PaperStatus)[] = ["All", ...statuses];
 

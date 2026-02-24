@@ -1,3 +1,7 @@
+export function truncateHash(hash: string): string {
+  return hash.length > 12 ? `${hash.slice(0, 6)}...${hash.slice(-4)}` : hash;
+}
+
 export function truncateWallet(addr: string): string {
   if (addr.length <= 10) return addr;
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`;

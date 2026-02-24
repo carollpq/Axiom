@@ -8,7 +8,7 @@ export function useExplorer(initialPapers: ExplorerPaper[]) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [fieldFilter, setFieldFilter] = useState("All");
-  const [selectedPaper, setSelectedPaper] = useState<number | null>(null);
+  const [selectedPaper, setSelectedPaper] = useState<string | null>(null);
   const [detailTab, setDetailTab] = useState<DetailTab>("overview");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
 
@@ -46,7 +46,7 @@ export function useExplorer(initialPapers: ExplorerPaper[]) {
 
   const paper = papers.find((p) => p.id === selectedPaper);
 
-  const selectPaper = (id: number) => {
+  const selectPaper = (id: string) => {
     setSelectedPaper(id);
     setDetailTab("overview");
   };

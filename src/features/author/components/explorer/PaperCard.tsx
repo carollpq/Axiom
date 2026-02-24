@@ -3,7 +3,7 @@ import { StatusBadge } from "./StatusBadge";
 
 interface PaperCardProps {
   paper: ExplorerPaper;
-  onSelect: (id: number) => void;
+  onSelect: (id: string) => void;
 }
 
 export function PaperCard({ paper: p, onSelect }: PaperCardProps) {

@@ -1,8 +1,9 @@
-import type { Paper, StatCardData } from "@/src/features/author/types/dashboard";
+import type { PaperRow, StatCardData } from "@/src/features/author/types/dashboard";
 import type { ApiPaper } from "@/src/shared/types/api";
 import { toDisplayStatus } from "@/src/shared/lib/status-map";
+import { truncateHash } from "@/src/shared/lib/format";
 
-export function mapDbPaperToFrontend(p: ApiPaper, index: number): Paper {
+export function mapDbPaperToFrontend(p: ApiPaper): PaperRow {
   const coauthors =
     p.contracts
       ?.flatMap((c) => c.contributors ?? [])
@@ -10,23 +11,17 @@ export function mapDbPaperToFrontend(p: ApiPaper, index: number): Paper {
       .filter(Boolean)
       .join(", ") || "\u2014";
 
-  const hash = p.versions?.[0]?.paperHash ?? "\u2014";
-  const truncatedHash =
-    hash.length > 12
-      ? `${hash.slice(0, 6)}...${hash.slice(-4)}`
-      : hash;
-
   return {
-    id: index + 1,
+    id: p.id,
     title: p.title,
     status: toDisplayStatus(p.status),
     coauthors,
     date: p.createdAt.slice(0, 10),
-    hash: truncatedHash,
+    hash: truncateHash(p.versions?.[0]?.paperHash ?? "\u2014"),
   };
 }
 
-export function computeStats(papers: Paper[]): StatCardData[] {
+export function computeStats(papers: PaperRow[]): StatCardData[] {
   const total = papers.length;
   const pending = papers.filter((p) => p.status === "Contract Pending").length;
   const review = papers.filter((p) => p.status === "Under Review").length;

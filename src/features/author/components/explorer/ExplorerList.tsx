@@ -15,7 +15,7 @@ interface ExplorerListProps {
   onStatusFilter: (s: string) => void;
   onFieldFilter: (f: string) => void;
   onSort: (s: SortOption) => void;
-  onSelectPaper: (id: number) => void;
+  onSelectPaper: (id: string) => void;
 }
 
 export function ExplorerList({

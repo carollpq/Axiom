@@ -3,16 +3,16 @@
 import { useState, useMemo } from "react";
 import { PapersTable } from "./PapersTable";
 import { paperStatuses } from "@/src/features/author/mock-data/dashboard";
-import type { Paper, PaperStatus } from "@/src/features/author/types/dashboard";
+import type { PaperRow, PaperStatus } from "@/src/features/author/types/dashboard";
 
 interface Props {
-  initialPapers: Paper[];
+  initialPapers: PaperRow[];
 }
 
 export function PapersTableClient({ initialPapers }: Props) {
   const [statusFilter, setStatusFilter] = useState<"All" | PaperStatus>("All");
   const [searchQuery, setSearchQuery] = useState("");
-  const [hoveredRow, setHoveredRow] = useState<number | null>(null);
+  const [hoveredRow, setHoveredRow] = useState<string | null>(null);
 
   const filteredPapers = useMemo(() => {
     return initialPapers.filter((p) => {

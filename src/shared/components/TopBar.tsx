@@ -17,7 +17,7 @@ function NavItem({ label, href, active }: { label: string; href: string; active:
   return (
     <Link
       href={href}
-      className="text-[13px] font-serif cursor-pointer px-4 py-2 tracking-[1px] uppercase transition-all duration-300"
+      className="text-[13px] font-serif cursor-pointer px-4 py-2 tracking-[1px] transition-all duration-300"
       style={{
         color: active ? "#c9b89e" : "#7a7a7a",
         borderBottom: active ? "1px solid #c9b89e" : "1px solid transparent",

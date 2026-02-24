@@ -14,7 +14,7 @@ export function StatCard({ label, value, icon, sub, alert }: StatCardProps) {
       >
         {value}
       </div>
-      <div className="text-[11px] text-[#8a8070] uppercase tracking-[1.5px] mt-1.5">
+      <div className="text-md text-[#8a8070] tracking-[1.5px] mt-1.5">
         {label}
       </div>
       {sub && (

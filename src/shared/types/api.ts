@@ -41,29 +41,18 @@ export interface ApiPaper {
   id: string;
   title: string;
   status: string;
+  abstract?: string | null;
+  visibility?: string | null;
   litDataToEncryptHash?: string | null;
   litAccessConditionsJson?: string | null;
   createdAt: string;
   updatedAt: string;
   versions?: ApiPaperVersion[];
-  contracts?: { contributors?: ApiContractContributor[] }[];
-}
-
-/** Shape returned by GET /api/papers/public */
-export interface ApiPublicPaper {
-  id: string;
-  title: string;
-  abstract: string | null;
-  status: string;
-  visibility: string;
-  updatedAt: string;
-  createdAt: string;
-  versions: ApiPaperVersion[];
-  contracts: {
-    contractHash: string | null;
-    contributors: ApiContractContributor[];
+  contracts?: {
+    contractHash?: string | null;
+    contributors?: ApiContractContributor[];
   }[];
-  owner: {
+  owner?: {
     displayName: string | null;
     walletAddress: string;
     orcidId: string | null;
