@@ -8,3 +8,4 @@ export { ModificationWarning } from "./ModificationWarning";
 export { SubmissionGate } from "./SubmissionGate";
 export { InviteModal } from "./InviteModal";
 export { ContractBuilderClient } from "./ContractBuilderClient";
+export { InviteClaimClient } from "./InviteClaimClient";

@@ -1,4 +1,4 @@
-import { getContributorByInviteToken } from "@/src/features/contracts/actions";
+import { getContributorByInviteToken } from "@/src/features/contracts/queries";
 import { InviteClaimClient } from "@/src/features/author/components/contract/InviteClaimClient";
 import Link from "next/link";
 

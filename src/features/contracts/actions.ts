@@ -6,7 +6,7 @@ import {
   type ContractStatusDb,
   type ContributorStatusDb,
 } from "@/src/shared/lib/db/schema";
-import { and, eq, gt } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 export interface CreateContractInput {
   paperTitle: string;
@@ -113,34 +113,6 @@ export async function generateInviteToken(contractId: string, contributorId: str
 
   if (!updated) return null;
   return { token, expiresAt };
-}
-
-export async function getContributorByInviteToken(token: string) {
-  const now = new Date().toISOString();
-
-  const contributor = (
-    await db
-      .select()
-      .from(contractContributors)
-      .where(
-        and(
-          eq(contractContributors.inviteToken, token),
-          gt(contractContributors.inviteExpiresAt, now),
-        ),
-      )
-      .limit(1)
-  )[0];
-
-  if (!contributor) return null;
-
-  const contract = await db.query.authorshipContracts.findFirst({
-    where: eq(authorshipContracts.id, contributor.contractId),
-    with: { contributors: true },
-  });
-
-  if (!contract) return null;
-
-  return { contributor, contract };
 }
 
 export async function resetContractSignatures(contractId: string) {
