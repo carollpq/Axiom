@@ -2,8 +2,8 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 import { useActiveAccount } from "thirdweb/react";
-import { fetchApi } from "@/lib/api";
-import { doLogout } from "@/src/app/actions/auth";
+import { fetchApi } from "@/src/shared/lib/api";
+import { doLogout } from "@/src/shared/lib/auth/index";
 import type { DbUser } from "@/src/shared/types/api";
 
 interface UserContextValue {

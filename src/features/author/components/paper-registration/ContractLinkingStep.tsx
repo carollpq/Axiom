@@ -1,6 +1,6 @@
 "use client";
 
-import type { SignedContract } from "@/features/author/types/paper-registration";
+import type { SignedContract } from "@/src/features/author/types/paper-registration";
 
 interface ContractLinkingStepProps {
   selectedContract: number | null;

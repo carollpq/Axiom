@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import type { DetailTab, SortOption, ExplorerPaper } from "@/features/author/types/explorer";
-import { FILTER_STATUSES } from "@/features/author/mock-data/explorer";
+import type { DetailTab, SortOption, ExplorerPaper } from "@/src/features/author/types/explorer";
+import { FILTER_STATUSES } from "@/src/features/author/mock-data/explorer";
 
 export function useExplorer(initialPapers: ExplorerPaper[]) {
   const [search, setSearch] = useState("");

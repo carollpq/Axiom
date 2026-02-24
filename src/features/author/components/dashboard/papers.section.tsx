@@ -1,5 +1,5 @@
-import { listUserPapers } from "@/features/papers/queries";
-import { mapDbPaperToFrontend } from "@/features/author/mappers/dashboard";
+import { listUserPapers } from "@/src/features/papers/queries";
+import { mapDbPaperToFrontend } from "@/src/features/author/mappers/dashboard";
 import { PapersTableClient } from "./papers-table.client";
 import type { ApiPaper } from "@/src/shared/types/api";
 

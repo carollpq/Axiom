@@ -1,7 +1,7 @@
 "use client";
 
-import type { DetailTab } from "@/features/author/types/explorer";
-import { DETAIL_TABS } from "@/features/author/mock-data/explorer";
+import type { DetailTab } from "@/src/features/author/types/explorer";
+import { DETAIL_TABS } from "@/src/features/author/mock-data/explorer";
 
 interface DetailTabsProps {
   activeTab: DetailTab;

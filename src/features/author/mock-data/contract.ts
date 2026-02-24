@@ -1,4 +1,4 @@
-import type { ExistingDraft, KnownUser, Contributor } from "@/features/author/types/contract";
+import type { ExistingDraft, KnownUser, Contributor } from "@/src/features/author/types/contract";
 
 export const CURRENT_USER_WALLET = "0x7f3a...9c2d";
 

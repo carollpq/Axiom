@@ -1,6 +1,6 @@
 import { createAuth } from "thirdweb/auth";
 import { privateKeyToAccount } from "thirdweb/wallets";
-import { client } from "@/lib/thirdweb";
+import { client } from "@/src/shared/lib/thirdweb";
 import { cookies } from "next/headers";
 
 export const AUTH_COOKIE = "tw_auth_token";

@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from "react";
 import { PapersTable } from "./PapersTable";
-import { paperStatuses } from "@/features/author/mock-data/dashboard";
-import type { Paper, PaperStatus } from "@/features/author/types/dashboard";
+import { paperStatuses } from "@/src/features/author/mock-data/dashboard";
+import type { Paper, PaperStatus } from "@/src/features/author/types/dashboard";
 
 interface Props {
   initialPapers: Paper[];

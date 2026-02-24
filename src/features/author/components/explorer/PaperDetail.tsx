@@ -1,6 +1,6 @@
 "use client";
 
-import type { ExplorerPaper, DetailTab } from "@/features/author/types/explorer";
+import type { ExplorerPaper, DetailTab } from "@/src/features/author/types/explorer";
 import { RetractionBanner } from "./RetractionBanner";
 import { DetailHeader } from "./DetailHeader";
 import { DetailTabs } from "./DetailTabs";

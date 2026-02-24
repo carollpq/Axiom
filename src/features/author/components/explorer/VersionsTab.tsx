@@ -1,4 +1,4 @@
-import type { PaperVersion } from "@/features/author/types/explorer";
+import type { PaperVersion } from "@/src/features/author/types/explorer";
 
 interface VersionsTabProps {
   versions: PaperVersion[];

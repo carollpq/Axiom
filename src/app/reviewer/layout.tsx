@@ -1,5 +1,5 @@
-import { RoleShell } from "@/components/shared";
-import { reviewerNavItems, mockReviewerUser } from "@/lib/mock-data/reviewer-dashboard";
+import { RoleShell } from "@/src/shared/components";
+import { reviewerNavItems, mockReviewerUser } from "@/src/shared/lib/mock-data/reviewer-dashboard";
 
 export default function ReviewerLayout({ children }: { children: React.ReactNode }) {
   return (

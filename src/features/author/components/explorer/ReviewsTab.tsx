@@ -1,4 +1,4 @@
-import type { PaperReview } from "@/features/author/types/explorer";
+import type { PaperReview } from "@/src/features/author/types/explorer";
 
 interface ReviewsTabProps {
   reviews: PaperReview[];

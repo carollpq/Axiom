@@ -1,6 +1,6 @@
-import type { Paper, StatCardData } from "@/features/author/types/dashboard";
+import type { Paper, StatCardData } from "@/src/features/author/types/dashboard";
 import type { ApiPaper } from "@/src/shared/types/api";
-import { toDisplayStatus } from "@/lib/status-map";
+import { toDisplayStatus } from "@/src/shared/lib/status-map";
 
 export function mapDbPaperToFrontend(p: ApiPaper, index: number): Paper {
   const coauthors =

@@ -1,5 +1,5 @@
 import type { DetailTab } from "@/src/shared/types/journal-dashboard";
-import { detailTabs } from "@/lib/mock-data/journal-dashboard";
+import { detailTabs } from "@/src/shared/lib/mock-data/journal-dashboard";
 
 interface DetailTabsProps {
   activeTab: DetailTab;

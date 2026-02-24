@@ -1,6 +1,6 @@
 "use client";
 
-import type { Paper, PaperStatus } from "@/features/author/types/dashboard";
+import type { Paper, PaperStatus } from "@/src/features/author/types/dashboard";
 import { StatusBadge } from "./StatusBadge";
 
 export function PapersTable({

@@ -1,5 +1,5 @@
-import { RoleShell } from "@/components/shared";
-import { journalNavItems, mockJournalUser } from "@/lib/mock-data/journal-dashboard";
+import { RoleShell } from "@/src/shared/components";
+import { journalNavItems, mockJournalUser } from "@/src/shared/lib/mock-data/journal-dashboard";
 
 export default function JournalLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -1,6 +1,6 @@
-import type { ExplorerPaper } from "@/features/author/types/explorer";
+import type { ExplorerPaper } from "@/src/features/author/types/explorer";
 import type { ApiPublicPaper } from "@/src/shared/types/api";
-import { toPublicDisplayStatus } from "@/lib/status-map";
+import { toPublicDisplayStatus } from "@/src/shared/lib/status-map";
 
 export function mapApiPaperToExplorer(p: ApiPublicPaper, index: number): ExplorerPaper {
   const latestVersion = p.versions[0] ?? null;

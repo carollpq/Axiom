@@ -1,4 +1,4 @@
-import type { ExplorerPaper } from "@/features/author/types/explorer";
+import type { ExplorerPaper } from "@/src/features/author/types/explorer";
 import { StatusBadge } from "./StatusBadge";
 
 interface DetailHeaderProps {

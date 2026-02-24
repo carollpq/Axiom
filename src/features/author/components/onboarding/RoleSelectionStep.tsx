@@ -1,4 +1,4 @@
-import type { UserRole } from "@/features/author/hooks/useOnboarding";
+import type { UserRole } from "@/src/features/author/hooks/useOnboarding";
 
 interface RoleSelectionStepProps {
   onSelectRole: (role: UserRole) => void;

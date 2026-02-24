@@ -6,7 +6,7 @@ import type {
   PoolReviewer,
   ReviewCriterion,
 } from "@/src/shared/types/journal-dashboard";
-import type { NavItemData, UserProfile } from "@/features/author/types/dashboard";
+import type { NavItemData, UserProfile } from "@/src/features/author/types/dashboard";
 
 export const mockSubmissions: JournalSubmission[] = [
   { id: 1, title: "On the Reproducibility of Transformer Architectures in Low-Resource Settings", authors: "A. Reeves, M. Chen, L. Vasquez", submitted: "2025-10-15", stage: "Published", reviewers: ["R-4821", "R-7293"], deadline: "2025-11-15", criteriaPublished: true, criteriaMet: true, hash: "0x3a9f...c2e1" },

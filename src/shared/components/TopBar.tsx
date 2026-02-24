@@ -4,13 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useActiveAccount } from "thirdweb/react";
 import { ConnectButton } from "thirdweb/react";
-import { client } from "@/lib/thirdweb";
+import { client } from "@/src/shared/lib/thirdweb";
 import {
   getLoginPayload,
   doLogin,
   doLogout,
   isLoggedIn,
-} from "@/src/app/actions/auth";
+} from "@/src/shared/lib/auth/index";
 import type { NavItemData, UserProfile } from "@/src/shared/types/shared";
 
 function NavItem({ label, href, active }: { label: string; href: string; active: boolean }) {

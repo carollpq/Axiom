@@ -1,4 +1,4 @@
-import type { ExistingDraft } from "@/features/author/types/contract";
+import type { ExistingDraft } from "@/src/features/author/types/contract";
 
 interface PaperSelectionProps {
   selectedDraft: number | null;

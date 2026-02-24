@@ -1,4 +1,4 @@
-import type { ExplorerPaper, SortOption } from "@/features/author/types/explorer";
+import type { ExplorerPaper, SortOption } from "@/src/features/author/types/explorer";
 import { SearchBar } from "./SearchBar";
 import { FilterBar } from "./FilterBar";
 import { PaperCard } from "./PaperCard";

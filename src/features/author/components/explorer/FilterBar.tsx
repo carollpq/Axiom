@@ -1,6 +1,6 @@
 "use client";
 
-import type { SortOption } from "@/features/author/types/explorer";
+import type { SortOption } from "@/src/features/author/types/explorer";
 
 interface FilterBarProps {
   statuses: string[];

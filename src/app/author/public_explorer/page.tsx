@@ -1,8 +1,8 @@
 import { Suspense } from "react";
-import { listPublicPapers } from "@/features/papers";
-import { mapApiPaperToExplorer } from "@/features/author/mappers/explorer";
-import { ExplorerClient } from "@/features/author/components/explorer";
-import { ExplorerListSkeleton } from "@/features/author/components/skeletons";
+import { listPublicPapers } from "@/src/features/papers";
+import { mapApiPaperToExplorer } from "@/src/features/author/mappers/explorer";
+import { ExplorerClient } from "@/src/features/author/components/explorer";
+import { ExplorerListSkeleton } from "@/src/features/author/components/skeletons";
 import type { ApiPublicPaper } from "@/src/shared/types/api";
 
 async function ExplorerContent() {

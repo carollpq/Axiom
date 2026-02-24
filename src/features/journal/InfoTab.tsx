@@ -1,5 +1,5 @@
 import type { JournalSubmission } from "@/src/shared/types/journal-dashboard";
-import { provenanceHashes } from "@/lib/mock-data/journal-dashboard";
+import { provenanceHashes } from "@/src/shared/lib/mock-data/journal-dashboard";
 
 interface InfoTabProps {
   submission: JournalSubmission;

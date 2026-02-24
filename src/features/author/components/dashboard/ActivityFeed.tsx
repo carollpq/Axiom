@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { ActivityItem } from "@/features/author/types/dashboard";
+import type { ActivityItem } from "@/src/features/author/types/dashboard";
 
 export function ActivityFeed({ items }: { items: ActivityItem[] }) {
   const [visibleCount, setVisibleCount] = useState(items.length);

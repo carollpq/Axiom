@@ -1,1 +1,1 @@
-export { TabBar } from "@/components/shared";
+export { TabBar } from "@/src/shared/components";

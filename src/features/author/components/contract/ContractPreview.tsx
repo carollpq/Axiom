@@ -1,6 +1,6 @@
 "use client";
 
-import type { Contributor, ExistingDraft } from "@/features/author/types/contract";
+import type { Contributor, ExistingDraft } from "@/src/features/author/types/contract";
 
 interface ContractPreviewProps {
   showPreview: boolean;

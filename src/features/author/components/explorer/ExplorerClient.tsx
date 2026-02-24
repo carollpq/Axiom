@@ -1,9 +1,9 @@
 "use client";
 
-import { useExplorer } from "@/features/author/hooks/useExplorer";
+import { useExplorer } from "@/src/features/author/hooks/useExplorer";
 import { ExplorerList } from "./ExplorerList";
 import { PaperDetail } from "./PaperDetail";
-import type { ExplorerPaper } from "@/features/author/types/explorer";
+import type { ExplorerPaper } from "@/src/features/author/types/explorer";
 
 interface ExplorerClientProps {
   initialPapers: ExplorerPaper[];

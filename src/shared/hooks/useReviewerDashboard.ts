@@ -9,7 +9,7 @@ import {
   mockReputationHistory,
   mockReputationBreakdown,
   mockReputationScores,
-} from "@/lib/mock-data/reviewer-dashboard";
+} from "@/src/shared/lib/mock-data/reviewer-dashboard";
 
 export function useReviewerDashboard() {
   const [activeTab, setActiveTab] = useState<ReviewerTab>("assigned");

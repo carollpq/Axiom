@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
-import { getContractById } from "@/features/contracts/queries";
-import { signContributor, updateContractHedera } from "@/features/contracts/actions";
-import { isHederaConfigured } from "@/lib/hedera/client";
-import { submitHcsMessage } from "@/lib/hedera/hcs";
+import { getSession } from "@/src/shared/lib/auth";
+import { getContractById } from "@/src/features/contracts/queries";
+import { signContributor, updateContractHedera } from "@/src/features/contracts/actions";
+import { isHederaConfigured } from "@/src/shared/lib/hedera/client";
+import { submitHcsMessage } from "@/src/shared/lib/hedera/hcs";
 
 export const runtime = "nodejs";
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { listPublicPapers } from "@/features/papers/queries";
+import { listPublicPapers } from "@/src/features/papers/queries";
 
 export const runtime = "nodejs";
 

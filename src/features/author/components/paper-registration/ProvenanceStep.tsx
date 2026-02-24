@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import type { ProvenanceItem } from "@/features/author/types/paper-registration";
+import type { ProvenanceItem } from "@/src/features/author/types/paper-registration";
 
 interface ProvenanceStepProps {
   fileHash: string;

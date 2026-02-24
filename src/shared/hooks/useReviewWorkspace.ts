@@ -8,7 +8,7 @@ import type {
   Recommendation,
   SubmissionResult,
 } from "@/src/shared/types/review-workspace";
-import { mockPaper, mockCriteria } from "@/lib/mock-data/review-workspace";
+import { mockPaper, mockCriteria } from "@/src/shared/lib/mock-data/review-workspace";
 
 export function useReviewWorkspace() {
   // Evaluations keyed by criterion id

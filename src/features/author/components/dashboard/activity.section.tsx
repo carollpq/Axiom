@@ -1,6 +1,6 @@
-import { listUserPapers } from "@/features/papers/queries";
-import { listUserContracts } from "@/features/contracts/queries";
-import { computeActivityData } from "@/features/author/queries/activity";
+import { listUserPapers } from "@/src/features/papers/queries";
+import { listUserContracts } from "@/src/features/contracts/queries";
+import { computeActivityData } from "@/src/features/author/queries/activity";
 import { ActivityFeed } from "./ActivityFeed";
 
 interface Props {

@@ -1,4 +1,4 @@
-import type { SignedContract } from "@/features/author/types/paper-registration";
+import type { SignedContract } from "@/src/features/author/types/paper-registration";
 import type { ApiContract } from "@/src/shared/types/api";
 
 export function mapDbContractToSigned(c: ApiContract, index: number): SignedContract {

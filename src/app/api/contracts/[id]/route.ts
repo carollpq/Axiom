@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getContractById } from "@/features/contracts/queries";
+import { getContractById } from "@/src/features/contracts/queries";
 
 export const runtime = "nodejs";
 

@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import type { Visibility, SignedContract } from "@/features/author/types/paper-registration";
-import { mockSignedContracts, mockRegisteredJournals } from "@/features/author/mock-data/paper-registration";
+import type { Visibility, SignedContract } from "@/src/features/author/types/paper-registration";
+import { mockSignedContracts, mockRegisteredJournals } from "@/src/features/author/mock-data/paper-registration";
 import { useCurrentUser } from "@/src/shared/hooks/useCurrentUser";
-import { fetchApi } from "@/lib/api";
-import { hashFile } from "@/lib/hashing";
-import { isLitConfigured, getLitClient } from "@/lib/lit/client";
-import { buildWalletListConditions } from "@/lib/lit/access-control";
-import { encryptFileWithLit } from "@/lib/lit/encrypt";
-import { mapDbContractToSigned } from "@/features/author/mappers/contract";
+import { fetchApi } from "@/src/shared/lib/api";
+import { hashFile } from "@/src/shared/lib/hashing";
+import { isLitConfigured, getLitClient } from "@/src/shared/lib/lit/client";
+import { buildWalletListConditions } from "@/src/shared/lib/lit/access-control";
+import { encryptFileWithLit } from "@/src/shared/lib/lit/encrypt";
+import { mapDbContractToSigned } from "@/src/features/author/mappers/contract";
 import type { ApiContract, ApiPaperVersion } from "@/src/shared/types/api";
 
 const STEP_LABELS = ["Paper Details", "Provenance", "Contract", "Register / Submit"];

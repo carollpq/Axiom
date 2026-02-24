@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
-import { isStorageConfigured, getPresignedUploadUrl } from "@/lib/storage";
+import { getSession } from "@/src/shared/lib/auth";
+import { isStorageConfigured, getPresignedUploadUrl } from "@/src/shared/lib/storage";
 
 export const runtime = "nodejs";
 

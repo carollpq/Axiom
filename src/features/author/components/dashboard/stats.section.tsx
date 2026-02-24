@@ -1,6 +1,6 @@
-import { listUserPapers } from "@/features/papers/queries";
-import { mapDbPaperToFrontend, computeStats } from "@/features/author/mappers/dashboard";
-import { StatCard } from "@/components/shared";
+import { listUserPapers } from "@/src/features/papers/queries";
+import { mapDbPaperToFrontend, computeStats } from "@/src/features/author/mappers/dashboard";
+import { StatCard } from "@/src/shared/components";
 import type { ApiPaper } from "@/src/shared/types/api";
 
 interface Props {

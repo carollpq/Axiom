@@ -1,7 +1,7 @@
-import type { listUserPapers } from "@/features/papers/queries";
-import type { listUserContracts } from "@/features/contracts/queries";
-import type { PendingAction, ActivityItem } from "@/features/author/types/dashboard";
-import { formatRelativeTime } from "@/lib/format";
+import type { listUserPapers } from "@/src/features/papers/queries";
+import type { listUserContracts } from "@/src/features/contracts/queries";
+import type { PendingAction, ActivityItem } from "@/src/features/author/types/dashboard";
+import { formatRelativeTime } from "@/src/shared/lib/format";
 
 type PaperRow = {
   id: string;

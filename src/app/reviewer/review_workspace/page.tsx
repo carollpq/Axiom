@@ -11,7 +11,7 @@ import {
   RecommendationSection,
   SubmissionActions,
   SubmissionConfirmation,
-} from "@/components/review-workspace";
+} from "@/src/features/reviewer/review-workspace";
 
 export default function ReviewWorkspacePage() {
   const {

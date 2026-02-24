@@ -1,4 +1,4 @@
-export { StatCard, TabBar, Footer, TopBar } from "@/components/shared";
+export { StatCard, TabBar, Footer, TopBar } from "@/src/shared/components";
 export { StatusBadge } from "./StatusBadge";
 export { QuickActions } from "./QuickActions";
 export { PapersTable } from "./PapersTable";

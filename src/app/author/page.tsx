@@ -19,7 +19,7 @@ import {
 
 export default async function AuthorDashboard() {
   const wallet = await getSession();
-  if (!wallet) redirect("/");
+  if (!wallet) redirect("/onboarding");
 
   // Both queries start in parallel — neither is awaited here.
   // Each section awaits only what it needs, so stats + papers

@@ -8,13 +8,13 @@ import {
   SubmissionsTable,
   KanbanBoard,
   DetailPanel,
-} from "@/components/journal-dashboard";
+} from "@/src/features/journal";
 import {
   pipelineStages,
   stages,
   mockReviewerPool,
   mockCriteria,
-} from "@/lib/mock-data/journal-dashboard";
+} from "@/src/shared/lib/mock-data/journal-dashboard";
 
 export default function JournalDashboard() {
   const {

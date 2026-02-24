@@ -5,7 +5,7 @@ import type {
   StatCardData,
   UserProfile,
   PaperStatus,
-} from "@/features/author/types/dashboard";
+} from "@/src/features/author/types/dashboard";
 
 export const mockPapers: Paper[] = [
   { id: 1, title: "On the Reproducibility of Transformer Architectures in Low-Resource Settings", status: "Published", coauthors: "M. Chen, L. Vasquez", date: "2025-11-02", hash: "0x3a9f...c2e1" },

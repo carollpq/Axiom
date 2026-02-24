@@ -7,7 +7,7 @@ import {
   AssignedReviewsTable,
   CompletedReviewsTable,
   FeedbackPanel,
-} from "@/components/reviewer-dashboard";
+} from "@/src/features/reviewer/reviewer-dashboard";
 
 export default function ReviewerDashboard() {
   const {

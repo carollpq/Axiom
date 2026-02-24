@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
-import { getPaperById } from "@/features/papers/queries";
-import { updatePaper } from "@/features/papers/actions";
+import { getSession } from "@/src/shared/lib/auth";
+import { getPaperById } from "@/src/features/papers/queries";
+import { updatePaper } from "@/src/features/papers/actions";
 
 export const runtime = "nodejs";
 

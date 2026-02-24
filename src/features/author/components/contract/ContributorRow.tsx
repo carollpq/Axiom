@@ -1,6 +1,6 @@
 "use client";
 
-import type { Contributor } from "@/features/author/types/contract";
+import type { Contributor } from "@/src/features/author/types/contract";
 
 interface ContributorRowProps {
   contributor: Contributor;

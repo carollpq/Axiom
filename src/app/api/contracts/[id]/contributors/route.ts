@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
-import { addContributor, removeContributor } from "@/features/contracts/actions";
+import { getSession } from "@/src/shared/lib/auth";
+import { addContributor, removeContributor } from "@/src/features/contracts/actions";
 
 export const runtime = "nodejs";
 

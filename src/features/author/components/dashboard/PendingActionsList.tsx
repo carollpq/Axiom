@@ -1,4 +1,4 @@
-import type { PendingAction } from "@/features/author/types/dashboard";
+import type { PendingAction } from "@/src/features/author/types/dashboard";
 
 const typeStyles: Record<PendingAction["type"], { bg: string; color: string; icon: string }> = {
   sign: { bg: "rgba(180,140,100,0.15)", color: "#c4956a", icon: "\u270D" },

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import type { Visibility } from "@/features/author/types/paper-registration";
+import type { Visibility } from "@/src/features/author/types/paper-registration";
 
 interface PaperDetailsStepProps {
   title: string;

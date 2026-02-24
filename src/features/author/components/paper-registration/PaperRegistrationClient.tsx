@@ -1,6 +1,6 @@
 "use client";
 
-import { usePaperRegistration } from "@/features/author/hooks/usePaperRegistration";
+import { usePaperRegistration } from "@/src/features/author/hooks/usePaperRegistration";
 import { StepIndicator } from "./StepIndicator";
 import { PaperDetailsStep } from "./PaperDetailsStep";
 import { ProvenanceStep } from "./ProvenanceStep";

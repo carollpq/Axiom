@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { TabBar } from "@/components/shared";
-import type { DashboardTab } from "@/features/author/types/dashboard";
+import { TabBar } from "@/src/shared/components";
+import type { DashboardTab } from "@/src/features/author/types/dashboard";
 
 const TABS = [
   { key: "papers" as const, label: "Papers", count: null },

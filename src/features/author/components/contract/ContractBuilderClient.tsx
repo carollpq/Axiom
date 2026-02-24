@@ -1,6 +1,6 @@
 "use client";
 
-import { useContractBuilder } from "@/features/author/hooks/useContractBuilder";
+import { useContractBuilder } from "@/src/features/author/hooks/useContractBuilder";
 import { PaperSelection } from "./PaperSelection";
 import { ContributorTable } from "./ContributorTable";
 import { SignatureProgress } from "./SignatureProgress";

@@ -1,7 +1,7 @@
-import { db } from "@/lib/db";
-import { papers, paperVersions, users } from "@/lib/db/schema";
+import { db } from "@/src/shared/lib/db";
+import { papers, paperVersions, users } from "@/src/shared/lib/db/schema";
 import { eq } from "drizzle-orm";
-import type { PaperStatusDb, StudyTypeDb, VisibilityDb } from "@/lib/db/schema";
+import type { PaperStatusDb, StudyTypeDb, VisibilityDb } from "@/src/shared/lib/db/schema";
 
 export async function updatePaperVersionHedera(
   versionId: string,

@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { Contributor, ExistingDraft } from "@/features/author/types/contract";
+import type { Contributor, ExistingDraft } from "@/src/features/author/types/contract";
 import {
   mockKnownUsers,
   mockContributors,
   CURRENT_USER_WALLET,
-} from "@/features/author/mock-data/contract";
+} from "@/src/features/author/mock-data/contract";
 import { useCurrentUser } from "@/src/shared/hooks/useCurrentUser";
-import { fetchApi } from "@/lib/api";
-import { hashString, canonicalJson } from "@/lib/hashing";
+import { fetchApi } from "@/src/shared/lib/api";
+import { hashString, canonicalJson } from "@/src/shared/lib/hashing";
 import type { ApiPaper, ApiContract, ApiContractContributor } from "@/src/shared/types/api";
 
 function mapDbContributors(dbContribs: ApiContractContributor[]): Contributor[] {

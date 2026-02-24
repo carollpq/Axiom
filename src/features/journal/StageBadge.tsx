@@ -1,5 +1,5 @@
 import type { SubmissionStage, StageColorConfig } from "@/src/shared/types/journal-dashboard";
-import { Badge } from "@/components/shared";
+import { Badge } from "@/src/shared/components";
 
 interface StageBadgeProps {
   stage: SubmissionStage;

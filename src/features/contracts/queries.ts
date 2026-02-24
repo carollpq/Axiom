@@ -1,5 +1,5 @@
-import { db } from "@/lib/db";
-import { authorshipContracts, users } from "@/lib/db/schema";
+import { db } from "@/src/shared/lib/db";
+import { authorshipContracts, users } from "@/src/shared/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function listUserContracts(walletAddress: string) {

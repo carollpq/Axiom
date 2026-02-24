@@ -15,7 +15,7 @@ import {
   stageColors,
   mockReviewerPool,
   journalStats,
-} from "@/lib/mock-data/journal-dashboard";
+} from "@/src/shared/lib/mock-data/journal-dashboard";
 
 export function useJournalDashboard() {
   const [filter, setFilter] = useState<StageFilter>("All");

@@ -1,4 +1,4 @@
-import type { SignedContract, RegisteredJournal } from "@/features/author/types/paper-registration";
+import type { SignedContract, RegisteredJournal } from "@/src/features/author/types/paper-registration";
 
 export const mockSignedContracts: SignedContract[] = [
   { id: 1, title: "On the Reproducibility of Transformer Architectures in Low-Resource Settings", hash: "0xfa91...2c3d", contributors: "A. Reeves (40%), M. Chen (35%), L. Vasquez (25%)", date: "2025-10-10" },

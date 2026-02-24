@@ -1,6 +1,6 @@
 "use client";
 
-import type { SignedContract, RegisteredJournal } from "@/features/author/types/paper-registration";
+import type { SignedContract, RegisteredJournal } from "@/src/features/author/types/paper-registration";
 import { HashDisplay } from "./HashDisplay";
 
 interface RegisterSubmitStepProps {

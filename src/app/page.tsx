@@ -1,69 +1,36 @@
-"use client";
+import { redirect } from "next/navigation";
+import { eq } from "drizzle-orm";
+import { getSession } from "@/src/shared/lib/auth";
+import { db } from "@/src/shared/lib/db";
+import { users } from "@/src/shared/lib/db/schema";
 
-import { ConnectButton } from "thirdweb/react";
-import { client } from "@/lib/thirdweb";
-import { useOnboarding } from "@/features/author/hooks/useOnboarding";
-import { Header } from "@/features/author/components/onboarding/Header";
-import { OrcidStep } from "@/features/author/components/onboarding/OrcidStep";
-import { RoleSelectionStep } from "@/features/author/components/onboarding/RoleSelectionStep";
-import { CompleteStep } from "@/features/author/components/onboarding/CompleteStep";
+export default async function RootPage() {
+  const wallet = await getSession();
 
-export default function Home() {
-  const {
-    account,
-    onboardingStep,
-    setOnboardingStep,
-    orcidId,
-    setOrcidId,
-    orcidError,
-    isValidatingOrcid,
-    selectedRole,
-    isExistingUser,
-    handleOrcidSubmit,
-    handleRoleSelection,
-  } = useOnboarding();
+  if (!wallet) {
+    redirect("/onboarding");
+  }
 
-  return (
-    <main className="p-4 pb-10 min-h-[100vh] flex items-center justify-center container max-w-screen-lg mx-auto">
-      <div className="py-20">
-        <Header />
+  const [user] = await db
+    .select({ roles: users.roles })
+    .from(users)
+    .where(eq(users.walletAddress, wallet))
+    .limit(1);
 
-        <div className="flex flex-col items-center gap-6">
-          <ConnectButton
-            client={client}
-            appMetadata={{
-              name: "Axiom.",
-              url: "https://axiom.com",
-            }}
-          />
+  if (!user || !user.roles || user.roles.length === 0) {
+    redirect("/onboarding");
+  }
 
-          {onboardingStep === "orcid" && account?.address && (
-            <OrcidStep
-              orcidId={orcidId}
-              setOrcidId={setOrcidId}
-              orcidError={orcidError}
-              isValidatingOrcid={isValidatingOrcid}
-              onSubmit={handleOrcidSubmit}
-            />
-          )}
+  const primaryRole = user.roles[0];
 
-          {onboardingStep === "role_selection" && account?.address && (
-            <RoleSelectionStep
-              onSelectRole={handleRoleSelection}
-              onBack={() => setOnboardingStep("orcid")}
-            />
-          )}
+  if (primaryRole === "reviewer") {
+    redirect("/reviewer");
+  }
 
-          {onboardingStep === "complete" && account?.address && (
-            <CompleteStep
-              walletAddress={account.address}
-              orcidId={orcidId}
-              selectedRole={selectedRole}
-              isExistingUser={isExistingUser}
-            />
-          )}
-        </div>
-      </div>
-    </main>
-  );
+  if (primaryRole === "editor" || primaryRole === "journal") {
+    redirect("/journal");
+  }
+
+  // Default: researcher / author
+  redirect("/dashboard");
 }

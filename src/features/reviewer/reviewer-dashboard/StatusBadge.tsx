@@ -1,6 +1,6 @@
 import type { ReviewStatus } from "@/src/shared/types/reviewer-dashboard";
 import type { BadgeColorConfig } from "@/src/shared/types/shared";
-import { Badge } from "@/components/shared";
+import { Badge } from "@/src/shared/components";
 
 const statusStyles: Record<ReviewStatus, BadgeColorConfig> = {
   Late: { bg: "rgba(200,100,90,0.15)", text: "#d4645a", border: "rgba(200,100,90,0.3)" },

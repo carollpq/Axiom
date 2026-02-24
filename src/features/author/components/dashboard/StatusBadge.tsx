@@ -1,1 +1,1 @@
-export { StatusBadge } from "@/components/shared";
+export { StatusBadge } from "@/src/shared/components";

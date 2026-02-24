@@ -1,11 +1,11 @@
-import { db } from "@/lib/db";
+import { db } from "@/src/shared/lib/db";
 import {
   authorshipContracts,
   contractContributors,
   users,
   type ContractStatusDb,
   type ContributorStatusDb,
-} from "@/lib/db/schema";
+} from "@/src/shared/lib/db/schema";
 import { and, eq } from "drizzle-orm";
 
 export interface CreateContractInput {
