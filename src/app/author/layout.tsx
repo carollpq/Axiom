@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { RoleShell } from "@/src/shared/components";
 import { getSession } from "@/src/shared/lib/auth";
 import { getUserByWallet } from "@/src/features/users/queries";
@@ -12,6 +13,7 @@ export default async function AuthorLayout({
   children: React.ReactNode;
 }) {
   const wallet = await getSession();
+  if (!wallet) redirect("/login");
 
   let profile: UserProfile;
   if (wallet) {

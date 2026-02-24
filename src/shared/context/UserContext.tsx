@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { useActiveAccount } from "thirdweb/react";
 import { fetchApi } from "@/src/shared/lib/api";
-import { doLogout } from "@/src/shared/lib/auth/index";
+import { doLogout } from "@/src/shared/lib/auth";
 import type { DbUser } from "@/src/shared/types/api";
 
 interface UserContextValue {

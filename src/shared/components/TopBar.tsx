@@ -10,7 +10,7 @@ import {
   doLogin,
   doLogout,
   isLoggedIn,
-} from "@/src/shared/lib/auth/index";
+} from "@/src/shared/lib/auth";
 import type { NavItemData, UserProfile } from "@/src/shared/types/shared";
 
 function NavItem({ label, href, active }: { label: string; href: string; active: boolean }) {

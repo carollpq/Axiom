@@ -6,7 +6,7 @@ export default async function RootPage() {
   const wallet = await getSession();
 
   if (!wallet) {
-    redirect("/onboarding");
+    redirect("/login");
   }
 
   const roles = await getUserRoles(wallet);

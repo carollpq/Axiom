@@ -8,7 +8,7 @@ import type { ApiContract } from "@/src/shared/types/api";
 
 async function PaperRegistrationContent() {
   const wallet = await getSession();
-  if (!wallet) redirect("/");
+  if (!wallet) redirect("/login");
 
   const contracts = listUserContracts(wallet) as unknown as ApiContract[];
 

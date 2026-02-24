@@ -9,7 +9,7 @@ import type { ApiPaper, ApiContract } from "@/src/shared/types/api";
 
 async function ContractBuilderContent() {
   const wallet = await getSession();
-  if (!wallet) redirect("/");
+  if (!wallet) redirect("/login");
 
   const papers = listUserPapers(wallet) as unknown as ApiPaper[];
   const contracts = listUserContracts(wallet) as unknown as ApiContract[];
