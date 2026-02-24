@@ -54,13 +54,13 @@ npm run format                 # Prettier formatting
 Every author page follows this decomposition:
 
 ```
-app/(...)/page.tsx             # Async Server Component — getSession() + feature queries → initialData
-app/(...)/loading.tsx          # Skeleton shown during navigation (Suspense fallback)
-app/(...)/error.tsx            # 'use client' error boundary (one per route group)
-components/{domain}/{Name}.client.tsx   # 'use client' boundary — accepts initialData, calls hook
-hooks/use{Domain}.ts           # 'use client' hook — pure UI state, accepts initialData params
-components/{domain}/           # Presentational components (no data fetching)
-lib/mappers/{domain}.ts        # Pure mapping functions — safe to import from server or client
+src/app/{role}/page.tsx                              # Async Server Component — getSession() + feature queries → initialData
+src/app/{role}/loading.tsx                           # Skeleton shown during navigation (Suspense fallback)
+src/app/{role}/error.tsx                             # 'use client' error boundary (one per route group)
+src/features/{domain}/components/{Name}.client.tsx   # 'use client' boundary — accepts initialData, calls hook
+src/features/{domain}/hooks/use{Domain}.ts           # 'use client' hook — pure UI state, accepts initialData params
+src/features/{domain}/components/                    # Presentational components (no data fetching)
+src/features/{domain}/mappers/{domain}.ts            # Pure mapping functions — safe to import from server or client
 ```
 
 **The split in one line:** server fetches, client interacts.
@@ -102,15 +102,15 @@ export function useDomain(initialData: DomainData[]) {
 }
 ```
 
-`useAuthFetch` (`hooks/useAuthFetch.ts`) is still used for **mutation-triggered refreshes** (e.g. re-fetching contracts after signing) but is no longer used for initial page data.
+`useAuthFetch` (`src/shared/hooks/useAuthFetch.ts`) is still used for **mutation-triggered refreshes** (e.g. re-fetching contracts after signing) but is no longer used for initial page data.
 
 #### Client Boundary File Naming
 
 Client boundary components (the `'use client'` files that wrap a page's interactive logic) use the `.client.tsx` suffix:
 
 ```
-components/author-dashboard/DashboardClient.tsx    # current (acceptable)
-components/author-dashboard/dashboard.client.tsx   # preferred for new files
+src/features/author/components/dashboard/tabs.shell.client.tsx   # preferred suffix
+src/features/author/components/dashboard/papers-table.client.tsx # preferred suffix
 ```
 
 New client boundary files should use the `.client.tsx` suffix so the boundary is visible at the filesystem level without reading the file.
@@ -124,9 +124,9 @@ New client boundary files should use the `.client.tsx` suffix so the boundary is
 
 ### Backend Feature Pattern
 
-Server-side logic is organised in `features/{domain}/`:
+Server-side data logic is organised in `src/features/{domain}/` (for DB-level domains) and `src/features/author/queries/` (for author-specific query logic):
 ```
-features/{domain}/
+src/features/{domain}/
 ├── index.ts       # Re-exports
 ├── queries.ts     # Drizzle read queries
 └── actions.ts     # Drizzle write mutations (called from API routes or Server Actions)
@@ -138,21 +138,21 @@ Always import from the **sub-file directly**, never from the feature root index:
 
 ```ts
 // ✅ correct — server-only file, safe in Server Components and API routes
-import { listUserPapers } from '@/features/papers/queries';
-import { createPaper }    from '@/features/papers/actions';
+import { listUserPapers } from '@/src/features/papers/queries';
+import { createPaper }    from '@/src/features/papers/actions';
 
 // ❌ wrong — root index re-exports everything; bundler may pull server code into client
-import { listUserPapers } from '@/features/papers';
+import { listUserPapers } from '@/src/features/papers';
 ```
 
-The same rule applies to `lib/mappers/`, `lib/db/`, `lib/hedera/`, `lib/lit/` — import from the specific file, not a parent barrel, when writing client code.
+The same rule applies to `src/features/{domain}/mappers/`, `src/shared/lib/db/`, `src/shared/lib/hedera/`, `src/shared/lib/lit/` — import from the specific file, not a parent barrel, when writing client code.
 
 #### Mapper Pattern
 
-Pure data-transformation functions that need to be called from **both** server pages and client hooks live in `lib/mappers/{domain}.ts`. They have no browser dependencies and no side effects, making them safe to import from anywhere.
+Pure data-transformation functions that need to be called from **both** server pages and client hooks live in `src/features/author/mappers/{domain}.ts`. They have no browser dependencies and no side effects, making them safe to import from anywhere.
 
 ```
-lib/mappers/
+src/features/author/mappers/
 ├── dashboard.ts   # mapDbPaperToFrontend, computeStats
 ├── explorer.ts    # mapApiPaperToExplorer
 └── contract.ts    # mapDbContractToSigned
@@ -160,12 +160,12 @@ lib/mappers/
 
 ### Shared Layout
 
-Each role group has its own layout using shared components from `components/shared/`:
-- `app/(author)/layout.tsx` — Author pages with TopBar (Dashboard, Contract Builder, Paper Registration, Explorer, Onboarding) + Footer
-- `app/(journal)/layout.tsx` — Journal pages with journal-specific navigation
-- `app/(reviewer)/layout.tsx` — Reviewer pages with reviewer-specific navigation
+Each role group has its own layout using shared components from `src/shared/components/`:
+- `src/app/author/layout.tsx` — Author pages with TopBar (Dashboard, Contract Builder, Paper Registration, Explorer) + Footer
+- `src/app/journal/layout.tsx` — Journal pages with journal-specific navigation
+- `src/app/reviewer/layout.tsx` — Reviewer pages with reviewer-specific navigation
 
-All layouts use the `RoleShell` component from `components/shared/`. Dark theme background (`#1a1816`). Pages should NOT include their own navigation chrome.
+All layouts use the `RoleShell` component from `src/shared/components/`. Dark theme background (`#1a1816`). Pages should NOT include their own navigation chrome.
 
 ### Styling Conventions
 
@@ -181,152 +181,182 @@ All layouts use the `RoleShell` component from `components/shared/`. Dark theme 
 
 ## Directory Structure (Actual)
 
+All source code lives under `src/`. The `@/` path alias resolves to the project root (i.e. `@/src/...`).
+
 ```
-app/
-├── layout.tsx                 # Root layout (ThirdwebProvider, UserProvider, global styles)
-├── page.tsx                   # Landing page
-├── globals.css                # Tailwind v4 import + global styles
-├── actions/
-│   └── auth.ts                # Server Actions: login, logout
-├── api/
-│   ├── auth/me/route.ts       # GET: return authenticated user from DB
-│   ├── activity/route.ts      # GET: activity feed for authenticated user
-│   ├── contracts/
-│   │   ├── route.ts           # GET/POST: list + create contracts
-│   │   └── [id]/
-│   │       ├── route.ts       # GET/PATCH: contract detail + update
-│   │       ├── contributors/route.ts  # POST: add contributor
-│   │       └── sign/route.ts  # POST: sign contract with wallet signature → HCS
-│   ├── papers/
-│   │   ├── route.ts           # GET/POST: list + create papers
-│   │   ├── public/route.ts    # GET: public paper listing (no auth)
-│   │   └── [id]/
-│   │       ├── route.ts       # GET/PATCH: paper detail + update
-│   │       └── versions/route.ts  # POST: create version → R2 upload → HCS anchor
-│   └── upload/
-│       └── presigned/route.ts # POST: generate R2 presigned upload URL (15-min expiry)
-├── (author)/
-│   ├── layout.tsx             # Shared author shell (TopBar + Footer)
-│   ├── page.tsx               # Author dashboard
-│   ├── contract_builder/page.tsx
-│   ├── paper_registration/page.tsx
-│   └── public_explorer/page.tsx
-├── (journal)/
-│   ├── layout.tsx
-│   └── journal/page.tsx       # Journal dashboard (mock data)
-└── (reviewer)/
-    ├── layout.tsx
-    ├── reviewer/page.tsx       # Reviewer dashboard (mock data)
-    └── review_workspace/page.tsx  # Review workspace (mock data)
+src/
+├── app/                           # Next.js App Router
+│   ├── layout.tsx                 # Root layout (ThirdwebProvider, UserProvider, globals)
+│   ├── page.tsx                   # Landing page
+│   ├── globals.css                # Tailwind v4 import + global styles
+│   ├── login/page.tsx             # Login / wallet-connect page
+│   ├── onboarding/page.tsx        # Onboarding flow (ORCID step is placeholder)
+│   ├── api/
+│   │   ├── auth/me/route.ts       # GET: return authenticated user from DB
+│   │   ├── activity/route.ts      # GET: activity feed for authenticated user
+│   │   ├── contracts/
+│   │   │   ├── route.ts           # GET/POST: list + create contracts
+│   │   │   └── [id]/
+│   │   │       ├── route.ts       # GET/PATCH: contract detail + update
+│   │   │       ├── contributors/route.ts  # POST: add contributor
+│   │   │       └── sign/route.ts  # POST: sign contract with wallet signature → HCS
+│   │   ├── papers/
+│   │   │   ├── route.ts           # GET/POST: list + create papers
+│   │   │   ├── public/route.ts    # GET: public paper listing (no auth)
+│   │   │   └── [id]/
+│   │   │       ├── route.ts       # GET/PATCH: paper detail + update
+│   │   │       └── versions/route.ts  # POST: create version → R2 upload → HCS anchor
+│   │   └── upload/
+│   │       └── presigned/route.ts # POST: generate R2 presigned upload URL (15-min expiry)
+│   ├── author/                    # Author role group
+│   │   ├── layout.tsx             # Author shell (TopBar + Footer)
+│   │   ├── loading.tsx            # Top-level Suspense skeleton
+│   │   ├── error.tsx              # Error boundary
+│   │   ├── page.tsx               # Author dashboard (real DB data)
+│   │   ├── contract_builder/page.tsx
+│   │   ├── paper_registration/page.tsx
+│   │   └── public_explorer/page.tsx
+│   ├── journal/                   # Journal role group
+│   │   ├── layout.tsx
+│   │   └── page.tsx               # Journal dashboard (mock data)
+│   └── reviewer/                  # Reviewer role group
+│       ├── layout.tsx
+│       ├── page.tsx               # Reviewer dashboard (mock data)
+│       └── review_workspace/page.tsx
 
-context/
-└── UserContext.tsx             # Wallet + user session state (useUser hook)
+├── features/                      # Domain-organised feature modules
+│   ├── author/                    # Author domain (most complete)
+│   │   ├── components/
+│   │   │   ├── contract/          # ContractBuilderClient + ContractPreview, ContributorRow,
+│   │   │   │                      #   ContributorTable, InviteModal, ModificationWarning,
+│   │   │   │                      #   PaperSelection, PercentageBar, SignatureProgress, SubmissionGate
+│   │   │   ├── dashboard/         # ActivityFeed, PapersTable, PendingActionsList, QuickActions,
+│   │   │   │                      #   StatusBadge, activity.section, papers.section, pending.section,
+│   │   │   │                      #   stats.section, tabs.shell.client, papers-table.client
+│   │   │   ├── explorer/          # ExplorerClient + DetailHeader, DetailTabs, ExplorerList,
+│   │   │   │                      #   FilterBar, HashRow, OverviewTab, PaperCard, PaperDetail,
+│   │   │   │                      #   ProvenanceTab, RetractionBanner, ReviewsTab, SearchBar,
+│   │   │   │                      #   StatusBadge, VersionsTab
+│   │   │   ├── onboarding/        # CompleteStep, Header, OrcidStep, RoleSelectionStep
+│   │   │   ├── paper-registration/ # PaperRegistrationClient + ConfirmationScreen,
+│   │   │   │                      #   ContractLinkingStep, HashDisplay, PaperDetailsStep,
+│   │   │   │                      #   ProvenanceStep, RegisterSubmitStep, StepIndicator, StepNavigation
+│   │   │   └── skeletons.tsx      # Suspense skeletons (StatsSkeleton, PapersTableSkeleton, etc.)
+│   │   ├── hooks/
+│   │   │   ├── useContractBuilder.ts   # Signing flow via Thirdweb
+│   │   │   ├── useExplorer.ts          # Filter/search/sort/detail state
+│   │   │   ├── useOnboarding.ts        # Onboarding flow
+│   │   │   └── usePaperRegistration.ts # Hashing → Lit → R2 → API → HCS
+│   │   ├── mappers/
+│   │   │   ├── contract.ts        # mapDbContractToSigned
+│   │   │   ├── dashboard.ts       # mapDbPaperToFrontend, computeStats
+│   │   │   └── explorer.ts        # mapApiPaperToExplorer
+│   │   ├── mock-data/
+│   │   │   ├── contract.ts
+│   │   │   ├── dashboard.ts
+│   │   │   ├── explorer.ts
+│   │   │   └── paper-registration.ts
+│   │   ├── queries/
+│   │   │   └── activity.ts        # computeActivityData(wallet) → { pendingActions, activity }
+│   │   ├── types/
+│   │   │   ├── contract.ts
+│   │   │   ├── dashboard.ts
+│   │   │   ├── explorer.ts
+│   │   │   ├── paper-registration.ts
+│   │   │   └── index.ts
+│   │   └── nav.ts                 # Author navigation link definitions
+│   ├── contracts/                 # Contracts DB domain (server-only)
+│   │   ├── index.ts
+│   │   ├── queries.ts             # listUserContracts, getContractById, getContributors
+│   │   └── actions.ts             # createContract, addContributor, signContributor, updateContractStatus
+│   ├── papers/                    # Papers DB domain (server-only)
+│   │   ├── index.ts
+│   │   ├── queries.ts             # listUserPapers, getPaperById, getPublicPapers, getPaperVersions
+│   │   └── actions.ts             # createPaper, updatePaper, createPaperVersion
+│   ├── users/                     # Users DB domain (server-only)
+│   │   ├── index.ts
+│   │   └── queries.ts             # getOrCreateUser, getUserByWallet
+│   ├── journal/                   # Journal feature (mock data)
+│   │   └── (15 component files + index.ts)
+│   └── reviewer/                  # Reviewer feature (mock data)
+│       ├── reviewer-dashboard/    # (13 component files + index.ts)
+│       └── review-workspace/      # (11 component files + index.ts)
 
-features/
-├── activity/
-│   └── queries.ts             # computeActivityData(wallet) → { pendingActions, activity }
-├── contracts/
-│   ├── index.ts
-│   ├── queries.ts             # listUserContracts, getContractById, getContributors
-│   └── actions.ts             # createContract, addContributor, signContributor, updateContractStatus
-├── papers/
-│   ├── index.ts
-│   ├── queries.ts             # listUserPapers, getPaperById, getPublicPapers, getPaperVersions
-│   └── actions.ts             # createPaper, updatePaper, createPaperVersion
-└── users/
-    ├── index.ts
-    └── queries.ts             # getOrCreateUser, getUserByWallet
-
-lib/
-├── api.ts                     # Typed fetch helpers for client → API routes
-├── auth.ts                    # JWT creation + verification, AUTH_COOKIE constant
-├── format.ts                  # Date/number formatting utilities
-├── hashing.ts                 # hashFile(), hashString(), canonicalJson() — Web Crypto API
-├── nav.ts                     # Navigation link definitions
-├── status-colors.ts           # Paper status → colour mapping
-├── status-map.ts              # DB status → display label mapping
-├── storage.ts                 # Cloudflare R2 client (AWS SDK S3-compatible)
-├── thirdweb.ts                # Thirdweb SDK client configuration
-├── validation.ts              # Zod schemas / input validation utilities
-├── db/
-│   ├── index.ts               # Drizzle client (SQLite dev / Neon prod)
-│   ├── schema.ts              # Full Drizzle schema: all tables + relations
-│   └── seed.ts                # Dev seed data
-├── hedera/
-│   ├── client.ts              # Hedera SDK client (AccountId + PrivateKey, testnet/mainnet)
-│   └── hcs.ts                 # submitHcsMessage(topicId, payload) → { txId, consensusTimestamp }
-├── lit/
-│   ├── client.ts              # LitNodeClient singleton with auto-connect
-│   ├── access-control.ts      # buildAuthorCondition(), buildAllowlistCondition(), buildNoAccessCondition()
-│   ├── encrypt.ts             # encryptFile() — encrypts before R2 upload, returns ciphertext + metadata
-│   └── decrypt.ts             # decryptFile() — NOT YET WIRED INTO ANY UI
-├── mappers/
-│   ├── dashboard.ts           # mapDbPaperToFrontend, computeStats
-│   ├── explorer.ts            # mapApiPaperToExplorer
-│   └── contract.ts            # mapDbContractToSigned
-└── mock-data/
-    ├── dashboard.ts
-    ├── contract.ts
-    ├── explorer.ts
-    ├── journal-dashboard.ts
-    ├── paper-registration.ts
-    ├── review-workspace.ts
-    └── reviewer-dashboard.ts
-
-hooks/
-├── useAuthFetch.ts            # fetch() wrapper that attaches JWT cookie; used for mutation-triggered refreshes only
-├── useCurrentUser.ts          # Alias for useUser() from UserContext
-├── useDashboard.ts            # Author dashboard: accepts initialData from server; pure UI state (tabs, filters)
-├── useContractBuilder.ts      # Contract builder: accepts initialPapers+initialContracts; signing flow via Thirdweb
-├── usePaperRegistration.ts    # Paper registration: accepts initialContracts; hashing → Lit → R2 → API → HCS
-├── useExplorer.ts             # Explorer: accepts initialPapers from server; filter/search/sort/detail state
-├── useJournalDashboard.ts     # Journal dashboard state (mock data)
-├── useReviewerDashboard.ts    # Reviewer dashboard state (mock data)
-├── useReviewWorkspace.ts      # Review workspace state (mock data)
-└── useOnboarding.ts           # Onboarding flow state (ORCID step is placeholder)
-
-types/
-├── api.ts                     # Shared API response types (ApiPaper, ApiContract, etc.)
-├── dashboard.ts
-├── contract.ts
-├── paper-registration.ts
-├── explorer.ts
-├── journal-dashboard.ts
-├── reviewer-dashboard.ts
-├── review-workspace.ts
-└── shared.ts
-
-components/
-├── author-dashboard/          # DashboardClient + ActivityFeed, PapersTable, PendingActionsList, QuickActions, StatusBadge
-├── contract/                  # ContractBuilderClient + ContractPreview, ContributorRow, ContributorTable, InviteModal,
-│                              #   ModificationWarning, PaperSelection, PercentageBar, SignatureProgress, SubmissionGate
-├── explorer/                  # ExplorerClient + DetailHeader, DetailTabs, ExplorerList, FilterBar, HashRow,
-│                              #   OverviewTab, PaperCard, PaperDetail, ProvenanceTab,
-│                              #   RetractionBanner, ReviewsTab, SearchBar, StatusBadge, VersionsTab
-├── journal-dashboard/         # 15 files (mock data)
-├── reviewer-dashboard/        # 13 files (mock data)
-├── review-workspace/          # 11 files (mock data)
-├── paper-registration/        # PaperRegistrationClient + ConfirmationScreen, ContractLinkingStep, HashDisplay,
-│                              #   PaperDetailsStep, ProvenanceStep, RegisterSubmitStep, StepIndicator, StepNavigation
-├── onboarding/                # CompleteStep, Header, OrcidStep, RoleSelectionStep (4 files)
-└── shared/                    # Badge, Footer, RoleShell, StatCard, StatusBadge, TabBar, TopBar, skeletons.tsx
+└── shared/                        # Cross-domain shared code
+    ├── components/                # Shared UI components
+    │   ├── Badge.tsx
+    │   ├── DashboardHeader.tsx    # role="author"|"journal"|"reviewer" → correct title/subtitle
+    │   ├── Footer.tsx
+    │   ├── RoleShell.tsx          # Role group shell layout wrapper
+    │   ├── StatCard.tsx
+    │   ├── StatusBadge.tsx
+    │   ├── TabBar.tsx
+    │   ├── TopBar.tsx
+    │   └── index.ts               # Barrel export
+    ├── context/
+    │   └── UserContext.tsx        # Wallet + user session state (useUser hook)
+    ├── hooks/
+    │   ├── useAuthFetch.ts        # fetch() with JWT cookie; mutation-triggered refreshes only
+    │   ├── useCurrentUser.ts      # Alias for useUser()
+    │   ├── useJournalDashboard.ts # Journal dashboard state (mock data)
+    │   ├── useReviewerDashboard.ts
+    │   └── useReviewWorkspace.ts
+    ├── lib/
+    │   ├── api.ts                 # Typed fetch helpers for client → API routes
+    │   ├── format.ts              # Date/number formatting utilities
+    │   ├── hashing.ts             # hashFile(), hashString(), canonicalJson() — Web Crypto API
+    │   ├── status-colors.ts       # Paper status → colour mapping
+    │   ├── status-map.ts          # DB status → display label mapping
+    │   ├── storage.ts             # Cloudflare R2 client (AWS SDK S3-compatible)
+    │   ├── thirdweb.ts            # Thirdweb SDK client configuration
+    │   ├── validation.ts          # Zod schemas / input validation utilities
+    │   ├── auth/
+    │   │   ├── actions.ts         # Server Actions: login, logout
+    │   │   └── auth.ts            # JWT creation + verification, AUTH_COOKIE constant
+    │   ├── db/
+    │   │   ├── index.ts           # Drizzle client (SQLite dev / Neon prod)
+    │   │   ├── schema.ts          # Full Drizzle schema: all tables + relations
+    │   │   └── seed.ts            # Dev seed data
+    │   ├── hedera/
+    │   │   ├── client.ts          # Hedera SDK client (AccountId + PrivateKey, testnet/mainnet)
+    │   │   └── hcs.ts             # submitHcsMessage(topicId, payload) → { txId, consensusTimestamp }
+    │   ├── lit/
+    │   │   ├── client.ts          # LitNodeClient singleton with auto-connect
+    │   │   ├── access-control.ts  # buildAuthorCondition(), buildAllowlistCondition(), buildNoAccessCondition()
+    │   │   ├── encrypt.ts         # encryptFile() — encrypts before R2 upload, returns ciphertext + metadata
+    │   │   └── decrypt.ts         # decryptFile() — NOT YET WIRED INTO ANY UI
+    │   └── mock-data/             # Shared mock data (journal + reviewer)
+    │       ├── journal-dashboard.ts
+    │       ├── review-workspace.ts
+    │       └── reviewer-dashboard.ts
+    └── types/
+        ├── api.ts                 # Shared API response types (ApiPaper, ApiContract, etc.)
+        ├── journal-dashboard.ts
+        ├── review-workspace.ts
+        ├── reviewer-dashboard.ts
+        └── shared.ts
 
 docs/
-└── architecture.md            # Full architecture document (v2)
+├── architecture.md
+├── data-fetching.md
+├── engineering-standards.md
+├── forms.md
+├── server-actions.md
+└── streaming.md
 ```
 
 ## Coding Conventions
 
 - **TypeScript strict mode** throughout.
 - **Server Components** by default. Use `'use client'` only when the component needs browser APIs or interactivity.
-- **Imports:** Use `@/` path alias for project root (e.g., `@/hooks/useDashboard`, `@/components/contract`). Always import from sub-file paths for server-only modules — never from feature root barrels (see Feature Import Rule above).
+- **Imports:** Use `@/` path alias for project root (e.g., `@/src/features/author/hooks/useContractBuilder`, `@/src/shared/components`). Always import from sub-file paths for server-only modules — never from feature root barrels (see Feature Import Rule above).
 - **File naming:** Component files use PascalCase (`ContributorRow.tsx`). Client boundary files use `.client.tsx` suffix (`dashboard.client.tsx`). Hooks use camelCase (`useContractBuilder.ts`). Types and mock data use kebab-case (`paper-registration.ts`). Domain directories use kebab-case (`paper-registration/`) or plain lowercase (`contract/`, `explorer/`).
 - **Dynamic route segments:** Use `[id]` not `[paperId]` / `[contractId]` — keep route params generic.
 - **No localStorage or sessionStorage.** State lives in React context (client) or httpOnly cookies (auth).
 - **Environment variables:** Access via `process.env` in server code only. Client-side env vars must be prefixed with `NEXT_PUBLIC_`.
 - **API routes that use Hedera SDK** must include `export const runtime = 'nodejs'` (Hedera SDK is Node.js only).
 - **Graceful degradation:** Hedera HCS, Lit encryption, and R2 uploads all fall back gracefully if env vars are missing — they log a warning and continue without the integration. This allows development without all credentials configured.
-- **Auth in server code:** Call `getSession()` from `@/lib/auth` to get the wallet address. Redirect to `'/'` if null. Never trust wallet address from the request body — always derive it from the verified JWT.
+- **Auth in server code:** Call `getSession()` from `@/src/shared/lib/auth/auth` to get the wallet address. Redirect to `'/login'` if null. Never trust wallet address from the request body — always derive it from the verified JWT.
 - **Validation:** Use `createInsertSchema(table)` from `drizzle-zod` to generate Zod schemas from Drizzle table definitions. Do not hand-write validation schemas that duplicate the DB schema.
 
 ## Environment Variables
@@ -372,8 +402,8 @@ UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
 ## Known Issues
 
 - `npm run build` fails without `NEXT_PUBLIC_THIRDWEB_CLIENT_ID` set. Use `npx tsc --noEmit` for type-checking during development.
-- `lib/lit/decrypt.ts` exists and is implemented but is not called anywhere — private paper content is unreadable for non-authors until this is wired into the explorer detail view.
-- Invite links in the contract builder (`handleInvite()` in `useContractBuilder.ts`) generate a hardcoded mock URL — real invite token generation and a `/invite/[token]` page are not yet built.
+- `src/shared/lib/lit/decrypt.ts` exists and is implemented but is not called anywhere — private paper content is unreadable for non-authors until this is wired into the explorer detail view.
+- Invite links in the contract builder (`handleInvite()` in `src/features/author/hooks/useContractBuilder.ts`) generate a hardcoded mock URL — real invite token generation and a `/invite/[token]` page are not yet built.
 - Paper submission to a journal (Step 4 of the paper registration wizard) is a UI no-op — no `POST /api/papers/[id]/submit` route exists yet.
 - The contract modification → signature invalidation cascade shows a UI warning but does not programmatically reset signatures when a contract is edited.
 - ORCID OAuth in the onboarding flow is a placeholder component with no real integration.
@@ -383,7 +413,7 @@ UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
 ## Remaining Work (Priority Order)
 
 ### Tier 1 — Blocks core author functionality
-1. Wire `lib/lit/decrypt.ts` into the explorer detail view (authors reading their own private papers)
+1. Wire `src/shared/lib/lit/decrypt.ts` into the explorer detail view (authors reading their own private papers)
 2. Cryptographically verify wallet signatures in `POST /api/contracts/[id]/sign`
 3. Implement contract modification → signature invalidation in `useContractBuilder.ts`
 4. Build real invite token generation + `/invite/[token]` page
@@ -448,7 +478,7 @@ Paper content is Lit-encrypted before upload to R2. Only users who meet on-chain
 | Published (free) | Anyone | No encryption (plaintext on R2) |
 | Retracted | No one | `false` (content sealed) |
 
-**Encryption timing:** Encrypt files client-side BEFORE upload. The on-chain hash must be of the **original (unencrypted)** content for verification to work. ✅ Already enforced in `usePaperRegistration.ts`.
+**Encryption timing:** Encrypt files client-side BEFORE upload. The on-chain hash must be of the **original (unencrypted)** content for verification to work. ✅ Already enforced in `src/features/author/hooks/usePaperRegistration.ts`.
 
 ### x402 Micropayment Integration
 
@@ -481,7 +511,7 @@ Key conventions:
 
 ### Client-Side Hashing
 
-All SHA-256 hashing uses `lib/hashing.ts` (Web Crypto API):
+All SHA-256 hashing uses `src/shared/lib/hashing.ts` (Web Crypto API):
 - `hashFile(file: File): Promise<string>`
 - `hashString(content: string): Promise<string>`
 - `canonicalJson(obj: object): string` — RFC 8785 deterministic serialization
@@ -493,7 +523,7 @@ All SHA-256 hashing uses `lib/hashing.ts` (Web Crypto API):
 - **Canonical JSON determinism:** Different JSON serialization = different hashes = broken signature verification.
 - **Hedera SDK is Node.js only.** Add `export const runtime = 'nodejs'` in any route handler using the Hedera SDK.
 - **Presigned URL expiry:** R2 presigned upload URLs expire in 15 minutes.
-- **Contract modification cascade:** Changing ANY field on a contract after ANY signature must invalidate ALL signatures. The UI shows a warning but does not yet enforce this programmatically.
+- **Contract modification cascade:** Changing ANY field on a contract after ANY signature must invalidate ALL signatures. The UI shows a warning but does not yet enforce this programmatically (see `src/features/author/hooks/useContractBuilder.ts`).
 - **Reviewer anonymity:** The `reviewerRatings` table deliberately has no `authorDid` or `raterId` column. Never add one.
 - **Confidential editor comments** are stored off-chain only and NEVER included in the review hash that goes on-chain.
 - **HCS message size limit:** ~6KB. Keep message payloads lean (hashes + metadata, not full content).
