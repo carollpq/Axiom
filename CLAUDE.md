@@ -15,11 +15,13 @@ The codebase is a **partially functional full-stack application**. The author se
 - Paper registration: client-side SHA-256 hashing → R2 presigned upload → Lit encryption → DB storage → Hedera HCS anchoring
 - Study type selection (original / negative result / replication / replication failed / meta-analysis) in Step 1 of registration wizard
 - Access price input in Step 4 of registration wizard (persisted to DB on registration)
-- Authorship contract creation + wallet signing → HCS anchoring per signature
+- Authorship contract creation + wallet signing (cryptographically verified via viem `verifyMessage`) → HCS anchoring per signature
+- Contract modification → signature invalidation: editing a field after signing triggers `PATCH /api/contracts/[id]/reset-signatures`
+- Invite token generation: `POST /api/contracts/[id]/invite` mints a real token (7-day expiry) + `/invite/[token]` page for claim/signing
 - Paper submission to journal: `POST /api/papers/[id]/submit` → creates `submissions` row → HCS anchor (graceful fallback) → status → `submitted`
 - Journal list fetched from DB and shown in Step 4 journal dropdown
 - Author dashboard + public explorer fetching real DB data
-- SQLite (dev) / PostgreSQL (prod) database via Drizzle ORM with full schema
+- Neon PostgreSQL (prod) / configurable via `DATABASE_URL` — schema uses `pgTable` throughout
 
 **What still uses mock data:**
 - Journal dashboard (`(journal)/`)
@@ -28,17 +30,16 @@ The codebase is a **partially functional full-stack application**. The author se
 
 **What is not yet implemented:**
 - Lit Protocol decryption (encrypt works; decrypt not wired into any UI)
-- ORCID OAuth (onboarding step is a placeholder)
-- Contract modification → signature invalidation cascade
+- ORCID OAuth (onboarding validates format client-side only; no real OAuth flow or DB write)
 - x402 micropayment gate
 - HTS soulbound reputation tokens
 - Smart contracts (PaperRevenueSplitter, PaymentReceiptRegistry)
 - `/verify` public hash verification page
 - Hedera mirror node lookups
 
-**Current stack:** Next.js 15 (App Router, Turbopack) · React 19 · Tailwind CSS v4 · Thirdweb v5 · TypeScript strict mode · SQLite/Drizzle ORM (dev) · Hedera SDK (HCS) · Lit Protocol SDK (encrypt only) · AWS SDK (Cloudflare R2)
+**Current stack:** Next.js 15 (App Router, Turbopack) · React 19 · Tailwind CSS v4 · Thirdweb v5 · TypeScript strict mode · Neon PostgreSQL/Drizzle ORM · Hedera SDK (HCS) · Lit Protocol SDK (encrypt only) · AWS SDK (Cloudflare R2)
 
-**Planned upgrades:** Switch SQLite → PostgreSQL (Neon) · x402 micropayments · HTS reputation tokens · Solidity smart contracts (Hardhat) · Upstash Redis · Vercel deployment
+**Planned upgrades:** x402 micropayments · HTS reputation tokens · Solidity smart contracts (Hardhat) · Upstash Redis · Vercel deployment
 
 ## Common Commands
 
@@ -406,9 +407,7 @@ UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
 
 - `npm run build` fails without `NEXT_PUBLIC_THIRDWEB_CLIENT_ID` set. Use `npx tsc --noEmit` for type-checking during development.
 - `src/shared/lib/lit/decrypt.ts` exists and is implemented but is not called anywhere — private paper content is unreadable for non-authors until this is wired into the explorer detail view.
-- Invite links in the contract builder (`handleInvite()` in `src/features/author/hooks/useContractBuilder.ts`) generate a hardcoded mock URL — real invite token generation and a `/invite/[token]` page are not yet built.
-- The contract modification → signature invalidation cascade shows a UI warning but does not programmatically reset signatures when a contract is edited.
-- ORCID OAuth in the onboarding flow is a placeholder component with no real integration.
+- ORCID onboarding only validates the ORCID format client-side (`validateOrcidFormat`). No OAuth token exchange, no public.orcid.org lookup, and the value is never persisted to the DB.
 
 ---
 
@@ -416,21 +415,17 @@ UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
 
 ### Tier 1 — Blocks core author functionality
 1. Wire `src/shared/lib/lit/decrypt.ts` into the explorer detail view (authors reading their own private papers)
-2. Cryptographically verify wallet signatures in `POST /api/contracts/[id]/sign`
-3. Implement contract modification → signature invalidation in `useContractBuilder.ts`
-4. Build real invite token generation + `/invite/[token]` page
 
 ### Tier 2 — Impacts usability
-5. Real ORCID OAuth flow
-6. Upload progress UI for R2 uploads
+2. Real ORCID OAuth flow (currently only validates format; no token exchange, no DB write)
+3. Upload progress UI for R2 uploads
 
 ### Tier 3 — Architecture / hackathon differentiators
-7. x402 micropayment gate for paper content
-8. HTS soulbound reputation token minting
-9. Smart contract deployment (PaperRevenueSplitter, PaymentReceiptRegistry)
-10. `/verify` public hash verification page
-11. Hedera mirror node lookups for receipt verification
-12. Switch DATABASE_URL from SQLite to Neon PostgreSQL for production
+4. x402 micropayment gate for paper content
+5. HTS soulbound reputation token minting
+6. Smart contract deployment (PaperRevenueSplitter, PaymentReceiptRegistry)
+7. `/verify` public hash verification page
+8. Hedera mirror node lookups for receipt verification
 
 ---
 
