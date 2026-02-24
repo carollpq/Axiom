@@ -16,7 +16,7 @@ interface ContributorTableProps {
   onRemove: (id: number) => void | Promise<void>;
   onSign: (id: number) => void | Promise<void>;
   onAdd: () => void | Promise<void>;
-  onInvite: () => void;
+  onInvite: (dbId?: string) => void | Promise<void>;
   onSetShowAddRow: (show: boolean) => void;
   onSetAddWallet: (wallet: string) => void;
 }
@@ -76,6 +76,7 @@ export function ContributorTable({
           onUpdate={onUpdate}
           onRemove={onRemove}
           onSign={onSign}
+          onInvite={onInvite}
         />
       ))}
 
@@ -111,7 +112,7 @@ export function ContributorTable({
             style={{ background: "none", border: "1px solid rgba(120,110,95,0.15)" }}
           >Cancel</button>
           <button
-            onClick={onInvite}
+            onClick={() => onInvite()}
             className="rounded py-2 px-3 text-[#7a9fc7] text-[11px] cursor-pointer font-serif"
             style={{ background: "none", border: "1px solid rgba(130,160,200,0.25)" }}
           >Invite Off-Platform</button>

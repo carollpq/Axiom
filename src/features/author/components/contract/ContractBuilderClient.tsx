@@ -17,7 +17,7 @@ interface ContractBuilderClientProps {
 export function ContractBuilderClient({ initialDrafts }: ContractBuilderClientProps) {
   const {
     selectedDraft, newTitle, contributors, showAddRow, addWallet,
-    showPreview, showInviteModal, inviteLink,
+    showPreview, showInviteModal, inviteLink, selectedContractId,
     totalPct, isValid, signedCount, allSigned, hasSigned, draft, drafts, currentUserWallet,
     setSelectedDraft, setNewTitle, setShowAddRow, setAddWallet, setShowPreview,
     updateContributor, removeContributor, addContributor, handleSign, handleInvite, closeInviteModal,
@@ -33,7 +33,7 @@ export function ContractBuilderClient({ initialDrafts }: ContractBuilderClientPr
             <span className="mx-2">/</span>
             <span className="text-[#8a8070]">Authorship Contract Builder</span>
           </div>
-          <h1 className="text-[28px] font-normal italic text-[#e8e0d4] m-0">Authorship Contract Builder</h1>
+          <h1 className="text-[28px] font-normal text-[#e8e0d4] m-0">Authorship Contract Builder</h1>
           <p className="text-[13px] text-[#6a6050] mt-1.5 italic m-0">Define contributions, collect signatures, record on Hedera</p>
         </div>
 
@@ -84,6 +84,8 @@ export function ContractBuilderClient({ initialDrafts }: ContractBuilderClientPr
           isValid={isValid}
           signedCount={signedCount}
           totalContributors={contributors.length}
+          paperId={draft?.dbId}
+          contractId={selectedContractId}
         />
       </div>
 

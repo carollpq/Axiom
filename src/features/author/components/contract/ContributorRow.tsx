@@ -12,9 +12,10 @@ interface ContributorRowProps {
   onUpdate: (id: number, field: string, value: string | number) => void;
   onRemove: (id: number) => void | Promise<void>;
   onSign: (id: number) => void | Promise<void>;
+  onInvite: (dbId?: string) => void | Promise<void>;
 }
 
-export function ContributorRow({ contributor: c, isValid, hasSigned, isCurrentUser, isLast, showAddRow, onUpdate, onRemove, onSign }: ContributorRowProps) {
+export function ContributorRow({ contributor: c, isValid, hasSigned, isCurrentUser, isLast, showAddRow, onUpdate, onRemove, onSign, onInvite }: ContributorRowProps) {
   return (
     <div
       className="grid items-center gap-2 py-3 px-3.5"
@@ -91,9 +92,10 @@ export function ContributorRow({ contributor: c, isValid, hasSigned, isCurrentUs
               <div className="flex items-center gap-1.5">
                 <span className="text-[11px] text-[#c4956a]">Pending</span>
                 <button
-                  className="rounded-sm py-0.5 px-2 text-[9px] text-[#6a6050] font-serif cursor-pointer"
-                  style={{ background: "none", border: "1px solid rgba(120,110,95,0.2)" }}
-                >Remind</button>
+                  onClick={() => onInvite(c.dbId)}
+                  className="rounded-sm py-0.5 px-2 text-[9px] text-[#5a7a9a] font-serif cursor-pointer"
+                  style={{ background: "none", border: "1px solid rgba(90,120,160,0.3)" }}
+                >Invite</button>
               </div>
             )}
           </div>

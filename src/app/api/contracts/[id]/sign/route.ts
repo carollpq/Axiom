@@ -4,6 +4,7 @@ import { getContractById } from "@/src/features/contracts/queries";
 import { signContributor, updateContractHedera } from "@/src/features/contracts/actions";
 import { isHederaConfigured } from "@/src/shared/lib/hedera/client";
 import { submitHcsMessage } from "@/src/shared/lib/hedera/hcs";
+import { verifyMessage } from "viem";
 
 export const runtime = "nodejs";
 
@@ -36,6 +37,21 @@ export async function POST(
       { error: "Session wallet does not match contributor wallet" },
       { status: 403 },
     );
+  }
+
+  if (contractHash) {
+    try {
+      const isValid = await verifyMessage({
+        address: contributorWallet as `0x${string}`,
+        message: contractHash,
+        signature: signature as `0x${string}`,
+      });
+      if (!isValid) {
+        return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+      }
+    } catch {
+      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+    }
   }
 
   const result = await signContributor({

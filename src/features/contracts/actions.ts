@@ -6,7 +6,7 @@ import {
   type ContractStatusDb,
   type ContributorStatusDb,
 } from "@/src/shared/lib/db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gt } from "drizzle-orm";
 
 export interface CreateContractInput {
   paperTitle: string;
@@ -88,6 +88,78 @@ export async function updateContractHedera(
       await db
         .update(authorshipContracts)
         .set({ hederaTxId, hederaTimestamp, updatedAt: new Date().toISOString() })
+        .where(eq(authorshipContracts.id, contractId))
+        .returning()
+    )[0] ?? null
+  );
+}
+
+export async function generateInviteToken(contractId: string, contributorId: string) {
+  const token = crypto.randomUUID();
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const updated = (
+    await db
+      .update(contractContributors)
+      .set({ inviteToken: token, inviteExpiresAt: expiresAt })
+      .where(
+        and(
+          eq(contractContributors.id, contributorId),
+          eq(contractContributors.contractId, contractId),
+        ),
+      )
+      .returning()
+  )[0];
+
+  if (!updated) return null;
+  return { token, expiresAt };
+}
+
+export async function getContributorByInviteToken(token: string) {
+  const now = new Date().toISOString();
+
+  const contributor = (
+    await db
+      .select()
+      .from(contractContributors)
+      .where(
+        and(
+          eq(contractContributors.inviteToken, token),
+          gt(contractContributors.inviteExpiresAt, now),
+        ),
+      )
+      .limit(1)
+  )[0];
+
+  if (!contributor) return null;
+
+  const contract = await db.query.authorshipContracts.findFirst({
+    where: eq(authorshipContracts.id, contributor.contractId),
+    with: { contributors: true },
+  });
+
+  if (!contract) return null;
+
+  return { contributor, contract };
+}
+
+export async function resetContractSignatures(contractId: string) {
+  const now = new Date().toISOString();
+
+  await db
+    .update(contractContributors)
+    .set({ status: "pending" as ContributorStatusDb, signature: null, signedAt: null })
+    .where(eq(contractContributors.contractId, contractId));
+
+  return (
+    (
+      await db
+        .update(authorshipContracts)
+        .set({
+          status: "pending_signatures" as ContractStatusDb,
+          contractHash: null,
+          updatedAt: now,
+        })
         .where(eq(authorshipContracts.id, contractId))
         .returning()
     )[0] ?? null

@@ -26,7 +26,9 @@ export function mapApiPapersToDrafts(
   return papers
     .filter((p) => p.status === "draft" || p.status === "contract_pending")
     .map((p, i) => {
-      const match = contracts.find((c) => c.paperTitle === p.title);
+      const match = contracts.find((c) =>
+        c.paperId ? c.paperId === p.id : c.paperTitle === p.title,
+      );
       return {
         id: i + 1,
         dbId: p.id,

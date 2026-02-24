@@ -89,19 +89,31 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
   }
 
   const updateContributor = (id: number, field: string, value: string | number) => {
+    const wasSignedBefore = hasSigned;
     setContributors((prev) =>
       prev.map((c) => {
-        if (c.id !== id) return c;
-        const updated = {
+        if (c.id !== id) {
+          // Reset ALL signed contributors when ANY field changes
+          if (wasSignedBefore && c.status === "signed") {
+            return { ...c, status: "pending" as const, txHash: null, signedAt: null };
+          }
+          return c;
+        }
+        return {
           ...c,
           [field]: field === "pct" ? (value === "" ? "" : Number(value)) : value,
+          ...(wasSignedBefore && c.status === "signed"
+            ? { status: "pending" as const, txHash: null, signedAt: null }
+            : {}),
         };
-        if (hasSigned && c.status === "signed" && c.id !== id) {
-          return { ...c, status: "pending" as const, txHash: null, signedAt: null };
-        }
-        return updated;
       }),
     );
+    // Reset signatures in DB if any were signed before this edit
+    if (wasSignedBefore && selectedContractId) {
+      fetchApi(`/api/contracts/${selectedContractId}/reset-signatures`, { method: "PATCH" }).catch(
+        (err) => console.error("Reset signatures failed:", err),
+      );
+    }
   };
 
   const removeContributor = async (id: number) => {
@@ -224,9 +236,26 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
     }
   };
 
-  const handleInvite = () => {
-    setInviteLink("https://axiom.pub/invite/c7f2a9e1-3b4d-4e5f");
-    setShowInviteModal(true);
+  const handleInvite = async (contributorDbId?: string) => {
+    if (!selectedContractId || !contributorDbId) {
+      // Fallback: open modal with empty link if no contract persisted yet
+      setInviteLink("");
+      setShowInviteModal(true);
+      return;
+    }
+    try {
+      const res = await fetchApi<{ inviteLink: string }>(
+        `/api/contracts/${selectedContractId}/invite`,
+        {
+          method: "POST",
+          body: JSON.stringify({ contributorId: contributorDbId }),
+        },
+      );
+      setInviteLink(res.inviteLink);
+      setShowInviteModal(true);
+    } catch (err) {
+      console.error("Invite generation failed:", err);
+    }
   };
 
   const closeInviteModal = () => setShowInviteModal(false);
@@ -241,6 +270,7 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
     showPreview,
     showInviteModal,
     inviteLink,
+    selectedContractId,
     // Derived
     totalPct,
     isValid,

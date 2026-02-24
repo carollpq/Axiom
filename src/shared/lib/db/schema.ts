@@ -153,6 +153,8 @@ export const contractContributors = pgTable("contract_contributors", {
     .default("pending"),
   isCreator: boolean("is_creator").notNull().default(false),
   signedAt: text("signed_at"),
+  inviteToken: text("invite_token").unique(),
+  inviteExpiresAt: text("invite_expires_at"),
   createdAt: text("created_at")
     .notNull()
     .default(sql`now()`),
