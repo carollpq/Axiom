@@ -8,16 +8,17 @@ import type {
   JournalStatCardData,
   PipelineCounts,
   SubmissionStage,
+  JournalSubmission,
+  PoolReviewer,
 } from "@/src/shared/types/journal-dashboard";
-import {
-  mockSubmissions,
-  pipelineStages,
-  stageColors,
-  mockReviewerPool,
-  journalStats,
-} from "@/src/shared/lib/mock-data/journal-dashboard";
+import { pipelineStages, stageColors } from "@/src/features/journal/constants";
 
-export function useJournalDashboard() {
+const JOURNAL_STATS = { avgReviewDays: 38, acceptRate: 62, journalScore: 4.3 };
+
+export function useJournalDashboard(
+  initialSubmissions: JournalSubmission[],
+  initialReviewerPool: PoolReviewer[],
+) {
   const [filter, setFilter] = useState<StageFilter>("All");
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<number | null>(null);
@@ -26,43 +27,43 @@ export function useJournalDashboard() {
   const [viewMode, setViewMode] = useState<ViewMode>("table");
 
   const filtered = useMemo(
-    () => filter === "All" ? mockSubmissions : mockSubmissions.filter(s => s.stage === filter),
-    [filter],
+    () => filter === "All" ? initialSubmissions : initialSubmissions.filter(s => s.stage === filter),
+    [filter, initialSubmissions],
   );
 
   const selected = useMemo(
-    () => mockSubmissions.find(s => s.id === selectedSubmission) ?? null,
-    [selectedSubmission],
+    () => initialSubmissions.find(s => s.id === selectedSubmission) ?? null,
+    [selectedSubmission, initialSubmissions],
   );
 
   const pipelineCounts = useMemo(() => {
     const counts = {} as PipelineCounts;
     for (const st of pipelineStages) {
-      counts[st] = mockSubmissions.filter(s => s.stage === st).length;
+      counts[st] = initialSubmissions.filter(s => s.stage === st).length;
     }
     return counts;
-  }, []);
+  }, [initialSubmissions]);
 
   const filteredReviewers = useMemo(
-    () => mockReviewerPool.filter(r =>
+    () => initialReviewerPool.filter(r =>
       r.name.toLowerCase().includes(searchReviewer.toLowerCase()) ||
       r.field.toLowerCase().includes(searchReviewer.toLowerCase()),
     ),
-    [searchReviewer],
+    [searchReviewer, initialReviewerPool],
   );
 
   const activeReviewCount = useMemo(
-    () => mockSubmissions.filter(s => s.stage === "Under Review" || s.stage === "Reviewers Assigned").length,
-    [],
+    () => initialSubmissions.filter(s => s.stage === "Under Review" || s.stage === "Reviewers Assigned").length,
+    [initialSubmissions],
   );
 
   const stats: JournalStatCardData[] = useMemo(() => [
-    { label: "Total Submissions", value: mockSubmissions.length },
-    { label: "Active Reviews", value: activeReviewCount },
-    { label: "Avg Review Time", value: journalStats.avgReviewDays + "d", sub: "Target: 45 days" },
-    { label: "Acceptance Rate", value: journalStats.acceptRate + "%" },
-    { label: "Journal Reputation", value: journalStats.journalScore.toFixed(1), sub: "/ 5.0" },
-  ], [activeReviewCount]);
+    { label: "Total Submissions", value: initialSubmissions.length },
+    { label: "Active Reviews",    value: activeReviewCount },
+    { label: "Avg Review Time",   value: JOURNAL_STATS.avgReviewDays + "d", sub: "Target: 45 days" },
+    { label: "Acceptance Rate",   value: JOURNAL_STATS.acceptRate + "%" },
+    { label: "Journal Reputation",value: JOURNAL_STATS.journalScore.toFixed(1), sub: "/ 5.0" },
+  ], [initialSubmissions.length, activeReviewCount]);
 
   function selectSubmission(id: number) {
     setSelectedSubmission(prev => prev === id ? null : id);
@@ -78,17 +79,12 @@ export function useJournalDashboard() {
   }
 
   return {
-    filter,
-    setFilter,
-    hoveredRow,
-    setHoveredRow,
+    filter, setFilter,
+    hoveredRow, setHoveredRow,
     selectedSubmission,
-    detailTab,
-    setDetailTab,
-    searchReviewer,
-    setSearchReviewer,
-    viewMode,
-    setViewMode,
+    detailTab, setDetailTab,
+    searchReviewer, setSearchReviewer,
+    viewMode, setViewMode,
     filtered,
     selected,
     pipelineCounts,
@@ -99,6 +95,6 @@ export function useJournalDashboard() {
     clearSelection,
     toggleFilter,
     stageColors,
-    submissions: mockSubmissions,
+    submissions: initialSubmissions,
   };
 }

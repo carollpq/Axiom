@@ -1,5 +1,4 @@
 import type { JournalSubmission } from "@/src/shared/types/journal-dashboard";
-import { provenanceHashes } from "@/src/shared/lib/mock-data/journal-dashboard";
 
 interface InfoTabProps {
   submission: JournalSubmission;
@@ -45,12 +44,9 @@ export function InfoTab({ submission }: InfoTabProps) {
         <div className="text-[10px] text-[#6a6050] uppercase tracking-[1px] mb-1.5">
           Provenance
         </div>
-        {Object.entries(provenanceHashes).map(([label, hash]) => (
-          <div key={label} className="flex justify-between py-1 text-[11px]">
-            <span className="text-[#8a8070]">{label}</span>
-            <span className="text-[#5a7a9a] font-mono text-[10px]">{hash}</span>
-          </div>
-        ))}
+        <div className="text-[11px] text-[#6a6050] italic">
+          Provenance hashes available after paper is anchored on-chain.
+        </div>
       </div>
     </div>
   );

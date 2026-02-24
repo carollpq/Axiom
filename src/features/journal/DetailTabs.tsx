@@ -1,5 +1,6 @@
 import type { DetailTab } from "@/src/shared/types/journal-dashboard";
-import { detailTabs } from "@/src/shared/lib/mock-data/journal-dashboard";
+
+const detailTabs = ["info", "criteria", "reviewers", "decision"] as const;
 
 interface DetailTabsProps {
   activeTab: DetailTab;

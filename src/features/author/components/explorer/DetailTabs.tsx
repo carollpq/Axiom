@@ -1,7 +1,8 @@
 "use client";
 
 import type { DetailTab } from "@/src/features/author/types/explorer";
-import { DETAIL_TABS } from "@/src/features/author/mock-data/explorer";
+
+const DETAIL_TABS = ["overview", "provenance", "versions", "reviews"] as const;
 
 interface DetailTabsProps {
   activeTab: DetailTab;

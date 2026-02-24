@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from "react";
 import type { DetailTab, SortOption, ExplorerPaper } from "@/src/features/author/types/explorer";
-import { FILTER_STATUSES } from "@/src/features/author/mock-data/explorer";
+
+const FILTER_STATUSES = ["All", "Published", "Under Review", "Retracted"];
 
 export function useExplorer(initialPapers: ExplorerPaper[]) {
   const [search, setSearch] = useState("");

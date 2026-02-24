@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { PapersTable } from "./PapersTable";
-import { paperStatuses } from "@/src/features/author/mock-data/dashboard";
+import { PAPER_STATUSES } from "@/src/features/author/types/dashboard";
 import type { PaperRow, PaperStatus } from "@/src/features/author/types/dashboard";
 
 interface Props {
@@ -29,7 +29,7 @@ export function PapersTableClient({ initialPapers }: Props) {
   return (
     <PapersTable
       papers={filteredPapers}
-      statuses={paperStatuses}
+      statuses={PAPER_STATUSES}
       statusFilter={statusFilter}
       onStatusFilter={setStatusFilter}
       searchQuery={searchQuery}

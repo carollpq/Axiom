@@ -1,9 +1,18 @@
 import { RoleShell } from "@/src/shared/components";
-import { journalNavItems, mockJournalUser } from "@/src/shared/lib/mock-data/journal-dashboard";
+import { journalNavItems } from "@/src/features/journal/nav";
+import type { UserProfile } from "@/src/shared/types/shared";
+
+const journalUser: UserProfile = {
+  name: "Journal of Computational Research",
+  initials: "JC",
+  wallet: "—",
+  role: "Editor",
+  notificationCount: 0,
+};
 
 export default function JournalLayout({ children }: { children: React.ReactNode }) {
   return (
-    <RoleShell navItems={journalNavItems} user={mockJournalUser}>
+    <RoleShell navItems={journalNavItems} user={journalUser}>
       {children}
     </RoleShell>
   );

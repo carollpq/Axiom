@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from "react";
 import type { Visibility, SignedContract } from "@/src/features/author/types/paper-registration";
-import { mockSignedContracts, mockRegisteredJournals } from "@/src/features/author/mock-data/paper-registration";
 import { useCurrentUser } from "@/src/shared/hooks/useCurrentUser";
 import { fetchApi } from "@/src/shared/lib/api";
 import { hashFile } from "@/src/shared/lib/hashing";
@@ -11,6 +10,7 @@ import { buildWalletListConditions } from "@/src/shared/lib/lit/access-control";
 import { encryptFileWithLit } from "@/src/shared/lib/lit/encrypt";
 import { mapDbContractToSigned } from "@/src/features/author/mappers/contract";
 import type { ApiContract, ApiPaperVersion } from "@/src/shared/types/api";
+import type { RegisteredJournal } from "@/src/features/author/types/paper-registration";
 
 const STEP_LABELS = ["Paper Details", "Provenance", "Contract", "Register / Submit"];
 
@@ -52,10 +52,9 @@ export function usePaperRegistration(initialContracts: ApiContract[]) {
   const [registering, setRegistering] = useState(false);
 
   // Contracts from server — filter to fully signed only
-  const signedContracts = initialContracts
+  const contracts: SignedContract[] = initialContracts
     .filter((c) => c.status === "fully_signed")
     .map(mapDbContractToSigned);
-  const contracts: SignedContract[] = signedContracts.length > 0 ? signedContracts : mockSignedContracts;
 
   // Hashing state
   const [isHashing, setIsHashing] = useState(false);
@@ -291,7 +290,7 @@ export function usePaperRegistration(initialContracts: ApiContract[]) {
     // Step 4
     registered, submitted,
     selectedJournal, setSelectedJournal,
-    journals: mockRegisteredJournals,
+    journals: [] as RegisteredJournal[],
     txHash, txTimestamp,
     handleRegister, handleSubmit,
     // Derived

@@ -38,3 +38,12 @@ export interface StatCardData {
 }
 
 export type { NavItemData, UserProfile } from "@/src/shared/types/shared";
+
+export const PAPER_STATUSES: PaperStatus[] = [
+  "Draft",
+  "Contract Pending",
+  "Submitted",
+  "Under Review",
+  "Revision Requested",
+  "Published",
+];

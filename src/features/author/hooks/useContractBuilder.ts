@@ -2,11 +2,6 @@
 
 import { useState, useEffect } from "react";
 import type { Contributor, ExistingDraft } from "@/src/features/author/types/contract";
-import {
-  mockKnownUsers,
-  mockContributors,
-  CURRENT_USER_WALLET,
-} from "@/src/features/author/mock-data/contract";
 import { useCurrentUser } from "@/src/shared/hooks/useCurrentUser";
 import { fetchApi } from "@/src/shared/lib/api";
 import { hashString, canonicalJson } from "@/src/shared/lib/hashing";
@@ -37,7 +32,7 @@ export function useContractBuilder(
 
   const [selectedDraft, setSelectedDraft] = useState<number | null>(null);
   const [newTitle, setNewTitle] = useState("");
-  const [contributors, setContributors] = useState<Contributor[]>(mockContributors);
+  const [contributors, setContributors] = useState<Contributor[]>([]);
   const [showAddRow, setShowAddRow] = useState(false);
   const [addWallet, setAddWallet] = useState("");
   const [showPreview, setShowPreview] = useState(false);
@@ -76,9 +71,7 @@ export function useContractBuilder(
     }
   }, [selectedDraft, dbContracts, drafts]);
 
-  const currentUserWallet = isConnected && user
-    ? user.walletAddress
-    : CURRENT_USER_WALLET;
+  const currentUserWallet = user?.walletAddress ?? "";
 
   const totalPct = contributors.reduce((s, c) => s + (Number(c.pct) || 0), 0);
   const isValid = totalPct === 100;
@@ -157,15 +150,8 @@ export function useContractBuilder(
   };
 
   const addContributor = async () => {
-    const found = mockKnownUsers.find(u => u.wallet === addWallet || u.did === addWallet);
     const newId = Math.max(...contributors.map(c => c.id), 0) + 1;
-    const newContributor: Contributor = found
-      ? {
-          id: newId, wallet: found.wallet, did: found.did, name: found.name,
-          orcid: found.orcid, pct: 0, role: "", status: "pending" as const,
-          txHash: null, signedAt: null, isCreator: false,
-        }
-      : addWallet.trim()
+    const newContributor: Contributor | null = addWallet.trim()
       ? {
           id: newId, wallet: addWallet, did: addWallet, name: "Unknown user",
           orcid: "\u2014", pct: 0, role: "", status: "pending" as const,
