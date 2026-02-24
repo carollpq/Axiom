@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useActiveAccount } from "thirdweb/react";
 import { fetchApi } from "@/src/shared/lib/api";
 import { doLogout } from "@/src/shared/lib/auth/actions";
@@ -19,6 +19,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const account = useActiveAccount();
   const [user, setUser] = useState<DbUser | null>(null);
   const [loading, setLoading] = useState(false);
+  // Track whether the wallet has resolved at least once so we don't
+  // mistake the initial undefined (Thirdweb rehydrating) for a disconnect.
+  const walletReady = useRef(false);
 
   // Restore session on mount (page refresh, SSR rehydration)
   useEffect(() => {
@@ -32,9 +35,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   // React to wallet connect/disconnect
   useEffect(() => {
     if (!account?.address) {
+      // Still waiting for Thirdweb to rehydrate the wallet — don't log out yet.
+      if (!walletReady.current) return;
       doLogout().then(() => setUser(null));
       return;
     }
+
+    walletReady.current = true;
 
     let cancelled = false;
     setLoading(true);
