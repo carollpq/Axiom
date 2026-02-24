@@ -2,7 +2,6 @@ import { ScrollText, PenLine, Clock, Sparkles } from "lucide-react";
 import type {
   PaperRow,
   PendingAction,
-  ActivityItem,
   StatCardData,
   UserProfile,
   PaperStatus,
@@ -20,14 +19,6 @@ export const mockPendingActions: PendingAction[] = [
   { type: "sign", text: 'Sign authorship contract for "Adversarial Robustness in Federated Learning Protocols"', time: "2 days ago", urgent: true },
   { type: "revision", text: 'Revision requested for "Graph Neural Networks for Protein Folding Prediction"', time: "5 days ago", urgent: true },
   { type: "review", text: 'Review received for "Causal Inference Methods for Observational Climate Data"', time: "1 week ago", urgent: false },
-];
-
-export const mockActivity: ActivityItem[] = [
-  { text: 'You registered Draft v1 of "Quantum Error Correction in Noisy Intermediate-Scale Devices"', time: "3 days ago" },
-  { text: 'R. Okafor signed the authorship contract for "Causal Inference Methods for Observational Climate Data"', time: "1 week ago" },
-  { text: 'Review submitted for "Causal Inference Methods..." by Journal of Climate Science', time: "1 week ago" },
-  { text: 'You submitted v2 of "On the Reproducibility of Transformer Architectures..." to NeurIPS Open Review', time: "3 weeks ago" },
-  { text: 'M. Chen signed the authorship contract for "On the Reproducibility of Transformer Architectures..."', time: "1 month ago" },
 ];
 
 export const mockStats: StatCardData[] = [

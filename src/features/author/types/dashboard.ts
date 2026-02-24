@@ -6,7 +6,7 @@ export type PaperStatus =
   | "Draft"
   | "Submitted";
 
-export type DashboardTab = "papers" | "pending" | "activity";
+export type DashboardTab = "papers" | "pending";
 
 export interface PaperRow {
   id: string;

@@ -7,14 +7,12 @@ import { DashboardHeader } from "@/src/shared/components";
 import { StatsSection } from "@/src/features/author/components/dashboard/stats.section";
 import { PapersSection } from "@/src/features/author/components/dashboard/papers.section";
 import { PendingSection } from "@/src/features/author/components/dashboard/pending.section";
-import { ActivitySection } from "@/src/features/author/components/dashboard/activity.section";
 import { TabsShellClient } from "@/src/features/author/components/dashboard/tabs.shell.client";
 import { QuickActions } from "@/src/features/author/components/dashboard";
 import {
   StatsSkeleton,
   PapersTableSkeleton,
   PendingSkeleton,
-  ActivitySkeleton,
 } from "@/src/features/author/components/skeletons";
 
 export default async function AuthorDashboard() {
@@ -53,15 +51,7 @@ export default async function AuthorDashboard() {
             />
           </Suspense>
         }
-        activitySection={
-          <Suspense fallback={<ActivitySkeleton />}>
-            <ActivitySection
-              wallet={wallet}
-              papersPromise={papersPromise}
-              contractsPromise={contractsPromise}
-            />
-          </Suspense>
-        }
+        
       />
     </div>
   );
