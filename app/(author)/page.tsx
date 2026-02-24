@@ -2,10 +2,10 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { getSession } from "@/lib/auth";
 import { listUserPapers } from "@/features/papers";
-import { computeActivityData } from "@/features/activity/queries";
-import { mapDbPaperToFrontend, computeStats } from "@/lib/mappers/dashboard";
-import { DashboardClient } from "@/components/author-dashboard";
-import { StatsSkeleton, PapersTableSkeleton } from "@/components/shared/skeletons";
+import { computeActivityData } from "@/features/author/queries/activity";
+import { mapDbPaperToFrontend, computeStats } from "@/features/author/mappers/dashboard";
+import { DashboardClient } from "@/features/author/components/dashboard";
+import { StatsSkeleton, PapersTableSkeleton } from "@/features/author/components/skeletons";
 import type { ApiPaper } from "@/types/api";
 
 async function DashboardContent() {

@@ -3,8 +3,8 @@ import { Suspense } from "react";
 import { getSession } from "@/lib/auth";
 import { listUserPapers } from "@/features/papers";
 import { listUserContracts } from "@/features/contracts";
-import { ContractBuilderClient } from "@/components/contract";
-import { ContractBuilderSkeleton } from "@/components/shared/skeletons";
+import { ContractBuilderClient } from "@/features/author/components/contract";
+import { ContractBuilderSkeleton } from "@/features/author/components/skeletons";
 import type { ApiPaper, ApiContract } from "@/types/api";
 
 async function ContractBuilderContent() {

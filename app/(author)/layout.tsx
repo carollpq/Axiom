@@ -1,8 +1,8 @@
 import { RoleShell } from "@/components/shared";
 import { getSession } from "@/lib/auth";
 import { getUserByWallet } from "@/features/users";
-import { mockUser } from "@/lib/mock-data/dashboard";
-import { navItems } from "@/lib/nav";
+import { mockUser } from "@/features/author/mock-data/dashboard";
+import { navItems } from "@/features/author/nav";
 import { truncateWallet, getInitials } from "@/lib/format";
 import type { UserProfile } from "@/types/shared";
 

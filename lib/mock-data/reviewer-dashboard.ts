@@ -6,7 +6,7 @@ import type {
   ReputationBreakdownItem,
   ReputationScores,
 } from "@/types/reviewer-dashboard";
-import type { NavItemData, UserProfile } from "@/types/dashboard";
+import type { NavItemData, UserProfile } from "@/features/author/types/dashboard";
 
 export const mockAssignedReviews: AssignedReview[] = [
   { id: 1, title: "Bayesian Optimization for Neural Architecture Search", journal: "JMLR", assigned: "2026-01-20", deadline: "2026-02-10", status: "Late", daysLeft: -2 },

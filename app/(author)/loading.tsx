@@ -1,4 +1,4 @@
-import { StatsSkeleton, PapersTableSkeleton } from "@/components/shared/skeletons";
+import { StatsSkeleton, PapersTableSkeleton } from "@/features/author/components/skeletons";
 
 export default function DashboardLoading() {
   return (

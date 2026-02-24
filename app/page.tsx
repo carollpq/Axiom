@@ -2,11 +2,11 @@
 
 import { ConnectButton } from "thirdweb/react";
 import { client } from "@/lib/thirdweb";
-import { useOnboarding } from "@/hooks/useOnboarding";
-import { Header } from "@/components/onboarding/Header";
-import { OrcidStep } from "@/components/onboarding/OrcidStep";
-import { RoleSelectionStep } from "@/components/onboarding/RoleSelectionStep";
-import { CompleteStep } from "@/components/onboarding/CompleteStep";
+import { useOnboarding } from "@/features/author/hooks/useOnboarding";
+import { Header } from "@/features/author/components/onboarding/Header";
+import { OrcidStep } from "@/features/author/components/onboarding/OrcidStep";
+import { RoleSelectionStep } from "@/features/author/components/onboarding/RoleSelectionStep";
+import { CompleteStep } from "@/features/author/components/onboarding/CompleteStep";
 
 export default function Home() {
   const {

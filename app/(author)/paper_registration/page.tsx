@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { getSession } from "@/lib/auth";
 import { listUserContracts } from "@/features/contracts";
-import { PaperRegistrationClient } from "@/components/paper-registration";
-import { PaperRegistrationSkeleton } from "@/components/shared/skeletons";
+import { PaperRegistrationClient } from "@/features/author/components/paper-registration";
+import { PaperRegistrationSkeleton } from "@/features/author/components/skeletons";
 import type { ApiContract } from "@/types/api";
 
 async function PaperRegistrationContent() {

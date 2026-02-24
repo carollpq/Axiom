@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { computeActivityData } from "@/features/activity/queries";
+import { computeActivityData } from "@/features/author/queries/activity";
 
 export const runtime = "nodejs";
 
