@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { getSession } from "@/src/shared/lib/auth";
+import { getSession } from "@/src/shared/lib/auth/auth";
 import { listUserPapers } from "@/src/features/papers/queries";
 import { listUserContracts } from "@/src/features/contracts/queries";
 import { DashboardHeader } from "@/src/features/author/components/dashboard/dashboard.header";

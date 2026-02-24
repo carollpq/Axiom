@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { RoleShell } from "@/src/shared/components";
-import { getSession } from "@/src/shared/lib/auth";
+import { getSession } from "@/src/shared/lib/auth/auth";
 import { getUserByWallet } from "@/src/features/users/queries";
 import { mockUser } from "@/src/features/author/mock-data/dashboard";
 import { navItems } from "@/src/features/author/nav";

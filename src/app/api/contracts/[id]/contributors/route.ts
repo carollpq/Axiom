@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/src/shared/lib/auth";
+import { getSession } from "@/src/shared/lib/auth/auth";
 import { addContributor, removeContributor } from "@/src/features/contracts/actions";
 
 export const runtime = "nodejs";

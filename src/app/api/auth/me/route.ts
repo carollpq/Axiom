@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/src/shared/lib/auth";
+import { getSession } from "@/src/shared/lib/auth/auth";
 import { getOrCreateUser } from "@/src/features/users/queries";
 
 export const runtime = "nodejs";

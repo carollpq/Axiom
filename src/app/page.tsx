@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/src/shared/lib/auth";
+import { getSession } from "@/src/shared/lib/auth/auth";
 import { getUserRoles } from "@/src/features/users/queries";
 
 export default async function RootPage() {

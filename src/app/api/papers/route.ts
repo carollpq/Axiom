@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/src/shared/lib/auth";
+import { getSession } from "@/src/shared/lib/auth/auth";
 import { listUserPapers } from "@/src/features/papers/queries";
 import { createPaper } from "@/src/features/papers/actions";
 

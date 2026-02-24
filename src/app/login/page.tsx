@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/src/shared/lib/auth";
+import { getSession } from "@/src/shared/lib/auth/auth";
 import { LoginClient } from "./login.client";
 
 export default async function LoginPage() {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/src/shared/lib/auth";
+import { getSession } from "@/src/shared/lib/auth/auth";
 import { createPaperVersion, updatePaperVersionHedera } from "@/src/features/papers/actions";
 import { isHederaConfigured } from "@/src/shared/lib/hedera/client";
 import { submitHcsMessage } from "@/src/shared/lib/hedera/hcs";

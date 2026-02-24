@@ -9,7 +9,7 @@ import {
   doLogin,
   doLogout,
   isLoggedIn,
-} from "@/src/shared/lib/auth";
+} from "@/src/shared/lib/auth/actions";
 import { useUser } from "@/src/shared/context/UserContext";
 
 export function LoginClient() {
