@@ -13,9 +13,13 @@ The codebase is a **partially functional full-stack application**. The author se
 **What's working end-to-end (author section):**
 - Thirdweb v5 wallet authentication → JWT in httpOnly cookie
 - Paper registration: client-side SHA-256 hashing → R2 presigned upload → Lit encryption → DB storage → Hedera HCS anchoring
+- Study type selection (original / negative result / replication / replication failed / meta-analysis) in Step 1 of registration wizard
+- Access price input in Step 4 of registration wizard (persisted to DB on registration)
 - Authorship contract creation + wallet signing → HCS anchoring per signature
+- Paper submission to journal: `POST /api/papers/[id]/submit` → creates `submissions` row → HCS anchor (graceful fallback) → status → `submitted`
+- Journal list fetched from DB and shown in Step 4 journal dropdown
 - Author dashboard + public explorer fetching real DB data
-- SQLite (dev) database via Drizzle ORM with full schema
+- SQLite (dev) / PostgreSQL (prod) database via Drizzle ORM with full schema
 
 **What still uses mock data:**
 - Journal dashboard (`(journal)/`)
@@ -24,7 +28,6 @@ The codebase is a **partially functional full-stack application**. The author se
 
 **What is not yet implemented:**
 - Lit Protocol decryption (encrypt works; decrypt not wired into any UI)
-- Paper submission to journal (Step 4 of wizard is a no-op)
 - ORCID OAuth (onboarding step is a placeholder)
 - Contract modification → signature invalidation cascade
 - x402 micropayment gate
@@ -404,7 +407,6 @@ UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
 - `npm run build` fails without `NEXT_PUBLIC_THIRDWEB_CLIENT_ID` set. Use `npx tsc --noEmit` for type-checking during development.
 - `src/shared/lib/lit/decrypt.ts` exists and is implemented but is not called anywhere — private paper content is unreadable for non-authors until this is wired into the explorer detail view.
 - Invite links in the contract builder (`handleInvite()` in `src/features/author/hooks/useContractBuilder.ts`) generate a hardcoded mock URL — real invite token generation and a `/invite/[token]` page are not yet built.
-- Paper submission to a journal (Step 4 of the paper registration wizard) is a UI no-op — no `POST /api/papers/[id]/submit` route exists yet.
 - The contract modification → signature invalidation cascade shows a UI warning but does not programmatically reset signatures when a contract is edited.
 - ORCID OAuth in the onboarding flow is a placeholder component with no real integration.
 
@@ -417,20 +419,18 @@ UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
 2. Cryptographically verify wallet signatures in `POST /api/contracts/[id]/sign`
 3. Implement contract modification → signature invalidation in `useContractBuilder.ts`
 4. Build real invite token generation + `/invite/[token]` page
-5. Implement `POST /api/papers/[id]/submit` and wire it to Step 4 of the registration wizard
 
 ### Tier 2 — Impacts usability
-6. Add study type selection (negative result / replication / meta-analysis) to paper registration Step 1
-7. Real ORCID OAuth flow
-8. Upload progress UI for R2 uploads
+5. Real ORCID OAuth flow
+6. Upload progress UI for R2 uploads
 
 ### Tier 3 — Architecture / hackathon differentiators
-10. x402 micropayment gate for paper content
-11. HTS soulbound reputation token minting
-12. Smart contract deployment (PaperRevenueSplitter, PaymentReceiptRegistry)
-13. `/verify` public hash verification page
-14. Hedera mirror node lookups for receipt verification
-15. Switch DATABASE_URL from SQLite to Neon PostgreSQL for production
+7. x402 micropayment gate for paper content
+8. HTS soulbound reputation token minting
+9. Smart contract deployment (PaperRevenueSplitter, PaymentReceiptRegistry)
+10. `/verify` public hash verification page
+11. Hedera mirror node lookups for receipt verification
+12. Switch DATABASE_URL from SQLite to Neon PostgreSQL for production
 
 ---
 
