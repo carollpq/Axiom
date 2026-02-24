@@ -1,8 +1,6 @@
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
 import { getSession } from "@/src/shared/lib/auth";
-import { db } from "@/src/shared/lib/db";
-import { users } from "@/src/shared/lib/db/schema";
+import { getUserRoles } from "@/src/features/users/queries";
 
 export default async function RootPage() {
   const wallet = await getSession();
@@ -11,17 +9,13 @@ export default async function RootPage() {
     redirect("/onboarding");
   }
 
-  const [user] = await db
-    .select({ roles: users.roles })
-    .from(users)
-    .where(eq(users.walletAddress, wallet))
-    .limit(1);
+  const roles = await getUserRoles(wallet);
 
-  if (!user || !user.roles || user.roles.length === 0) {
+  if (roles.length === 0) {
     redirect("/onboarding");
   }
 
-  const primaryRole = user.roles[0];
+  const primaryRole = roles[0];
 
   if (primaryRole === "reviewer") {
     redirect("/reviewer");
@@ -32,5 +26,5 @@ export default async function RootPage() {
   }
 
   // Default: researcher / author
-  redirect("/dashboard");
+  redirect("/author");
 }
