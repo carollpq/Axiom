@@ -20,7 +20,6 @@ The codebase is a **partially functional full-stack application**. The author se
 **What still uses mock data:**
 - Journal dashboard (`(journal)/`)
 - Reviewer dashboard + review workspace (`(reviewer)/`)
-- Activity feed and pending actions on author dashboard
 - Invite link generation in contract builder
 
 **What is not yet implemented:**
@@ -50,35 +49,71 @@ npm run format                 # Prettier formatting
 
 ## Architecture
 
-### 4-Layer Decomposition Pattern
+### Server-First Page Pattern
 
-Every page follows a consistent decomposition:
+Every author page follows this decomposition:
 
 ```
-types/{domain}.ts              # TypeScript interfaces for the domain
-lib/mock-data/{domain}.ts      # Hardcoded mock data (used as fallback or for journal/reviewer)
-hooks/use{Domain}.ts           # "use client" hook: all state, derived values, handlers
-components/{domain}/           # Small, focused components (barrel-exported via index.ts)
-app/(...)/page.tsx             # Thin orchestration: imports hook + components, ~40-120 lines
+app/(...)/page.tsx             # Async Server Component — getSession() + feature queries → initialData
+app/(...)/loading.tsx          # Skeleton shown during navigation (Suspense fallback)
+app/(...)/error.tsx            # 'use client' error boundary (one per route group)
+components/{domain}/{Name}.client.tsx   # 'use client' boundary — accepts initialData, calls hook
+hooks/use{Domain}.ts           # 'use client' hook — pure UI state, accepts initialData params
+components/{domain}/           # Presentational components (no data fetching)
+lib/mappers/{domain}.ts        # Pure mapping functions — safe to import from server or client
 ```
+
+**The split in one line:** server fetches, client interacts.
+
+```ts
+// page.tsx (server) — no 'use client', no hooks
+export default async function Page() {
+  const wallet = await getSession();
+  if (!wallet) redirect('/');
+  const raw = listUserPapers(wallet) as unknown as ApiPaper[];
+  return <DomainClient initialData={raw.map(mapDbX)} />;
+}
+
+// Domain.client.tsx (client boundary)
+'use client';
+export function DomainClient({ initialData }: Props) {
+  const state = useDomain(initialData);   // pure UI state, no fetching
+  return <DomainView {...state} />;
+}
+```
+
+**What stays client-side forever:** wallet signing (`account.signMessage`), file hashing (Web Crypto API), Lit encryption, R2 uploads, `useUser()` / `useActiveAccount()`.
+
+**What stays as API routes:** all mutations (`POST`, `PATCH`, `DELETE`). `GET` routes are kept for external access but no longer hit on initial page load.
 
 **Established domains:** `dashboard` (author-dashboard), `contract`, `paper-registration`, `explorer`, `journal-dashboard`, `reviewer-dashboard`, `review-workspace`, `onboarding`, `shared`
 
 #### Hook Pattern
 
-Each custom hook follows the same shape:
+Each custom hook accepts `initialData` from the server and owns only UI state:
 
 ```ts
 "use client";
-export function useDomain() {
-  // useState for all local state
-  // useMemo for derived/filtered values
-  // handler functions for user actions
+export function useDomain(initialData: DomainData[]) {
+  // useState for UI-only state (filters, selected item, modal open, etc.)
+  // useMemo for derived/filtered values from initialData
+  // handler functions for mutations (call API routes, then refresh local state)
   return { /* flat object of state + derived + handlers */ };
 }
 ```
 
-Hooks that need authenticated API calls use `useAuthFetch` (`hooks/useAuthFetch.ts`) which attaches the JWT cookie automatically.
+`useAuthFetch` (`hooks/useAuthFetch.ts`) is still used for **mutation-triggered refreshes** (e.g. re-fetching contracts after signing) but is no longer used for initial page data.
+
+#### Client Boundary File Naming
+
+Client boundary components (the `'use client'` files that wrap a page's interactive logic) use the `.client.tsx` suffix:
+
+```
+components/author-dashboard/DashboardClient.tsx    # current (acceptable)
+components/author-dashboard/dashboard.client.tsx   # preferred for new files
+```
+
+New client boundary files should use the `.client.tsx` suffix so the boundary is visible at the filesystem level without reading the file.
 
 #### Component Pattern
 
@@ -95,6 +130,32 @@ features/{domain}/
 ├── index.ts       # Re-exports
 ├── queries.ts     # Drizzle read queries
 └── actions.ts     # Drizzle write mutations (called from API routes or Server Actions)
+```
+
+#### Feature Import Rule — prevent server code leaking into client bundles
+
+Always import from the **sub-file directly**, never from the feature root index:
+
+```ts
+// ✅ correct — server-only file, safe in Server Components and API routes
+import { listUserPapers } from '@/features/papers/queries';
+import { createPaper }    from '@/features/papers/actions';
+
+// ❌ wrong — root index re-exports everything; bundler may pull server code into client
+import { listUserPapers } from '@/features/papers';
+```
+
+The same rule applies to `lib/mappers/`, `lib/db/`, `lib/hedera/`, `lib/lit/` — import from the specific file, not a parent barrel, when writing client code.
+
+#### Mapper Pattern
+
+Pure data-transformation functions that need to be called from **both** server pages and client hooks live in `lib/mappers/{domain}.ts`. They have no browser dependencies and no side effects, making them safe to import from anywhere.
+
+```
+lib/mappers/
+├── dashboard.ts   # mapDbPaperToFrontend, computeStats
+├── explorer.ts    # mapApiPaperToExplorer
+└── contract.ts    # mapDbContractToSigned
 ```
 
 ### Shared Layout
@@ -162,6 +223,8 @@ context/
 └── UserContext.tsx             # Wallet + user session state (useUser hook)
 
 features/
+├── activity/
+│   └── queries.ts             # computeActivityData(wallet) → { pendingActions, activity }
 ├── contracts/
 │   ├── index.ts
 │   ├── queries.ts             # listUserContracts, getContractById, getContributors
@@ -197,6 +260,10 @@ lib/
 │   ├── access-control.ts      # buildAuthorCondition(), buildAllowlistCondition(), buildNoAccessCondition()
 │   ├── encrypt.ts             # encryptFile() — encrypts before R2 upload, returns ciphertext + metadata
 │   └── decrypt.ts             # decryptFile() — NOT YET WIRED INTO ANY UI
+├── mappers/
+│   ├── dashboard.ts           # mapDbPaperToFrontend, computeStats
+│   ├── explorer.ts            # mapApiPaperToExplorer
+│   └── contract.ts            # mapDbContractToSigned
 └── mock-data/
     ├── dashboard.ts
     ├── contract.ts
@@ -207,12 +274,12 @@ lib/
     └── reviewer-dashboard.ts
 
 hooks/
-├── useAuthFetch.ts            # fetch() wrapper that attaches JWT cookie; used by all data hooks
+├── useAuthFetch.ts            # fetch() wrapper that attaches JWT cookie; used for mutation-triggered refreshes only
 ├── useCurrentUser.ts          # Alias for useUser() from UserContext
-├── useDashboard.ts            # Author dashboard: fetches /api/papers + /api/activity; falls back to mock
-├── useContractBuilder.ts      # Contract builder: full signing flow with Thirdweb account.signMessage()
-├── usePaperRegistration.ts    # Paper registration: hashing → Lit encrypt → R2 upload → API → HCS
-├── useExplorer.ts             # Explorer: fetches /api/papers/public; filter/search/sort/detail state
+├── useDashboard.ts            # Author dashboard: accepts initialData from server; pure UI state (tabs, filters)
+├── useContractBuilder.ts      # Contract builder: accepts initialPapers+initialContracts; signing flow via Thirdweb
+├── usePaperRegistration.ts    # Paper registration: accepts initialContracts; hashing → Lit → R2 → API → HCS
+├── useExplorer.ts             # Explorer: accepts initialPapers from server; filter/search/sort/detail state
 ├── useJournalDashboard.ts     # Journal dashboard state (mock data)
 ├── useReviewerDashboard.ts    # Reviewer dashboard state (mock data)
 ├── useReviewWorkspace.ts      # Review workspace state (mock data)
@@ -230,22 +297,19 @@ types/
 └── shared.ts
 
 components/
-├── author-dashboard/          # ActivityFeed, PapersTable, PendingActionsList, QuickActions, StatusBadge (6 files)
-├── contract/                  # ContractPreview, ContributorRow, ContributorTable, InviteModal,
-│                              #   ModificationWarning, PaperSelection, PercentageBar,
-│                              #   SignatureProgress, SubmissionGate (10 files)
-├── explorer/                  # DetailHeader, DetailTabs, ExplorerList, FilterBar, HashRow,
+├── author-dashboard/          # DashboardClient + ActivityFeed, PapersTable, PendingActionsList, QuickActions, StatusBadge
+├── contract/                  # ContractBuilderClient + ContractPreview, ContributorRow, ContributorTable, InviteModal,
+│                              #   ModificationWarning, PaperSelection, PercentageBar, SignatureProgress, SubmissionGate
+├── explorer/                  # ExplorerClient + DetailHeader, DetailTabs, ExplorerList, FilterBar, HashRow,
 │                              #   OverviewTab, PaperCard, PaperDetail, ProvenanceTab,
-│                              #   RetractionBanner, ReviewsTab, SearchBar, StatusBadge,
-│                              #   VersionsTab (15 files)
+│                              #   RetractionBanner, ReviewsTab, SearchBar, StatusBadge, VersionsTab
 ├── journal-dashboard/         # 15 files (mock data)
 ├── reviewer-dashboard/        # 13 files (mock data)
 ├── review-workspace/          # 11 files (mock data)
-├── paper-registration/        # ConfirmationScreen, ContractLinkingStep, HashDisplay,
-│                              #   PaperDetailsStep, ProvenanceStep, RegisterSubmitStep,
-│                              #   StepIndicator, StepNavigation (9 files)
+├── paper-registration/        # PaperRegistrationClient + ConfirmationScreen, ContractLinkingStep, HashDisplay,
+│                              #   PaperDetailsStep, ProvenanceStep, RegisterSubmitStep, StepIndicator, StepNavigation
 ├── onboarding/                # CompleteStep, Header, OrcidStep, RoleSelectionStep (4 files)
-└── shared/                    # Badge, Footer, RoleShell, StatCard, StatusBadge, TabBar, TopBar (8 files)
+└── shared/                    # Badge, Footer, RoleShell, StatCard, StatusBadge, TabBar, TopBar, skeletons.tsx
 
 docs/
 └── architecture.md            # Full architecture document (v2)
@@ -255,12 +319,15 @@ docs/
 
 - **TypeScript strict mode** throughout.
 - **Server Components** by default. Use `'use client'` only when the component needs browser APIs or interactivity.
-- **Imports:** Use `@/` path alias for project root (e.g., `@/hooks/useDashboard`, `@/components/contract`).
-- **File naming:** Component files use PascalCase (`ContributorRow.tsx`). Hooks use camelCase (`useContractBuilder.ts`). Types and mock data use kebab-case (`paper-registration.ts`). Domain directories use kebab-case (`paper-registration/`) or plain lowercase (`contract/`, `explorer/`).
+- **Imports:** Use `@/` path alias for project root (e.g., `@/hooks/useDashboard`, `@/components/contract`). Always import from sub-file paths for server-only modules — never from feature root barrels (see Feature Import Rule above).
+- **File naming:** Component files use PascalCase (`ContributorRow.tsx`). Client boundary files use `.client.tsx` suffix (`dashboard.client.tsx`). Hooks use camelCase (`useContractBuilder.ts`). Types and mock data use kebab-case (`paper-registration.ts`). Domain directories use kebab-case (`paper-registration/`) or plain lowercase (`contract/`, `explorer/`).
+- **Dynamic route segments:** Use `[id]` not `[paperId]` / `[contractId]` — keep route params generic.
 - **No localStorage or sessionStorage.** State lives in React context (client) or httpOnly cookies (auth).
 - **Environment variables:** Access via `process.env` in server code only. Client-side env vars must be prefixed with `NEXT_PUBLIC_`.
 - **API routes that use Hedera SDK** must include `export const runtime = 'nodejs'` (Hedera SDK is Node.js only).
 - **Graceful degradation:** Hedera HCS, Lit encryption, and R2 uploads all fall back gracefully if env vars are missing — they log a warning and continue without the integration. This allows development without all credentials configured.
+- **Auth in server code:** Call `getSession()` from `@/lib/auth` to get the wallet address. Redirect to `'/'` if null. Never trust wallet address from the request body — always derive it from the verified JWT.
+- **Validation:** Use `createInsertSchema(table)` from `drizzle-zod` to generate Zod schemas from Drizzle table definitions. Do not hand-write validation schemas that duplicate the DB schema.
 
 ## Environment Variables
 
@@ -308,7 +375,6 @@ UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
 - `lib/lit/decrypt.ts` exists and is implemented but is not called anywhere — private paper content is unreadable for non-authors until this is wired into the explorer detail view.
 - Invite links in the contract builder (`handleInvite()` in `useContractBuilder.ts`) generate a hardcoded mock URL — real invite token generation and a `/invite/[token]` page are not yet built.
 - Paper submission to a journal (Step 4 of the paper registration wizard) is a UI no-op — no `POST /api/papers/[id]/submit` route exists yet.
-- Activity feed and pending actions on the author dashboard fall back to hardcoded mock data rather than querying DB state.
 - The contract modification → signature invalidation cascade shows a UI warning but does not programmatically reset signatures when a contract is edited.
 - ORCID OAuth in the onboarding flow is a placeholder component with no real integration.
 
@@ -324,10 +390,9 @@ UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
 5. Implement `POST /api/papers/[id]/submit` and wire it to Step 4 of the registration wizard
 
 ### Tier 2 — Impacts usability
-6. Compute real activity feed and pending actions from DB state
-7. Add study type selection (negative result / replication / meta-analysis) to paper registration Step 1
-8. Real ORCID OAuth flow
-9. Upload progress UI for R2 uploads
+6. Add study type selection (negative result / replication / meta-analysis) to paper registration Step 1
+7. Real ORCID OAuth flow
+8. Upload progress UI for R2 uploads
 
 ### Tier 3 — Architecture / hackathon differentiators
 10. x402 micropayment gate for paper content
