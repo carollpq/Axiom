@@ -3,8 +3,8 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { useActiveAccount } from "thirdweb/react";
 import { fetchApi } from "@/lib/api";
-import { doLogout } from "@/app/actions/auth";
-import type { DbUser } from "@/types/api";
+import { doLogout } from "@/src/app/actions/auth";
+import type { DbUser } from "@/src/shared/types/api";
 
 interface UserContextValue {
   account: ReturnType<typeof useActiveAccount>;
