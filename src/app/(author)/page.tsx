@@ -1,21 +1,21 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { getSession } from "@/lib/auth";
-import { listUserPapers } from "@/features/papers/queries";
-import { listUserContracts } from "@/features/contracts/queries";
-import { DashboardHeader } from "@/features/author/components/dashboard/dashboard.header";
-import { StatsSection } from "@/features/author/components/dashboard/stats.section";
-import { PapersSection } from "@/features/author/components/dashboard/papers.section";
-import { PendingSection } from "@/features/author/components/dashboard/pending.section";
-import { ActivitySection } from "@/features/author/components/dashboard/activity.section";
-import { TabsShellClient } from "@/features/author/components/dashboard/tabs.shell.client";
-import { QuickActions } from "@/features/author/components/dashboard";
+import { getSession } from "@/src/shared/lib/auth";
+import { listUserPapers } from "@/src/features/papers/queries";
+import { listUserContracts } from "@/src/features/contracts/queries";
+import { DashboardHeader } from "@/src/features/author/components/dashboard/dashboard.header";
+import { StatsSection } from "@/src/features/author/components/dashboard/stats.section";
+import { PapersSection } from "@/src/features/author/components/dashboard/papers.section";
+import { PendingSection } from "@/src/features/author/components/dashboard/pending.section";
+import { ActivitySection } from "@/src/features/author/components/dashboard/activity.section";
+import { TabsShellClient } from "@/src/features/author/components/dashboard/tabs.shell.client";
+import { QuickActions } from "@/src/features/author/components/dashboard";
 import {
   StatsSkeleton,
   PapersTableSkeleton,
   PendingSkeleton,
   ActivitySkeleton,
-} from "@/features/author/components/skeletons";
+} from "@/src/features/author/components/skeletons";
 
 export default async function AuthorDashboard() {
   const wallet = await getSession();

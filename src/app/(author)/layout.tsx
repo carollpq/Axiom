@@ -1,9 +1,9 @@
-import { RoleShell } from "@/components/shared";
-import { getSession } from "@/lib/auth";
-import { getUserByWallet } from "@/features/users/queries";
-import { mockUser } from "@/features/author/mock-data/dashboard";
-import { navItems } from "@/features/author/nav";
-import { truncateWallet, getInitials } from "@/lib/format";
+import { RoleShell } from "@/src/shared/components";
+import { getSession } from "@/src/shared/lib/auth";
+import { getUserByWallet } from "@/src/features/users/queries";
+import { mockUser } from "@/src/features/author/mock-data/dashboard";
+import { navItems } from "@/src/features/author/nav";
+import { truncateWallet, getInitials } from "@/src/shared/lib/format";
 import type { UserProfile } from "@/src/shared/types/shared";
 
 export default async function AuthorLayout({

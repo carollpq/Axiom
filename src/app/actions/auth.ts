@@ -1,7 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { auth, AUTH_COOKIE, getSession } from "@/lib/auth";
+import { auth, AUTH_COOKIE, getSession } from "@/src/shared/lib/auth";
 import type { LoginPayload } from "thirdweb/auth";
 
 const SEVEN_DAYS = 60 * 60 * 24 * 7;

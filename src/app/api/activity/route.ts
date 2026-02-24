@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
-import { computeActivityData } from "@/features/author/queries/activity";
-import { listUserPapers } from "@/features/papers/queries";
-import { listUserContracts } from "@/features/contracts/queries";
+import { getSession } from "@/src/shared/lib/auth";
+import { computeActivityData } from "@/src/features/author/queries/activity";
+import { listUserPapers } from "@/src/features/papers/queries";
+import { listUserContracts } from "@/src/features/contracts/queries";
 
 export const runtime = "nodejs";
 

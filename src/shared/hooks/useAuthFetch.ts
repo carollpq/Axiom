@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useUser } from "@/context/UserContext";
+import { useUser } from "@/src/shared/context/UserContext";
 
 /**
  * Fetch data that requires an authenticated session (JWT cookie).

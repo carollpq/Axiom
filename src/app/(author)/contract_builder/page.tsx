@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { getSession } from "@/lib/auth";
-import { listUserPapers } from "@/features/papers";
-import { listUserContracts } from "@/features/contracts";
-import { ContractBuilderClient } from "@/features/author/components/contract";
-import { ContractBuilderSkeleton } from "@/features/author/components/skeletons";
+import { getSession } from "@/src/shared/lib/auth";
+import { listUserPapers } from "@/src/features/papers";
+import { listUserContracts } from "@/src/features/contracts";
+import { ContractBuilderClient } from "@/src/features/author/components/contract";
+import { ContractBuilderSkeleton } from "@/src/features/author/components/skeletons";
 import type { ApiPaper, ApiContract } from "@/src/shared/types/api";
 
 async function ContractBuilderContent() {
