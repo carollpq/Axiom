@@ -9,12 +9,14 @@ import { RegisterSubmitStep } from "./RegisterSubmitStep";
 import { ConfirmationScreen } from "./ConfirmationScreen";
 import { StepNavigation } from "./StepNavigation";
 import type { ApiContract } from "@/src/shared/types/api";
+import type { RegisteredJournal } from "@/src/features/author/types/paper-registration";
 
 interface PaperRegistrationClientProps {
   initialContracts: ApiContract[];
+  initialJournals: RegisteredJournal[];
 }
 
-export function PaperRegistrationClient({ initialContracts }: PaperRegistrationClientProps) {
+export function PaperRegistrationClient({ initialContracts, initialJournals }: PaperRegistrationClientProps) {
   const {
     step, steps, goBack, goNext,
     title, setTitle, abstract, setAbstract,
@@ -31,7 +33,9 @@ export function PaperRegistrationClient({ initialContracts }: PaperRegistrationC
     txHash, txTimestamp,
     handleRegister, handleSubmit,
     canProceedStep1,
-  } = usePaperRegistration(initialContracts);
+    studyType, setStudyType,
+    accessPrice, setAccessPrice,
+  } = usePaperRegistration(initialContracts, initialJournals);
 
   const canProceed = step === 0 ? canProceedStep1 : true;
   const showConfirmation = (registered || submitted) && step === 3;
@@ -45,7 +49,7 @@ export function PaperRegistrationClient({ initialContracts }: PaperRegistrationC
           <span className="mx-2">/</span>
           <span className="text-[#8a8070]">Paper Registration & Submission</span>
         </div>
-        <h1 className="text-[28px] font-normal italic text-[#e8e0d4] m-0">Paper Registration & Submission</h1>
+        <h1 className="text-[28px] font-normal text-[#e8e0d4] m-0">Paper Registration & Submission</h1>
         <p className="text-[13px] text-[#6a6050] mt-1.5 italic m-0">Timestamp your research on-chain and submit for peer review</p>
       </div>
 
@@ -59,9 +63,9 @@ export function PaperRegistrationClient({ initialContracts }: PaperRegistrationC
         <PaperDetailsStep
           title={title} abstract={abstract}
           fileName={fileName} fileHash={fileHash} isHashing={isHashing}
-          visibility={visibility} keywords={keywords} keywordInput={keywordInput}
+          visibility={visibility} studyType={studyType} keywords={keywords} keywordInput={keywordInput}
           onTitleChange={setTitle} onAbstractChange={setAbstract}
-          onVisibilityChange={setVisibility}
+          onVisibilityChange={setVisibility} onStudyTypeChange={setStudyType}
           onKeywordInputChange={setKeywordInput}
           onAddKeyword={addKeyword} onRemoveKeyword={removeKeyword}
           onFileUpload={handleFileUpload} onFileRemove={removeFile}
@@ -102,7 +106,9 @@ export function PaperRegistrationClient({ initialContracts }: PaperRegistrationC
           envHash={envHash} visibility={visibility}
           contract={contract} journals={journals}
           selectedJournal={selectedJournal}
+          accessPrice={accessPrice}
           onSelectJournal={setSelectedJournal}
+          onAccessPriceChange={setAccessPrice}
           onRegister={handleRegister} onSubmit={handleSubmit}
         />
       )}

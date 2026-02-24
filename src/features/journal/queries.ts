@@ -1,4 +1,11 @@
 import { db } from "@/src/shared/lib/db";
+import { journals } from "@/src/shared/lib/db/schema";
+
+export async function listJournals() {
+  return db
+    .select({ id: journals.id, name: journals.name, reputationScore: journals.reputationScore })
+    .from(journals);
+}
 
 export async function listJournalSubmissions() {
   return db.query.submissions.findMany({

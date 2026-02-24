@@ -1,5 +1,5 @@
 import { db } from "@/src/shared/lib/db";
-import { papers, paperVersions, users } from "@/src/shared/lib/db/schema";
+import { papers, paperVersions, submissions, users } from "@/src/shared/lib/db/schema";
 import { eq } from "drizzle-orm";
 import type { PaperStatusDb, StudyTypeDb, VisibilityDb } from "@/src/shared/lib/db/schema";
 
@@ -77,6 +77,39 @@ export async function updatePaper(id: string, input: UpdatePaperInput) {
       await db.update(papers).set(updates).where(eq(papers.id, id)).returning()
     )[0] ?? null
   );
+}
+
+export interface CreateSubmissionInput {
+  paperId: string;
+  journalId: string;
+  versionId: string;
+}
+
+export async function createSubmission(input: CreateSubmissionInput) {
+  return (
+    await db
+      .insert(submissions)
+      .values({
+        paperId: input.paperId,
+        journalId: input.journalId,
+        versionId: input.versionId,
+      })
+      .returning()
+  )[0] ?? null;
+}
+
+export async function updateSubmissionHedera(
+  submissionId: string,
+  hederaTxId: string,
+  hederaTimestamp: string,
+) {
+  return (
+    await db
+      .update(submissions)
+      .set({ hederaTxId, hederaTimestamp })
+      .where(eq(submissions.id, submissionId))
+      .returning()
+  )[0] ?? null;
 }
 
 export interface CreatePaperVersionInput {

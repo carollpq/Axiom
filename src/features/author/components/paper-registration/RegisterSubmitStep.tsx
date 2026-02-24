@@ -12,8 +12,10 @@ interface RegisterSubmitStepProps {
   visibility: string;
   contract: SignedContract | undefined;
   journals: RegisteredJournal[];
-  selectedJournal: number | null;
-  onSelectJournal: (id: number | null) => void;
+  selectedJournal: string | null;
+  accessPrice: string;
+  onSelectJournal: (id: string | null) => void;
+  onAccessPriceChange: (v: string) => void;
   onRegister: () => void;
   onSubmit: () => void;
 }
@@ -29,7 +31,7 @@ const labelStyle: React.CSSProperties = { fontSize: 10, color: "#8a8070", margin
 
 export function RegisterSubmitStep({
   title, fileHash, datasetHash, codeCommit, envHash, visibility,
-  contract, journals, selectedJournal, onSelectJournal, onRegister, onSubmit,
+  contract, journals, selectedJournal, accessPrice, onSelectJournal, onAccessPriceChange, onRegister, onSubmit,
 }: RegisterSubmitStepProps) {
   const canSubmit = !!(contract && selectedJournal);
 
@@ -72,6 +74,17 @@ export function RegisterSubmitStep({
           <div className="text-[11px] text-[#6a6050] mb-4 leading-relaxed">
             Timestamp your paper on Hedera. Records paper hash, author DID, ORCID, and provenance hashes. Always available.
           </div>
+          <div className="mb-4 text-left">
+            <label style={labelStyle}>Access price (USD) — set 0 for free/open access</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={accessPrice}
+              onChange={e => onAccessPriceChange(e.target.value)}
+              style={{ ...inputStyle, maxWidth: 120, textAlign: "right" }}
+            />
+          </div>
           <button
             onClick={onRegister}
             className="py-3 px-7 rounded text-[#d4c8a8] font-serif text-sm cursor-pointer"
@@ -100,7 +113,7 @@ export function RegisterSubmitStep({
               <label style={labelStyle}>Select Journal</label>
               <select
                 value={selectedJournal || ""}
-                onChange={e => onSelectJournal(e.target.value ? Number(e.target.value) : null)}
+                onChange={e => onSelectJournal(e.target.value || null)}
                 style={{ ...inputStyle, appearance: "none", cursor: "pointer", textAlign: "center", maxWidth: 280, margin: "0 auto" }}
               >
                 <option value="">-- Choose journal --</option>

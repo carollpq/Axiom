@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/src/shared/lib/auth/auth";
 import { getPaperById } from "@/src/features/papers/queries";
-import { updatePaper } from "@/src/features/papers/actions";
-import { getContractById } from "@/src/features/contracts/queries";
-import { db } from "@/src/shared/lib/db";
-import { submissions, journals } from "@/src/shared/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { createSubmission, updatePaper, updateSubmissionHedera } from "@/src/features/papers/actions";
 import { isHederaConfigured } from "@/src/shared/lib/hedera/client";
 import { submitHcsMessage } from "@/src/shared/lib/hedera/hcs";
+import { db } from "@/src/shared/lib/db";
+import { paperVersions, users } from "@/src/shared/lib/db/schema";
+import { eq, desc } from "drizzle-orm";
 
 export const runtime = "nodejs";
 
@@ -22,10 +21,10 @@ export async function POST(
 
   const { id } = await params;
   const body = await req.json();
-  const { journalId, contractId } = body as { journalId?: string; contractId?: string };
+  const { journalId } = body as { journalId?: string };
 
-  if (!journalId || !contractId) {
-    return NextResponse.json({ error: "journalId and contractId are required" }, { status: 400 });
+  if (!journalId) {
+    return NextResponse.json({ error: "journalId is required" }, { status: 400 });
   }
 
   const paper = await getPaperById(id);
@@ -33,68 +32,77 @@ export async function POST(
     return NextResponse.json({ error: "Paper not found" }, { status: 404 });
   }
 
-  if (paper.owner.walletAddress !== sessionWallet) {
+  // Verify ownership via session wallet (never trust wallet from body)
+  const owner = await db
+    .select()
+    .from(users)
+    .where(eq(users.walletAddress, sessionWallet.toLowerCase()))
+    .limit(1)
+    .then(rows => rows[0] ?? null);
+
+  if (!owner || paper.ownerId !== owner.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const allowedStatuses = ["draft", "registered", "contract_pending"];
-  if (!allowedStatuses.includes(paper.status)) {
+  if (paper.status !== "registered") {
     return NextResponse.json(
-      { error: `Paper cannot be submitted from status: ${paper.status}` },
-      { status: 422 },
+      { error: "Paper must be registered before submitting" },
+      { status: 400 },
     );
   }
 
-  const contract = await getContractById(contractId);
-  if (!contract || contract.status !== "fully_signed") {
-    return NextResponse.json(
-      { error: "Contract must be fully signed before submission" },
-      { status: 422 },
-    );
+  // Find the latest version
+  const latestVersion = await db
+    .select()
+    .from(paperVersions)
+    .where(eq(paperVersions.paperId, id))
+    .orderBy(desc(paperVersions.versionNumber))
+    .limit(1)
+    .then(rows => rows[0] ?? null);
+
+  if (!latestVersion) {
+    return NextResponse.json({ error: "No paper version found" }, { status: 400 });
   }
 
-  if (contract.paperId && contract.paperId !== id) {
-    return NextResponse.json(
-      { error: "Contract is not linked to this paper" },
-      { status: 422 },
-    );
+  const submission = await createSubmission({
+    paperId: id,
+    journalId,
+    versionId: latestVersion.id,
+  });
+
+  if (!submission) {
+    return NextResponse.json({ error: "Failed to create submission" }, { status: 500 });
   }
 
-  const journal = (await db.select().from(journals).where(eq(journals.id, journalId)).limit(1))[0];
-  if (!journal) {
-    return NextResponse.json({ error: "Journal not found" }, { status: 404 });
-  }
-
-  const latestVersionId = paper.versions.at(-1)?.id ?? null;
-
-  const submission = (
-    await db
-      .insert(submissions)
-      .values({
-        paperId: id,
-        journalId,
-        versionId: latestVersionId,
-        status: "submitted",
-      })
-      .returning()
-  )[0];
-
-  await updatePaper(id, { status: "submitted" });
+  let hederaTxId: string | undefined;
+  let hederaTimestamp: string | undefined;
 
   if (isHederaConfigured() && process.env.HCS_TOPIC_SUBMISSIONS) {
     try {
-      await submitHcsMessage(process.env.HCS_TOPIC_SUBMISSIONS, {
-        type: "submitted",
-        paperId: id,
-        journalId,
-        contractId,
-        submissionId: submission.id,
-        timestamp: new Date().toISOString(),
-      });
+      const { txId, consensusTimestamp } = await submitHcsMessage(
+        process.env.HCS_TOPIC_SUBMISSIONS,
+        {
+          type: "submitted",
+          paperId: id,
+          journalId,
+          versionId: latestVersion.id,
+          submissionId: submission.id,
+          submittedAt: new Date().toISOString(),
+        },
+      );
+      hederaTxId = txId;
+      hederaTimestamp = consensusTimestamp;
+      await updateSubmissionHedera(submission.id, txId, consensusTimestamp);
     } catch (err) {
-      console.error("[HCS] Submission anchoring failed:", err);
+      console.error("[HCS] Submission anchor failed:", err);
     }
   }
 
-  return NextResponse.json({ submissionId: submission.id });
+  await updatePaper(id, { status: "submitted" });
+
+  return NextResponse.json({
+    submissionId: submission.id,
+    hederaTxId,
+    hederaTimestamp,
+  });
 }

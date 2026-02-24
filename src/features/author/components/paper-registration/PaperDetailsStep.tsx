@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import type { Visibility } from "@/src/features/author/types/paper-registration";
+import type { StudyTypeDb } from "@/src/shared/lib/db/schema";
 
 interface PaperDetailsStepProps {
   title: string;
@@ -10,11 +11,13 @@ interface PaperDetailsStepProps {
   fileHash: string;
   isHashing: boolean;
   visibility: Visibility;
+  studyType: StudyTypeDb;
   keywords: string[];
   keywordInput: string;
   onTitleChange: (v: string) => void;
   onAbstractChange: (v: string) => void;
   onVisibilityChange: (v: Visibility) => void;
+  onStudyTypeChange: (v: StudyTypeDb) => void;
   onKeywordInputChange: (v: string) => void;
   onAddKeyword: () => void;
   onRemoveKeyword: (i: number) => void;
@@ -36,9 +39,17 @@ const visibilityOptions = [
   { key: "public" as const, label: "Public Draft", desc: "Content accessible via the platform." },
 ];
 
+const studyTypeOptions: { key: StudyTypeDb; label: string }[] = [
+  { key: "original", label: "Original Research" },
+  { key: "negative_result", label: "Negative Result" },
+  { key: "replication", label: "Replication" },
+  { key: "replication_failed", label: "Replication Failed" },
+  { key: "meta_analysis", label: "Meta-Analysis" },
+];
+
 export function PaperDetailsStep({
-  title, abstract, fileName, fileHash, isHashing, visibility, keywords, keywordInput,
-  onTitleChange, onAbstractChange, onVisibilityChange, onKeywordInputChange,
+  title, abstract, fileName, fileHash, isHashing, visibility, studyType, keywords, keywordInput,
+  onTitleChange, onAbstractChange, onVisibilityChange, onStudyTypeChange, onKeywordInputChange,
   onAddKeyword, onRemoveKeyword, onFileUpload, onFileRemove,
 }: PaperDetailsStepProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -150,6 +161,27 @@ export function PaperDetailsStep({
                 <span className="text-[13px]" style={{ color: visibility === v.key ? "#d4c8a8" : "#8a8070" }}>{v.label}</span>
               </div>
               <div className="text-[10px] text-[#5a5345] ml-6">{v.desc}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Study Type */}
+      <div className="mb-[18px]">
+        <label style={labelStyle}>Study Type</label>
+        <div className="flex flex-wrap gap-2">
+          {studyTypeOptions.map(opt => (
+            <button
+              key={opt.key}
+              onClick={() => onStudyTypeChange(opt.key)}
+              className="py-2 px-3 text-left cursor-pointer rounded-md transition-all duration-300 text-[12px]"
+              style={{
+                background: studyType === opt.key ? "rgba(180,160,120,0.08)" : "rgba(30,28,24,0.4)",
+                border: "1px solid " + (studyType === opt.key ? "rgba(180,160,120,0.3)" : "rgba(120,110,95,0.12)"),
+                color: studyType === opt.key ? "#d4c8a8" : "#6a6050",
+              }}
+            >
+              {opt.label}
             </button>
           ))}
         </div>

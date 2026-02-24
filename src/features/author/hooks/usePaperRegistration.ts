@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import type { Visibility, SignedContract } from "@/src/features/author/types/paper-registration";
+import type { Visibility, SignedContract, RegisteredJournal } from "@/src/features/author/types/paper-registration";
 import { useCurrentUser } from "@/src/shared/hooks/useCurrentUser";
 import { fetchApi } from "@/src/shared/lib/api";
 import { hashFile } from "@/src/shared/lib/hashing";
@@ -10,11 +10,11 @@ import { buildWalletListConditions } from "@/src/shared/lib/lit/access-control";
 import { encryptFileWithLit } from "@/src/shared/lib/lit/encrypt";
 import { mapDbContractToSigned } from "@/src/features/author/mappers/contract";
 import type { ApiContract, ApiPaperVersion } from "@/src/shared/types/api";
-import type { RegisteredJournal } from "@/src/features/author/types/paper-registration";
+import type { StudyTypeDb } from "@/src/shared/lib/db/schema";
 
 const STEP_LABELS = ["Paper Details", "Provenance", "Contract", "Register / Submit"];
 
-export function usePaperRegistration(initialContracts: ApiContract[]) {
+export function usePaperRegistration(initialContracts: ApiContract[], initialJournals: RegisteredJournal[]) {
   const { user, isConnected, account } = useCurrentUser();
 
   // Navigation
@@ -27,6 +27,7 @@ export function usePaperRegistration(initialContracts: ApiContract[]) {
   const [fileHash, setFileHash] = useState("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [visibility, setVisibility] = useState<Visibility>("private");
+  const [studyType, setStudyType] = useState<StudyTypeDb>("original");
   const [keywords, setKeywords] = useState(["machine learning", "reproducibility"]);
   const [keywordInput, setKeywordInput] = useState("");
 
@@ -46,7 +47,9 @@ export function usePaperRegistration(initialContracts: ApiContract[]) {
   // Step 4: Confirmation
   const [registered, setRegistered] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [selectedJournal, setSelectedJournal] = useState<number | null>(null);
+  const [selectedJournal, setSelectedJournal] = useState<string | null>(null);
+  const [paperId, setPaperId] = useState<string | null>(null);
+  const [accessPrice, setAccessPrice] = useState("1.00");
   const [txHash, setTxHash] = useState("");
   const [txTimestamp, setTxTimestamp] = useState("");
   const [registering, setRegistering] = useState(false);
@@ -201,11 +204,13 @@ export function usePaperRegistration(initialContracts: ApiContract[]) {
         body: JSON.stringify({
           title,
           abstract,
-          studyType: "original",
+          studyType,
           litDataToEncryptHash,
           litAccessConditionsJson,
         }),
       });
+
+      setPaperId(paper.id);
 
       const version = await fetchApi<ApiPaperVersion>(
         `/api/papers/${paper.id}/versions`,
@@ -224,7 +229,7 @@ export function usePaperRegistration(initialContracts: ApiContract[]) {
 
       await fetchApi(`/api/papers/${paper.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ status: "registered", visibility }),
+        body: JSON.stringify({ status: "registered", visibility, accessPrice }),
       });
 
       setTxHash(
@@ -245,16 +250,23 @@ export function usePaperRegistration(initialContracts: ApiContract[]) {
   };
 
   const handleSubmit = async () => {
-    if (!isConnected || !user) {
-      setTxHash("0x" + Math.random().toString(16).slice(2, 10) + "..." + Math.random().toString(16).slice(2, 6));
-      setTxTimestamp("2026-02-08 11:43:02 UTC");
-      setSubmitted(true);
-      return;
-    }
+    if (!paperId || !selectedJournal) return;
 
-    setTxHash("0x" + Math.random().toString(16).slice(2, 10) + "..." + Math.random().toString(16).slice(2, 6));
-    setTxTimestamp(new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC");
-    setSubmitted(true);
+    try {
+      const result = await fetchApi<{ submissionId?: string; hederaTxId?: string; hederaTimestamp?: string }>(
+        `/api/papers/${paperId}/submit`,
+        { method: "POST", body: JSON.stringify({ journalId: selectedJournal }) },
+      );
+      setTxHash(result.hederaTxId ?? "pending — configure HEDERA_OPERATOR_ID/KEY to anchor on-chain");
+      setTxTimestamp(
+        result.hederaTimestamp
+          ? result.hederaTimestamp.replace("T", " ").slice(0, 19) + " UTC"
+          : new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC",
+      );
+      setSubmitted(true);
+    } catch (err) {
+      console.error("Submission failed:", err);
+    }
   };
 
   const goBack = () => { if (step > 0) setStep(step - 1); };
@@ -272,6 +284,7 @@ export function usePaperRegistration(initialContracts: ApiContract[]) {
     abstract, setAbstract,
     fileName, fileHash,
     visibility, setVisibility,
+    studyType, setStudyType,
     keywords, keywordInput, setKeywordInput,
     handleFileUpload, removeFile, isHashing,
     addKeyword, removeKeyword,
@@ -290,7 +303,8 @@ export function usePaperRegistration(initialContracts: ApiContract[]) {
     // Step 4
     registered, submitted,
     selectedJournal, setSelectedJournal,
-    journals: [] as RegisteredJournal[],
+    journals: initialJournals,
+    accessPrice, setAccessPrice,
     txHash, txTimestamp,
     handleRegister, handleSubmit,
     // Derived

@@ -9,10 +9,9 @@ export interface SignedContract {
 }
 
 export interface RegisteredJournal {
-  id: number;
+  id: string;
   name: string;
-  field: string;
-  score: number;
+  reputationScore: string | null;
 }
 
 export interface ProvenanceItem {
