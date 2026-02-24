@@ -2,36 +2,19 @@
 
 import { useState, useCallback } from "react";
 import type { Visibility, SignedContract } from "@/types/paper-registration";
-import {
-  mockSignedContracts,
-  mockRegisteredJournals,
-} from "@/lib/mock-data/paper-registration";
+import { mockSignedContracts, mockRegisteredJournals } from "@/lib/mock-data/paper-registration";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { fetchApi } from "@/lib/api";
 import { hashFile } from "@/lib/hashing";
 import { isLitConfigured, getLitClient } from "@/lib/lit/client";
 import { buildWalletListConditions } from "@/lib/lit/access-control";
 import { encryptFileWithLit } from "@/lib/lit/encrypt";
+import { mapDbContractToSigned } from "@/lib/mappers/contract";
 import type { ApiContract, ApiPaperVersion } from "@/types/api";
-import { useAuthFetch } from "@/hooks/useAuthFetch";
 
 const STEP_LABELS = ["Paper Details", "Provenance", "Contract", "Register / Submit"];
 
-function mapDbContractToSigned(c: ApiContract, index: number): SignedContract {
-  const contribSummary = c.contributors
-    .map((cc) => `${cc.contributorName ?? "Unknown"} (${cc.contributionPct}%)`)
-    .join(", ");
-
-  return {
-    id: index + 1,
-    title: c.paperTitle,
-    hash: c.contractHash ?? "\u2014",
-    contributors: contribSummary || "\u2014",
-    date: c.createdAt.slice(0, 10),
-  };
-}
-
-export function usePaperRegistration() {
+export function usePaperRegistration(initialContracts: ApiContract[]) {
   const { user, isConnected, account } = useCurrentUser();
 
   // Navigation
@@ -68,21 +51,11 @@ export function usePaperRegistration() {
   const [txTimestamp, setTxTimestamp] = useState("");
   const [registering, setRegistering] = useState(false);
 
-  // DB-fetched contracts
-  const { data: rawContracts } = useAuthFetch<ApiContract[]>(
-    () => fetchApi<ApiContract[]>("/api/contracts"),
-  );
-
-  const dbContracts: SignedContract[] | null = rawContracts
-    ? (() => {
-        const signed = rawContracts
-          .filter((c) => c.status === "fully_signed")
-          .map(mapDbContractToSigned);
-        return signed.length > 0 ? signed : null;
-      })()
-    : null;
-
-  const contracts = dbContracts ?? mockSignedContracts;
+  // Contracts from server — filter to fully signed only
+  const signedContracts = initialContracts
+    .filter((c) => c.status === "fully_signed")
+    .map(mapDbContractToSigned);
+  const contracts: SignedContract[] = signedContracts.length > 0 ? signedContracts : mockSignedContracts;
 
   // Hashing state
   const [isHashing, setIsHashing] = useState(false);
@@ -150,8 +123,6 @@ export function usePaperRegistration() {
     setKeywords(prev => prev.filter((_, j) => j !== index));
   };
 
-  // Upload a file to R2 via presigned URL. Returns the object key, or null if
-  // storage is not configured or the upload fails (non-fatal).
   const uploadToR2 = async (
     file: File,
     hash: string,
@@ -179,7 +150,6 @@ export function usePaperRegistration() {
       if (!r2Response.ok) throw new Error(`R2 PUT failed: ${r2Response.status}`);
       return objectKey;
     } catch (err) {
-      // Non-fatal — gracefully skip if storage is not configured or unavailable
       console.warn("[R2] Upload skipped:", err);
       return null;
     }
@@ -187,7 +157,6 @@ export function usePaperRegistration() {
 
   const handleRegister = async () => {
     if (!isConnected || !user) {
-      // Fall back to mock behavior when not connected
       setTxHash("0x" + Math.random().toString(16).slice(2, 10) + "..." + Math.random().toString(16).slice(2, 6));
       setTxTimestamp("2026-02-08 11:42:15 UTC");
       setRegistered(true);
@@ -196,21 +165,15 @@ export function usePaperRegistration() {
 
     setRegistering(true);
     try {
-      // 1. Lit-encrypt the paper PDF before upload (non-fatal if not configured).
-      // The access condition is author-only (private draft).
-      // NOTE: fileHash is always the hash of the ORIGINAL plaintext — it is
-      // computed before encryption and is what gets anchored on HCS.
       let fileToUpload = uploadedFile;
       let litDataToEncryptHash: string | null = null;
       let litAccessConditionsJson: string | null = null;
 
       if (uploadedFile && fileHash && isLitConfigured() && account?.address) {
         try {
-          // Pre-connect so subnetPubKey is ready (no user action required)
           await getLitClient();
           const conditions = buildWalletListConditions([account.address]);
           const encrypted = await encryptFileWithLit(uploadedFile, conditions);
-          // Replace the plaintext file with the encrypted blob for R2 upload
           fileToUpload = new File(
             [encrypted.ciphertext],
             uploadedFile.name + ".enc",
@@ -219,15 +182,11 @@ export function usePaperRegistration() {
           litDataToEncryptHash = encrypted.dataToEncryptHash;
           litAccessConditionsJson = encrypted.accessConditionsJson;
         } catch (litErr) {
-          // Non-fatal — fall back to uploading plaintext
           console.warn("[Lit] Encryption skipped:", litErr);
           fileToUpload = uploadedFile;
         }
       }
 
-      // 2. Upload files to R2 (non-fatal if storage not configured).
-      // Dataset and env keys are derivable as `{folder}/{hash}` so we don't
-      // need to store them separately — just ensure the objects are in R2.
       const fileStorageKey = fileToUpload
         ? await uploadToR2(fileToUpload, fileHash, "papers")
         : null;
@@ -238,7 +197,6 @@ export function usePaperRegistration() {
         await uploadToR2(uploadedEnvFile, envHash, "environments");
       }
 
-      // 3. Create the paper (with Lit metadata if encryption succeeded)
       const paper = await fetchApi<{ id: string }>("/api/papers", {
         method: "POST",
         body: JSON.stringify({
@@ -250,7 +208,6 @@ export function usePaperRegistration() {
         }),
       });
 
-      // 4. Create the first version + anchor on HCS (server-side, non-fatal if unconfigured)
       const version = await fetchApi<ApiPaperVersion>(
         `/api/papers/${paper.id}/versions`,
         {
@@ -266,13 +223,11 @@ export function usePaperRegistration() {
         },
       );
 
-      // 5. Update paper status to registered + set visibility
       await fetchApi(`/api/papers/${paper.id}`, {
         method: "PATCH",
         body: JSON.stringify({ status: "registered", visibility }),
       });
 
-      // Use real HCS receipt if anchored, otherwise show a pending note
       setTxHash(
         version.hederaTxId ??
           "pending — configure HEDERA_OPERATOR_ID/KEY to anchor on-chain",
@@ -298,7 +253,6 @@ export function usePaperRegistration() {
       return;
     }
 
-    // Journal submission — future work, just update status for now
     setTxHash("0x" + Math.random().toString(16).slice(2, 10) + "..." + Math.random().toString(16).slice(2, 6));
     setTxTimestamp(new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC");
     setSubmitted(true);

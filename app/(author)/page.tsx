@@ -1,79 +1,55 @@
-"use client";
+import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import { getSession } from "@/lib/auth";
+import { listUserPapers } from "@/features/papers";
+import { computeActivityData } from "@/features/activity/queries";
+import { mapDbPaperToFrontend, computeStats } from "@/lib/mappers/dashboard";
+import { DashboardClient } from "@/components/author-dashboard";
+import { StatsSkeleton, PapersTableSkeleton } from "@/components/shared/skeletons";
+import type { ApiPaper } from "@/types/api";
 
-import { useDashboard } from "@/hooks/useDashboard";
-import {
-  StatCard,
-  QuickActions,
-  TabBar,
-  PapersTable,
-  PendingActionsList,
-  ActivityFeed,
-} from "@/components/author-dashboard";
+async function DashboardContent() {
+  const wallet = await getSession();
+  if (!wallet) redirect("/");
 
-export default function AuthorDashboard() {
-  const {
-    activeTab,
-    setActiveTab,
-    statusFilter,
-    setStatusFilter,
-    searchQuery,
-    setSearchQuery,
-    hoveredRow,
-    setHoveredRow,
-    filteredPapers,
-    tabs,
-    pendingActions,
-    activity,
-    stats,
-    paperStatuses,
-  } = useDashboard();
+  const raw = listUserPapers(wallet) as unknown as ApiPaper[];
+  const papers = raw.map(mapDbPaperToFrontend);
+  const stats = computeStats(papers);
+  const { pendingActions, activity } = computeActivityData(wallet);
 
   return (
+    <DashboardClient
+      initialPapers={papers}
+      initialStats={stats}
+      initialPendingActions={pendingActions}
+      initialActivity={activity}
+    />
+  );
+}
+
+function DashboardFallback() {
+  return (
     <div className="max-w-[1200px] mx-auto px-10 py-8">
-      {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-[28px] font-normal italic text-[#e8e0d4] m-0 tracking-[0.5px]">
-          Author Dashboard
-        </h1>
-        <p className="text-[13px] text-[#6a6050] mt-1.5 italic">
-          Manage your research, contracts, and submissions
-        </p>
-      </div>
-
-      {/* Stat Cards */}
-      <div className="flex gap-4 mb-8 flex-wrap">
-        {stats.map((s) => (
-          <StatCard key={s.label} {...s} />
-        ))}
-      </div>
-
-      {/* Quick Actions */}
-      <QuickActions />
-
-      {/* Tabs */}
-      <TabBar tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
-
-      {/* Tab Content */}
-      {activeTab === "papers" && (
-        <PapersTable
-          papers={filteredPapers}
-          statuses={paperStatuses}
-          statusFilter={statusFilter}
-          onStatusFilter={setStatusFilter}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          hoveredRow={hoveredRow}
-          onHoverRow={setHoveredRow}
+        <div
+          className="animate-pulse h-8 w-48 rounded mb-2"
+          style={{ background: "rgba(45,42,38,0.8)" }}
         />
-      )}
-
-      {activeTab === "pending" && (
-        <PendingActionsList actions={pendingActions} />
-      )}
-
-      {activeTab === "activity" && (
-        <ActivityFeed items={activity} />
-      )}
+        <div
+          className="animate-pulse h-3 w-64 rounded"
+          style={{ background: "rgba(45,42,38,0.8)" }}
+        />
+      </div>
+      <StatsSkeleton />
+      <PapersTableSkeleton />
     </div>
+  );
+}
+
+export default function AuthorDashboard() {
+  return (
+    <Suspense fallback={<DashboardFallback />}>
+      <DashboardContent />
+    </Suspense>
   );
 }

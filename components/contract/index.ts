@@ -7,3 +7,4 @@ export { ContractPreview } from "./ContractPreview";
 export { ModificationWarning } from "./ModificationWarning";
 export { SubmissionGate } from "./SubmissionGate";
 export { InviteModal } from "./InviteModal";
+export { ContractBuilderClient } from "./ContractBuilderClient";

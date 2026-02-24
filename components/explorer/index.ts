@@ -12,3 +12,4 @@ export { ProvenanceTab } from "./ProvenanceTab";
 export { VersionsTab } from "./VersionsTab";
 export { ReviewsTab } from "./ReviewsTab";
 export { PaperDetail } from "./PaperDetail";
+export { ExplorerClient } from "./ExplorerClient";

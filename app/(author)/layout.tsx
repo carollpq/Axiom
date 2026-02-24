@@ -1,28 +1,33 @@
-"use client";
-
 import { RoleShell } from "@/components/shared";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { getSession } from "@/lib/auth";
+import { getUserByWallet } from "@/features/users";
 import { mockUser } from "@/lib/mock-data/dashboard";
 import { navItems } from "@/lib/nav";
 import { truncateWallet, getInitials } from "@/lib/format";
 import type { UserProfile } from "@/types/shared";
 
-export default function AuthorLayout({
+export default async function AuthorLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = useCurrentUser();
+  const wallet = await getSession();
 
-  const profile: UserProfile = user
-    ? {
-        name: user.displayName ?? truncateWallet(user.walletAddress),
-        initials: getInitials(user.displayName ?? user.walletAddress),
-        wallet: truncateWallet(user.walletAddress),
-        role: "Author",
-        notificationCount: 0,
-      }
-    : mockUser;
+  let profile: UserProfile;
+  if (wallet) {
+    const user = getUserByWallet(wallet);
+    profile = user
+      ? {
+          name: user.displayName ?? truncateWallet(user.walletAddress),
+          initials: getInitials(user.displayName ?? user.walletAddress),
+          wallet: truncateWallet(user.walletAddress),
+          role: "Author",
+          notificationCount: 0,
+        }
+      : mockUser;
+  } else {
+    profile = mockUser;
+  }
 
   return (
     <RoleShell navItems={navItems} user={profile}>

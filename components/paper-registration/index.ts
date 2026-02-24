@@ -6,3 +6,4 @@ export { ContractLinkingStep } from "./ContractLinkingStep";
 export { RegisterSubmitStep } from "./RegisterSubmitStep";
 export { ConfirmationScreen } from "./ConfirmationScreen";
 export { StepNavigation } from "./StepNavigation";
+export { PaperRegistrationClient } from "./PaperRegistrationClient";

@@ -1,44 +1,20 @@
-"use client";
+import { Suspense } from "react";
+import { listPublicPapers } from "@/features/papers";
+import { mapApiPaperToExplorer } from "@/lib/mappers/explorer";
+import { ExplorerClient } from "@/components/explorer";
+import { ExplorerListSkeleton } from "@/components/shared/skeletons";
+import type { ApiPublicPaper } from "@/types/api";
 
-import { useExplorer } from "@/hooks/useExplorer";
-import { ExplorerList, PaperDetail } from "@/components/explorer";
+async function ExplorerContent() {
+  const raw = listPublicPapers() as unknown as ApiPublicPaper[];
+  const papers = raw.map(mapApiPaperToExplorer);
+  return <ExplorerClient initialPapers={papers} />;
+}
 
 export default function PaperExplorer() {
-  const {
-    search, setSearch,
-    statusFilter, setStatusFilter,
-    fieldFilter, setFieldFilter,
-    sortBy, setSortBy,
-    statuses, fields, filtered,
-    paper, detailTab, setDetailTab,
-    selectPaper, clearSelection,
-  } = useExplorer();
-
-  if (paper) {
-    return (
-      <PaperDetail
-        paper={paper}
-        detailTab={detailTab}
-        onTabChange={setDetailTab}
-        onBack={clearSelection}
-      />
-    );
-  }
-
   return (
-    <ExplorerList
-      search={search}
-      statusFilter={statusFilter}
-      fieldFilter={fieldFilter}
-      sortBy={sortBy}
-      statuses={statuses}
-      fields={fields}
-      filtered={filtered}
-      onSearchChange={setSearch}
-      onStatusFilter={setStatusFilter}
-      onFieldFilter={setFieldFilter}
-      onSort={setSortBy}
-      onSelectPaper={selectPaper}
-    />
+    <Suspense fallback={<ExplorerListSkeleton />}>
+      <ExplorerContent />
+    </Suspense>
   );
 }

@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import type { Contributor, ExistingDraft } from "@/types/contract";
 import {
-  mockDrafts,
   mockKnownUsers,
   mockContributors,
   CURRENT_USER_WALLET,
@@ -12,7 +11,6 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { fetchApi } from "@/lib/api";
 import { hashString, canonicalJson } from "@/lib/hashing";
 import type { ApiPaper, ApiContract, ApiContractContributor } from "@/types/api";
-import { useAuthFetch } from "@/hooks/useAuthFetch";
 
 function mapDbContributors(dbContribs: ApiContractContributor[]): Contributor[] {
   return dbContribs.map((c, i) => ({
@@ -31,7 +29,10 @@ function mapDbContributors(dbContribs: ApiContractContributor[]): Contributor[] 
   }));
 }
 
-export function useContractBuilder() {
+export function useContractBuilder(
+  initialPapers: ApiPaper[],
+  initialContracts: ApiContract[],
+) {
   const { user, isConnected, account } = useCurrentUser();
 
   const [selectedDraft, setSelectedDraft] = useState<number | null>(null);
@@ -43,27 +44,18 @@ export function useContractBuilder() {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteLink, setInviteLink] = useState("");
   const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
+  const [dbContracts, setDbContracts] = useState<ApiContract[]>(initialContracts);
 
-  const { data: rawPapers } = useAuthFetch<ApiPaper[]>(
-    () => fetchApi<ApiPaper[]>("/api/papers"),
-  );
+  const dbDrafts: ExistingDraft[] = initialPapers
+    .filter((p) => p.status === "draft" || p.status === "contract_pending")
+    .map((p, i) => ({
+      id: i + 1,
+      dbId: p.id,
+      title: p.title,
+      hash: p.versions?.[0]?.paperHash ?? "\u2014",
+    }));
 
-  const { data: dbContracts, refetch: refetchContracts } = useAuthFetch<ApiContract[]>(
-    () => fetchApi<ApiContract[]>("/api/contracts"),
-  );
-
-  const dbDrafts: ExistingDraft[] | null = rawPapers
-    ? rawPapers
-        .filter((p) => p.status === "draft" || p.status === "contract_pending")
-        .map((p, i) => ({
-          id: i + 1,
-          dbId: p.id,
-          title: p.title,
-          hash: p.versions?.[0]?.paperHash ?? "\u2014",
-        }))
-    : null;
-
-  const drafts = dbDrafts ?? mockDrafts;
+  const drafts = dbDrafts;
 
   // When a draft is selected, load its contract contributors if available
   useEffect(() => {
@@ -95,8 +87,13 @@ export function useContractBuilder() {
   const hasSigned = contributors.some(c => c.status === "signed");
   const draft = drafts.find(d => d.id === selectedDraft);
 
-  // Create contract + persist all current contributors to DB.
-  // Returns the new contract ID, or null on failure.
+  // Refresh contracts from API after any mutation
+  async function refreshContracts(): Promise<ApiContract[]> {
+    const fresh = await fetchApi<ApiContract[]>("/api/contracts");
+    setDbContracts(fresh);
+    return fresh;
+  }
+
   async function handleCreateContract(): Promise<string | null> {
     if (!user) return null;
     const titleForContract = draft?.title ?? newTitle.trim();
@@ -110,7 +107,6 @@ export function useContractBuilder() {
       }),
     });
 
-    // Persist all current contributors
     const addResults = await Promise.all(
       contributors.map((c) =>
         fetchApi<{ id: string }>(`/api/contracts/${newContract.id}/contributors`, {
@@ -126,7 +122,6 @@ export function useContractBuilder() {
       ),
     );
 
-    // Stamp each contributor with its DB UUID for future API calls
     setContributors((prev) =>
       prev.map((c, i) => ({ ...c, dbId: addResults[i]?.id })),
     );
@@ -147,7 +142,6 @@ export function useContractBuilder() {
 
   const removeContributor = async (id: number) => {
     const contributor = contributors.find((c) => c.id === id);
-    // If contract exists in DB and contributor has a DB record, remove via API
     if (selectedContractId && contributor?.dbId) {
       try {
         await fetchApi(
@@ -156,7 +150,7 @@ export function useContractBuilder() {
         );
       } catch (err) {
         console.error("Remove contributor failed:", err);
-        return; // Don't remove from local state if API failed
+        return;
       }
     }
     setContributors(prev => prev.filter(c => c.id !== id));
@@ -181,7 +175,6 @@ export function useContractBuilder() {
 
     if (!newContributor) return;
 
-    // If a contract already exists, persist to DB immediately
     if (selectedContractId) {
       try {
         const result = await fetchApi<{ id: string }>(
@@ -212,7 +205,6 @@ export function useContractBuilder() {
   const handleSign = async (id: number) => {
     const contributor = contributors.find((c) => c.id === id);
 
-    // Fallback: mock signing when wallet not connected
     if (!contributor || !account || !user) {
       setContributors((prev) =>
         prev.map((c) =>
@@ -234,7 +226,6 @@ export function useContractBuilder() {
     }
 
     try {
-      // Ensure contract exists in DB before signing
       const contractId = selectedContractId ?? await handleCreateContract();
       if (!contractId) {
         console.error("Could not create contract before signing");
@@ -262,8 +253,7 @@ export function useContractBuilder() {
         }),
       });
 
-      // Refresh + update local contributors from DB
-      const freshContracts = await refetchContracts();
+      const freshContracts = await refreshContracts();
       const matchingContract = freshContracts?.find((c) => c.id === contractId);
       if (matchingContract) {
         setContributors(mapDbContributors(matchingContract.contributors));

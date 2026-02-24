@@ -4,3 +4,4 @@ export { QuickActions } from "./QuickActions";
 export { PapersTable } from "./PapersTable";
 export { PendingActionsList } from "./PendingActionsList";
 export { ActivityFeed } from "./ActivityFeed";
+export { DashboardClient } from "./DashboardClient";
