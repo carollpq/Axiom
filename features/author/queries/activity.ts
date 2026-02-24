@@ -1,5 +1,5 @@
-import { listUserPapers } from "@/features/papers/queries";
-import { listUserContracts } from "@/features/contracts/queries";
+import type { listUserPapers } from "@/features/papers/queries";
+import type { listUserContracts } from "@/features/contracts/queries";
 import type { PendingAction, ActivityItem } from "@/features/author/types/dashboard";
 import { formatRelativeTime } from "@/lib/format";
 
@@ -36,15 +36,16 @@ type ContractRow = {
   }[];
 };
 
-export async function computeActivityData(
+export function computeActivityData(
   wallet: string,
   papers: Awaited<ReturnType<typeof listUserPapers>>,
-): Promise<{
+  contracts: Awaited<ReturnType<typeof listUserContracts>>,
+): {
   pendingActions: PendingAction[];
   activity: ActivityItem[];
-}> {
+} {
   const paperRows = papers as unknown as PaperRow[];
-  const contracts = (await listUserContracts(wallet)) as unknown as ContractRow[];
+  const contractRows = contracts as unknown as ContractRow[];
 
   // ── Pending Actions ────────────────────────────────────────────────────────
   const pendingActions: PendingAction[] = [];
@@ -74,7 +75,7 @@ export async function computeActivityData(
     }
   }
 
-  for (const c of contracts) {
+  for (const c of contractRows) {
     if (c.status === "pending_signatures") {
       const unsigned = c.contributors.find(
         (contrib) =>
@@ -126,7 +127,7 @@ export async function computeActivityData(
     }
   }
 
-  for (const c of contracts) {
+  for (const c of contractRows) {
     activityItems.push({
       text: `You created authorship contract for "${c.paperTitle}"`,
       time: formatRelativeTime(c.createdAt),

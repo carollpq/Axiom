@@ -62,6 +62,48 @@ export function PapersTableSkeleton() {
   );
 }
 
+/** 3 pending action rows */
+export function PendingSkeleton() {
+  return (
+    <div className="flex flex-col gap-2.5">
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="flex items-start gap-3.5 px-5 py-4 rounded-r-[6px]"
+          style={{ background: "rgba(45,42,38,0.5)", border: "1px solid rgba(120,110,95,0.15)", borderLeft: "3px solid rgba(120,110,95,0.3)" }}
+        >
+          <PulseBlock className="w-8 h-8 rounded-full shrink-0" />
+          <div className="flex-1">
+            <PulseBlock className="h-3 w-3/4 mb-2" />
+            <PulseBlock className="h-2.5 w-24" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** 5 activity timeline items */
+export function ActivitySkeleton() {
+  return (
+    <div className="relative pl-6">
+      <div className="absolute left-[7px] top-2 bottom-2 w-px bg-[rgba(120,110,95,0.1)]" />
+      {[0, 1, 2, 3, 4].map((i) => (
+        <div key={i} className="flex items-start gap-4 mb-5">
+          <div
+            className="w-3.5 h-3.5 rounded-full shrink-0 absolute -left-[-1px]"
+            style={{ background: "rgba(120,110,95,0.2)", border: "2px solid rgba(120,110,95,0.3)" }}
+          />
+          <div className="flex-1">
+            <PulseBlock className="h-3 w-3/4 mb-1.5" />
+            <PulseBlock className="h-2.5 w-20" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** Explorer: search bar + filter chips + 5 paper cards */
 export function ExplorerListSkeleton() {
   return (

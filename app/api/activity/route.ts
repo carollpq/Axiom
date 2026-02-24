@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { computeActivityData } from "@/features/author/queries/activity";
 import { listUserPapers } from "@/features/papers/queries";
+import { listUserContracts } from "@/features/contracts/queries";
 
 export const runtime = "nodejs";
 
@@ -14,7 +15,10 @@ export async function GET() {
     );
   }
 
-  const papers = await listUserPapers(wallet);
-  const { pendingActions, activity } = await computeActivityData(wallet, papers);
+  const [papers, contracts] = await Promise.all([
+    listUserPapers(wallet),
+    listUserContracts(wallet),
+  ]);
+  const { pendingActions, activity } = computeActivityData(wallet, papers, contracts);
   return NextResponse.json({ pendingActions, activity });
 }
