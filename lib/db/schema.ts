@@ -1,8 +1,5 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { pgTable, text, integer, boolean, jsonb } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
-
-// SQLite doesn't have native enums — we use text columns with TypeScript types.
-// These types mirror the planned PostgreSQL enums for future migration.
 
 export type PaperStatusDb =
   | "draft"
@@ -41,7 +38,7 @@ export type SubmissionStatusDb =
 
 // ── Tables ─────────────────────────────────────────────────────────────────
 
-export const users = sqliteTable("users", {
+export const users = pgTable("users", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
@@ -50,20 +47,17 @@ export const users = sqliteTable("users", {
   displayName: text("display_name"),
   institution: text("institution"),
   orcidId: text("orcid_id"),
-  roles: text("roles", { mode: "json" }).notNull().$type<string[]>().default([]),
-  researchFields: text("research_fields", { mode: "json" })
-    .notNull()
-    .$type<string[]>()
-    .default([]),
+  roles: jsonb("roles").notNull().$type<string[]>().default([]),
+  researchFields: jsonb("research_fields").notNull().$type<string[]>().default([]),
   createdAt: text("created_at")
     .notNull()
-    .default(sql`(datetime('now'))`),
+    .default(sql`now()`),
   updatedAt: text("updated_at")
     .notNull()
-    .default(sql`(datetime('now'))`),
+    .default(sql`now()`),
 });
 
-export const papers = sqliteTable("papers", {
+export const papers = pgTable("papers", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
@@ -89,13 +83,13 @@ export const papers = sqliteTable("papers", {
   hederaTimestamp: text("hedera_timestamp"),
   createdAt: text("created_at")
     .notNull()
-    .default(sql`(datetime('now'))`),
+    .default(sql`now()`),
   updatedAt: text("updated_at")
     .notNull()
-    .default(sql`(datetime('now'))`),
+    .default(sql`now()`),
 });
 
-export const paperVersions = sqliteTable("paper_versions", {
+export const paperVersions = pgTable("paper_versions", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
@@ -113,10 +107,10 @@ export const paperVersions = sqliteTable("paper_versions", {
   hederaTimestamp: text("hedera_timestamp"),
   createdAt: text("created_at")
     .notNull()
-    .default(sql`(datetime('now'))`),
+    .default(sql`now()`),
 });
 
-export const authorshipContracts = sqliteTable("authorship_contracts", {
+export const authorshipContracts = pgTable("authorship_contracts", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
@@ -135,13 +129,13 @@ export const authorshipContracts = sqliteTable("authorship_contracts", {
   hederaTimestamp: text("hedera_timestamp"),
   createdAt: text("created_at")
     .notNull()
-    .default(sql`(datetime('now'))`),
+    .default(sql`now()`),
   updatedAt: text("updated_at")
     .notNull()
-    .default(sql`(datetime('now'))`),
+    .default(sql`now()`),
 });
 
-export const contractContributors = sqliteTable("contract_contributors", {
+export const contractContributors = pgTable("contract_contributors", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
@@ -157,14 +151,14 @@ export const contractContributors = sqliteTable("contract_contributors", {
     .notNull()
     .$type<ContributorStatusDb>()
     .default("pending"),
-  isCreator: integer("is_creator", { mode: "boolean" }).notNull().default(false),
+  isCreator: boolean("is_creator").notNull().default(false),
   signedAt: text("signed_at"),
   createdAt: text("created_at")
     .notNull()
-    .default(sql`(datetime('now'))`),
+    .default(sql`now()`),
 });
 
-export const journals = sqliteTable("journals", {
+export const journals = pgTable("journals", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
@@ -173,13 +167,13 @@ export const journals = sqliteTable("journals", {
   reputationScore: text("reputation_score").default("4.3"),
   createdAt: text("created_at")
     .notNull()
-    .default(sql`(datetime('now'))`),
+    .default(sql`now()`),
   updatedAt: text("updated_at")
     .notNull()
-    .default(sql`(datetime('now'))`),
+    .default(sql`now()`),
 });
 
-export const submissions = sqliteTable("submissions", {
+export const submissions = pgTable("submissions", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
@@ -194,25 +188,19 @@ export const submissions = sqliteTable("submissions", {
     .notNull()
     .$type<SubmissionStatusDb>()
     .default("submitted"),
-  // Reviewer wallets assigned to this submission
-  reviewerWallets: text("reviewer_wallets", { mode: "json" })
-    .$type<string[]>()
-    .default([]),
+  reviewerWallets: jsonb("reviewer_wallets").$type<string[]>().default([]),
   reviewDeadline: text("review_deadline"),
-  // On-chain anchoring for criteria
   criteriaHash: text("criteria_hash"),
   criteriaTxId: text("criteria_tx_id"),
-  criteriaMet: integer("criteria_met", { mode: "boolean" }),
-  // Decision
+  criteriaMet: boolean("criteria_met"),
   decision: text("decision"),
   decisionJustification: text("decision_justification"),
   decisionTxId: text("decision_tx_id"),
-  // Hedera anchoring for submission event
   hederaTxId: text("hedera_tx_id"),
   hederaTimestamp: text("hedera_timestamp"),
   submittedAt: text("submitted_at")
     .notNull()
-    .default(sql`(datetime('now'))`),
+    .default(sql`now()`),
   decidedAt: text("decided_at"),
 });
 

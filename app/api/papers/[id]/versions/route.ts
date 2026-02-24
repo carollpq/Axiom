@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { createPaperVersion, updatePaperVersionHedera } from "@/features/papers";
+import { createPaperVersion, updatePaperVersionHedera } from "@/features/papers/actions";
 import { isHederaConfigured } from "@/lib/hedera/client";
 import { submitHcsMessage } from "@/lib/hedera/hcs";
 
@@ -26,7 +26,7 @@ export async function POST(
     );
   }
 
-  const version = createPaperVersion({
+  const version = await createPaperVersion({
     paperId: id,
     paperHash,
     datasetHash: body.datasetHash ?? null,
@@ -60,7 +60,7 @@ export async function POST(
         hcsPayload,
       );
 
-      const updated = updatePaperVersionHedera(version.id, txId, consensusTimestamp);
+      const updated = await updatePaperVersionHedera(version.id, txId, consensusTimestamp);
       return NextResponse.json(updated ?? version, { status: 201 });
     } catch (err) {
       // HCS failure is non-fatal — return the version without on-chain data

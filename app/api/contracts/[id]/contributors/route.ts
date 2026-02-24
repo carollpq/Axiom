@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { addContributor, removeContributor } from "@/features/contracts";
+import { addContributor, removeContributor } from "@/features/contracts/actions";
 
 export const runtime = "nodejs";
 
@@ -24,7 +24,7 @@ export async function POST(
     );
   }
 
-  const contributor = addContributor({ ...body, contractId });
+  const contributor = await addContributor({ ...body, contractId });
   return NextResponse.json(contributor, { status: 201 });
 }
 
@@ -46,7 +46,7 @@ export async function DELETE(
     );
   }
 
-  const deleted = removeContributor(contractId, contributorId);
+  const deleted = await removeContributor(contractId, contributorId);
   if (!deleted) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }

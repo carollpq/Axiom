@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { listUserContracts, createContract } from "@/features/contracts";
+import { listUserContracts } from "@/features/contracts/queries";
+import { createContract } from "@/features/contracts/actions";
 
 export const runtime = "nodejs";
 
@@ -10,7 +11,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const result = listUserContracts(wallet);
+  const result = await listUserContracts(wallet);
   return NextResponse.json(result);
 }
 
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const contract = createContract({ ...body, wallet });
+  const contract = await createContract({ ...body, wallet });
   if (!contract) {
     return NextResponse.json({ error: "user not found" }, { status: 404 });
   }

@@ -1,14 +1,15 @@
 import { db } from "@/lib/db";
 import { papers, users } from "@/lib/db/schema";
-import { eq, ne } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
-export function listUserPapers(walletAddress: string) {
-  const user = db
-    .select()
-    .from(users)
-    .where(eq(users.walletAddress, walletAddress.toLowerCase()))
-    .limit(1)
-    .get();
+export async function listUserPapers(walletAddress: string) {
+  const user = (
+    await db
+      .select()
+      .from(users)
+      .where(eq(users.walletAddress, walletAddress.toLowerCase()))
+      .limit(1)
+  )[0];
 
   if (!user) return [];
 
@@ -25,7 +26,7 @@ export function listUserPapers(walletAddress: string) {
 }
 
 /** All publicly visible papers — used by the public explorer, no auth required. */
-export function listPublicPapers() {
+export async function listPublicPapers() {
   return db.query.papers.findMany({
     where: eq(papers.visibility, "public"),
     with: {
@@ -39,9 +40,9 @@ export function listPublicPapers() {
   });
 }
 
-export function getPaperById(id: string) {
+export async function getPaperById(id: string) {
   return (
-    db.query.papers.findFirst({
+    (await db.query.papers.findFirst({
       where: eq(papers.id, id),
       with: {
         versions: true,
@@ -50,6 +51,6 @@ export function getPaperById(id: string) {
         },
         owner: true,
       },
-    }) ?? null
+    })) ?? null
   );
 }

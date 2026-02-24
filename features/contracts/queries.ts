@@ -2,13 +2,14 @@ import { db } from "@/lib/db";
 import { authorshipContracts, users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
-export function listUserContracts(walletAddress: string) {
-  const user = db
-    .select()
-    .from(users)
-    .where(eq(users.walletAddress, walletAddress.toLowerCase()))
-    .limit(1)
-    .get();
+export async function listUserContracts(walletAddress: string) {
+  const user = (
+    await db
+      .select()
+      .from(users)
+      .where(eq(users.walletAddress, walletAddress.toLowerCase()))
+      .limit(1)
+  )[0];
 
   if (!user) return [];
 
@@ -19,15 +20,15 @@ export function listUserContracts(walletAddress: string) {
   });
 }
 
-export function getContractById(id: string) {
+export async function getContractById(id: string) {
   return (
-    db.query.authorshipContracts.findFirst({
+    (await db.query.authorshipContracts.findFirst({
       where: eq(authorshipContracts.id, id),
       with: {
         contributors: true,
         creator: true,
         paper: true,
       },
-    }) ?? null
+    })) ?? null
   );
 }

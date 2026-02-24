@@ -14,25 +14,27 @@ export interface CreateContractInput {
   wallet: string;
 }
 
-export function createContract(input: CreateContractInput) {
-  const user = db
-    .select()
-    .from(users)
-    .where(eq(users.walletAddress, input.wallet.toLowerCase()))
-    .limit(1)
-    .get();
+export async function createContract(input: CreateContractInput) {
+  const user = (
+    await db
+      .select()
+      .from(users)
+      .where(eq(users.walletAddress, input.wallet.toLowerCase()))
+      .limit(1)
+  )[0];
 
   if (!user) return null;
 
-  return db
-    .insert(authorshipContracts)
-    .values({
-      paperTitle: input.paperTitle,
-      paperId: input.paperId ?? null,
-      creatorId: user.id,
-    })
-    .returning()
-    .get();
+  return (
+    await db
+      .insert(authorshipContracts)
+      .values({
+        paperTitle: input.paperTitle,
+        paperId: input.paperId ?? null,
+        creatorId: user.id,
+      })
+      .returning()
+  )[0];
 }
 
 export interface AddContributorInput {
@@ -44,48 +46,51 @@ export interface AddContributorInput {
   isCreator?: boolean;
 }
 
-export function addContributor(input: AddContributorInput) {
-  return db
-    .insert(contractContributors)
-    .values({
-      contractId: input.contractId,
-      contributorWallet: input.contributorWallet.toLowerCase(),
-      contributorName: input.contributorName ?? null,
-      contributionPct: input.contributionPct,
-      roleDescription: input.roleDescription ?? null,
-      isCreator: input.isCreator ?? false,
-    })
-    .returning()
-    .get();
+export async function addContributor(input: AddContributorInput) {
+  return (
+    await db
+      .insert(contractContributors)
+      .values({
+        contractId: input.contractId,
+        contributorWallet: input.contributorWallet.toLowerCase(),
+        contributorName: input.contributorName ?? null,
+        contributionPct: input.contributionPct,
+        roleDescription: input.roleDescription ?? null,
+        isCreator: input.isCreator ?? false,
+      })
+      .returning()
+  )[0];
 }
 
-export function removeContributor(contractId: string, contributorId: string) {
+export async function removeContributor(contractId: string, contributorId: string) {
   return (
-    db
-      .delete(contractContributors)
-      .where(
-        and(
-          eq(contractContributors.id, contributorId),
-          eq(contractContributors.contractId, contractId),
-        ),
-      )
-      .returning()
-      .get() ?? null
+    (
+      await db
+        .delete(contractContributors)
+        .where(
+          and(
+            eq(contractContributors.id, contributorId),
+            eq(contractContributors.contractId, contractId),
+          ),
+        )
+        .returning()
+    )[0] ?? null
   );
 }
 
-export function updateContractHedera(
+export async function updateContractHedera(
   contractId: string,
   hederaTxId: string,
   hederaTimestamp: string,
 ) {
   return (
-    db
-      .update(authorshipContracts)
-      .set({ hederaTxId, hederaTimestamp, updatedAt: new Date().toISOString() })
-      .where(eq(authorshipContracts.id, contractId))
-      .returning()
-      .get() ?? null
+    (
+      await db
+        .update(authorshipContracts)
+        .set({ hederaTxId, hederaTimestamp, updatedAt: new Date().toISOString() })
+        .where(eq(authorshipContracts.id, contractId))
+        .returning()
+    )[0] ?? null
   );
 }
 
@@ -96,40 +101,41 @@ export interface SignContributorInput {
   contractHash?: string;
 }
 
-export function signContributor(input: SignContributorInput) {
+export async function signContributor(input: SignContributorInput) {
   const now = new Date().toISOString();
 
-  const updated = db
-    .update(contractContributors)
-    .set({
-      signature: input.signature,
-      status: "signed" as ContributorStatusDb,
-      signedAt: now,
-    })
-    .where(
-      and(
-        eq(contractContributors.contractId, input.contractId),
-        eq(
-          contractContributors.contributorWallet,
-          input.contributorWallet.toLowerCase(),
+  const updated = (
+    await db
+      .update(contractContributors)
+      .set({
+        signature: input.signature,
+        status: "signed" as ContributorStatusDb,
+        signedAt: now,
+      })
+      .where(
+        and(
+          eq(contractContributors.contractId, input.contractId),
+          eq(
+            contractContributors.contributorWallet,
+            input.contributorWallet.toLowerCase(),
+          ),
         ),
-      ),
-    )
-    .returning()
-    .get();
+      )
+      .returning()
+  )[0];
 
   if (!updated) return null;
 
   // Check if all contributors are now signed — auto-advance contract status
-  const allContribs = db
+  const allContribs = await db
     .select()
     .from(contractContributors)
-    .where(eq(contractContributors.contractId, input.contractId))
-    .all();
+    .where(eq(contractContributors.contractId, input.contractId));
 
   const allSigned = allContribs.every((c) => c.status === "signed");
 
-  db.update(authorshipContracts)
+  await db
+    .update(authorshipContracts)
     .set({
       status: (allSigned
         ? "fully_signed"
@@ -137,8 +143,7 @@ export function signContributor(input: SignContributorInput) {
       contractHash: allSigned ? (input.contractHash ?? null) : undefined,
       updatedAt: now,
     })
-    .where(eq(authorshipContracts.id, input.contractId))
-    .run();
+    .where(eq(authorshipContracts.id, input.contractId));
 
   return updated;
 }

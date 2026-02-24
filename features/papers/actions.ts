@@ -3,18 +3,19 @@ import { papers, paperVersions, users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import type { PaperStatusDb, StudyTypeDb, VisibilityDb } from "@/lib/db/schema";
 
-export function updatePaperVersionHedera(
+export async function updatePaperVersionHedera(
   versionId: string,
   hederaTxId: string,
   hederaTimestamp: string,
 ) {
   return (
-    db
-      .update(paperVersions)
-      .set({ hederaTxId, hederaTimestamp })
-      .where(eq(paperVersions.id, versionId))
-      .returning()
-      .get() ?? null
+    (
+      await db
+        .update(paperVersions)
+        .set({ hederaTxId, hederaTimestamp })
+        .where(eq(paperVersions.id, versionId))
+        .returning()
+    )[0] ?? null
   );
 }
 
@@ -27,28 +28,30 @@ export interface CreatePaperInput {
   litAccessConditionsJson?: string | null;
 }
 
-export function createPaper(input: CreatePaperInput) {
-  const user = db
-    .select()
-    .from(users)
-    .where(eq(users.walletAddress, input.wallet.toLowerCase()))
-    .limit(1)
-    .get();
+export async function createPaper(input: CreatePaperInput) {
+  const user = (
+    await db
+      .select()
+      .from(users)
+      .where(eq(users.walletAddress, input.wallet.toLowerCase()))
+      .limit(1)
+  )[0];
 
   if (!user) return null;
 
-  return db
-    .insert(papers)
-    .values({
-      title: input.title,
-      abstract: input.abstract ?? null,
-      studyType: input.studyType ?? "original",
-      ownerId: user.id,
-      litDataToEncryptHash: input.litDataToEncryptHash ?? null,
-      litAccessConditionsJson: input.litAccessConditionsJson ?? null,
-    })
-    .returning()
-    .get();
+  return (
+    await db
+      .insert(papers)
+      .values({
+        title: input.title,
+        abstract: input.abstract ?? null,
+        studyType: input.studyType ?? "original",
+        ownerId: user.id,
+        litDataToEncryptHash: input.litDataToEncryptHash ?? null,
+        litAccessConditionsJson: input.litAccessConditionsJson ?? null,
+      })
+      .returning()
+  )[0];
 }
 
 export interface UpdatePaperInput {
@@ -59,7 +62,7 @@ export interface UpdatePaperInput {
   accessPrice?: string;
 }
 
-export function updatePaper(id: string, input: UpdatePaperInput) {
+export async function updatePaper(id: string, input: UpdatePaperInput) {
   const updates: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(input)) {
     if (value !== undefined) updates[key] = value;
@@ -70,8 +73,9 @@ export function updatePaper(id: string, input: UpdatePaperInput) {
   updates.updatedAt = new Date().toISOString();
 
   return (
-    db.update(papers).set(updates).where(eq(papers.id, id)).returning().get() ??
-    null
+    (
+      await db.update(papers).set(updates).where(eq(papers.id, id)).returning()
+    )[0] ?? null
   );
 }
 
@@ -85,36 +89,38 @@ export interface CreatePaperVersionInput {
   fileStorageKey?: string | null;
 }
 
-export function createPaperVersion(input: CreatePaperVersionInput) {
-  const paper = db
-    .select()
-    .from(papers)
-    .where(eq(papers.id, input.paperId))
-    .limit(1)
-    .get();
+export async function createPaperVersion(input: CreatePaperVersionInput) {
+  const paper = (
+    await db
+      .select()
+      .from(papers)
+      .where(eq(papers.id, input.paperId))
+      .limit(1)
+  )[0];
 
   if (!paper) return null;
 
-  const version = db
-    .insert(paperVersions)
-    .values({
-      paperId: input.paperId,
-      versionNumber: paper.currentVersion,
-      paperHash: input.paperHash,
-      datasetHash: input.datasetHash ?? null,
-      codeRepoUrl: input.codeRepoUrl ?? null,
-      codeCommitHash: input.codeCommitHash ?? null,
-      envSpecHash: input.envSpecHash ?? null,
-      fileStorageKey: input.fileStorageKey ?? null,
-    })
-    .returning()
-    .get();
+  const version = (
+    await db
+      .insert(paperVersions)
+      .values({
+        paperId: input.paperId,
+        versionNumber: paper.currentVersion,
+        paperHash: input.paperHash,
+        datasetHash: input.datasetHash ?? null,
+        codeRepoUrl: input.codeRepoUrl ?? null,
+        codeCommitHash: input.codeCommitHash ?? null,
+        envSpecHash: input.envSpecHash ?? null,
+        fileStorageKey: input.fileStorageKey ?? null,
+      })
+      .returning()
+  )[0];
 
   // Bump the paper's current version
-  db.update(papers)
+  await db
+    .update(papers)
     .set({ currentVersion: paper.currentVersion + 1, updatedAt: new Date().toISOString() })
-    .where(eq(papers.id, input.paperId))
-    .run();
+    .where(eq(papers.id, input.paperId));
 
   return version;
 }

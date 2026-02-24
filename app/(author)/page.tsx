@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { getSession } from "@/lib/auth";
-import { listUserPapers } from "@/features/papers";
+import { listUserPapers } from "@/features/papers/queries";
 import { computeActivityData } from "@/features/author/queries/activity";
 import { mapDbPaperToFrontend, computeStats } from "@/features/author/mappers/dashboard";
 import { DashboardClient } from "@/features/author/components/dashboard";
@@ -12,10 +12,10 @@ async function DashboardContent() {
   const wallet = await getSession();
   if (!wallet) redirect("/");
 
-  const raw = listUserPapers(wallet) as unknown as ApiPaper[];
-  const papers = raw.map(mapDbPaperToFrontend);
+  const rawPapers = await listUserPapers(wallet);
+  const papers = (rawPapers as unknown as ApiPaper[]).map(mapDbPaperToFrontend);
   const stats = computeStats(papers);
-  const { pendingActions, activity } = computeActivityData(wallet);
+  const { pendingActions, activity } = await computeActivityData(wallet, rawPapers);
 
   return (
     <DashboardClient

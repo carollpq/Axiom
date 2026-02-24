@@ -1,6 +1,6 @@
 import { RoleShell } from "@/components/shared";
 import { getSession } from "@/lib/auth";
-import { getUserByWallet } from "@/features/users";
+import { getUserByWallet } from "@/features/users/queries";
 import { mockUser } from "@/features/author/mock-data/dashboard";
 import { navItems } from "@/features/author/nav";
 import { truncateWallet, getInitials } from "@/lib/format";
@@ -15,7 +15,7 @@ export default async function AuthorLayout({
 
   let profile: UserProfile;
   if (wallet) {
-    const user = getUserByWallet(wallet);
+    const user = await getUserByWallet(wallet);
     profile = user
       ? {
           name: user.displayName ?? truncateWallet(user.walletAddress),

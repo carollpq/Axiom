@@ -1,5 +1,5 @@
-import { listUserPapers } from "@/features/papers";
-import { listUserContracts } from "@/features/contracts";
+import { listUserPapers } from "@/features/papers/queries";
+import { listUserContracts } from "@/features/contracts/queries";
 import type { PendingAction, ActivityItem } from "@/features/author/types/dashboard";
 import { formatRelativeTime } from "@/lib/format";
 
@@ -36,17 +36,20 @@ type ContractRow = {
   }[];
 };
 
-export function computeActivityData(wallet: string): {
+export async function computeActivityData(
+  wallet: string,
+  papers: Awaited<ReturnType<typeof listUserPapers>>,
+): Promise<{
   pendingActions: PendingAction[];
   activity: ActivityItem[];
-} {
-  const papers = listUserPapers(wallet) as unknown as PaperRow[];
-  const contracts = listUserContracts(wallet) as unknown as ContractRow[];
+}> {
+  const paperRows = papers as unknown as PaperRow[];
+  const contracts = (await listUserContracts(wallet)) as unknown as ContractRow[];
 
   // ── Pending Actions ────────────────────────────────────────────────────────
   const pendingActions: PendingAction[] = [];
 
-  for (const p of papers) {
+  for (const p of paperRows) {
     if (p.status === "contract_pending") {
       pendingActions.push({
         type: "sign",
@@ -98,7 +101,7 @@ export function computeActivityData(wallet: string): {
   type TimedActivity = ActivityItem & { _ts: string };
   const activityItems: TimedActivity[] = [];
 
-  for (const p of papers) {
+  for (const p of paperRows) {
     activityItems.push({
       text: `You created "${p.title}"`,
       time: formatRelativeTime(p.createdAt),

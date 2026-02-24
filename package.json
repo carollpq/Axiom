@@ -21,6 +21,7 @@
     "@lit-protocol/auth-helpers": "^8.2.1",
     "@lit-protocol/constants": "^9.0.1",
     "@lit-protocol/lit-node-client": "^7.4.0",
+    "@neondatabase/serverless": "^1.0.2",
     "@tailwindcss/postcss": "^4.1.18",
     "better-sqlite3": "^12.6.2",
     "drizzle-orm": "^0.45.1",

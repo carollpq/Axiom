@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { listUserPapers, createPaper } from "@/features/papers";
+import { listUserPapers } from "@/features/papers/queries";
+import { createPaper } from "@/features/papers/actions";
 
 export const runtime = "nodejs";
 
@@ -10,7 +11,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const result = listUserPapers(wallet);
+  const result = await listUserPapers(wallet);
   return NextResponse.json(result);
 }
 
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "title is required" }, { status: 400 });
   }
 
-  const paper = createPaper({ ...body, wallet });
+  const paper = await createPaper({ ...body, wallet });
   if (!paper) {
     return NextResponse.json({ error: "user not found" }, { status: 404 });
   }

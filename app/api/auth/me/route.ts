@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getOrCreateUser } from "@/features/users";
+import { getOrCreateUser } from "@/features/users/queries";
 
 export const runtime = "nodejs";
 
@@ -10,6 +10,6 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const user = getOrCreateUser(wallet);
+  const user = await getOrCreateUser(wallet);
   return NextResponse.json(user);
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getContractById } from "@/features/contracts";
+import { getContractById } from "@/features/contracts/queries";
 
 export const runtime = "nodejs";
 
@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const contract = getContractById(id);
+  const contract = await getContractById(id);
 
   if (!contract) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
