@@ -1,4 +1,5 @@
 // Shared type definitions used across multiple domains
+import type { LucideIcon } from "lucide-react";
 
 /** Unified badge color config — replaces StageColorConfig and StatusColor */
 export interface BadgeColorConfig {
@@ -18,7 +19,7 @@ export interface TabConfig<K extends string = string> {
 export interface StatCardProps {
   label: string;
   value: string | number;
-  icon?: string;
+  icon?: LucideIcon;
   sub?: string;
   alert?: boolean;
 }

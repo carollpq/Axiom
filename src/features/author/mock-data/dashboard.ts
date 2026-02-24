@@ -1,3 +1,4 @@
+import { ScrollText, PenLine, Clock, Sparkles } from "lucide-react";
 import type {
   PaperRow,
   PendingAction,
@@ -30,10 +31,10 @@ export const mockActivity: ActivityItem[] = [
 ];
 
 export const mockStats: StatCardData[] = [
-  { label: "Total Papers", value: "5", icon: "\uD83D\uDCDC" },
-  { label: "Pending Contracts", value: "1", icon: "\u270D" },
-  { label: "Under Review", value: "1", icon: "\u23F3" },
-  { label: "Published", value: "1", icon: "\u2726" },
+  { label: "Total Papers", value: "5", icon: ScrollText },
+  { label: "Pending Contracts", value: "1", icon: PenLine },
+  { label: "Under Review", value: "1", icon: Clock },
+  { label: "Published", value: "1", icon: Sparkles },
 ];
 
 export const mockUser: UserProfile = {

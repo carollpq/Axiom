@@ -2,7 +2,15 @@ import type { PaperRow, StatCardData } from "@/src/features/author/types/dashboa
 import type { ApiPaper } from "@/src/shared/types/api";
 import { toDisplayStatus } from "@/src/shared/lib/status-map";
 import { truncateHash } from "@/src/shared/lib/format";
+import { ScrollText, PenLine, Clock, Sparkles } from "lucide-react";
 
+/**
+ * Converts a raw ApiPaper (nested DB shape) into a flat PaperRow for the
+ * dashboard table. Derives three display-only fields:
+ *   - coauthors: flattens contracts → contributors → names into a comma-separated string
+ *   - hash: picks the first version's paperHash and truncates it for display
+ *   - status: converts the DB enum (e.g. "contract_pending") to a display label
+ */
 export function mapDbPaperToFrontend(p: ApiPaper): PaperRow {
   const coauthors =
     p.contracts
@@ -28,9 +36,9 @@ export function computeStats(papers: PaperRow[]): StatCardData[] {
   const published = papers.filter((p) => p.status === "Published").length;
 
   return [
-    { label: "Total Papers", value: String(total), icon: "\uD83D\uDCDC" },
-    { label: "Pending Contracts", value: String(pending), icon: "\u270D" },
-    { label: "Under Review", value: String(review), icon: "\u23F3" },
-    { label: "Published", value: String(published), icon: "\u2726" },
+    { label: "Total Papers", value: String(total), icon: ScrollText },
+    { label: "Pending Contracts", value: String(pending), icon: PenLine },
+    { label: "Under Review", value: String(review), icon: Clock },
+    { label: "Published", value: String(published), icon: Sparkles },
   ];
 }
