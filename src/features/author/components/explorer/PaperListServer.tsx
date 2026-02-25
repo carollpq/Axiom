@@ -1,0 +1,10 @@
+import { listPublicPapers } from "@/src/features/papers/queries";
+import { mapApiPaperToExplorer } from "@/src/features/author/mappers/explorer";
+import { ExplorerShell } from "./ExplorerShell.client";
+import type { ApiPaper } from "@/src/shared/types/api";
+
+export async function PaperListServer() {
+  const raw = (await listPublicPapers()) as unknown as ApiPaper[];
+  const papers = raw.map(mapApiPaperToExplorer);
+  return <ExplorerShell initialPapers={papers} />;
+}

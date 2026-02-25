@@ -134,6 +134,44 @@ export function ExplorerListSkeleton() {
   );
 }
 
+/** Paper detail: back-button stub + title + three content sections */
+export function PaperDetailSkeleton() {
+  return (
+    <div className="max-w-[900px] mx-auto py-8 px-10">
+      <PulseBlock className="h-3 w-28 mb-5" />
+      <PulseBlock className="h-6 w-3/4 mb-2" />
+      <PulseBlock className="h-3 w-48 mb-6" />
+      {/* Authors section */}
+      <div
+        className="rounded-lg p-5 mb-4"
+        style={{ border: "1px solid rgba(120,110,95,0.15)", background: "rgba(45,42,38,0.5)" }}
+      >
+        <PulseBlock className="h-3 w-24 mb-3" />
+        <div className="flex gap-4">
+          <PulseBlock className="h-3 flex-1" />
+          <PulseBlock className="h-3 flex-1" />
+        </div>
+      </div>
+      {/* Abstract section */}
+      <div
+        className="rounded-lg p-5 mb-4"
+        style={{ border: "1px solid rgba(120,110,95,0.15)", background: "rgba(45,42,38,0.5)" }}
+      >
+        <PulseBlock className="h-3 w-20 mb-3" />
+        <PulseBlock className="h-3 w-full mb-2" />
+        <PulseBlock className="h-3 w-5/6 mb-2" />
+        <PulseBlock className="h-3 w-4/6" />
+      </div>
+      {/* Tab bar stub */}
+      <div className="flex gap-2 mt-5">
+        {["w-20", "w-24", "w-20", "w-16"].map((w, i) => (
+          <PulseBlock key={i} className={`h-8 rounded-sm ${w}`} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Contract builder: heading + two content blocks */
 export function ContractBuilderSkeleton() {
   return (
