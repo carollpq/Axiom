@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/src/shared/lib/auth/auth";
-import { computeActivityData } from "@/src/features/author/queries/activity";
+import { computeActivityData } from "@/src/features/researcher/queries/activity";
 import { listUserPapers } from "@/src/features/papers/queries";
 import { listUserContracts } from "@/src/features/contracts/queries";
 

@@ -1,6 +1,6 @@
 const ROLE_CONFIG = {
-  author: {
-    title: "Author Dashboard",
+  researcher: {
+    title: "Researcher Dashboard",
     subtitle: "Manage your research, contracts, and submissions",
   },
   journal: {

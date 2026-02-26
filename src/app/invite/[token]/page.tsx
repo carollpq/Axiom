@@ -1,5 +1,5 @@
 import { getContributorByInviteToken } from "@/src/features/contracts/queries";
-import { InviteClaimClient } from "@/src/features/author/components/contract/InviteClaimClient";
+import { InviteClaimClient } from "@/src/features/researcher/components/contract/InviteClaimClient";
 import Link from "next/link";
 
 interface InvitePageProps {

@@ -21,7 +21,7 @@ function seed() {
       did: "did:hedera:0x7f3a9c2d",
       displayName: "Dr. A. Reeves",
       orcidId: "0000-0001-2345-6789",
-      roles: ["author"],
+      roles: ["researcher"],
       researchFields: ["Machine Learning", "Climate Science"],
     })
     .returning()

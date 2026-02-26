@@ -26,5 +26,5 @@ export default async function RootPage() {
   }
 
   // Default: researcher / author
-  redirect("/author");
+  redirect("/researcher");
 }

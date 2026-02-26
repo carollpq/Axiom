@@ -33,7 +33,7 @@ export async function getOrCreateUser(walletAddress: string) {
       .insert(users)
       .values({
         walletAddress: normalized,
-        roles: ["author"],
+        roles: ["researcher"],
       })
       .returning()
   )[0];

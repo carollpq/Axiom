@@ -1,0 +1,23 @@
+import { getSession } from "@/src/shared/lib/auth/auth";
+import { listUserContracts } from "@/src/features/contracts/queries";
+import { listJournals } from "@/src/features/editor/queries";
+import { PaperRegistrationClient } from "@/src/features/researcher/components/paper-registration";
+import type { ApiContract } from "@/src/shared/types/api";
+import type { RegisteredJournal } from "@/src/features/researcher/types/paper-registration";
+
+export default async function PaperRegistration() {
+  // wallet is guaranteed non-null by (protected)/layout.tsx
+  const wallet = (await getSession())!;
+
+  const [contracts, journals] = await Promise.all([
+    listUserContracts(wallet),
+    listJournals(),
+  ]);
+
+  return (
+    <PaperRegistrationClient
+      initialContracts={contracts as unknown as ApiContract[]}
+      initialJournals={journals as RegisteredJournal[]}
+    />
+  );
+}

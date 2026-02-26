@@ -1,4 +1,4 @@
-import type { PaperStatus } from "@/src/features/author/types/dashboard";
+import type { PaperStatus } from "@/src/features/researcher/types/dashboard";
 
 /** Maps DB paper_status enum → frontend display string (author dashboard context) */
 const statusMap: Record<string, PaperStatus> = {
