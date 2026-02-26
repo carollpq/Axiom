@@ -49,6 +49,7 @@ export function UnderReviewClient({
           papers={papers}
           selectedId={selectedId}
           onSelect={setSelectedId}
+          sectionTitle="Under Review"
         />
       }
       viewer={<PdfViewerPlaceholder title={selected?.title} />}

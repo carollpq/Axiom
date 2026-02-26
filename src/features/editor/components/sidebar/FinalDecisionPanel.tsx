@@ -20,6 +20,9 @@ export function FinalDecisionPanel({
       className="p-4"
       style={{ borderBottom: "1px solid rgba(120,110,95,0.1)" }}
     >
+      <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-3">
+        Editorial Decision
+      </div>
       <textarea
         value={comment}
         onChange={(e) => onCommentChange(e.target.value)}

@@ -15,6 +15,9 @@ export function AddToIssuePanel({
 }: AddToIssuePanelProps) {
   return (
     <div className="p-4">
+      <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-3">
+        Add to Issue
+      </div>
       <select
         value={selectedIssue}
         onChange={(e) => onIssueChange(e.target.value)}
@@ -25,7 +28,7 @@ export function AddToIssuePanel({
           appearance: "none",
         }}
       >
-        <option value="">Add to Issue</option>
+        <option value="">Select issue...</option>
         {issues.map((issue) => (
           <option key={issue.id} value={issue.id}>
             {issue.label}

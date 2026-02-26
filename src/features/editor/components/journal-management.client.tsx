@@ -21,8 +21,14 @@ export function JournalManagement({
   reviewers,
 }: JournalManagementProps) {
   return (
-    <div className="max-w-[1280px] mx-auto py-8 px-10">
-      <div className="font-serif text-xl text-[#e8e0d4] mb-6">{journalName}</div>
+    <div className="max-w-[1200px] mx-auto px-10 py-8">
+      {/* Page header */}
+      <div className="mb-8">
+        <h1 className="text-[28px] font-normal text-[#e8e0d4] m-0 tracking-[0.5px] font-serif">
+          Journal Management
+        </h1>
+        <p className="text-[13px] text-[#6a6050] mt-1.5 italic">{journalName}</p>
+      </div>
 
       <IssuesGrid issues={issues} />
       <EditableSection title="Aims and Scope" initialValue={aimsAndScope} />

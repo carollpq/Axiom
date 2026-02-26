@@ -37,6 +37,7 @@ export function IncomingPapersClient({ papers, reviewerPool }: IncomingPapersPro
           papers={papers}
           selectedId={selectedId}
           onSelect={setSelectedId}
+          sectionTitle="Incoming Papers"
         />
       }
       viewer={

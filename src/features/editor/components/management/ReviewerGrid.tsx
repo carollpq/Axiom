@@ -7,7 +7,7 @@ interface ReviewerGridProps {
 export function ReviewerGrid({ reviewers }: ReviewerGridProps) {
   return (
     <div className="mb-8">
-      <div className="text-sm text-[#d4ccc0] font-serif mb-3">Reviewers</div>
+      <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-4">Reviewer Pool</div>
       <div className="grid grid-cols-4 gap-4">
         {reviewers.map((r) => (
           <div

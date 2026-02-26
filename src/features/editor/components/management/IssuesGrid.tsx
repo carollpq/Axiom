@@ -7,6 +7,9 @@ interface IssuesGridProps {
 export function IssuesGrid({ issues }: IssuesGridProps) {
   return (
     <div className="mb-8">
+      <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-4">
+        Issues
+      </div>
       <div className="grid grid-cols-4 gap-4">
         {issues.map((issue) => (
           <div

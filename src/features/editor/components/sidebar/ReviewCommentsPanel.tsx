@@ -10,7 +10,7 @@ export function ReviewCommentsPanel({ reviewers }: ReviewCommentsPanelProps) {
       className="p-4"
       style={{ borderBottom: "1px solid rgba(120,110,95,0.1)" }}
     >
-      <div className="text-sm text-[#e8e0d4] font-serif mb-3">Reviews</div>
+      <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-3">Reviews</div>
 
       <div className="space-y-2">
         {reviewers.map((r) => (

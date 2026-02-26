@@ -39,6 +39,7 @@ export function AcceptedPapersClient({
           papers={papers}
           selectedId={selectedId}
           onSelect={setSelectedId}
+          sectionTitle="Accepted Papers"
         />
       }
       viewer={<PdfViewerPlaceholder title={selected?.title} />}

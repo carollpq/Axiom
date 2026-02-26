@@ -13,7 +13,7 @@ export function DeskRejectPanel({
 }: DeskRejectPanelProps) {
   return (
     <div className="p-4">
-      <div className="text-sm text-[#e8e0d4] font-serif mb-3">Desk Reject</div>
+      <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-3">Desk Reject</div>
 
       <textarea
         value={comment}

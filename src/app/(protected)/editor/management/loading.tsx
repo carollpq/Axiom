@@ -9,7 +9,7 @@ function PulseBlock({ className }: { className?: string }) {
 
 export default function ManagementLoading() {
   return (
-    <div className="max-w-[1280px] mx-auto py-8 px-10 space-y-6">
+    <div className="max-w-[1200px] mx-auto px-10 py-8 space-y-6">
       <PulseBlock className="h-8 w-[300px]" />
       <div className="grid grid-cols-4 gap-4">
         {Array.from({ length: 3 }).map((_, i) => (
