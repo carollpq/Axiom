@@ -1,6 +1,6 @@
 import { getSession } from "@/src/shared/lib/auth/auth";
 import { listUserContracts } from "@/src/features/contracts/queries";
-import { listJournals } from "@/src/features/journal/queries";
+import { listJournals } from "@/src/features/editor/queries";
 import { PaperRegistrationClient } from "@/src/features/author/components/paper-registration";
 import type { ApiContract } from "@/src/shared/types/api";
 import type { RegisteredJournal } from "@/src/features/author/types/paper-registration";

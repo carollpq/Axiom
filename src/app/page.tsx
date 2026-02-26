@@ -22,7 +22,7 @@ export default async function RootPage() {
   }
 
   if (primaryRole === "editor" || primaryRole === "journal") {
-    redirect("/journal");
+    redirect("/editor");
   }
 
   // Default: researcher / author

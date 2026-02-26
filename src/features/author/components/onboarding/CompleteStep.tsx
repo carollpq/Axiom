@@ -6,7 +6,7 @@ import type { UserRole } from "@/src/features/author/hooks/useOnboarding";
 const ROLE_ROUTES: Record<NonNullable<UserRole>, string> = {
   researcher: "/author",
   reviewer: "/reviewer",
-  editor: "/journal",
+  editor: "/editor",
 };
 
 interface CompleteStepProps {
