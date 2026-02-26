@@ -35,6 +35,7 @@ export interface ExplorerPaper {
   title: string;
   authors: PaperAuthor[];
   status: string;
+  studyType: string;
   journal: string;
   field: string;
   date: string;
@@ -49,6 +50,9 @@ export interface ExplorerPaper {
   codeUrl: string;
   datasetUrl: string;
   visibility: string;
+  litDataToEncryptHash: string | null;
+  litAccessConditionsJson: string | null;
+  fileStorageKey: string | null;
   versions: PaperVersion[];
   reviews: PaperReview[];
   decision: string | null;

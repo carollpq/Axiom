@@ -1,50 +1,45 @@
 "use client";
 
+import { FilterPills } from "@/src/shared/components/FilterPills";
 import type { SortOption } from "@/src/features/author/types/explorer";
 
 interface FilterBarProps {
   statuses: string[];
   fields: string[];
+  studyTypes: string[];
   statusFilter: string;
   fieldFilter: string;
+  studyTypeFilter: string;
   sortBy: SortOption;
   onStatusFilter: (s: string) => void;
   onFieldFilter: (f: string) => void;
+  onStudyTypeFilter: (s: string) => void;
   onSort: (s: SortOption) => void;
 }
 
-export function FilterBar({ statuses, fields, statusFilter, fieldFilter, sortBy, onStatusFilter, onFieldFilter, onSort }: FilterBarProps) {
+export function FilterBar({
+  statuses, fields, studyTypes,
+  statusFilter, fieldFilter, studyTypeFilter, sortBy,
+  onStatusFilter, onFieldFilter, onStudyTypeFilter, onSort,
+}: FilterBarProps) {
   return (
-    <div className="flex justify-between items-center mb-5 flex-wrap gap-3">
-      <div className="flex gap-1.5 flex-wrap">
-        {statuses.map(s => (
-          <button
-            key={s}
-            onClick={() => onStatusFilter(s)}
-            className="rounded-sm py-1 px-3 text-[11px] font-serif cursor-pointer"
-            style={{
-              background: statusFilter === s ? "rgba(180,160,120,0.15)" : "transparent",
-              border: "1px solid " + (statusFilter === s ? "rgba(180,160,120,0.3)" : "rgba(120,110,95,0.15)"),
-              color: statusFilter === s ? "#c9b89e" : "#6a6050",
-            }}
-          >{s}</button>
-        ))}
-        <span className="w-px mx-1" style={{ background: "rgba(120,110,95,0.15)" }} />
-        {fields.map(f => (
-          <button
-            key={f}
-            onClick={() => onFieldFilter(f)}
-            className="rounded-sm py-1 px-3 text-[11px] font-serif cursor-pointer"
-            style={{
-              background: fieldFilter === f ? "rgba(180,160,120,0.15)" : "transparent",
-              border: "1px solid " + (fieldFilter === f ? "rgba(180,160,120,0.3)" : "rgba(120,110,95,0.15)"),
-              color: fieldFilter === f ? "#c9b89e" : "#6a6050",
-            }}
-          >{f}</button>
-        ))}
+    <div className="flex justify-between items-start mb-5 flex-wrap gap-3">
+      <div className="flex flex-col gap-2">
+        {/* Status + Field in one row */}
+        <div className="flex gap-1.5 flex-wrap">
+          <FilterPills options={statuses} value={statusFilter} onChange={onStatusFilter} />
+          <span className="w-px mx-1" style={{ background: "rgba(120,110,95,0.15)" }} />
+          <FilterPills options={fields} value={fieldFilter} onChange={onFieldFilter} />
+        </div>
+        {/* Study type row */}
+        <div className="flex gap-1.5 flex-wrap">
+          <FilterPills options={studyTypes} value={studyTypeFilter} onChange={onStudyTypeFilter} />
+        </div>
       </div>
+
+      {/* Sort toggle */}
       <div className="flex gap-1">
-        {(["newest", "oldest"] as const).map(s => (
+        {(["newest", "oldest"] as const).map((s) => (
           <button
             key={s}
             onClick={() => onSort(s)}
@@ -54,7 +49,9 @@ export function FilterBar({ statuses, fields, statusFilter, fieldFilter, sortBy,
               border: "1px solid rgba(120,110,95,0.12)",
               color: sortBy === s ? "#c9b89e" : "#4a4238",
             }}
-          >{s}</button>
+          >
+            {s}
+          </button>
         ))}
       </div>
     </div>

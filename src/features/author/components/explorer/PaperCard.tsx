@@ -6,6 +6,13 @@ interface PaperCardProps {
   onSelect: (id: string) => void;
 }
 
+function studyTypeLabel(raw: string): string {
+  return raw
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .replace("Meta Analysis", "Meta-Analysis");
+}
+
 export function PaperCard({ paper: p, onSelect }: PaperCardProps) {
   return (
     <div
@@ -24,7 +31,17 @@ export function PaperCard({ paper: p, onSelect }: PaperCardProps) {
             {p.authors.map(a => a.name).join(", ")}
           </div>
         </div>
-        <StatusBadge status={p.status} />
+        <div className="flex items-center gap-2 shrink-0">
+          <span
+            className="text-[9px] px-2 py-0.5 rounded-sm font-serif"
+            style={{
+              background: "rgba(90,122,154,0.1)",
+              border: "1px solid rgba(90,122,154,0.18)",
+              color: "#5a7a9a",
+            }}
+          >{studyTypeLabel(p.studyType)}</span>
+          <StatusBadge status={p.status} />
+        </div>
       </div>
       <div className="flex gap-4 items-center flex-wrap">
         <span className="text-[11px] text-[#6a6050]">{p.journal}</span>

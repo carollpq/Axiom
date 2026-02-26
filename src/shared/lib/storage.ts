@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export function isStorageConfigured(): boolean {
@@ -48,4 +48,24 @@ export async function getPresignedUploadUrl(
   });
 
   return { uploadUrl, objectKey };
+}
+
+/**
+ * Fetch an object from R2 and return its full contents as a Buffer.
+ */
+export async function getFileFromR2(objectKey: string): Promise<Buffer> {
+  const command = new GetObjectCommand({
+    Bucket: process.env.S3_BUCKET!,
+    Key: objectKey,
+  });
+
+  const response = await getS3Client().send(command);
+  if (!response.Body) throw new Error("Empty response body from R2");
+
+  // ReadableStream → Buffer (Node.js environment)
+  const chunks: Uint8Array[] = [];
+  for await (const chunk of response.Body as AsyncIterable<Uint8Array>) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
 }

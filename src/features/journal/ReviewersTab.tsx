@@ -1,4 +1,5 @@
 import type { JournalSubmission, PoolReviewer } from "@/src/shared/types/journal-dashboard";
+import { SearchInput } from "@/src/shared/components/SearchInput";
 
 interface ReviewersTabProps {
   submission: JournalSubmission;
@@ -66,16 +67,12 @@ export function ReviewersTab({
       <div className="text-[10px] text-[#6a6050] uppercase tracking-[1px] mb-2">
         Find Reviewers
       </div>
-      <input
-        type="text"
-        placeholder="Search by name or field..."
+      <SearchInput
+        size="sm"
         value={searchReviewer}
-        onChange={(e) => onSearchChange(e.target.value)}
-        className="w-full px-3 py-2 rounded text-[#d4ccc0] font-serif text-xs outline-none box-border mb-2.5"
-        style={{
-          background: "rgba(30,28,24,0.6)",
-          border: "1px solid rgba(120,110,95,0.2)",
-        }}
+        onChange={onSearchChange}
+        placeholder="Search by name or field..."
+        className="mb-2.5"
       />
 
       {/* Unassigned pool */}

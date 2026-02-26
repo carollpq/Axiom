@@ -1,7 +1,9 @@
 import type { ExplorerPaper } from "@/src/features/author/types/explorer";
+import { DecryptButton } from "./DecryptButton";
 
 interface OverviewTabProps {
   paper: ExplorerPaper;
+  paperId: string;
 }
 
 const sectionStyle: React.CSSProperties = {
@@ -9,7 +11,14 @@ const sectionStyle: React.CSSProperties = {
   borderRadius: 8, padding: 22, marginBottom: 20,
 };
 
-export function OverviewTab({ paper }: OverviewTabProps) {
+function studyTypeLabel(raw: string): string {
+  return raw
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .replace("Meta Analysis", "Meta-Analysis");
+}
+
+export function OverviewTab({ paper, paperId }: OverviewTabProps) {
   return (
     <div>
       {/* Authors & Contributions */}
@@ -43,7 +52,17 @@ export function OverviewTab({ paper }: OverviewTabProps) {
 
       {/* Abstract */}
       <div style={sectionStyle}>
-        <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-3">Abstract</div>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px]">Abstract</div>
+          <span
+            className="text-[9px] px-2 py-0.5 rounded-sm font-serif"
+            style={{
+              background: "rgba(90,122,154,0.12)",
+              border: "1px solid rgba(90,122,154,0.2)",
+              color: "#5a7a9a",
+            }}
+          >{studyTypeLabel(paper.studyType)}</span>
+        </div>
         <div className="text-[13px] text-[#b0a898] leading-[1.7]">{paper.abstract}</div>
         {paper.visibility === "public" && (
           <button
@@ -52,9 +71,7 @@ export function OverviewTab({ paper }: OverviewTabProps) {
           >View Full Paper {"\u2197"}</button>
         )}
         {paper.visibility === "private" && (
-          <div className="mt-3.5 text-[11px] text-[#6a6050] italic">
-            Content is private. Hash recorded on-chain for proof of disclosure.
-          </div>
+          <DecryptButton paperId={paperId} hasLitData={!!paper.litDataToEncryptHash} />
         )}
       </div>
     </div>

@@ -1,4 +1,6 @@
 export { Badge } from "./Badge";
+export { SearchInput } from "./SearchInput";
+export { FilterPills } from "./FilterPills";
 export { TabBar } from "./TabBar";
 export { StatCard } from "./StatCard";
 export { TopBar } from "./TopBar";

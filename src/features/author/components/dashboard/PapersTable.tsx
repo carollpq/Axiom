@@ -1,6 +1,8 @@
 "use client";
 
 import type { PaperRow, PaperStatus } from "@/src/features/author/types/dashboard";
+import { SearchInput } from "@/src/shared/components/SearchInput";
+import { FilterPills } from "@/src/shared/components/FilterPills";
 import { StatusBadge } from "./StatusBadge";
 
 export function PapersTable({
@@ -26,36 +28,19 @@ export function PapersTable({
 
   return (
     <div>
-      {/* Search */}
-      <div className="relative mb-4">
-        <input
-          type="text"
-          placeholder="Search papers by title or co-author..."
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full py-2.5 px-4 pl-10 bg-[rgba(45,42,38,0.6)] border border-[rgba(120,110,95,0.25)] rounded-[6px] text-[#d4ccc0] font-serif text-[13px] outline-none"
-        />
-        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6a6050] text-base">
-          {"\u2315"}
-        </span>
-      </div>
+      <SearchInput
+        value={searchQuery}
+        onChange={onSearchChange}
+        placeholder="Search papers by title or co-author..."
+        className="mb-4"
+      />
 
-      {/* Status Filter Pills */}
       <div className="flex gap-1.5 mb-5 flex-wrap">
-        {allStatuses.map((s) => (
-          <button
-            key={s}
-            onClick={() => onStatusFilter(s)}
-            className="rounded-[3px] px-3.5 py-[5px] text-[11px] font-serif cursor-pointer transition-all duration-300 border"
-            style={{
-              background: statusFilter === s ? "rgba(180,160,120,0.15)" : "transparent",
-              borderColor: statusFilter === s ? "rgba(180,160,120,0.3)" : "rgba(120,110,95,0.15)",
-              color: statusFilter === s ? "#c9b89e" : "#6a6050",
-            }}
-          >
-            {s}
-          </button>
-        ))}
+        <FilterPills
+          options={allStatuses}
+          value={statusFilter}
+          onChange={onStatusFilter}
+        />
       </div>
 
       {/* Table */}
