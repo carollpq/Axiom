@@ -77,6 +77,35 @@ export function RoleSelectionStep({
             </svg>
           </div>
         </button>
+
+        <button
+          onClick={() => onSelectRole("editor")}
+          className="w-full p-4 bg-zinc-800 hover:bg-zinc-750 border border-zinc-700 rounded-lg text-left transition-colors group"
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="text-lg font-medium text-zinc-100 mb-1 group-hover:text-blue-400">
+                Editor / Journal
+              </h3>
+              <p className="text-zinc-400 text-sm">
+                Manage submissions, publish review criteria, and assign reviewers
+              </p>
+            </div>
+            <svg
+              className="w-6 h-6 text-zinc-600 group-hover:text-blue-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </div>
+        </button>
       </div>
 
       <button

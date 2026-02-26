@@ -76,7 +76,6 @@ export const papers = pgTable("papers", {
   ownerId: text("owner_id")
     .notNull()
     .references(() => users.id),
-  accessPrice: text("access_price"),
   litDataToEncryptHash: text("lit_data_to_encrypt_hash"),
   litAccessConditionsJson: text("lit_access_conditions_json"),
   hederaTxId: text("hedera_tx_id"),

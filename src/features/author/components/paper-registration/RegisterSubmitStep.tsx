@@ -13,9 +13,7 @@ interface RegisterSubmitStepProps {
   contract: SignedContract | undefined;
   journals: RegisteredJournal[];
   selectedJournal: string | null;
-  accessPrice: string;
   onSelectJournal: (id: string | null) => void;
-  onAccessPriceChange: (v: string) => void;
   onRegister: () => void;
   onSubmit: () => void;
 }
@@ -31,7 +29,7 @@ const labelStyle: React.CSSProperties = { fontSize: 10, color: "#8a8070", margin
 
 export function RegisterSubmitStep({
   title, fileHash, datasetHash, codeCommit, envHash, visibility,
-  contract, journals, selectedJournal, accessPrice, onSelectJournal, onAccessPriceChange, onRegister, onSubmit,
+  contract, journals, selectedJournal, onSelectJournal, onRegister, onSubmit,
 }: RegisterSubmitStepProps) {
   const canSubmit = !!(contract && selectedJournal);
 
@@ -73,17 +71,6 @@ export function RegisterSubmitStep({
           <div className="text-sm text-[#d4c8a8] mb-1.5">Register Draft</div>
           <div className="text-[11px] text-[#6a6050] mb-4 leading-relaxed">
             Timestamp your paper on Hedera. Records paper hash, author DID, ORCID, and provenance hashes. Always available.
-          </div>
-          <div className="mb-4 text-left">
-            <label style={labelStyle}>Access price (USD) — set 0 for free/open access</label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={accessPrice}
-              onChange={e => onAccessPriceChange(e.target.value)}
-              style={{ ...inputStyle, maxWidth: 120, textAlign: "right" }}
-            />
           </div>
           <button
             onClick={onRegister}

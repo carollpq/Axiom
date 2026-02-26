@@ -49,7 +49,6 @@ export function usePaperRegistration(initialContracts: ApiContract[], initialJou
   const [submitted, setSubmitted] = useState(false);
   const [selectedJournal, setSelectedJournal] = useState<string | null>(null);
   const [paperId, setPaperId] = useState<string | null>(null);
-  const [accessPrice, setAccessPrice] = useState("1.00");
   const [txHash, setTxHash] = useState("");
   const [txTimestamp, setTxTimestamp] = useState("");
   const [registering, setRegistering] = useState(false);
@@ -229,7 +228,7 @@ export function usePaperRegistration(initialContracts: ApiContract[], initialJou
 
       await fetchApi(`/api/papers/${paper.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ status: "registered", visibility, accessPrice }),
+        body: JSON.stringify({ status: "registered", visibility }),
       });
 
       setTxHash(
@@ -304,7 +303,6 @@ export function usePaperRegistration(initialContracts: ApiContract[], initialJou
     registered, submitted,
     selectedJournal, setSelectedJournal,
     journals: initialJournals,
-    accessPrice, setAccessPrice,
     txHash, txTimestamp,
     handleRegister, handleSubmit,
     // Derived

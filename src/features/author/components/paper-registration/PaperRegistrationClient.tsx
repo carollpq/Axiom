@@ -34,7 +34,6 @@ export function PaperRegistrationClient({ initialContracts, initialJournals }: P
     handleRegister, handleSubmit,
     canProceedStep1,
     studyType, setStudyType,
-    accessPrice, setAccessPrice,
   } = usePaperRegistration(initialContracts, initialJournals);
 
   const canProceed = step === 0 ? canProceedStep1 : true;
@@ -106,9 +105,7 @@ export function PaperRegistrationClient({ initialContracts, initialJournals }: P
           envHash={envHash} visibility={visibility}
           contract={contract} journals={journals}
           selectedJournal={selectedJournal}
-          accessPrice={accessPrice}
           onSelectJournal={setSelectedJournal}
-          onAccessPriceChange={setAccessPrice}
           onRegister={handleRegister} onSubmit={handleSubmit}
         />
       )}

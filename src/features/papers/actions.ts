@@ -59,7 +59,6 @@ export interface UpdatePaperInput {
   abstract?: string;
   status?: PaperStatusDb;
   visibility?: VisibilityDb;
-  accessPrice?: string;
 }
 
 export async function updatePaper(id: string, input: UpdatePaperInput) {

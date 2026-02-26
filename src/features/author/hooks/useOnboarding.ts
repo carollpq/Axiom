@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useActiveAccount } from "thirdweb/react";
 import { validateOrcidFormat } from "@/src/shared/lib/validation";
 
-export type UserRole = "researcher" | "reviewer" | null;
+export type UserRole = "researcher" | "reviewer" | "editor" | null;
 export type OnboardingStep = "connect" | "orcid" | "role_selection" | "complete";
 
 export function useOnboarding() {
