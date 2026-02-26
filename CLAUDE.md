@@ -59,15 +59,18 @@ npm run format                 # Prettier formatting
 
 ## Architecture
 
-### Core Focus: Review Fairness
+### Core Focus: Peer Review Quality & Accountability
 
-The platform's value proposition centers on making the review process fair and accountable. The key differentiators:
+The platform's value proposition centers on improving the *quality* of peer review and making reviewer behavior accountable — the most underdeveloped part of the current academic publishing ecosystem. Reviewers today give feedback with no accountability, no recognition, and no incentive to improve. Axiom fixes this.
 
-1. **Pre-registered review criteria** — Journals publish criteria on HCS before review begins. If a paper meets all required criteria, the journal is bound to publish or provide public justification.
-2. **Soulbound reviewer reputation** — HTS NFTs minted per review event. Portable, non-transferable, cross-journal.
-3. **Rebuttal phase** — Authors can challenge unfair reviews before final rejection.
-4. **Enforced timelines** — Deadlines tracked with on-chain anchoring. Late reviews = negative reputation tokens.
-5. **Transparent post-decision reviews** — After final decision, anonymized review comments become public.
+The key differentiators:
+
+1. **Structured reviewer feedback** — Reviews are broken into per-criterion evaluations (yes/no/partially + required comment). Reviewers can no longer just write vague rejections — every concern must be tied to a stated criterion.
+2. **Soulbound reviewer reputation** — HTS NFTs minted per review event. Portable, non-transferable, cross-journal. Reviewers build a verifiable quality record that follows them everywhere.
+3. **Pre-registered review criteria** — Journals publish review criteria on HCS before review begins. Criteria become immutable. If a paper is rejected despite meeting stated criteria, the editor must provide **public on-chain justification** — creating accountability without overriding editorial discretion.
+4. **Rebuttal phase** — Authors can challenge specific reviewer comments they believe are unfair or factually wrong. If a rebuttal is upheld, the reviewer gets a negative reputation event. This incentivizes reviewers to make well-supported critiques.
+5. **Enforced timelines** — Deadlines tracked with on-chain anchoring. Late reviews = negative reputation tokens.
+6. **Transparent post-decision reviews** — After final decision, anonymized review comments become public. Reviewers know their work will be visible — incentivizing quality over laziness.
 
 **What we do NOT change:** Journal revenue models, paywalls, subscriptions, or APCs. This is critical for adoption — journals gain tools without losing revenue.
 
@@ -157,7 +160,7 @@ Each role group has its own layout using `RoleShell` from `src/shared/components
 4. **Reviewer dashboard: real data** — Assigned reviews, deadlines, reputation score card, completed reviews.
 5. **Review workspace: real data** — Display paper + criteria. Reviewer evaluates each criterion (yes/no/partially + comment). Submit → hash + HCS anchor.
 6. **HTS soulbound reputation tokens** — Mint on review events. Create `AXIOM_REVIEWER_REPUTATION` token on HTS. Mint via API on review submission.
-7. **Editorial decision flow** — If all required criteria met → system flags binding obligation. Reject requires on-chain justification. Decision → HCS anchor.
+7. **Editorial decision flow** — System computes `allCriteriaMet`. If met but editor rejects → editor must provide public on-chain justification. Decision → HCS anchor. This is accountability, not a binding obligation to publish.
 
 ### Tier 2 — Rebuttal + Timeline
 8. **Rebuttal phase** — When criteria not fully met and rejection likely, editor opens rebuttal. Researcher submits per-review responses (agree/disagree + justification). Editor resolves. Rebuttal + resolution → HCS anchor. Reputation tokens minted based on outcome.
@@ -179,7 +182,7 @@ Each role group has its own layout using `RoleShell` from `src/shared/components
 
 ### Pre-Registered Review Criteria
 
-The cornerstone feature. Journals MUST publish criteria on-chain before review begins.
+Journals publish review criteria on HCS before review begins. This is NOT a contractual obligation to publish — journals keep full editorial discretion. The value is **accountability**: criteria are immutable on-chain, and any rejection must be justifiable against the stated criteria or the editor provides a public explanation. This creates social/reputational pressure without needing legal enforceability.
 
 ```typescript
 interface ReviewCriterion {
@@ -193,9 +196,10 @@ interface ReviewCriterion {
 
 - Criteria are hashed (canonical JSON → SHA-256) and recorded on HCS `criteria` topic
 - Once published, criteria are IMMUTABLE for that submission
-- Reviewers evaluate each criterion with structured feedback
+- Reviewers evaluate each criterion with structured feedback (vague rejections are no longer possible)
 - System computes `allCriteriaMet` based on required criteria
-- If met → journal bound to publish. Rejection requires public on-chain justification.
+- If all criteria met but editor still rejects → editor must provide public on-chain justification visible to all
+- This creates **public accountability**, not a legal contract to publish
 
 ### Rebuttal Phase
 

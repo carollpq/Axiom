@@ -38,13 +38,16 @@
 
 Axiom focuses on the **review process** — the stage where academic publishing is most broken. We don't ask journals to change their business model. We give them tools that make their review process fairer, faster, and more credible.
 
+**The core problem:** Peer review quality is invisible and unaccountable. Reviewers can write vague, lazy, or biased reviews with no consequences. There's no portable record of reviewer quality, no structured way to evaluate reviews, and no recourse for authors who receive unfair feedback. This is the most underdeveloped part of the current ecosystem.
+
 **Problems we solve (validated by researchers):**
+- Reviewers give unstructured, vague feedback with no accountability
+- Reviewer effort and quality is invisible and non-portable across journals
 - Reviews take 5–6 months with no communication to authors
 - 80% of reviewers submit late or not at all
-- Reviewers have unchecked power — can reject for irrelevant reasons
+- Reviewers have unchecked power — can reject for irrelevant reasons with no justification
 - No accountability for low-quality or biased reviews
 - Authors can't rebut unfair reviews before rejection
-- Reviewer effort is invisible and non-portable across journals
 - Authorship disputes have no cryptographic proof
 - Idea theft is hard to disprove without verifiable timestamps
 
@@ -92,19 +95,24 @@ Journals won't adopt a system that threatens their revenue. But they *will* adop
 | Problem | Axiom Solution |
 |---|---|
 | Months of silence | Real-time status updates (reviewers assigned, reviews submitted, decision pending) |
-| Unfair rejection | Pre-registered criteria — if met, journal is bound to publish |
-| No recourse against bad reviews | Rebuttal phase before final decision |
+| Vague / unhelpful reviews | Per-criterion structured evaluation — reviewers must address specific criteria with comments |
+| Unfair rejection | Pre-registered criteria — if rejection contradicts stated criteria, editor must provide public on-chain justification |
+| No recourse against bad reviews | Rebuttal phase before final decision — upheld rebuttals give reviewer a negative reputation event |
 | Authorship disputes | Cryptographic contribution contracts |
 | Idea theft | On-chain timestamped registration (proof of first disclosure) |
 | Reviewer power abuse | Anonymous but accountable — reputation system tracks quality |
 
 ### What Reviewers Get
 
+Reviewers are the most underserved group in academic publishing. Axiom is primarily built to fix this.
+
 | Problem | Axiom Solution |
 |---|---|
 | Invisible effort | Portable reputation (HTS soulbound tokens) visible across all journals |
-| No recognition for good work | Reputation score improves with quality, timeliness |
-| "Giving back" feels thankless | Verifiable record of contribution to science |
+| No recognition for good work | Reputation score improves with quality, timeliness, and author feedback |
+| No incentive to give quality feedback | Per-criterion structured reviews + author ratings + post-decision public visibility |
+| "Giving back" feels thankless | Verifiable, cross-journal record of contribution to science |
+| No feedback on their own reviewing | Author ratings (anonymous) + rebuttal outcomes give reviewers quality signals |
 
 ### Adoption Flywheel
 
@@ -195,23 +203,23 @@ Each paper version links to dataset hash, code commit hash, and environment hash
 
 **Current state:** Version creation with provenance hashes works. Version graph UI not yet built.
 
-### 4.4 Pre-Registered Peer Review Contracts (FR-4) 🔲 Not Yet Implemented
+### 4.4 Pre-Registered Review Criteria (FR-4) 🔲 Not Yet Implemented
 
-**This is the cornerstone feature for review fairness.**
+**This is the cornerstone feature for review quality and accountability.**
 
-Journals publish review criteria on-chain BEFORE review begins. This creates a binding commitment: if the paper meets the criteria, the journal must publish or provide public justification for rejection.
+Journals publish review criteria on-chain BEFORE review begins. This is **not** a contractual obligation to publish — journals keep full editorial discretion. The value is that criteria become immutable and public, forcing structured reviewer feedback and creating accountability for rejection decisions.
 
 **How it works:**
 
 1. Editor creates submission-specific review criteria (structured form)
 2. Criteria are hashed and recorded on HCS (`criteria` topic)
 3. Criteria become immutable — cannot be changed after publication
-4. Reviewers evaluate each criterion individually (yes / no / partially + comment)
-5. System computes whether all criteria are met
-6. If met → journal is flagged with binding obligation to publish
-7. If editor still rejects → must provide on-chain justification visible to everyone
+4. Reviewers evaluate each criterion individually (yes / no / partially + required comment if not 'yes')
+5. System computes whether all criteria are met (`allCriteriaMet`)
+6. If criteria met but editor rejects → editor must provide **public on-chain justification** visible to all
+7. This creates reputational/social pressure to justify decisions, not a legal obligation to publish
 
-**Why this matters:** This is the single biggest change from traditional publishing. Journals can't arbitrarily reject papers that meet their own stated criteria. The criteria are public, the evaluations are structured, and rejections require justification.
+**Why this matters:** Reviewers can no longer write vague rejections — every concern must be tied to a specific stated criterion with a comment explaining the issue. This is the primary mechanism for improving review quality. The accountability for editors is a secondary benefit — journals retain full editorial discretion but must explain decisions that contradict their own stated criteria.
 
 **Schema for criteria:**
 
@@ -1372,11 +1380,11 @@ Vercel Project
 
 ## Appendix B: Feature Scope
 
-**Core MVP (Review Fairness):**
+**Core MVP (Peer Review Quality & Accountability):**
 - ✅ Authorship contribution contracts (FR-1)
 - ✅ Paper registration & timestamped ownership (FR-2)
 - ✅ Paper versioning & provenance (FR-3)
-- 🔲 Pre-registered review criteria (FR-4) — **top priority**
+- 🔲 Structured per-criterion reviewer feedback + pre-registered criteria (FR-4) — **top priority**
 - 🔲 Reviewer reputation via HTS (FR-5) — **top priority**
 - 🔲 Reviewer feedback transparency (FR-6)
 - 🔲 Rebuttal phase (NEW)
