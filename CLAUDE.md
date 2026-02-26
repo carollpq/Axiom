@@ -10,9 +10,9 @@ Axiom is a blockchain-backed academic publishing and peer review platform built 
 
 ### Project Status
 
-The codebase is a **partially functional full-stack application**. The author section has significant backend integration; journal and reviewer sections still use mock data.
+The codebase is a **partially functional full-stack application**. The researcher section has significant backend integration; editor and reviewer sections still use mock data.
 
-**What's working end-to-end (author section):**
+**What's working end-to-end (researcher section):**
 - Thirdweb v5 wallet authentication → JWT in httpOnly cookie
 - Paper registration: client-side SHA-256 hashing → R2 presigned upload → Lit encryption → DB storage → Hedera HCS anchoring
 - Study type selection (original / negative result / replication / replication failed / meta-analysis) in Step 1 of registration wizard
@@ -21,27 +21,31 @@ The codebase is a **partially functional full-stack application**. The author se
 - Invite token generation: `POST /api/contracts/[id]/invite` mints token (7-day expiry) + `/invite/[token]` claim page
 - Paper submission to journal: `POST /api/papers/[id]/submit` → creates `submissions` row → HCS anchor → status → `submitted`
 - Journal list fetched from DB in Step 4 dropdown
-- Author dashboard + public explorer fetching real DB data
+- Researcher dashboard + public explorer fetching real DB data
 - Neon PostgreSQL (prod) / SQLite (dev) via `DATABASE_URL`
 
 **What still uses mock data:**
-- Journal dashboard (`(journal)/`)
+- Editor dashboard (`(editor)/`)
 - Reviewer dashboard + review workspace (`(reviewer)/`)
+
+**Recently completed (UI/infra):**
+- Editor UI fully redesigned to match researcher page visual style (DashboardHeader, flat stat cards, section label conventions, sidebar panel titles)
+- Real PDF viewer implemented in editor three-column views (`PdfViewer` using react-pdf v10 / pdfjs-dist v5); shows placeholder until `fileUrl` is populated from presigned R2 URLs
 
 **What is not yet implemented:**
 - Pre-registered review criteria (journal publishes on-chain) — **TOP PRIORITY**
 - Review submission workflow (reviewer evaluates criteria) — **TOP PRIORITY**
 - HTS soulbound reputation token minting — **TOP PRIORITY**
-- Rebuttal phase (author challenges unfair reviews)
+- Rebuttal phase (researcher challenges unfair reviews)
 - Timeline enforcement with deadline tracking
-- Real-time author status updates / notifications
+- Real-time researcher status updates / notifications
 - Reviewer search by reputation score
 - Lit Protocol decryption (encrypt works; decrypt not wired into UI)
 - ORCID OAuth (onboarding validates format client-side only)
 - `/verify` public hash verification page
 - Hedera mirror node lookups
 
-**Current stack:** Next.js 15 (App Router, Turbopack) · React 19 · Tailwind CSS v4 · Thirdweb v5 · TypeScript strict mode · Neon PostgreSQL/Drizzle ORM · Hedera SDK (HCS) · Lit Protocol SDK (encrypt only) · AWS SDK (Cloudflare R2)
+**Current stack:** Next.js 15 (App Router, Turbopack) · React 19 · Tailwind CSS v4 · Thirdweb v5 · TypeScript strict mode · Neon PostgreSQL/Drizzle ORM · Hedera SDK (HCS) · Lit Protocol SDK (encrypt only) · AWS SDK (Cloudflare R2) · react-pdf v10 (pdfjs-dist v5)
 
 ## Common Commands
 
@@ -105,8 +109,8 @@ export function useDomain(initialData: DomainData[]) {
 
 Client boundary files use `.client.tsx` suffix:
 ```
-src/features/author/components/dashboard/tabs.shell.client.tsx
-src/features/author/components/dashboard/papers-table.client.tsx
+src/features/researcher/components/dashboard/tabs.shell.client.tsx
+src/features/researcher/components/dashboard/papers-table.client.tsx
 ```
 
 ### Backend Feature Pattern
@@ -156,12 +160,12 @@ Each role group has its own layout using `RoleShell` from `src/shared/components
 7. **Editorial decision flow** — If all required criteria met → system flags binding obligation. Reject requires on-chain justification. Decision → HCS anchor.
 
 ### Tier 2 — Rebuttal + Timeline
-8. **Rebuttal phase** — When criteria not fully met and rejection likely, editor opens rebuttal. Author submits per-review responses (agree/disagree + justification). Editor resolves. Rebuttal + resolution → HCS anchor. Reputation tokens minted based on outcome.
-9. **Timeline enforcement** — Track deadlines in `review_assignments`. Cron job checks overdue. Late = `review_late` HTS token. Author notifications at each stage.
-10. **Author status updates** — Notifications table + polling. "Reviewers assigned", "Review 1/3 done", "Rebuttal phase open", etc.
+8. **Rebuttal phase** — When criteria not fully met and rejection likely, editor opens rebuttal. Researcher submits per-review responses (agree/disagree + justification). Editor resolves. Rebuttal + resolution → HCS anchor. Reputation tokens minted based on outcome.
+9. **Timeline enforcement** — Track deadlines in `review_assignments`. Cron job checks overdue. Late = `review_late` HTS token. Researcher notifications at each stage.
+10. **Researcher status updates** — Notifications table + polling. "Reviewers assigned", "Review 1/3 done", "Rebuttal phase open", etc.
 
 ### Tier 3 — Polish + Demo Features
-11. **Wire Lit decrypt into explorer** — Authors reading their own private papers.
+11. **Wire Lit decrypt into explorer** — Researchers reading their own private papers.
 12. **`/verify` page** — Upload PDF → client-side hash → check against DB/HCS.
 13. **Reviewer search by reputation** — Editor searches reviewers filtered by score, field, timeliness.
 14. **Review transparency** — After final decision, anonymized review comments visible on paper detail view.
@@ -234,7 +238,7 @@ Score: `0.30 × Timeliness + 0.25 × Editor Rating + 0.25 × Author Feedback + 0
 | Rebuttal response | 14 days from opening |
 | Rebuttal resolution | 7 days from submission |
 
-Overdue: reviewer gets `review_late` HTS token. Editor overdue: journal timeline score drops. Author notified at each transition.
+Overdue: reviewer gets `review_late` HTS token. Editor overdue: journal timeline score drops. Researcher notified at each transition.
 
 ### Lit Protocol — Review Phase Only
 
@@ -242,13 +246,13 @@ Lit encrypts paper content during the review phase. On publication, content is d
 
 | State | Who Decrypts | Condition |
 |---|---|---|
-| Private Draft | Authors | `wallet IN authorWallets` |
-| Under Review | Authors + reviewers + editor | `wallet IN allowedWallets` |
+| Private Draft | Researchers | `wallet IN researcherWallets` |
+| Under Review | Researchers + reviewers + editor | `wallet IN allowedWallets` |
 | Published | Journal's existing model | Decrypted, no longer Lit-gated |
 
 ### Review Comment Visibility
 
-- During review: comments visible only to editor + reviewer (and author during rebuttal)
+- During review: comments visible only to editor + reviewer (and researcher during rebuttal)
 - After final decision (including rebuttal resolution): anonymized comments become PUBLIC
 - Confidential editor comments are NEVER public, NEVER on-chain
 
@@ -281,15 +285,15 @@ src/
 │   │   # ├── journals/[id]/reviewers/route.ts        🔲
 │   │   # ├── reputation/[wallet]/route.ts            🔲
 │   │   # └── cron/reputation/ + cron/deadlines/      🔲
-│   ├── author/                    # ✅ Real data
-│   ├── journal/                   # 🔲 Mock data
+│   ├── researcher/                # ✅ Real data
+│   ├── editor/                    # 🔲 Mock data (UI redesigned, PDF viewer wired)
 │   └── reviewer/                  # 🔲 Mock data
 ├── features/
-│   ├── author/                    # Components, hooks, mappers, types ✅
+│   ├── researcher/                # Components, hooks, mappers, types ✅
 │   ├── contracts/                 # DB queries + actions ✅
 │   ├── papers/                    # DB queries + actions ✅
 │   ├── users/                     # DB queries ✅
-│   ├── journal/                   # Mock components 🔲
+│   ├── editor/                    # Mock components, redesigned UI 🔲
 │   └── reviewer/                  # Mock components 🔲
 │   # NEEDED:
 │   # ├── submissions/             # DB domain: queries + actions 🔲
@@ -297,7 +301,7 @@ src/
 │   # ├── rebuttals/               # DB domain: queries + actions 🔲
 │   # └── reputation/              # DB domain: queries + actions 🔲
 └── shared/
-    ├── components/                # TopBar, Footer, RoleShell, etc. ✅
+    ├── components/                # TopBar, Footer, RoleShell, PdfViewer, etc. ✅
     ├── context/UserContext.tsx     # Wallet + session ✅
     ├── hooks/useAuthFetch.ts      # Mutation-triggered refreshes ✅
     ├── lib/
@@ -396,9 +400,9 @@ NEXT_PUBLIC_LIT_NETWORK
 - **Confidential editor comments:** NEVER on-chain. NEVER public. Stored off-chain only.
 
 ### Privacy & Anonymity
-- **Reviewer identity:** Reviews linked to wallet, not real name. Anonymous to authors.
-- **Author ratings:** `reviewerRatings` has NO author reference. One-way hash for dedup only. Never add rater identity.
-- **Rebuttal ≠ reviewer identity exposure:** Authors see review content during rebuttal but NOT reviewer identity.
+- **Reviewer identity:** Reviews linked to wallet, not real name. Anonymous to researchers.
+- **Researcher ratings:** `reviewerRatings` has NO researcher reference. One-way hash for dedup only. Never add rater identity.
+- **Rebuttal ≠ reviewer identity exposure:** Researchers see review content during rebuttal but NOT reviewer identity.
 
 ### Lit Protocol
 - **Lit + Hedera compatibility:** Highest technical risk. Test EVM-compatible conditions via Hedera JSON-RPC early.
