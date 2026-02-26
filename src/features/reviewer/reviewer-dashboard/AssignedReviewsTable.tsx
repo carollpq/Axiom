@@ -18,7 +18,7 @@ export function AssignedReviewsTable({ reviews, hoveredRow, onHoverRow, getUrgen
         className="px-5 py-3 text-[10px] text-[#6a6050] uppercase tracking-[1.5px]"
         style={{
           display: "grid",
-          gridTemplateColumns: "2.5fr 1fr 0.8fr 0.8fr 0.8fr",
+          gridTemplateColumns: "2.5fr 1fr 0.8fr 0.8fr 0.8fr 0.7fr",
           background: "rgba(45,42,38,0.5)",
           borderBottom: "1px solid rgba(120,110,95,0.15)",
         }}
@@ -28,20 +28,22 @@ export function AssignedReviewsTable({ reviews, hoveredRow, onHoverRow, getUrgen
         <span>Deadline</span>
         <span>Time Left</span>
         <span>Status</span>
+        <span></span>
       </div>
 
       {/* Rows */}
       {reviews.map((r, i) => {
         const u = getUrgencyStyle(r.daysLeft, r.status);
+        const reviewUrl = `/reviewer/review_workspace/${r.assignmentId ?? r.id}`;
         return (
           <div
             key={r.id}
             onMouseEnter={() => onHoverRow(r.id)}
             onMouseLeave={() => onHoverRow(null)}
-            className="items-center px-5 py-3.5 cursor-pointer transition-colors duration-200"
+            className="items-center px-5 py-3.5 transition-colors duration-200"
             style={{
               display: "grid",
-              gridTemplateColumns: "2.5fr 1fr 0.8fr 0.8fr 0.8fr",
+              gridTemplateColumns: "2.5fr 1fr 0.8fr 0.8fr 0.8fr 0.7fr",
               background: hoveredRow === r.id ? "rgba(120,110,95,0.08)" : "transparent",
               borderBottom: i < reviews.length - 1 ? "1px solid rgba(120,110,95,0.08)" : "none",
               borderLeft:
@@ -63,6 +65,23 @@ export function AssignedReviewsTable({ reviews, hoveredRow, onHoverRow, getUrgen
             </span>
             <span>
               <StatusBadge status={r.status} />
+            </span>
+            <span>
+              {r.status !== "Submitted" && (
+                <a
+                  href={reviewUrl}
+                  className="text-[11px] px-2.5 py-1 rounded font-serif"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(180,160,120,0.2), rgba(160,140,100,0.12))",
+                    border: "1px solid rgba(180,160,120,0.35)",
+                    color: "#d4c8a8",
+                    textDecoration: "none",
+                    display: "inline-block",
+                  }}
+                >
+                  {r.status === "Pending" ? "Open" : "Continue"}
+                </a>
+              )}
             </span>
           </div>
         );

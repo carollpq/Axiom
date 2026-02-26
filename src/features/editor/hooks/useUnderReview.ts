@@ -17,7 +17,8 @@ export function useUnderReview(
   const [decision, setDecision] = useState("");
   const [additionalAssigned, setAdditionalAssigned] = useState<string[]>([]);
   const [reviewerSearch, setReviewerSearch] = useState("");
-  const [timelineDays] = useState(12);
+  const [timelineDays] = useState(21);
+  const [isReleasingDecision, setIsReleasingDecision] = useState(false);
 
   const selected = useMemo(
     () => initialPapers.find((p) => p.id === selectedId) ?? null,
@@ -29,9 +30,38 @@ export function useUnderReview(
     [selectedId, reviewStatuses],
   );
 
-  function releaseToAuthor() {
-    // TODO: API call
-    console.log("Release decision:", { decision, editorComment, paperId: selectedId });
+  const allCriteriaMet = useMemo(() => {
+    // Derive from reviewers: all must have submitted (status = "complete")
+    return currentReviewers.length > 0 && currentReviewers.every(r => r.status === "complete");
+  }, [currentReviewers]);
+
+  async function releaseToAuthor() {
+    if (!selectedId || !decision) return;
+    setIsReleasingDecision(true);
+
+    try {
+      const response = await fetch(`/api/submissions/${selectedId}/decision`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          decision: decision as "accept" | "reject" | "revise",
+          comment: editorComment,
+          allCriteriaMet,
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: "Unknown error" }));
+        console.error("[releaseToAuthor] API error:", err);
+      } else {
+        setEditorComment("");
+        setDecision("");
+      }
+    } catch (err) {
+      console.error("[releaseToAuthor] Unexpected error:", err);
+    } finally {
+      setIsReleasingDecision(false);
+    }
   }
 
   function assignReviewer(id: string) {
@@ -49,6 +79,7 @@ export function useUnderReview(
     setSelectedId,
     selected,
     currentReviewers,
+    allCriteriaMet,
     editorComment,
     setEditorComment,
     decision,
@@ -60,5 +91,6 @@ export function useUnderReview(
     reviewerSearch,
     setReviewerSearch,
     timelineDays,
+    isReleasingDecision,
   };
 }

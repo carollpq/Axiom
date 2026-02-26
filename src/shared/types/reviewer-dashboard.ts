@@ -4,6 +4,7 @@ export type ReviewerTab = "assigned" | "completed" | "feedback";
 
 export interface AssignedReview {
   id: number;
+  assignmentId?: string;
   title: string;
   journal: string;
   assigned: string;

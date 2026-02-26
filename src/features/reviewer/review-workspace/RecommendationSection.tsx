@@ -48,8 +48,8 @@ export function RecommendationSection({
             color: "#8fbc8f",
           }}
         >
-          All journal criteria are met. The journal has a binding publication
-          obligation unless an on-chain justification for rejection is provided.
+          All journal criteria are met. Any rejection must be accompanied by a
+          public on-chain justification from the editor.
         </div>
       )}
 

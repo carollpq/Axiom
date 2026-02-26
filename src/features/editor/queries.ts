@@ -1,5 +1,6 @@
 import { db } from "@/src/shared/lib/db";
-import { journals } from "@/src/shared/lib/db/schema";
+import { journals, submissions } from "@/src/shared/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 export async function listJournals() {
   return db
@@ -7,8 +8,15 @@ export async function listJournals() {
     .from(journals);
 }
 
-export async function listJournalSubmissions() {
+export async function getJournalByEditorWallet(editorWallet: string) {
+  return db.query.journals.findFirst({
+    where: eq(journals.editorWallet, editorWallet.toLowerCase()),
+  });
+}
+
+export async function listJournalSubmissions(journalId?: string) {
   return db.query.submissions.findMany({
+    where: journalId ? eq(submissions.journalId, journalId) : undefined,
     with: {
       paper: {
         with: {
@@ -17,6 +25,8 @@ export async function listJournalSubmissions() {
         },
       },
       journal: true,
+      reviewCriteria: true,
+      reviewAssignments: true,
     },
     orderBy: (s, { desc }) => [desc(s.submittedAt)],
   });

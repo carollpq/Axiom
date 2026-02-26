@@ -10,8 +10,10 @@ import type {
   PaperUnderReview,
   ReviewCriterion,
 } from "@/src/shared/types/review-workspace";
+import { canonicalJson, hashString } from "@/src/shared/lib/hashing";
+import type { DbReviewAssignment } from "@/src/features/reviews/queries";
 
-// Placeholder paper — replace with real data once review workspace routing is wired up
+// Placeholder paper — used when no assignment is provided
 const PLACEHOLDER_PAPER: PaperUnderReview = {
   id: 2,
   title: "Distributed Consensus in Heterogeneous IoT Networks",
@@ -29,7 +31,7 @@ const PLACEHOLDER_PAPER: PaperUnderReview = {
   ],
 };
 
-// Placeholder criteria — replace with DB-sourced criteria once submissions store them
+// Placeholder criteria — used when no criteria are published yet
 const PLACEHOLDER_CRITERIA: ReviewCriterion[] = [
   { id: 1, text: "Methodology is reproducible",        onChainHash: "0x3a1f8b2c9d4e5f60a7b8c9d0e1f2a3b4c5d6e7f8" },
   { id: 2, text: "Statistical analysis is appropriate", onChainHash: "0x4b2a9c3d0e5f6a71b8c9d0e1f2a3b4c5d6e7f8a9" },
@@ -37,11 +39,80 @@ const PLACEHOLDER_CRITERIA: ReviewCriterion[] = [
   { id: 4, text: "Claims are supported by evidence",    onChainHash: "0x6d4c1e5f2a7b8c93d0e1f2a3b4c5d6e7f8a9b0c1" },
 ];
 
-export function useReviewWorkspace() {
+function mapAssignmentToPaper(assignment: NonNullable<DbReviewAssignment>): PaperUnderReview {
+  const paper = assignment.submission.paper;
+  const journal = assignment.submission.journal;
+  const versions = paper.versions ?? [];
+  const latestVersion = versions.length > 0 ? versions[versions.length - 1] : null;
+
+  const provenance = latestVersion
+    ? [
+        { label: "Paper Hash", hash: latestVersion.paperHash, verified: true },
+        ...(latestVersion.datasetHash
+          ? [{ label: "Dataset", hash: latestVersion.datasetHash, verified: true }]
+          : []),
+        ...(latestVersion.codeRepoUrl
+          ? [{ label: "Code Repository", hash: latestVersion.codeCommitHash ?? latestVersion.codeRepoUrl, url: latestVersion.codeRepoUrl, verified: !!latestVersion.codeCommitHash }]
+          : []),
+        ...(latestVersion.envSpecHash
+          ? [{ label: "Environment Spec", hash: latestVersion.envSpecHash, verified: true }]
+          : []),
+      ]
+    : PLACEHOLDER_PAPER.provenance;
+
+  return {
+    id: 0, // numeric id not used for real submissions
+    title: paper.title,
+    abstract: paper.abstract ?? "",
+    journal: journal.name,
+    version: latestVersion ? `v${latestVersion.versionNumber}` : "v1",
+    anonymized: true,
+    pdfUrl: "#",
+    provenance,
+  };
+}
+
+interface DbCriterion {
+  id: string;
+  label: string;
+  evaluationType: string;
+  description?: string;
+  required: boolean;
+}
+
+function mapAssignmentToCriteria(assignment: NonNullable<DbReviewAssignment>): ReviewCriterion[] {
+  const reviewCriteriaRow = assignment.submission.reviewCriteria?.[0];
+  if (!reviewCriteriaRow?.criteriaJson) return PLACEHOLDER_CRITERIA;
+
+  try {
+    const parsed = JSON.parse(reviewCriteriaRow.criteriaJson) as DbCriterion[];
+    return parsed.map((c, idx) => ({
+      id: idx + 1,
+      text: c.label,
+      onChainHash: reviewCriteriaRow.criteriaHash,
+    }));
+  } catch {
+    return PLACEHOLDER_CRITERIA;
+  }
+}
+
+export function useReviewWorkspace(assignment?: NonNullable<DbReviewAssignment>) {
+  const paper = useMemo(
+    () => (assignment ? mapAssignmentToPaper(assignment) : PLACEHOLDER_PAPER),
+    [assignment],
+  );
+
+  const criteria = useMemo(
+    () => (assignment ? mapAssignmentToCriteria(assignment) : PLACEHOLDER_CRITERIA),
+    [assignment],
+  );
+
   const [evaluations, setEvaluations] = useState<Record<number, CriterionEvaluation>>(() => {
     const init: Record<number, CriterionEvaluation> = {};
-    for (const c of PLACEHOLDER_CRITERIA) {
-      init[c.id] = { criterionId: c.id, rating: null, comment: "" };
+    // Use criteria length to initialize — will update if criteria changes
+    const c = assignment ? mapAssignmentToCriteria(assignment) : PLACEHOLDER_CRITERIA;
+    for (const criterion of c) {
+      init[criterion.id] = { criterionId: criterion.id, rating: null, comment: "" };
     }
     return init;
   });
@@ -58,6 +129,7 @@ export function useReviewWorkspace() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
   const [criteriaCollapsed, setCriteriaCollapsed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const completedCount = useMemo(
     () => Object.values(evaluations).filter(e => e.rating !== null).length,
@@ -73,8 +145,9 @@ export function useReviewWorkspace() {
     () =>
       Object.values(evaluations).every(e => e.rating !== null) &&
       recommendation !== null &&
-      generalComments.strengths.trim().length > 0,
-    [evaluations, recommendation, generalComments.strengths],
+      generalComments.strengths.trim().length > 0 &&
+      !isSubmitting,
+    [evaluations, recommendation, generalComments.strengths, isSubmitting],
   );
 
   const setCriterionRating = useCallback((id: number, rating: CriterionRating) => {
@@ -91,30 +164,90 @@ export function useReviewWorkspace() {
 
   const saveDraft = useCallback(() => { setIsDraft(true); }, []);
 
-  const submitReview = useCallback(() => {
+  const submitReview = useCallback(async () => {
+    if (!canSubmit) return;
+    setIsSubmitting(true);
+
     const met     = Object.values(evaluations).filter(e => e.rating === "Yes").length;
     const partial = Object.values(evaluations).filter(e => e.rating === "Partially").length;
     const notMet  = Object.values(evaluations).filter(e => e.rating === "No").length;
 
-    setSubmissionResult({
-      txHash:    "0x" + Math.random().toString(16).slice(2, 10) + "..." + Math.random().toString(16).slice(2, 6),
-      timestamp: new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC",
-      paperHash: PLACEHOLDER_PAPER.provenance[0].hash.slice(0, 16) + "...",
-      reviewHash:"0x" + Math.random().toString(16).slice(2, 18) + "...",
-      criteriaSummary: { met, partial, notMet },
-    });
-    setIsSubmitted(true);
-    setIsDraft(false);
-  }, [evaluations]);
+    // Compute review hash (excluding confidentialEditorComments — those never leave the server)
+    const reviewPayload = {
+      evaluations,
+      recommendation,
+      strengths: generalComments.strengths,
+      weaknesses: generalComments.weaknesses,
+      questionsForAuthors: generalComments.questionsForAuthors,
+    };
+    const reviewHash = await hashString(canonicalJson(reviewPayload));
+
+    if (!assignment) {
+      // Placeholder mode — just show mock result
+      setSubmissionResult({
+        txHash: "0x" + Math.random().toString(16).slice(2, 10) + "..." + Math.random().toString(16).slice(2, 6),
+        timestamp: new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC",
+        paperHash: paper.provenance[0]?.hash.slice(0, 16) + "...",
+        reviewHash: reviewHash.slice(0, 16) + "...",
+        criteriaSummary: { met, partial, notMet },
+      });
+      setIsSubmitted(true);
+      setIsDraft(false);
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/reviews/${assignment.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          criteriaEvaluations: evaluations,
+          strengths: generalComments.strengths,
+          weaknesses: generalComments.weaknesses,
+          questionsForAuthors: generalComments.questionsForAuthors,
+          confidentialEditorComments: generalComments.confidentialEditorComments,
+          recommendation,
+          reviewHash,
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: "Unknown error" }));
+        console.error("[Review submit] API error:", err);
+        setIsSubmitting(false);
+        return;
+      }
+
+      const result = await response.json() as { reviewId: string; hederaTxId?: string; hederaTimestamp?: string };
+
+      setSubmissionResult({
+        txHash: result.hederaTxId ?? "pending",
+        timestamp: result.hederaTimestamp
+          ? new Date(result.hederaTimestamp).toISOString().replace("T", " ").slice(0, 19) + " UTC"
+          : new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC",
+        paperHash: paper.provenance[0]?.hash.slice(0, 16) + "...",
+        reviewHash: reviewHash.slice(0, 16) + "...",
+        criteriaSummary: { met, partial, notMet },
+      });
+      setIsSubmitted(true);
+      setIsDraft(false);
+    } catch (err) {
+      console.error("[Review submit] Unexpected error:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [assignment, canSubmit, evaluations, recommendation, generalComments, paper.provenance]);
 
   return {
-    paper: PLACEHOLDER_PAPER,
-    criteria: PLACEHOLDER_CRITERIA,
+    paper,
+    criteria,
     evaluations, generalComments, recommendation,
     isDraft, isSubmitted, submissionResult,
     criteriaCollapsed, setCriteriaCollapsed,
     completedCount, allCriteriaMet, canSubmit,
     setCriterionRating, setCriterionComment, setGeneralComment,
     setRecommendation, saveDraft, submitReview,
+    isSubmitting,
   };
 }

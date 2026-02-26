@@ -1,4 +1,4 @@
-import type { JournalSubmission, SubmissionStage, PoolReviewer } from "@/src/shared/types/editor-dashboard";
+import type { JournalSubmission, SubmissionStage, PoolReviewer, PaperCardData, ReviewerWithStatus } from "@/src/shared/types/editor-dashboard";
 import type { DbJournalSubmission, DbReviewer } from "../queries";
 
 function deriveStage(
@@ -48,5 +48,36 @@ export function mapDbToPoolReviewer(u: DbReviewer): PoolReviewer {
     score: 0,   // requires reputationEvents table
     orcid: String(u.orcidId ?? "—"),
     reviews: 0, // requires reviews table
+  };
+}
+
+export function mapDbToPaperCardData(s: DbJournalSubmission): PaperCardData {
+  const abstract = s.paper.abstract ?? "";
+  return {
+    id: s.id,
+    title: s.paper.title,
+    authors: s.paper.owner?.displayName ?? s.paper.owner?.walletAddress ?? "Unknown",
+    abstractSnippet: abstract.length > 180 ? abstract.slice(0, 177) + "…" : abstract,
+    submittedDate: s.submittedAt.slice(0, 10),
+  };
+}
+
+export function mapDbToReviewerWithStatus(assignment: {
+  id: string;
+  reviewerWallet: string;
+  status: string;
+}): ReviewerWithStatus {
+  const statusMap: Record<string, ReviewerWithStatus["status"]> = {
+    assigned: "pending",
+    accepted: "in_progress",
+    submitted: "complete",
+    declined: "rejected",
+    late: "in_progress",
+  };
+  return {
+    id: assignment.id,
+    name: assignment.reviewerWallet.slice(0, 8) + "…" + assignment.reviewerWallet.slice(-4),
+    status: statusMap[assignment.status] ?? "pending",
+    hasComment: assignment.status === "submitted",
   };
 }

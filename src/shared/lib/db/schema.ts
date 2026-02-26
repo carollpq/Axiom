@@ -30,11 +30,31 @@ export type ContributorStatusDb = "pending" | "signed" | "declined";
 
 export type SubmissionStatusDb =
   | "submitted"
+  | "criteria_published"
+  | "reviewers_assigned"
   | "under_review"
+  | "rebuttal_open"
   | "revision_requested"
   | "accepted"
   | "rejected"
   | "published";
+
+export type ReviewAssignmentStatusDb =
+  | "assigned"
+  | "accepted"
+  | "declined"
+  | "submitted"
+  | "late";
+
+export type ReputationEventTypeDb =
+  | "review_completed"
+  | "review_late"
+  | "editor_rating"
+  | "author_rating"
+  | "paper_published"
+  | "paper_retracted"
+  | "rebuttal_upheld"
+  | "rebuttal_overturned";
 
 // ── Tables ─────────────────────────────────────────────────────────────────
 
@@ -197,12 +217,102 @@ export const submissions = pgTable("submissions", {
   decision: text("decision"),
   decisionJustification: text("decision_justification"),
   decisionTxId: text("decision_tx_id"),
+  reviewDeadlineDays: integer("review_deadline_days").notNull().default(21),
   hederaTxId: text("hedera_tx_id"),
   hederaTimestamp: text("hedera_timestamp"),
   submittedAt: text("submitted_at")
     .notNull()
     .default(sql`now()`),
   decidedAt: text("decided_at"),
+});
+
+export const reviewCriteria = pgTable("review_criteria", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  submissionId: text("submission_id")
+    .notNull()
+    .references(() => submissions.id),
+  criteriaJson: text("criteria_json").notNull(),
+  criteriaHash: text("criteria_hash").notNull(),
+  hederaTxId: text("hedera_tx_id"),
+  publishedAt: text("published_at")
+    .notNull()
+    .default(sql`now()`),
+});
+
+export const reviewAssignments = pgTable("review_assignments", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  submissionId: text("submission_id")
+    .notNull()
+    .references(() => submissions.id),
+  reviewerWallet: text("reviewer_wallet").notNull(),
+  status: text("status")
+    .notNull()
+    .$type<ReviewAssignmentStatusDb>()
+    .default("assigned"),
+  assignedAt: text("assigned_at")
+    .notNull()
+    .default(sql`now()`),
+  deadline: text("deadline"),
+  acceptedAt: text("accepted_at"),
+  submittedAt: text("submitted_at"),
+});
+
+export const reviews = pgTable("reviews", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  submissionId: text("submission_id")
+    .notNull()
+    .references(() => submissions.id),
+  assignmentId: text("assignment_id")
+    .notNull()
+    .references(() => reviewAssignments.id),
+  reviewerWallet: text("reviewer_wallet").notNull(),
+  reviewHash: text("review_hash"),
+  criteriaEvaluations: text("criteria_evaluations"),
+  strengths: text("strengths"),
+  weaknesses: text("weaknesses"),
+  questionsForAuthors: text("questions_for_authors"),
+  confidentialEditorComments: text("confidential_editor_comments"),
+  recommendation: text("recommendation"),
+  hederaTxId: text("hedera_tx_id"),
+  submittedAt: text("submitted_at")
+    .notNull()
+    .default(sql`now()`),
+});
+
+export const reputationEvents = pgTable("reputation_events", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userWallet: text("user_wallet").notNull(),
+  eventType: text("event_type")
+    .notNull()
+    .$type<ReputationEventTypeDb>(),
+  scoreDelta: integer("score_delta").notNull().default(0),
+  details: text("details"),
+  htsTokenSerial: text("hts_token_serial"),
+  hederaTxId: text("hedera_tx_id"),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`now()`),
+});
+
+export const reputationScores = pgTable("reputation_scores", {
+  userWallet: text("user_wallet").primaryKey(),
+  overallScore: integer("overall_score").notNull().default(0),
+  timelinessScore: integer("timeliness_score").notNull().default(0),
+  editorRatingAvg: integer("editor_rating_avg").notNull().default(0),
+  authorRatingAvg: integer("author_rating_avg").notNull().default(0),
+  publicationScore: integer("publication_score").notNull().default(0),
+  reviewCount: integer("review_count").notNull().default(0),
+  lastComputedAt: text("last_computed_at")
+    .notNull()
+    .default(sql`now()`),
 });
 
 // ── Relations ──────────────────────────────────────────────────────────────
@@ -254,7 +364,7 @@ export const journalsRelations = relations(journals, ({ many }) => ({
   submissions: many(submissions),
 }));
 
-export const submissionsRelations = relations(submissions, ({ one }) => ({
+export const submissionsRelations = relations(submissions, ({ one, many }) => ({
   paper: one(papers, {
     fields: [submissions.paperId],
     references: [papers.id],
@@ -266,5 +376,34 @@ export const submissionsRelations = relations(submissions, ({ one }) => ({
   version: one(paperVersions, {
     fields: [submissions.versionId],
     references: [paperVersions.id],
+  }),
+  reviewCriteria: many(reviewCriteria),
+  reviewAssignments: many(reviewAssignments),
+  reviews: many(reviews),
+}));
+
+export const reviewCriteriaRelations = relations(reviewCriteria, ({ one }) => ({
+  submission: one(submissions, {
+    fields: [reviewCriteria.submissionId],
+    references: [submissions.id],
+  }),
+}));
+
+export const reviewAssignmentsRelations = relations(reviewAssignments, ({ one, many }) => ({
+  submission: one(submissions, {
+    fields: [reviewAssignments.submissionId],
+    references: [submissions.id],
+  }),
+  reviews: many(reviews),
+}));
+
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  submission: one(submissions, {
+    fields: [reviews.submissionId],
+    references: [submissions.id],
+  }),
+  assignment: one(reviewAssignments, {
+    fields: [reviews.assignmentId],
+    references: [reviewAssignments.id],
   }),
 }));

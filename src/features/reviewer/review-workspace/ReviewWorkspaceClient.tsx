@@ -1,6 +1,7 @@
 "use client";
 
 import { useReviewWorkspace } from "@/src/shared/hooks/useReviewWorkspace";
+import type { DbReviewAssignment } from "@/src/features/reviews/queries";
 import {
   MethodologyBanner,
   PaperPanel,
@@ -13,7 +14,11 @@ import {
   SubmissionConfirmation,
 } from "@/src/features/reviewer/review-workspace";
 
-export default function ReviewWorkspacePage() {
+interface ReviewWorkspaceClientProps {
+  assignment: NonNullable<DbReviewAssignment>;
+}
+
+export function ReviewWorkspaceClient({ assignment }: ReviewWorkspaceClientProps) {
   const {
     paper,
     criteria,
@@ -34,15 +39,15 @@ export default function ReviewWorkspacePage() {
     setRecommendation,
     saveDraft,
     submitReview,
-  } = useReviewWorkspace();
+  } = useReviewWorkspace(assignment);
 
   return (
     <main className="max-w-7xl mx-auto px-10 py-8">
       {/* Breadcrumb */}
       <div className="text-xs mb-6" style={{ color: "#6a6050" }}>
-        <span className="cursor-pointer" style={{ color: "#8a8070" }}>
+        <a href="/reviewer" style={{ color: "#8a8070" }}>
           Dashboard
-        </span>
+        </a>
         <span className="mx-2">/</span>
         <span>Review Workspace</span>
       </div>

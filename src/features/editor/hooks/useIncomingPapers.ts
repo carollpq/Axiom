@@ -11,7 +11,8 @@ export function useIncomingPapers(
   const [assignedIds, setAssignedIds] = useState<string[]>([]);
   const [reviewerSearch, setReviewerSearch] = useState("");
   const [deskRejectComment, setDeskRejectComment] = useState("");
-  const [timelineDays] = useState(12);
+  const [timelineDays] = useState(21);
+  const [isSendingInvites, setIsSendingInvites] = useState(false);
 
   const selected = useMemo(
     () => initialPapers.find((p) => p.id === selectedId) ?? null,
@@ -26,9 +27,35 @@ export function useIncomingPapers(
     setAssignedIds((prev) => prev.filter((r) => r !== id));
   }
 
-  function sendInvites() {
-    // TODO: API call
-    console.log("Sending invites to:", assignedIds);
+  async function sendInvites() {
+    if (!selectedId || assignedIds.length === 0) return;
+    setIsSendingInvites(true);
+
+    // Map reviewer pool IDs to wallet addresses
+    const reviewerWallets = assignedIds.map(id => {
+      const reviewer = initialReviewerPool.find(r => r.id === id);
+      // If reviewer has an orcid field that might be a wallet, use id as fallback
+      return reviewer?.id ?? id;
+    });
+
+    try {
+      const response = await fetch(`/api/submissions/${selectedId}/assign-reviewer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviewerWallets, deadlineDays: timelineDays }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: "Unknown error" }));
+        console.error("[sendInvites] API error:", err);
+      } else {
+        setAssignedIds([]);
+      }
+    } catch (err) {
+      console.error("[sendInvites] Unexpected error:", err);
+    } finally {
+      setIsSendingInvites(false);
+    }
   }
 
   function submitDeskReject() {
@@ -53,5 +80,6 @@ export function useIncomingPapers(
     timelineDays,
     sendInvites,
     submitDeskReject,
+    isSendingInvites,
   };
 }
