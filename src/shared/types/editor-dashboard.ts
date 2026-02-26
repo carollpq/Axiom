@@ -53,6 +53,7 @@ export interface PaperCardData {
   authors: string;
   abstractSnippet: string;
   submittedDate: string;
+  fileUrl?: string;
 }
 
 export type ReviewStatus = "complete" | "in_progress" | "rejected" | "pending";

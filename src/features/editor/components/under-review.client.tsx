@@ -1,7 +1,7 @@
 "use client";
 
 import { ThreeColumnLayout } from "@/src/shared/components/ThreeColumnLayout";
-import { PdfViewerPlaceholder } from "@/src/shared/components/PdfViewerPlaceholder";
+import { PdfViewer } from "@/src/shared/components/PdfViewer";
 import { PaperList } from "./PaperList.client";
 import { ReviewStatusPanel } from "./sidebar/ReviewStatusPanel";
 import { FinalDecisionPanel } from "./sidebar/FinalDecisionPanel";
@@ -52,7 +52,7 @@ export function UnderReviewClient({
           sectionTitle="Under Review"
         />
       }
-      viewer={<PdfViewerPlaceholder title={selected?.title} />}
+      viewer={<PdfViewer fileUrl={selected?.fileUrl} title={selected?.title} />}
       sidebar={
         selectedId ? (
           <>

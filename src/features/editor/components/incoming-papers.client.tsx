@@ -1,7 +1,7 @@
 "use client";
 
 import { ThreeColumnLayout } from "@/src/shared/components/ThreeColumnLayout";
-import { PdfViewerPlaceholder } from "@/src/shared/components/PdfViewerPlaceholder";
+import { PdfViewer } from "@/src/shared/components/PdfViewer";
 import { PaperList } from "./PaperList.client";
 import { AssignReviewersPanel } from "./sidebar/AssignReviewersPanel";
 import { DeskRejectPanel } from "./sidebar/DeskRejectPanel";
@@ -41,7 +41,7 @@ export function IncomingPapersClient({ papers, reviewerPool }: IncomingPapersPro
         />
       }
       viewer={
-        <PdfViewerPlaceholder title={selected?.title} />
+        <PdfViewer fileUrl={selected?.fileUrl} title={selected?.title} />
       }
       sidebar={
         selectedId ? (

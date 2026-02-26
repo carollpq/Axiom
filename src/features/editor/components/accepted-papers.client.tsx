@@ -1,7 +1,7 @@
 "use client";
 
 import { ThreeColumnLayout } from "@/src/shared/components/ThreeColumnLayout";
-import { PdfViewerPlaceholder } from "@/src/shared/components/PdfViewerPlaceholder";
+import { PdfViewer } from "@/src/shared/components/PdfViewer";
 import { PaperList } from "./PaperList.client";
 import { ReviewCommentsPanel } from "./sidebar/ReviewCommentsPanel";
 import { AddToIssuePanel } from "./sidebar/AddToIssuePanel";
@@ -42,7 +42,7 @@ export function AcceptedPapersClient({
           sectionTitle="Accepted Papers"
         />
       }
-      viewer={<PdfViewerPlaceholder title={selected?.title} />}
+      viewer={<PdfViewer fileUrl={selected?.fileUrl} title={selected?.title} />}
       sidebar={
         selectedId ? (
           <>
