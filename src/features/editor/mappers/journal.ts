@@ -48,18 +48,19 @@ export function mapDbToPoolReviewer(u: DbReviewer): PoolReviewer {
     score: 0,   // requires reputationEvents table
     orcid: String(u.orcidId ?? "—"),
     reviews: 0, // requires reviews table
-    wallet: u.walletAddress,
+    wallet: String(u.walletAddress),
   };
 }
 
 export function mapDbToPaperCardData(s: DbJournalSubmission): PaperCardData {
   const abstract = s.paper.abstract ?? "";
+  const submittedDate = s.submittedAt ? String(s.submittedAt).slice(0, 10) : "—";
   return {
     id: s.id,
     title: s.paper.title,
     authors: s.paper.owner?.displayName ?? s.paper.owner?.walletAddress ?? "Unknown",
     abstractSnippet: abstract.length > 180 ? abstract.slice(0, 177) + "…" : abstract,
-    submittedDate: s.submittedAt.slice(0, 10),
+    submittedDate,
   };
 }
 
