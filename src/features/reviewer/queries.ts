@@ -1,26 +1,49 @@
 import { db } from "@/src/shared/lib/db";
+import { reviewAssignments, reputationScores } from "@/src/shared/lib/db/schema";
+import { eq, and, or } from "drizzle-orm";
 
 export async function listAssignedReviews(reviewerWallet: string) {
-  const all = await db.query.submissions.findMany({
-    with: { paper: true, journal: true },
+  return db.query.reviewAssignments.findMany({
+    where: and(
+      eq(reviewAssignments.reviewerWallet, reviewerWallet.toLowerCase()),
+      or(
+        eq(reviewAssignments.status, "assigned"),
+        eq(reviewAssignments.status, "accepted"),
+      ),
+    ),
+    with: {
+      submission: {
+        with: { paper: true, journal: true },
+      },
+    },
+    orderBy: (a, { asc }) => [asc(a.deadline)],
   });
-  return all.filter(
-    (s) =>
-      s.status === "under_review" &&
-      (s.reviewerWallets as string[] | null ?? []).includes(reviewerWallet),
-  );
 }
 
 export async function listCompletedReviews(reviewerWallet: string) {
-  const all = await db.query.submissions.findMany({
-    with: { paper: { with: { versions: true } }, journal: true },
+  return db.query.reviewAssignments.findMany({
+    where: and(
+      eq(reviewAssignments.reviewerWallet, reviewerWallet.toLowerCase()),
+      eq(reviewAssignments.status, "submitted"),
+    ),
+    with: {
+      submission: {
+        with: {
+          paper: { with: { versions: true } },
+          journal: true,
+        },
+      },
+    },
+    orderBy: (a, { desc }) => [desc(a.submittedAt)],
   });
-  return all.filter(
-    (s) =>
-      (s.status === "published" || s.status === "rejected") &&
-      (s.reviewerWallets as string[] | null ?? []).includes(reviewerWallet),
-  );
+}
+
+export async function getReviewerReputation(reviewerWallet: string) {
+  return db.query.reputationScores.findFirst({
+    where: eq(reputationScores.userWallet, reviewerWallet.toLowerCase()),
+  });
 }
 
 export type DbAssignedReview = Awaited<ReturnType<typeof listAssignedReviews>>[number];
 export type DbCompletedReview = Awaited<ReturnType<typeof listCompletedReviews>>[number];
+export type DbReputationRow = NonNullable<Awaited<ReturnType<typeof getReviewerReputation>>>;

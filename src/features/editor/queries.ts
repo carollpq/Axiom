@@ -1,5 +1,5 @@
 import { db } from "@/src/shared/lib/db";
-import { journals, submissions } from "@/src/shared/lib/db/schema";
+import { journals, submissions, reputationScores } from "@/src/shared/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function listJournals() {
@@ -37,5 +37,10 @@ export async function listReviewerPool() {
   return reviewers.filter((u) => (u.roles as string[]).includes("reviewer"));
 }
 
+export async function listReputationScores() {
+  return db.select().from(reputationScores);
+}
+
 export type DbJournalSubmission = Awaited<ReturnType<typeof listJournalSubmissions>>[number];
 export type DbReviewer = Awaited<ReturnType<typeof listReviewerPool>>[number];
+export type DbReputationScore = Awaited<ReturnType<typeof listReputationScores>>[number];

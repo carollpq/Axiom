@@ -1,5 +1,5 @@
 import type { JournalSubmission, SubmissionStage, PoolReviewer, PaperCardData, ReviewerWithStatus } from "@/src/shared/types/editor-dashboard";
-import type { DbJournalSubmission, DbReviewer } from "../queries";
+import type { DbJournalSubmission, DbReviewer, DbReputationScore } from "../queries";
 
 function deriveStage(
   status: string,
@@ -39,15 +39,16 @@ export function mapDbToJournalSubmission(s: DbJournalSubmission, index: number):
   };
 }
 
-export function mapDbToPoolReviewer(u: DbReviewer): PoolReviewer {
+export function mapDbToPoolReviewer(u: DbReviewer, scoreRow?: DbReputationScore | null): PoolReviewer {
   const fields = (u.researchFields as string[] | null) ?? [];
   return {
     id: String(u.id),
     name: String(u.displayName ?? u.walletAddress),
     field: fields[0] ?? "—",
-    score: 0,   // requires reputationEvents table
+    // DB stores 0–100; UI renders as 0.0–5.0
+    score: scoreRow ? Math.round((scoreRow.overallScore / 10) * 10) / 10 : 0,
     orcid: String(u.orcidId ?? "—"),
-    reviews: 0, // requires reviews table
+    reviews: scoreRow?.reviewCount ?? 0,
   };
 }
 
@@ -62,11 +63,10 @@ export function mapDbToPaperCardData(s: DbJournalSubmission): PaperCardData {
   };
 }
 
-export function mapDbToReviewerWithStatus(assignment: {
-  id: string;
-  reviewerWallet: string;
-  status: string;
-}): ReviewerWithStatus {
+export function mapDbToReviewerWithStatus(
+  assignment: { id: string; reviewerWallet: string; status: string },
+  nameByWallet?: Record<string, string>,
+): ReviewerWithStatus {
   const statusMap: Record<string, ReviewerWithStatus["status"]> = {
     assigned: "pending",
     accepted: "in_progress",
@@ -74,9 +74,12 @@ export function mapDbToReviewerWithStatus(assignment: {
     declined: "rejected",
     late: "in_progress",
   };
+  const name =
+    nameByWallet?.[assignment.reviewerWallet] ??
+    assignment.reviewerWallet.slice(0, 8) + "…" + assignment.reviewerWallet.slice(-4);
   return {
     id: assignment.id,
-    name: assignment.reviewerWallet.slice(0, 8) + "…" + assignment.reviewerWallet.slice(-4),
+    name,
     status: statusMap[assignment.status] ?? "pending",
     hasComment: assignment.status === "submitted",
   };
