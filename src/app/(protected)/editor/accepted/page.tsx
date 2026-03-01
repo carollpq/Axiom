@@ -1,24 +1,46 @@
 import { AcceptedPapersClient } from "@/src/features/editor/components/accepted-papers.client";
-import { mockAcceptedPapers, mockIssues } from "@/src/features/editor/mock-data";
+import { mockIssues } from "@/src/features/editor/mock-data";
+import { getSession } from "@/src/shared/lib/auth/auth";
+import { getJournalByEditorWallet, listJournalSubmissions } from "@/src/features/editor/queries";
+import { mapDbToPaperCardData, mapDbToReviewerWithStatus } from "@/src/features/editor/mappers/journal";
 import type { ReviewerWithStatus } from "@/src/shared/types/editor-dashboard";
 
-const acceptedReviewStatuses: Record<string, ReviewerWithStatus[]> = {
-  p8: [
-    { id: "r1", name: "Dr. Emily Watson", status: "complete", hasComment: true },
-    { id: "r3", name: "Dr. Priya Mehta", status: "complete", hasComment: true },
-    { id: "r5", name: "Dr. Anna Kowalski", status: "complete", hasComment: true },
-  ],
-  p9: [
-    { id: "r2", name: "Dr. James Liu", status: "complete", hasComment: true },
-    { id: "r6", name: "Dr. Omar Hassan", status: "complete", hasComment: true },
-  ],
-};
-
 export default async function AcceptedPapersPage() {
+  const sessionWallet = await getSession();
+
+  if (sessionWallet) {
+    const journal = await getJournalByEditorWallet(sessionWallet);
+    if (journal) {
+      const allSubs = await listJournalSubmissions(journal.id);
+
+      const acceptedSubs = allSubs.filter(
+        s => s.status === "accepted" || s.status === "published",
+      );
+
+      const papers = acceptedSubs.map(mapDbToPaperCardData);
+
+      const reviewStatuses: Record<string, ReviewerWithStatus[]> = {};
+      for (const s of acceptedSubs) {
+        if (s.reviewAssignments && s.reviewAssignments.length > 0) {
+          reviewStatuses[s.id] = (s.reviewAssignments as { id: string; reviewerWallet: string; status: string }[]).map(mapDbToReviewerWithStatus);
+        }
+      }
+
+      return (
+        <AcceptedPapersClient
+          papers={papers}
+          reviewStatuses={reviewStatuses}
+          issues={mockIssues}
+        />
+      );
+    }
+  }
+
+  // Fallback would go here
   return (
     <AcceptedPapersClient
-      papers={mockAcceptedPapers}
-      reviewStatuses={acceptedReviewStatuses}
+      papers={[]}
+      reviewStatuses={{}}
       issues={mockIssues}
     />
   );

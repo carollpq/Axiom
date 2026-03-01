@@ -38,7 +38,8 @@ export default async function JournalDashboard() {
       const s = mockDashboardStats;
       stats = [
         { label: "New Submissions", value: s.newSubmissions },
-        { label: "Awaiting Assignment", value: s.awaitingAssignment },
+        { label: "Criteria Published", value: s.awaitingAssignment },
+        { label: "Reviewers Assigned", value: 0 },
         { label: "Under Review", value: s.underReview },
         { label: "Accepted", value: s.acceptedPapers },
         { label: "Rejected", value: s.rejectedPapers, alert: true },
@@ -49,7 +50,8 @@ export default async function JournalDashboard() {
     const s = mockDashboardStats;
     stats = [
       { label: "New Submissions", value: s.newSubmissions },
-      { label: "Awaiting Assignment", value: s.awaitingAssignment },
+      { label: "Criteria Published", value: s.awaitingAssignment },
+      { label: "Reviewers Assigned", value: 0 },
       { label: "Under Review", value: s.underReview },
       { label: "Accepted", value: s.acceptedPapers },
       { label: "Rejected", value: s.rejectedPapers, alert: true },

@@ -33,6 +33,7 @@ export interface PoolReviewer {
   score: number;
   orcid: string;
   reviews: number;
+  wallet?: string;
 }
 
 export interface ReviewCriterion {

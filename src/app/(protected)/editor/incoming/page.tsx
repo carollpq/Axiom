@@ -22,15 +22,9 @@ export default async function IncomingPapersPage() {
       const papers = incomingSubs.map(mapDbToPaperCardData);
       const reviewerPool = reviewers.map(mapDbToPoolReviewer);
 
-      // Pass submission IDs alongside papers so the client can call the assign-reviewer API
-      const papersWithSubmissionId = incomingSubs.map(s => ({
-        ...mapDbToPaperCardData(s),
-        submissionId: s.id,
-      }));
-
       return (
         <IncomingPapersClient
-          papers={papersWithSubmissionId}
+          papers={papers}
           reviewerPool={reviewerPool}
         />
       );

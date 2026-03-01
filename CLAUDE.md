@@ -25,23 +25,23 @@ The codebase is a **partially functional full-stack application**. The researche
 - Neon PostgreSQL (prod) / SQLite (dev) via `DATABASE_URL`
 
 **What still uses mock data:**
-- Editor dashboard (`(editor)/`)
 - Reviewer dashboard + review workspace (`(reviewer)/`)
 
 **Recently completed (UI/infra):**
 - Editor UI fully redesigned to match researcher page visual style (DashboardHeader, flat stat cards, section label conventions, sidebar panel titles)
+- Editor dashboard with DB-backed submission pipeline (real data: incoming → criteria published → reviewers assigned → under review → decision pending → accepted/rejected)
 - Real PDF viewer implemented in editor three-column views (`PdfViewer` using react-pdf v10 / pdfjs-dist v5); shows placeholder until `fileUrl` is populated from presigned R2 URLs
 
 **What is not yet implemented:**
 - Pre-registered review criteria (journal publishes on-chain) — **TOP PRIORITY**
 - Review submission workflow (reviewer evaluates criteria) — **TOP PRIORITY**
 - HTS soulbound reputation token minting — **TOP PRIORITY**
-- Rebuttal phase (researcher challenges unfair reviews)
+- Rebuttal phase (researcher challenges unfair reviews) **TOP PRIORITY**
 - Timeline enforcement with deadline tracking
 - Real-time researcher status updates / notifications
 - Reviewer search by reputation score
 - Lit Protocol decryption (encrypt works; decrypt not wired into UI)
-- ORCID OAuth (onboarding validates format client-side only)
+- ORCID OAuth (onboarding validates format client-side only) **TOP PRIORITY**
 - `/verify` public hash verification page
 - Hedera mirror node lookups
 
@@ -154,7 +154,7 @@ Each role group has its own layout using `RoleShell` from `src/shared/components
 ## Remaining Work (Priority Order)
 
 ### Tier 1 — Core Review Pipeline (hackathon differentiators)
-1. **Journal dashboard: real data** — Replace mock data with DB-backed submission pipeline (Kanban: New → Criteria Published → Reviewers Assigned → Under Review → Decision Pending → Published/Rejected)
+1. ✅ **Journal dashboard: real data** — Replace mock data with DB-backed submission pipeline (Kanban: New → Criteria Published → Reviewers Assigned → Under Review → Decision Pending → Published/Rejected)
 2. **Publish review criteria** — `POST /api/submissions/[id]/criteria` → hash + HCS anchor. Criteria become immutable. Editor UI: `CriteriaBuilder` component.
 3. **Assign reviewers** — `POST /api/submissions/[id]/assign-reviewer` → create `review_assignments` row. Search reviewers by reputation score and field.
 4. **Reviewer dashboard: real data** — Assigned reviews, deadlines, reputation score card, completed reviews.

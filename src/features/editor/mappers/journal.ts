@@ -48,6 +48,7 @@ export function mapDbToPoolReviewer(u: DbReviewer): PoolReviewer {
     score: 0,   // requires reputationEvents table
     orcid: String(u.orcidId ?? "—"),
     reviews: 0, // requires reviews table
+    wallet: u.walletAddress,
   };
 }
 
