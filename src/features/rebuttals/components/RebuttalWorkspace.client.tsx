@@ -1,6 +1,9 @@
 "use client";
 
 import { useRebuttal } from "@/src/features/rebuttals/hooks/useRebuttal";
+import { SectionLabel } from "@/src/shared/components/SectionLabel";
+import { FormTextarea } from "@/src/shared/components/FormTextarea";
+import { Button } from "@/src/shared/components/Button";
 
 interface ReviewForRebuttal {
   id: string;
@@ -66,9 +69,7 @@ export function RebuttalWorkspace({
         }}
       >
         <div className="p-4">
-          <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-3">
-            Reviews to Address
-          </div>
+          <SectionLabel className="mb-3">Reviews to Address</SectionLabel>
           <div className="space-y-1">
             {reviews.map((r) => {
               const resp = responses[r.id];
@@ -106,9 +107,7 @@ export function RebuttalWorkspace({
           className="p-4"
           style={{ borderTop: "1px solid rgba(120,110,95,0.1)" }}
         >
-          <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-1">
-            Deadline
-          </div>
+          <SectionLabel className="mb-1">Deadline</SectionLabel>
           <div
             className="text-[12px] font-serif"
             style={{ color: isPastDeadline ? "#d4645a" : "#b0a898" }}
@@ -133,9 +132,7 @@ export function RebuttalWorkspace({
 
             {selectedReview.recommendation && (
               <div className="mb-4">
-                <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-1">
-                  Recommendation
-                </div>
+                <SectionLabel className="mb-1">Recommendation</SectionLabel>
                 <div className="text-[13px] text-[#d4ccc0] font-serif capitalize">
                   {selectedReview.recommendation}
                 </div>
@@ -144,9 +141,7 @@ export function RebuttalWorkspace({
 
             {selectedReview.strengths && (
               <div className="mb-4">
-                <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-1">
-                  Strengths
-                </div>
+                <SectionLabel className="mb-1">Strengths</SectionLabel>
                 <div
                   className="text-[13px] text-[#b0a898] font-serif leading-relaxed p-3 rounded"
                   style={{ background: "rgba(45,42,38,0.4)" }}
@@ -158,9 +153,7 @@ export function RebuttalWorkspace({
 
             {selectedReview.weaknesses && (
               <div className="mb-4">
-                <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-1">
-                  Weaknesses
-                </div>
+                <SectionLabel className="mb-1">Weaknesses</SectionLabel>
                 <div
                   className="text-[13px] text-[#b0a898] font-serif leading-relaxed p-3 rounded"
                   style={{ background: "rgba(45,42,38,0.4)" }}
@@ -172,9 +165,7 @@ export function RebuttalWorkspace({
 
             {selectedReview.questionsForAuthors && (
               <div className="mb-4">
-                <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-1">
-                  Questions for Authors
-                </div>
+                <SectionLabel className="mb-1">Questions for Authors</SectionLabel>
                 <div
                   className="text-[13px] text-[#b0a898] font-serif leading-relaxed p-3 rounded"
                   style={{ background: "rgba(45,42,38,0.4)" }}
@@ -186,9 +177,7 @@ export function RebuttalWorkspace({
 
             {selectedReview.criteriaEvaluations && (
               <div className="mb-4">
-                <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-1">
-                  Criteria Evaluations
-                </div>
+                <SectionLabel className="mb-1">Criteria Evaluations</SectionLabel>
                 <div
                   className="text-[13px] text-[#b0a898] font-serif leading-relaxed p-3 rounded"
                   style={{ background: "rgba(45,42,38,0.4)" }}
@@ -219,9 +208,7 @@ export function RebuttalWorkspace({
             className="p-4"
             style={{ borderBottom: "1px solid rgba(120,110,95,0.1)" }}
           >
-            <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-2">
-              Resolution
-            </div>
+            <SectionLabel className="mb-2">Resolution</SectionLabel>
             <div
               className="text-[13px] font-serif font-semibold mb-2"
               style={{
@@ -268,9 +255,7 @@ export function RebuttalWorkspace({
         {/* Response form (only when open) */}
         {selectedReviewId && !isReadOnly && (
           <div className="p-4">
-            <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-3">
-              Your Response
-            </div>
+            <SectionLabel className="mb-3">Your Response</SectionLabel>
 
             <div className="flex gap-2 mb-3">
               {(["agree", "disagree"] as const).map((pos) => (
@@ -305,44 +290,33 @@ export function RebuttalWorkspace({
               ))}
             </div>
 
-            <textarea
+            <FormTextarea
               value={responses[selectedReviewId]?.justification ?? ""}
               onChange={(e) => setJustification(selectedReviewId, e.target.value)}
               placeholder="Provide your justification..."
               rows={6}
-              className="w-full rounded-[6px] p-3 text-[12px] font-serif text-[#d4ccc0] outline-none resize-none mb-3"
-              style={{
-                background: "rgba(30,28,24,0.6)",
-                border: "1px solid rgba(120,110,95,0.2)",
-              }}
+              className="mb-3"
             />
 
             {error && (
               <div className="text-[11px] text-[#d4645a] font-serif mb-2">{error}</div>
             )}
 
-            <button
+            <Button
+              variant="gold"
+              fullWidth
               onClick={submitRebuttal}
               disabled={isSubmitting}
-              className="w-full px-4 py-2 rounded text-[12px] font-serif cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(180,160,120,0.25), rgba(160,140,100,0.15))",
-                border: "1px solid rgba(180,160,120,0.4)",
-                color: "#d4c8a8",
-              }}
             >
               {isSubmitting ? "Submitting..." : "Submit Rebuttal"}
-            </button>
+            </Button>
           </div>
         )}
 
         {/* Show existing responses (read-only view for submitted/resolved) */}
         {isReadOnly && existingResponses && existingResponses.length > 0 && !resolution && rebuttalStatus !== "submitted" && !submitted && (
           <div className="p-4">
-            <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-3">
-              Past Deadline
-            </div>
+            <SectionLabel className="mb-3">Past Deadline</SectionLabel>
             <div className="text-[12px] text-[#d4645a] font-serif">
               The rebuttal deadline has passed.
             </div>

@@ -1,3 +1,5 @@
+import type { RebuttalData, RebuttalResponse } from "@/src/features/rebuttals/types";
+
 export type SubmissionStage =
   | "New"
   | "Criteria Published"
@@ -36,12 +38,12 @@ export interface PoolReviewer {
   wallet?: string;
 }
 
-export interface ReviewCriterion {
+export interface CriterionTemplate {
   label: string;
   type: string;
 }
 
-export type { BadgeColorConfig as StageColorConfig } from "@/src/shared/types/shared";
+export type { BadgeColorConfig } from "@/src/shared/types/shared";
 export type { StatCardProps as JournalStatCardData } from "@/src/shared/types/shared";
 
 export type PipelineCounts = Record<SubmissionStage, number>;
@@ -57,12 +59,12 @@ export interface PaperCardData {
   fileUrl?: string;
 }
 
-export type ReviewStatus = "complete" | "in_progress" | "rejected" | "pending";
+export type AssignmentDisplayStatus = "complete" | "in_progress" | "rejected" | "pending";
 
 export interface ReviewerWithStatus {
   id: string;
   name: string;
-  status: ReviewStatus;
+  status: AssignmentDisplayStatus;
   hasComment: boolean;
 }
 
@@ -79,15 +81,8 @@ export interface JournalIssue {
   paperCount: number;
 }
 
-export interface RebuttalResponseInfo {
-  reviewId: string;
-  position: "agree" | "disagree";
-  justification: string;
-}
+export type RebuttalResponseInfo = Pick<RebuttalResponse, "reviewId" | "position" | "justification">;
 
-export interface RebuttalInfo {
-  id: string;
-  submissionId: string;
-  status: "open" | "submitted" | "under_review" | "resolved";
+export type RebuttalInfo = Pick<RebuttalData, "id" | "submissionId" | "status"> & {
   responses: RebuttalResponseInfo[];
-}
+};

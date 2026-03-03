@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/src/shared/lib/auth/auth";
 import { getContractById } from "@/src/features/contracts/queries";
 import { signContributor, updateContractHedera } from "@/src/features/contracts/actions";
-import { isHederaConfigured } from "@/src/shared/lib/hedera/client";
-import { submitHcsMessage } from "@/src/shared/lib/hedera/hcs";
 import { verifyMessage } from "viem";
+import { requireSession, anchorToHcs } from "@/src/shared/lib/api-helpers";
 
 export const runtime = "nodejs";
 
@@ -12,10 +10,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const sessionWallet = await getSession();
-  if (!sessionWallet) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const session = await requireSession();
+  if (session instanceof NextResponse) return session;
 
   const { id } = await params;
   const body = await req.json();
@@ -32,7 +28,7 @@ export async function POST(
     );
   }
 
-  if (contributorWallet.toLowerCase() !== sessionWallet) {
+  if (contributorWallet.toLowerCase() !== session) {
     return NextResponse.json(
       { error: "Session wallet does not match contributor wallet" },
       { status: 403 },
@@ -68,40 +64,34 @@ export async function POST(
     );
   }
 
-  if (isHederaConfigured() && process.env.HCS_TOPIC_CONTRACTS) {
-    try {
-      const contract = await getContractById(id) as unknown as {
-        status: string;
-        contractHash: string | null;
-      } | null;
-      const isFullySigned = contract?.status === "fully_signed";
+  const contract = await getContractById(id) as unknown as {
+    status: string;
+    contractHash: string | null;
+  } | null;
+  const isFullySigned = contract?.status === "fully_signed";
 
-      const hcsPayload = isFullySigned
-        ? {
-            type: "fullySigned",
-            contractId: id,
-            contractHash: contractHash ?? contract?.contractHash,
-            timestamp: new Date().toISOString(),
-          }
-        : {
-            type: "signed",
-            contractId: id,
-            contractHash: contractHash ?? null,
-            signerWallet: contributorWallet,
-            timestamp: new Date().toISOString(),
-          };
-
-      const { txId, consensusTimestamp } = await submitHcsMessage(
-        process.env.HCS_TOPIC_CONTRACTS,
-        hcsPayload,
-      );
-
-      if (isFullySigned) {
-        await updateContractHedera(id, txId, consensusTimestamp);
+  const hcsPayload = isFullySigned
+    ? {
+        type: "fullySigned",
+        contractId: id,
+        contractHash: contractHash ?? contract?.contractHash ?? null,
+        timestamp: new Date().toISOString(),
       }
-    } catch (err) {
-      console.error("[HCS] Contract sign failed:", err);
-    }
+    : {
+        type: "signed",
+        contractId: id,
+        contractHash: contractHash ?? null,
+        signerWallet: contributorWallet,
+        timestamp: new Date().toISOString(),
+      };
+
+  const { txId, consensusTimestamp } = await anchorToHcs(
+    "HCS_TOPIC_CONTRACTS",
+    hcsPayload,
+  );
+
+  if (isFullySigned && txId && consensusTimestamp) {
+    await updateContractHedera(id, txId, consensusTimestamp);
   }
 
   return NextResponse.json(result);

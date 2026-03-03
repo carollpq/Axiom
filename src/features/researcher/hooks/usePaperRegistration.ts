@@ -4,6 +4,7 @@ import { useReducer, useCallback, useRef } from "react";
 import type { SignedContract, RegisteredJournal } from "@/src/features/researcher/types/paper-registration";
 import { useCurrentUser } from "@/src/shared/hooks/useCurrentUser";
 import { fetchApi } from "@/src/shared/lib/api";
+import { mockTxHash, formatTimestampUtc } from "@/src/shared/lib/format";
 import { hashFile } from "@/src/shared/lib/hashing";
 import { isLitConfigured, getLitClient } from "@/src/shared/lib/lit/client";
 import { buildWalletListConditions } from "@/src/shared/lib/lit/access-control";
@@ -114,7 +115,7 @@ export function usePaperRegistration(initialContracts: ApiContract[], initialJou
     if (!isConnected || !user) {
       dispatch({
         type: "REGISTER_DEMO",
-        txHash: "0x" + Math.random().toString(16).slice(2, 10) + "..." + Math.random().toString(16).slice(2, 6),
+        txHash: mockTxHash(),
         txTimestamp: "2026-02-08 11:42:15 UTC",
       });
       return;
@@ -190,9 +191,7 @@ export function usePaperRegistration(initialContracts: ApiContract[], initialJou
         type: "REGISTER_SUCCESS",
         paperId: paper.id,
         txHash: version.hederaTxId ?? "pending — configure HEDERA_OPERATOR_ID/KEY to anchor on-chain",
-        txTimestamp: version.hederaTimestamp
-          ? version.hederaTimestamp.replace("T", " ").slice(0, 19) + " UTC"
-          : new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC",
+        txTimestamp: formatTimestampUtc(version.hederaTimestamp ?? new Date().toISOString()),
       });
     } catch (err) {
       console.error("Registration failed:", err);
@@ -211,9 +210,7 @@ export function usePaperRegistration(initialContracts: ApiContract[], initialJou
       dispatch({
         type: "SUBMIT_SUCCESS",
         txHash: result.hederaTxId ?? "pending — configure HEDERA_OPERATOR_ID/KEY to anchor on-chain",
-        txTimestamp: result.hederaTimestamp
-          ? result.hederaTimestamp.replace("T", " ").slice(0, 19) + " UTC"
-          : new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC",
+        txTimestamp: formatTimestampUtc(result.hederaTimestamp ?? new Date().toISOString()),
       });
     } catch (err) {
       console.error("Submission failed:", err);

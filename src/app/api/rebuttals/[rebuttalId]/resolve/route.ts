@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/src/shared/lib/auth/auth";
 import { getRebuttalById } from "@/src/features/rebuttals/queries";
 import { resolveRebuttal } from "@/src/features/rebuttals/actions";
-import { createReputationEvent } from "@/src/features/reviews/actions";
 import { createNotification } from "@/src/features/notifications/actions";
-import { isHederaConfigured } from "@/src/shared/lib/hedera/client";
-import { submitHcsMessage } from "@/src/shared/lib/hedera/hcs";
-import { mintReputationToken } from "@/src/shared/lib/hedera/hts";
 import type { RebuttalResolutionDb } from "@/src/shared/lib/db/schema";
+import {
+  requireSession,
+  anchorToHcs,
+  recordReputation,
+} from "@/src/shared/lib/api-helpers";
 
 export const runtime = "nodejs";
 
@@ -15,10 +15,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ rebuttalId: string }> },
 ) {
-  const sessionWallet = await getSession();
-  if (!sessionWallet) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const session = await requireSession();
+  if (session instanceof NextResponse) return session;
 
   const { rebuttalId } = await params;
 
@@ -31,7 +29,7 @@ export async function POST(
     return NextResponse.json({ error: "Submission not found" }, { status: 404 });
   }
 
-  if (rebuttal.submission.journal.editorWallet.toLowerCase() !== sessionWallet.toLowerCase()) {
+  if (rebuttal.submission.journal.editorWallet.toLowerCase() !== session.toLowerCase()) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -48,21 +46,13 @@ export async function POST(
     return NextResponse.json({ error: "Invalid resolution" }, { status: 400 });
   }
 
-  let hederaTxId: string | undefined;
-  if (isHederaConfigured() && process.env.HCS_TOPIC_DECISIONS) {
-    try {
-      const { txId } = await submitHcsMessage(process.env.HCS_TOPIC_DECISIONS, {
-        type: "rebuttal_resolved",
-        rebuttalId,
-        submissionId: rebuttal.submissionId,
-        resolution: body.resolution,
-        timestamp: new Date().toISOString(),
-      });
-      hederaTxId = txId;
-    } catch (err) {
-      console.error("[HCS] Rebuttal resolution anchor failed:", err);
-    }
-  }
+  const { txId: hederaTxId } = await anchorToHcs("HCS_TOPIC_DECISIONS", {
+    type: "rebuttal_resolved",
+    rebuttalId,
+    submissionId: rebuttal.submissionId,
+    resolution: body.resolution,
+    timestamp: new Date().toISOString(),
+  });
 
   await resolveRebuttal({
     rebuttalId,
@@ -80,20 +70,13 @@ export async function POST(
     const eventType = body.resolution === "upheld" ? "rebuttal_upheld" : "rebuttal_overturned";
     const scoreDelta = body.resolution === "upheld" ? -2 : body.resolution === "rejected" ? 1 : 0;
 
-    const mintResult = await mintReputationToken(reviewerWallet, {
-      type: eventType,
-      rebuttalId,
-      resolution: body.resolution,
-    });
-
-    await createReputationEvent({
-      userWallet: reviewerWallet,
+    await recordReputation(
+      reviewerWallet,
       eventType,
       scoreDelta,
-      details: `Rebuttal ${body.resolution} for submission ${rebuttal.submissionId}`,
-      htsTokenSerial: mintResult?.serial,
-      hederaTxId: mintResult?.txId,
-    });
+      `Rebuttal ${body.resolution} for submission ${rebuttal.submissionId}`,
+      { type: eventType, rebuttalId, resolution: body.resolution },
+    );
   }
 
   // Notify author

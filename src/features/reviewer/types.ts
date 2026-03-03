@@ -2,7 +2,7 @@ import type { TabConfig } from "@/src/shared/types/shared";
 
 // ── Reviewer Dashboard Types ──
 
-export type ReviewStatus = "Late" | "In Progress" | "Pending" | "Submitted";
+export type ReviewerDisplayStatus = "Late" | "In Progress" | "Pending" | "Submitted";
 
 export type ReviewerTab = "assigned" | "completed" | "feedback";
 
@@ -13,7 +13,7 @@ export interface AssignedReview {
   journal: string;
   assigned: string;
   deadline: string;
-  status: ReviewStatus;
+  status: ReviewerDisplayStatus;
   daysLeft: number;
 }
 

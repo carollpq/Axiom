@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/src/shared/lib/auth/auth";
 import { getPaperById } from "@/src/features/papers/queries";
 import { createSubmission, updatePaper, updateSubmissionHedera } from "@/src/features/papers/actions";
-import { isHederaConfigured } from "@/src/shared/lib/hedera/client";
-import { submitHcsMessage } from "@/src/shared/lib/hedera/hcs";
 import { db } from "@/src/shared/lib/db";
 import { paperVersions, users } from "@/src/shared/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
+import { requireSession, anchorToHcs } from "@/src/shared/lib/api-helpers";
 
 export const runtime = "nodejs";
 
@@ -14,10 +12,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const sessionWallet = await getSession();
-  if (!sessionWallet) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const session = await requireSession();
+  if (session instanceof NextResponse) return session;
 
   const { id } = await params;
   const body = await req.json();
@@ -36,7 +32,7 @@ export async function POST(
   const owner = await db
     .select()
     .from(users)
-    .where(eq(users.walletAddress, sessionWallet.toLowerCase()))
+    .where(eq(users.walletAddress, session.toLowerCase()))
     .limit(1)
     .then(rows => rows[0] ?? null);
 
@@ -74,28 +70,20 @@ export async function POST(
     return NextResponse.json({ error: "Failed to create submission" }, { status: 500 });
   }
 
-  let hederaTxId: string | undefined;
-  let hederaTimestamp: string | undefined;
+  const { txId: hederaTxId, consensusTimestamp: hederaTimestamp } = await anchorToHcs(
+    "HCS_TOPIC_SUBMISSIONS",
+    {
+      type: "submitted",
+      paperId: id,
+      journalId,
+      versionId: latestVersion.id,
+      submissionId: submission.id,
+      submittedAt: new Date().toISOString(),
+    },
+  );
 
-  if (isHederaConfigured() && process.env.HCS_TOPIC_SUBMISSIONS) {
-    try {
-      const { txId, consensusTimestamp } = await submitHcsMessage(
-        process.env.HCS_TOPIC_SUBMISSIONS,
-        {
-          type: "submitted",
-          paperId: id,
-          journalId,
-          versionId: latestVersion.id,
-          submissionId: submission.id,
-          submittedAt: new Date().toISOString(),
-        },
-      );
-      hederaTxId = txId;
-      hederaTimestamp = consensusTimestamp;
-      await updateSubmissionHedera(submission.id, txId, consensusTimestamp);
-    } catch (err) {
-      console.error("[HCS] Submission anchor failed:", err);
-    }
+  if (hederaTxId && hederaTimestamp) {
+    await updateSubmissionHedera(submission.id, hederaTxId, hederaTimestamp);
   }
 
   await updatePaper(id, { status: "submitted" });

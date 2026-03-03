@@ -1,5 +1,6 @@
 import type { JournalSubmission, SubmissionStage, PoolReviewer, PaperCardData, ReviewerWithStatus } from "@/src/features/editor/types";
 import type { DbJournalSubmission, DbReviewer, DbReputationScore } from "../queries";
+import { formatIsoDate, truncateHash, displayNameOrWallet, toFivePointScale } from "@/src/shared/lib/format";
 
 function deriveStage(
   status: string,
@@ -22,14 +23,14 @@ function deriveStage(
 
 export function mapDbToJournalSubmission(s: DbJournalSubmission, index: number): JournalSubmission {
   const latestVersion = s.paper.versions?.at(-1);
-  const hash = latestVersion ? latestVersion.paperHash.slice(0, 8) + "..." : "—";
+  const hash = latestVersion ? truncateHash(latestVersion.paperHash, 8) : "—";
   const wallets = (s.reviewerWallets as string[] | null) ?? [];
 
   return {
     id: index + 1,
     title: s.paper.title,
     authors: s.paper.owner?.displayName ?? "Unknown",
-    submitted: s.submittedAt.slice(0, 10),
+    submitted: formatIsoDate(s.submittedAt),
     stage: deriveStage(s.status, s.criteriaHash ?? null, wallets, s.criteriaMet ?? null, s.decision ?? null),
     reviewers: wallets,
     deadline: s.reviewDeadline ?? null,
@@ -45,8 +46,7 @@ export function mapDbToPoolReviewer(u: DbReviewer, scoreRow?: DbReputationScore 
     id: String(u.id),
     name: String(u.displayName ?? u.walletAddress),
     field: fields[0] ?? "—",
-    // DB stores 0–100; UI renders as 0.0–5.0
-    score: scoreRow ? Math.round((scoreRow.overallScore / 10) * 10) / 10 : 0,
+    score: scoreRow ? toFivePointScale(scoreRow.overallScore) : 0,
     orcid: String(u.orcidId ?? "—"),
     reviews: scoreRow?.reviewCount ?? 0,
   };
@@ -54,7 +54,7 @@ export function mapDbToPoolReviewer(u: DbReviewer, scoreRow?: DbReputationScore 
 
 export function mapDbToPaperCardData(s: DbJournalSubmission): PaperCardData {
   const abstract = s.paper.abstract ?? "";
-  const submittedDate = s.submittedAt ? String(s.submittedAt).slice(0, 10) : "—";
+  const submittedDate = s.submittedAt ? formatIsoDate(String(s.submittedAt)) : "—";
   return {
     id: s.id,
     title: s.paper.title,
@@ -77,7 +77,7 @@ export function mapDbToReviewerWithStatus(
   };
   const name =
     nameByWallet?.[assignment.reviewerWallet] ??
-    assignment.reviewerWallet.slice(0, 8) + "…" + assignment.reviewerWallet.slice(-4);
+    displayNameOrWallet(null, assignment.reviewerWallet);
   return {
     id: assignment.id,
     name,

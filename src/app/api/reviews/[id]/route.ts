@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/src/shared/lib/auth/auth";
 import { getReviewAssignment } from "@/src/features/reviews/queries";
-import { createReview, updateReviewHedera, createReputationEvent } from "@/src/features/reviews/actions";
-import { isHederaConfigured } from "@/src/shared/lib/hedera/client";
-import { submitHcsMessage } from "@/src/shared/lib/hedera/hcs";
+import { createReview, updateReviewHedera } from "@/src/features/reviews/actions";
 import { db } from "@/src/shared/lib/db";
 import { paperVersions } from "@/src/shared/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { mintReputationToken } from "@/src/shared/lib/hedera/hts";
 import { createNotification } from "@/src/features/notifications/actions";
+import {
+  requireSession,
+  anchorToHcs,
+  recordReputation,
+} from "@/src/shared/lib/api-helpers";
 
 export const runtime = "nodejs";
 
@@ -16,14 +17,12 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const sessionWallet = await getSession();
-  if (!sessionWallet) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const session = await requireSession();
+  if (session instanceof NextResponse) return session;
 
   const { id: assignmentId } = await params;
 
-  const assignment = await getReviewAssignment(assignmentId, sessionWallet);
+  const assignment = await getReviewAssignment(assignmentId, session);
   if (!assignment) {
     return NextResponse.json({ error: "Assignment not found or access denied" }, { status: 403 });
   }
@@ -62,7 +61,7 @@ export async function POST(
   const review = await createReview({
     submissionId: assignment.submissionId,
     assignmentId,
-    reviewerWallet: sessionWallet,
+    reviewerWallet: session,
     reviewHash: body.reviewHash,
     criteriaEvaluations: JSON.stringify(body.criteriaEvaluations),
     strengths: body.strengths ?? "",
@@ -76,51 +75,29 @@ export async function POST(
     return NextResponse.json({ error: "Failed to create review" }, { status: 500 });
   }
 
-  let hederaTxId: string | undefined;
-  let hederaTimestamp: string | undefined;
-
-  if (isHederaConfigured() && process.env.HCS_TOPIC_REVIEWS) {
-    try {
-      const { txId, consensusTimestamp } = await submitHcsMessage(
-        process.env.HCS_TOPIC_REVIEWS,
-        {
-          type: "review_submitted",
-          reviewHash: body.reviewHash,
-          reviewerWallet: sessionWallet,
-          submissionId: assignment.submissionId,
-          paperHash: latestVersion?.paperHash ?? null,
-          timestamp: new Date().toISOString(),
-        },
-      );
-      hederaTxId = txId;
-      hederaTimestamp = consensusTimestamp;
-      await updateReviewHedera(review.id, txId);
-    } catch (err) {
-      console.error("[HCS] Review anchor failed:", err);
-    }
-  }
-
-  // Create reputation event (append-only — never update or delete)
-  let htsTokenSerial: string | undefined;
-  try {
-    const tokenResult = await mintReputationToken(sessionWallet, {
-      type: "review_completed",
-      reviewId: review.id,
+  const { txId: hederaTxId, consensusTimestamp: hederaTimestamp } = await anchorToHcs(
+    "HCS_TOPIC_REVIEWS",
+    {
+      type: "review_submitted",
+      reviewHash: body.reviewHash,
+      reviewerWallet: session,
       submissionId: assignment.submissionId,
-    });
-    htsTokenSerial = tokenResult?.serial;
-  } catch (err) {
-    console.error("[HTS] Reputation token mint failed:", err);
+      paperHash: latestVersion?.paperHash ?? null,
+      timestamp: new Date().toISOString(),
+    },
+  );
+
+  if (hederaTxId) {
+    await updateReviewHedera(review.id, hederaTxId);
   }
 
-  await createReputationEvent({
-    userWallet: sessionWallet,
-    eventType: "review_completed",
-    scoreDelta: 1,
-    details: JSON.stringify({ reviewId: review.id, submissionId: assignment.submissionId }),
-    htsTokenSerial,
-    hederaTxId,
-  });
+  await recordReputation(
+    session,
+    "review_completed",
+    1,
+    JSON.stringify({ reviewId: review.id, submissionId: assignment.submissionId }),
+    { type: "review_completed", reviewId: review.id, submissionId: assignment.submissionId },
+  );
 
   // Notify editor that a review was submitted
   if (assignment.submission.journal?.editorWallet) {

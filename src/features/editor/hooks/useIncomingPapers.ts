@@ -1,23 +1,19 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
+import { useSelection } from "@/src/shared/hooks/useSelection";
 import type { PaperCardData, PoolReviewer } from "@/src/features/editor/types";
 
 export function useIncomingPapers(
   initialPapers: PaperCardData[],
   initialReviewerPool: PoolReviewer[],
 ) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { selectedId, setSelectedId, selected } = useSelection(initialPapers);
   const [assignedIds, setAssignedIds] = useState<string[]>([]);
   const [reviewerSearch, setReviewerSearch] = useState("");
   const [deskRejectComment, setDeskRejectComment] = useState("");
   const [timelineDays] = useState(21);
   const [isSendingInvites, setIsSendingInvites] = useState(false);
-
-  const selected = useMemo(
-    () => initialPapers.find((p) => p.id === selectedId) ?? null,
-    [initialPapers, selectedId],
-  );
 
   function assignReviewer(id: string) {
     setAssignedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));

@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { FormInput } from "@/src/shared/components/FormInput";
+import { SectionLabel } from "@/src/shared/components/SectionLabel";
+import { Button } from "@/src/shared/components/Button";
 
 export interface ReviewCriterionInput {
   id: string;
@@ -14,19 +17,6 @@ interface CriteriaBuilderProps {
   submissionId: string;
   onPublished?: (criteriaHash: string, hederaTxId?: string) => void;
 }
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "7px 10px",
-  background: "rgba(30,28,24,0.8)",
-  border: "1px solid rgba(120,110,95,0.25)",
-  borderRadius: 4,
-  color: "#d4ccc0",
-  fontFamily: "'Georgia', serif",
-  fontSize: 12,
-  outline: "none",
-  boxSizing: "border-box",
-};
 
 function newCriterion(): ReviewCriterionInput {
   return {
@@ -104,9 +94,7 @@ export function CriteriaBuilder({ submissionId, onPublished }: CriteriaBuilderPr
 
   return (
     <div className="px-4 py-3">
-      <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-3">
-        Review Criteria
-      </div>
+      <SectionLabel className="mb-3">Review Criteria</SectionLabel>
 
       <div className="space-y-2 mb-3">
         {criteria.map((c, idx) => (
@@ -120,12 +108,11 @@ export function CriteriaBuilder({ submissionId, onPublished }: CriteriaBuilderPr
           >
             <div className="flex items-center gap-2 mb-2">
               <span className="text-[10px] text-[#6a6050] shrink-0">{idx + 1}.</span>
-              <input
+              <FormInput
                 type="text"
                 value={c.label}
                 onChange={e => updateCriterion(c.id, { label: e.target.value })}
                 placeholder="Criterion label..."
-                style={inputStyle}
               />
               <button
                 onClick={() => removeCriterion(c.id)}
@@ -152,7 +139,12 @@ export function CriteriaBuilder({ submissionId, onPublished }: CriteriaBuilderPr
                 onChange={e =>
                   updateCriterion(c.id, { evaluationType: e.target.value as ReviewCriterionInput["evaluationType"] })
                 }
-                style={{ ...inputStyle, width: "auto", padding: "4px 8px", fontSize: 11 }}
+                className="rounded text-[11px] font-serif text-[#d4ccc0] outline-none"
+                style={{
+                  padding: "4px 8px",
+                  background: "rgba(30,28,24,0.8)",
+                  border: "1px solid rgba(120,110,95,0.25)",
+                }}
               >
                 <option value="yes_no_partially">Yes / No / Partially</option>
                 <option value="scale_1_5">Scale 1–5</option>
@@ -178,20 +170,15 @@ export function CriteriaBuilder({ submissionId, onPublished }: CriteriaBuilderPr
         <div className="text-[11px] text-[#d4645a] mb-2">{error}</div>
       )}
 
-      <button
+      <Button
+        variant="gold"
+        fullWidth
         onClick={handlePublish}
         disabled={!canPublish || isPublishing}
-        className="w-full text-[12px] py-2.5 rounded cursor-pointer font-serif disabled:opacity-40"
-        style={{
-          background: canPublish && !isPublishing
-            ? "linear-gradient(135deg, rgba(201,164,74,0.3), rgba(180,145,60,0.2))"
-            : "rgba(45,42,38,0.5)",
-          border: "1px solid rgba(201,164,74,0.4)",
-          color: "#c9a44a",
-        }}
+        className="py-2.5"
       >
         {isPublishing ? "Publishing to HCS..." : "Publish Criteria On-Chain"}
-      </button>
+      </Button>
 
       <p className="text-[10px] mt-2" style={{ color: "#4a4238" }}>
         Once published, criteria are immutable for this submission.

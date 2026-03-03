@@ -2,16 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/src/shared/lib/db";
 import { users } from "@/src/shared/lib/db/schema";
-import { getSession } from "@/src/shared/lib/auth/auth";
+import { requireSession } from "@/src/shared/lib/api-helpers";
 
 const ORCID_REGEX = /^\d{4}-\d{4}-\d{4}-\d{3}[0-9X]$/;
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
+    const session = await requireSession();
+    if (session instanceof NextResponse) return session;
 
     const body = await request.json();
     const { wallet, role, orcidId } = body;

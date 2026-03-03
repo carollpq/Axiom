@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listOverdueAssignments } from "@/src/features/reviews/queries";
-import { markAssignmentLate, createReputationEvent } from "@/src/features/reviews/actions";
+import { markAssignmentLate } from "@/src/features/reviews/actions";
 import { createNotification } from "@/src/features/notifications/actions";
-import { mintReputationToken } from "@/src/shared/lib/hedera/hts";
+import { recordReputation } from "@/src/shared/lib/api-helpers";
 
 export const runtime = "nodejs";
 
@@ -22,20 +22,13 @@ export async function GET(req: NextRequest) {
   for (const assignment of overdue) {
     await markAssignmentLate(assignment.id);
 
-    const mintResult = await mintReputationToken(assignment.reviewerWallet, {
-      type: "review_late",
-      assignmentId: assignment.id,
-      submissionId: assignment.submissionId,
-    });
-
-    await createReputationEvent({
-      userWallet: assignment.reviewerWallet,
-      eventType: "review_late",
-      scoreDelta: -2,
-      details: `Late review for submission ${assignment.submissionId}`,
-      htsTokenSerial: mintResult?.serial,
-      hederaTxId: mintResult?.txId,
-    });
+    await recordReputation(
+      assignment.reviewerWallet,
+      "review_late",
+      -2,
+      `Late review for submission ${assignment.submissionId}`,
+      { type: "review_late", assignmentId: assignment.id, submissionId: assignment.submissionId },
+    );
 
     // Notify reviewer
     await createNotification({

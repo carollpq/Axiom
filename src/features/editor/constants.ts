@@ -1,4 +1,4 @@
-import type { SubmissionStage, StageFilter, StageColorConfig, ReviewCriterion } from "@/src/features/editor/types";
+import type { SubmissionStage, StageFilter, BadgeColorConfig, CriterionTemplate } from "@/src/features/editor/types";
 
 export const pipelineStages: SubmissionStage[] = [
   "New",
@@ -12,7 +12,7 @@ export const pipelineStages: SubmissionStage[] = [
 
 export const stages: StageFilter[] = ["All", ...pipelineStages];
 
-export const stageColors: Record<SubmissionStage, StageColorConfig> = {
+export const stageColors: Record<SubmissionStage, BadgeColorConfig> = {
   "New":                { bg: "rgba(150,150,170,0.15)", text: "#9a9aad", border: "rgba(150,150,170,0.3)" },
   "Criteria Published": { bg: "rgba(130,160,200,0.15)", text: "#7a9fc7", border: "rgba(130,160,200,0.3)" },
   "Reviewers Assigned": { bg: "rgba(160,140,200,0.15)", text: "#a98fc7", border: "rgba(160,140,200,0.3)" },
@@ -22,7 +22,7 @@ export const stageColors: Record<SubmissionStage, StageColorConfig> = {
   "Rejected":           { bg: "rgba(200,100,90,0.15)",  text: "#d4645a", border: "rgba(200,100,90,0.3)" },
 };
 
-export const reviewCriteria: ReviewCriterion[] = [
+export const reviewCriteria: CriterionTemplate[] = [
   { label: "Methodology is reproducible",        type: "Yes / No / Partially" },
   { label: "Statistical analysis is appropriate", type: "Yes / No / Partially" },
   { label: "Dataset is accessible and described", type: "Yes / No / Partially" },

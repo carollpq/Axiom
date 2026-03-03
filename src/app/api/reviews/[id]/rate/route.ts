@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/src/shared/lib/auth/auth";
 import { db } from "@/src/shared/lib/db";
 import { reviews, reviewerRatings } from "@/src/shared/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { canonicalJson, hashString } from "@/src/shared/lib/hashing";
-import { mintReputationToken } from "@/src/shared/lib/hedera/hts";
-import { createReputationEvent } from "@/src/features/reviews/actions";
+import { requireSession, recordReputation } from "@/src/shared/lib/api-helpers";
 
 export const runtime = "nodejs";
 
@@ -13,10 +11,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const sessionWallet = await getSession();
-  if (!sessionWallet) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const session = await requireSession();
+  if (session instanceof NextResponse) return session;
 
   const { id: reviewId } = await params;
 
@@ -34,7 +30,7 @@ export async function POST(
     return NextResponse.json({ error: "Review not found" }, { status: 404 });
   }
 
-  if (review.submission.paper.owner.walletAddress.toLowerCase() !== sessionWallet.toLowerCase()) {
+  if (review.submission.paper.owner.walletAddress.toLowerCase() !== session.toLowerCase()) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -54,11 +50,13 @@ export async function POST(
 
   const ratingHash = await hashString(canonicalJson({ rating: body.rating, reviewId }));
 
-  const mintResult = await mintReputationToken(review.reviewerWallet, {
-    type: "author_rating",
-    rating: body.rating,
-    reviewId,
-  });
+  const { serial } = await recordReputation(
+    review.reviewerWallet,
+    "author_rating",
+    body.rating - 3, // 1→-2, 2→-1, 3→0, 4→+1, 5→+2
+    `Author rating: ${body.rating}/5`,
+    { type: "author_rating", rating: body.rating, reviewId },
+  );
 
   const [ratingRow] = await db
     .insert(reviewerRatings)
@@ -66,18 +64,9 @@ export async function POST(
       reviewId,
       rating: body.rating,
       ratingHash,
-      reputationTokenSerial: mintResult?.serial ?? null,
+      reputationTokenSerial: serial ?? null,
     })
     .returning();
-
-  await createReputationEvent({
-    userWallet: review.reviewerWallet,
-    eventType: "author_rating",
-    scoreDelta: body.rating - 3, // 1→-2, 2→-1, 3→0, 4→+1, 5→+2
-    details: `Author rating: ${body.rating}/5`,
-    htsTokenSerial: mintResult?.serial,
-    hederaTxId: mintResult?.txId,
-  });
 
   return NextResponse.json({ success: true, ratingId: ratingRow?.id });
 }

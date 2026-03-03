@@ -9,6 +9,7 @@ import type {
   ReviewCriterion,
 } from "@/src/features/reviewer/types";
 import { canonicalJson, hashString } from "@/src/shared/lib/hashing";
+import { mockTxHash, formatTimestampUtc } from "@/src/shared/lib/format";
 import type { DbReviewAssignment } from "@/src/features/reviews/queries";
 import {
   reviewWorkspaceReducer,
@@ -161,8 +162,8 @@ export function useReviewWorkspace(assignment?: NonNullable<DbReviewAssignment>)
       dispatch({
         type: "SUBMIT_SUCCESS",
         submissionResult: {
-          txHash: "0x" + Math.random().toString(16).slice(2, 10) + "..." + Math.random().toString(16).slice(2, 6),
-          timestamp: new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC",
+          txHash: mockTxHash(),
+          timestamp: formatTimestampUtc(new Date().toISOString()),
           paperHash: paper.provenance[0]?.hash.slice(0, 16) + "...",
           reviewHash: reviewHash.slice(0, 16) + "...",
           criteriaSummary: { met, partial, notMet },
@@ -199,9 +200,7 @@ export function useReviewWorkspace(assignment?: NonNullable<DbReviewAssignment>)
         type: "SUBMIT_SUCCESS",
         submissionResult: {
           txHash: result.hederaTxId ?? "pending",
-          timestamp: result.hederaTimestamp
-            ? new Date(result.hederaTimestamp).toISOString().replace("T", " ").slice(0, 19) + " UTC"
-            : new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC",
+          timestamp: formatTimestampUtc(result.hederaTimestamp ?? new Date().toISOString()),
           paperHash: paper.provenance[0]?.hash.slice(0, 16) + "...",
           reviewHash: reviewHash.slice(0, 16) + "...",
           criteriaSummary: { met, partial, notMet },

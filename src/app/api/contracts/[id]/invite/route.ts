@@ -1,17 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/src/shared/lib/auth/auth";
 import { getContractById } from "@/src/features/contracts/queries";
 import { generateInviteToken } from "@/src/features/contracts/actions";
 import { getUserByWallet } from "@/src/features/users/queries";
+import { requireSession } from "@/src/shared/lib/api-helpers";
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const sessionWallet = await getSession();
-  if (!sessionWallet) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const sessionWallet = await requireSession();
+  if (sessionWallet instanceof NextResponse) return sessionWallet;
 
   const { id } = await params;
   const body = await req.json();

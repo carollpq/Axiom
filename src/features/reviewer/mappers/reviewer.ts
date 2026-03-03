@@ -1,11 +1,12 @@
 import type {
   AssignedReview,
   CompletedReview,
-  ReviewStatus,
+  ReviewerDisplayStatus,
   ReputationScores,
   ReputationBreakdownItem,
 } from "@/src/features/reviewer/types";
 import type { DbAssignedReview, DbCompletedReview, DbReputationRow } from "../queries";
+import { formatIsoDate, truncateHash, toFivePointScale } from "@/src/shared/lib/format";
 
 function daysUntil(deadline: string | null): number {
   if (!deadline) return 0;
@@ -13,7 +14,7 @@ function daysUntil(deadline: string | null): number {
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
-function reviewStatus(assignmentStatus: string, daysLeft: number): ReviewStatus {
+function reviewStatus(assignmentStatus: string, daysLeft: number): ReviewerDisplayStatus {
   if (assignmentStatus === "submitted") return "Submitted";
   if (daysLeft < 0) return "Late";
   if (daysLeft <= 3) return "In Progress";
@@ -27,8 +28,8 @@ export function mapDbToAssignedReview(a: DbAssignedReview, index: number): Assig
     assignmentId: a.id,
     title: a.submission.paper.title,
     journal: a.submission.journal?.name ?? "—",
-    assigned: a.assignedAt.slice(0, 10),
-    deadline: a.deadline ? a.deadline.slice(0, 10) : "—",
+    assigned: formatIsoDate(a.assignedAt),
+    deadline: a.deadline ? formatIsoDate(a.deadline) : "—",
     status: reviewStatus(a.status, daysLeft),
     daysLeft,
   };
@@ -37,39 +38,34 @@ export function mapDbToAssignedReview(a: DbAssignedReview, index: number): Assig
 export function mapDbToCompletedReview(a: DbCompletedReview, index: number): CompletedReview {
   const versions = (a.submission.paper as { versions?: { paperHash: string }[] }).versions ?? [];
   const latest = versions.at(-1);
-  const hash = latest ? latest.paperHash.slice(0, 8) + "..." : "—";
+  const hash = latest ? truncateHash(latest.paperHash, 8) : "—";
   return {
     id: index + 1,
     title: a.submission.paper.title,
     journal: a.submission.journal?.name ?? "—",
-    submitted: (a.submittedAt ?? a.assignedAt).slice(0, 10),
+    submitted: formatIsoDate(a.submittedAt ?? a.assignedAt),
     editorRating: 0,
     authorRating: 0,
     hash,
   };
 }
 
-// DB stores scores 0–100; UI renders 0.0–5.0
-function toFiveScale(n: number) {
-  return Math.round((n / 10) * 10) / 10;
-}
-
 export function mapDbToReputationScores(row: DbReputationRow): ReputationScores {
   return {
-    overall: toFiveScale(row.overallScore),
+    overall: toFivePointScale(row.overallScore),
     change: 0, // no historical delta available yet
-    timeliness: toFiveScale(row.timelinessScore),
-    editorAvg: toFiveScale(row.editorRatingAvg),
-    authorAvg: toFiveScale(row.authorRatingAvg),
-    postPub: toFiveScale(row.publicationScore),
+    timeliness: toFivePointScale(row.timelinessScore),
+    editorAvg: toFivePointScale(row.editorRatingAvg),
+    authorAvg: toFivePointScale(row.authorRatingAvg),
+    postPub: toFivePointScale(row.publicationScore),
   };
 }
 
 export function mapDbToReputationBreakdown(row: DbReputationRow): ReputationBreakdownItem[] {
   return [
-    { label: "Timeliness",       value: toFiveScale(row.timelinessScore),  desc: "Avg days to deadline" },
-    { label: "Editor Ratings",   value: toFiveScale(row.editorRatingAvg),  desc: "From journal editors" },
-    { label: "Author Feedback",  value: toFiveScale(row.authorRatingAvg),  desc: "Anonymous aggregate" },
-    { label: "Post-Publication", value: toFiveScale(row.publicationScore), desc: "Publication outcome" },
+    { label: "Timeliness",       value: toFivePointScale(row.timelinessScore),  desc: "Avg days to deadline" },
+    { label: "Editor Ratings",   value: toFivePointScale(row.editorRatingAvg),  desc: "From journal editors" },
+    { label: "Author Feedback",  value: toFivePointScale(row.authorRatingAvg),  desc: "Anonymous aggregate" },
+    { label: "Post-Publication", value: toFivePointScale(row.publicationScore), desc: "Publication outcome" },
   ];
 }

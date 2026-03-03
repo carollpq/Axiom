@@ -1,10 +1,10 @@
-export function truncateHash(hash: string): string {
-  return hash.length > 12 ? `${hash.slice(0, 6)}...${hash.slice(-4)}` : hash;
+export function truncateHash(hash: string, prefixLen = 6): string {
+  return hash.length > 12 ? `${hash.slice(0, prefixLen)}...${hash.slice(-4)}` : hash;
 }
 
-export function truncateWallet(addr: string): string {
+export function truncateWallet(addr: string, prefixLen = 6): string {
   if (addr.length <= 10) return addr;
-  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  return `${addr.slice(0, prefixLen)}...${addr.slice(-4)}`;
 }
 
 export function getInitials(name: string): string {
@@ -28,4 +28,37 @@ export function formatRelativeTime(isoDate: string): string {
   if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
   if (diffDays < 60) return "1 month ago";
   return `${Math.floor(diffDays / 30)} months ago`;
+}
+
+/** ISO date string → "YYYY-MM-DD" */
+export function formatIsoDate(iso: string): string {
+  return iso.slice(0, 10);
+}
+
+/** Display name with wallet fallback. */
+export function displayNameOrWallet(
+  name: string | null | undefined,
+  wallet: string,
+): string {
+  return name ?? truncateWallet(wallet);
+}
+
+/** Generate a mock transaction hash for demo/dev mode. */
+export function mockTxHash(): string {
+  return (
+    "0x" +
+    Math.random().toString(16).slice(2, 10) +
+    "..." +
+    Math.random().toString(16).slice(2, 6)
+  );
+}
+
+/** Convert a 0–100 score to a 0.0–5.0 display scale. */
+export function toFivePointScale(score100: number): number {
+  return Math.round((score100 / 20) * 10) / 10;
+}
+
+/** Format an ISO timestamp as "YYYY-MM-DD HH:MM:SS UTC" */
+export function formatTimestampUtc(iso: string): string {
+  return iso.replace("T", " ").slice(0, 19) + " UTC";
 }

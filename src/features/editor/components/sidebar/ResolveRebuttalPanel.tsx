@@ -2,6 +2,12 @@
 
 import { useState } from "react";
 import type { RebuttalResolutionDb } from "@/src/shared/lib/db/schema";
+import { Button } from "@/src/shared/components/Button";
+import { FormTextarea } from "@/src/shared/components/FormTextarea";
+import { FormSelect } from "@/src/shared/components/FormSelect";
+import { SidebarSection } from "@/src/shared/components/SidebarSection";
+import { SectionLabel } from "@/src/shared/components/SectionLabel";
+import { ListRow } from "@/src/shared/components/ListRow";
 
 interface RebuttalResponseView {
   reviewId: string;
@@ -32,26 +38,12 @@ export function ResolveRebuttalPanel({
   const [notes, setNotes] = useState("");
 
   return (
-    <div
-      className="p-4"
-      style={{ borderBottom: "1px solid rgba(120,110,95,0.1)" }}
-    >
-      <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-3">
-        Rebuttal Responses
-      </div>
-
+    <SidebarSection title="Rebuttal Responses">
       <div className="space-y-2 mb-4 max-h-[200px] overflow-y-auto">
         {responses.map((r) => {
           const c = positionColors[r.position];
           return (
-            <div
-              key={`${r.reviewId}-${r.position}`}
-              className="rounded p-3"
-              style={{
-                background: "rgba(45,42,38,0.5)",
-                border: "1px solid rgba(120,110,95,0.15)",
-              }}
-            >
+            <ListRow key={`${r.reviewId}-${r.position}`} className="block p-3">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[11px] text-[#b0a898] font-serif">
                   Re: {r.reviewerLabel}
@@ -66,55 +58,40 @@ export function ResolveRebuttalPanel({
               <p className="text-[11px] text-[#8a8070] font-serif leading-relaxed">
                 {r.justification}
               </p>
-            </div>
+            </ListRow>
           );
         })}
       </div>
 
-      <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-2">
-        Resolution
-      </div>
+      <SectionLabel className="mb-2">Resolution</SectionLabel>
 
-      <select
+      <FormSelect
         value={resolution}
         onChange={(e) => setResolution(e.target.value as RebuttalResolutionDb | "")}
-        className="w-full rounded-[6px] px-3 py-2 text-[12px] font-serif text-[#d4ccc0] outline-none cursor-pointer mb-2"
-        style={{
-          background: "rgba(30,28,24,0.6)",
-          border: "1px solid rgba(120,110,95,0.2)",
-          appearance: "none",
-        }}
+        className="w-full mb-2"
       >
         <option value="">Select resolution...</option>
         <option value="upheld">Upheld (reviewer was wrong)</option>
         <option value="rejected">Rejected (reviewer was right)</option>
         <option value="partial">Partial</option>
-      </select>
+      </FormSelect>
 
-      <textarea
+      <FormTextarea
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
         placeholder="Editor notes on resolution..."
         rows={3}
-        className="w-full rounded-[6px] p-3 text-[12px] font-serif text-[#d4ccc0] outline-none resize-none mb-3"
-        style={{
-          background: "rgba(30,28,24,0.6)",
-          border: "1px solid rgba(120,110,95,0.2)",
-        }}
+        className="mb-3"
       />
 
-      <button
+      <Button
+        variant="gold"
+        fullWidth
         onClick={() => { if (resolution) onResolve(resolution, notes); }}
         disabled={!resolution || isResolving}
-        className="w-full px-4 py-2 rounded text-[12px] font-serif cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-        style={{
-          background: "linear-gradient(135deg, rgba(180,160,120,0.25), rgba(160,140,100,0.15))",
-          border: "1px solid rgba(180,160,120,0.4)",
-          color: "#d4c8a8",
-        }}
       >
         {isResolving ? "Resolving..." : "Resolve Rebuttal"}
-      </button>
-    </div>
+      </Button>
+    </SidebarSection>
   );
 }

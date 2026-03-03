@@ -1,6 +1,8 @@
 "use client";
 
 import type { JournalIssue } from "@/src/features/editor/types";
+import { FormSelect } from "@/src/shared/components/FormSelect";
+import { SectionLabel } from "@/src/shared/components/SectionLabel";
 
 interface AddToIssuePanelProps {
   issues: JournalIssue[];
@@ -15,18 +17,12 @@ export function AddToIssuePanel({
 }: AddToIssuePanelProps) {
   return (
     <div className="p-4">
-      <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-3">
-        Add to Issue
-      </div>
-      <select
+      <SectionLabel className="mb-3">Add to Issue</SectionLabel>
+      <FormSelect
         value={selectedIssue}
         onChange={(e) => onIssueChange(e.target.value)}
-        className="w-full rounded-[6px] px-3 py-2.5 text-[12px] font-serif text-[#d4ccc0] outline-none cursor-pointer"
-        style={{
-          background: "rgba(30,28,24,0.6)",
-          border: "1px solid rgba(120,110,95,0.2)",
-          appearance: "none",
-        }}
+        className="w-full"
+        style={{ padding: "8px 12px" }}
       >
         <option value="">Select issue...</option>
         {issues.map((issue) => (
@@ -34,7 +30,7 @@ export function AddToIssuePanel({
             {issue.label}
           </option>
         ))}
-      </select>
+      </FormSelect>
     </div>
   );
 }

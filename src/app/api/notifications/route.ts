@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/src/shared/lib/auth/auth";
 import { listNotifications, countUnread } from "@/src/features/notifications/queries";
 import { markAsRead, markAllAsRead } from "@/src/features/notifications/actions";
+import { requireSession } from "@/src/shared/lib/api-helpers";
 
 export async function GET() {
-  const wallet = await getSession();
-  if (!wallet) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const wallet = await requireSession();
+  if (wallet instanceof NextResponse) return wallet;
 
   const [items, unreadCount] = await Promise.all([
     listNotifications(wallet),
@@ -18,10 +16,8 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
-  const wallet = await getSession();
-  if (!wallet) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const wallet = await requireSession();
+  if (wallet instanceof NextResponse) return wallet;
 
   const body = (await req.json()) as { id?: string; markAll?: boolean };
 

@@ -1,6 +1,9 @@
 "use client";
 
 import { SearchInput } from "@/src/shared/components/SearchInput";
+import { Button } from "@/src/shared/components/Button";
+import { SidebarSection } from "@/src/shared/components/SidebarSection";
+import { ListRow } from "@/src/shared/components/ListRow";
 import type { PoolReviewer } from "@/src/features/editor/types";
 
 interface AssignReviewersPanelProps {
@@ -37,14 +40,7 @@ export function AssignReviewersPanel({
     );
 
   return (
-    <div
-      className="p-4"
-      style={{ borderBottom: "1px solid rgba(120,110,95,0.1)" }}
-    >
-      <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-3">
-        Assign Reviewers
-      </div>
-
+    <SidebarSection title="Assign Reviewers">
       <SearchInput
         value={search}
         onChange={onSearchChange}
@@ -107,30 +103,15 @@ export function AssignReviewersPanel({
 
       {/* Timeline + action */}
       <div className="mt-3 flex items-center gap-2">
-        <div
-          className="px-3 py-2 rounded text-[11px] text-[#8a8070] font-serif"
-          style={{
-            background: "rgba(45,42,38,0.5)",
-            border: "1px solid rgba(120,110,95,0.15)",
-          }}
-        >
+        <ListRow className="px-3 py-2 text-[11px] text-[#8a8070] font-serif">
           Assigned Timeline: {timelineDays} days
-        </div>
+        </ListRow>
         {onAction && (
-          <button
-            onClick={onAction}
-            className="px-4 py-2 rounded text-[11px] font-serif cursor-pointer"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(180,160,120,0.25), rgba(160,140,100,0.15))",
-              border: "1px solid rgba(180,160,120,0.4)",
-              color: "#d4c8a8",
-            }}
-          >
+          <Button variant="gold" onClick={onAction} className="text-[11px]">
             {actionLabel}
-          </button>
+          </Button>
         )}
       </div>
-    </div>
+    </SidebarSection>
   );
 }

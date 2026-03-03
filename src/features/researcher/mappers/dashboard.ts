@@ -1,7 +1,7 @@
 import type { PaperRow, StatCardData } from "@/src/features/researcher/types/dashboard";
 import type { ApiPaper } from "@/src/shared/types/api";
 import { toDisplayStatus } from "@/src/shared/lib/status-map";
-import { truncateHash } from "@/src/shared/lib/format";
+import { truncateHash, formatIsoDate } from "@/src/shared/lib/format";
 import { ScrollText, PenLine, Clock, Sparkles } from "lucide-react";
 
 /**
@@ -24,7 +24,7 @@ export function mapDbPaperToFrontend(p: ApiPaper): PaperRow {
     title: p.title,
     status: toDisplayStatus(p.status),
     coauthors,
-    date: p.createdAt.slice(0, 10),
+    date: formatIsoDate(p.createdAt),
     hash: truncateHash(p.versions?.[0]?.paperHash ?? "\u2014"),
   };
 }

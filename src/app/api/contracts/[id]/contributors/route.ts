@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/src/shared/lib/auth/auth";
 import { addContributor, removeContributor } from "@/src/features/contracts/actions";
+import { requireSession } from "@/src/shared/lib/api-helpers";
 
 export const runtime = "nodejs";
 
@@ -8,10 +8,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const wallet = await getSession();
-  if (!wallet) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const wallet = await requireSession();
+  if (wallet instanceof NextResponse) return wallet;
 
   const { id: contractId } = await params;
   const body = await req.json();
@@ -32,10 +30,8 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const wallet = await getSession();
-  if (!wallet) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const wallet = await requireSession();
+  if (wallet instanceof NextResponse) return wallet;
 
   const { id: contractId } = await params;
   const contributorId = req.nextUrl.searchParams.get("contributorId");

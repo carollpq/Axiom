@@ -1,6 +1,7 @@
 import type { SignedContract } from "@/src/features/researcher/types/paper-registration";
 import type { Contributor, ExistingDraft } from "@/src/features/researcher/types/contract";
 import type { ApiContract, ApiContractContributor, ApiPaper } from "@/src/shared/types/api";
+import { formatIsoDate } from "@/src/shared/lib/format";
 
 export function mapApiContributors(dbContribs: ApiContractContributor[]): Contributor[] {
   return dbContribs.map((c, i) => ({
@@ -52,6 +53,6 @@ export function mapDbContractToSigned(c: ApiContract, index: number): SignedCont
     title: c.paperTitle,
     hash: c.contractHash ?? "\u2014",
     contributors: contribSummary || "\u2014",
-    date: c.createdAt.slice(0, 10),
+    date: formatIsoDate(c.createdAt),
   };
 }

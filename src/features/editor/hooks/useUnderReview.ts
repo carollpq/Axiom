@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useSelection } from "@/src/shared/hooks/useSelection";
 import type {
   PaperCardData,
   PoolReviewer,
@@ -14,7 +15,7 @@ export function useUnderReview(
   reviewStatuses: Record<string, ReviewerWithStatus[]>,
   rebuttalsBySubmission?: Record<string, RebuttalInfo>,
 ) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { selectedId, setSelectedId, selected } = useSelection(initialPapers);
   const [editorComment, setEditorComment] = useState("");
   const [decision, setDecision] = useState("");
   const [additionalAssigned, setAdditionalAssigned] = useState<string[]>([]);
@@ -23,11 +24,6 @@ export function useUnderReview(
   const [isReleasingDecision, setIsReleasingDecision] = useState(false);
   const [isOpeningRebuttal, setIsOpeningRebuttal] = useState(false);
   const [isResolvingRebuttal, setIsResolvingRebuttal] = useState(false);
-
-  const selected = useMemo(
-    () => initialPapers.find((p) => p.id === selectedId) ?? null,
-    [initialPapers, selectedId],
-  );
 
   const currentReviewers = useMemo(
     () => (selectedId ? (reviewStatuses[selectedId] ?? []) : []),

@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/src/shared/lib/auth/auth";
 import { getRebuttalById } from "@/src/features/rebuttals/queries";
 import { submitRebuttalResponses } from "@/src/features/rebuttals/actions";
 import { createNotification } from "@/src/features/notifications/actions";
-import { isHederaConfigured } from "@/src/shared/lib/hedera/client";
-import { submitHcsMessage } from "@/src/shared/lib/hedera/hcs";
 import { canonicalJson, hashString } from "@/src/shared/lib/hashing";
 import type { RebuttalPositionDb } from "@/src/shared/lib/db/schema";
+import { requireSession, anchorToHcs } from "@/src/shared/lib/api-helpers";
 
 export const runtime = "nodejs";
 
@@ -22,10 +20,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ rebuttalId: string }> },
 ) {
-  const sessionWallet = await getSession();
-  if (!sessionWallet) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const session = await requireSession();
+  if (session instanceof NextResponse) return session;
 
   const { rebuttalId } = await params;
 
@@ -34,7 +30,7 @@ export async function POST(
     return NextResponse.json({ error: "Rebuttal not found" }, { status: 404 });
   }
 
-  if (rebuttal.authorWallet.toLowerCase() !== sessionWallet.toLowerCase()) {
+  if (rebuttal.authorWallet.toLowerCase() !== session.toLowerCase()) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -54,21 +50,13 @@ export async function POST(
 
   const rebuttalHash = await hashString(canonicalJson(body.responses));
 
-  let hederaTxId: string | undefined;
-  if (isHederaConfigured() && process.env.HCS_TOPIC_DECISIONS) {
-    try {
-      const { txId } = await submitHcsMessage(process.env.HCS_TOPIC_DECISIONS, {
-        type: "rebuttal_submitted",
-        rebuttalId,
-        submissionId: rebuttal.submissionId,
-        rebuttalHash,
-        timestamp: new Date().toISOString(),
-      });
-      hederaTxId = txId;
-    } catch (err) {
-      console.error("[HCS] Rebuttal submission anchor failed:", err);
-    }
-  }
+  const { txId: hederaTxId } = await anchorToHcs("HCS_TOPIC_DECISIONS", {
+    type: "rebuttal_submitted",
+    rebuttalId,
+    submissionId: rebuttal.submissionId,
+    rebuttalHash,
+    timestamp: new Date().toISOString(),
+  });
 
   const responses = body.responses.map((r) => ({
     ...r,

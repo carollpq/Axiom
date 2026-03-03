@@ -1,6 +1,7 @@
 "use client";
 
 import type { Contributor, ExistingDraft } from "@/src/features/researcher/types/contract";
+import { mockTxHash } from "@/src/shared/lib/format";
 
 interface ContractPreviewProps {
   showPreview: boolean;
@@ -52,7 +53,7 @@ export function ContractPreview({ showPreview, onToggle, title, draft, contribut
             </div>
 
             <div className="mt-3.5 text-[10px] text-[#5a7a9a] font-mono">
-              Contract hash: 0x{Math.random().toString(16).slice(2, 10)}...{Math.random().toString(16).slice(2, 6)}
+              Contract hash: {mockTxHash()}
             </div>
           </div>
         </div>

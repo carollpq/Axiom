@@ -4,6 +4,7 @@ import { useReducer, useEffect } from "react";
 import type { Contributor, ExistingDraft } from "@/src/features/researcher/types/contract";
 import { useCurrentUser } from "@/src/shared/hooks/useCurrentUser";
 import { fetchApi } from "@/src/shared/lib/api";
+import { mockTxHash } from "@/src/shared/lib/format";
 import { hashString, canonicalJson } from "@/src/shared/lib/hashing";
 import { mapApiContributors } from "@/src/features/researcher/mappers/contract";
 import type { ApiContract } from "@/src/shared/types/api";
@@ -172,11 +173,7 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
       dispatch({
         type: "SIGN_DEMO",
         id,
-        txHash:
-          "0x" +
-          Math.random().toString(16).slice(2, 6) +
-          "..." +
-          Math.random().toString(16).slice(2, 6),
+        txHash: mockTxHash(),
         signedAt: new Date().toISOString(),
       });
       return;

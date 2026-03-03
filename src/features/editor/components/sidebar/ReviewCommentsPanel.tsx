@@ -1,4 +1,6 @@
 import type { ReviewerWithStatus } from "@/src/features/editor/types";
+import { SidebarSection } from "@/src/shared/components/SidebarSection";
+import { ListRow } from "@/src/shared/components/ListRow";
 
 interface ReviewCommentsPanelProps {
   reviewers: ReviewerWithStatus[];
@@ -6,22 +8,10 @@ interface ReviewCommentsPanelProps {
 
 export function ReviewCommentsPanel({ reviewers }: ReviewCommentsPanelProps) {
   return (
-    <div
-      className="p-4"
-      style={{ borderBottom: "1px solid rgba(120,110,95,0.1)" }}
-    >
-      <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-3">Reviews</div>
-
+    <SidebarSection title="Reviews">
       <div className="space-y-2">
         {reviewers.map((r) => (
-          <div
-            key={r.id}
-            className="flex items-center justify-between px-3 py-2.5 rounded"
-            style={{
-              background: "rgba(45,42,38,0.5)",
-              border: "1px solid rgba(180,160,120,0.2)",
-            }}
-          >
+          <ListRow key={r.id} variant="gold">
             <span className="text-[12px] text-[#d4ccc0] font-serif">
               {r.name}
             </span>
@@ -35,9 +25,9 @@ export function ReviewCommentsPanel({ reviewers }: ReviewCommentsPanelProps) {
             >
               See comment...
             </button>
-          </div>
+          </ListRow>
         ))}
       </div>
-    </div>
+    </SidebarSection>
   );
 }
