@@ -60,11 +60,16 @@ export function LoginFlow() {
   const account = useActiveAccount();
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
 
-  // If wallet already connected on mount, move to ORCID step
+  // If wallet already connected, verify session before advancing to ORCID
   useEffect(() => {
-    if (account?.address && state.step === "wallet") {
-      dispatch({ type: "ADVANCE_TO_ORCID" });
-    }
+    if (!account?.address || state.step !== "wallet") return;
+
+    isLoggedIn(account.address).then((loggedIn) => {
+      if (loggedIn) {
+        dispatch({ type: "ADVANCE_TO_ORCID" });
+      }
+      // If not logged in, user must click ConnectButton to trigger doLogin
+    });
   }, [account?.address, state.step]);
 
   // Redirect after successful registration
@@ -92,8 +97,8 @@ export function LoginFlow() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Registration failed");
+        const data = await response.json();
+        throw new Error(data.message || data.error || "Registration failed");
       }
 
       dispatch({ type: "SUBMIT_SUCCESS" });
@@ -148,40 +153,27 @@ export function LoginFlow() {
               Connect your Web3 wallet to sign in as a {state.selectedRole}:
             </p>
 
-            {account?.address ? (
-              <div
-                className="p-3 rounded text-sm font-mono truncate"
-                style={{
-                  backgroundColor: "#1a1816",
-                  color: "#8fbc8f",
-                  border: "1px solid #5a7a9a",
+            <div className="flex justify-center">
+              <ConnectButton
+                client={client}
+                auth={{ isLoggedIn, getLoginPayload, doLogin, doLogout }}
+                theme="dark"
+                connectButton={{
+                  label: "Connect Wallet",
+                  style: {
+                    backgroundColor: "#c9a44a",
+                    color: "#1a1816",
+                    border: "none",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    fontFamily: "Georgia, serif",
+                    padding: "8px 24px",
+                    height: "38px",
+                    fontWeight: "600",
+                  },
                 }}
-              >
-                {account.address}
-              </div>
-            ) : (
-              <div className="flex justify-center">
-                <ConnectButton
-                  client={client}
-                  auth={{ isLoggedIn, getLoginPayload, doLogin, doLogout }}
-                  theme="dark"
-                  connectButton={{
-                    label: "Connect Wallet",
-                    style: {
-                      backgroundColor: "#c9a44a",
-                      color: "#1a1816",
-                      border: "none",
-                      borderRadius: "6px",
-                      fontSize: "13px",
-                      fontFamily: "Georgia, serif",
-                      padding: "8px 24px",
-                      height: "38px",
-                      fontWeight: "600",
-                    },
-                  }}
-                />
-              </div>
-            )}
+              />
+            </div>
           </div>
 
           <div className="flex gap-2">
@@ -193,6 +185,14 @@ export function LoginFlow() {
                 color: "#b0a898",
                 border: "1px solid #5a4a3a",
               }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = "rgba(201, 164, 74, 0.5)";
+                e.currentTarget.style.color = "#d4ccc0";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = "#5a4a3a";
+                e.currentTarget.style.color = "#b0a898";
+              }}
             >
               Back
             </button>
@@ -203,6 +203,12 @@ export function LoginFlow() {
                 style={{
                   backgroundColor: "#c9a44a",
                   color: "#1a1816",
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.backgroundColor = "#d4b45a";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.backgroundColor = "#c9a44a";
                 }}
               >
                 Continue

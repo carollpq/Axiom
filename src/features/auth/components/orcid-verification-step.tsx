@@ -24,7 +24,7 @@ export function OrcidVerificationStep({
       return false;
     }
     if (!ORCID_REGEX.test(value)) {
-      setError("Invalid ORCID format. Expected: XXXX-XXXX-XXXX-XXXXX");
+      setError("Invalid ORCID format. Expected: XXXX-XXXX-XXXX-XXXX");
       return false;
     }
     return true;
@@ -62,7 +62,7 @@ export function OrcidVerificationStep({
 
         <input
           type="text"
-          placeholder="XXXX-XXXX-XXXX-XXXXX"
+          placeholder="XXXX-XXXX-XXXX-XXXX"
           value={orcidId}
           onChange={e => {
             setOrcidId(e.target.value);
@@ -92,11 +92,19 @@ export function OrcidVerificationStep({
           type="button"
           onClick={onBack}
           disabled={loading}
-          className="flex-1 py-2 text-sm rounded transition-all"
+          className="flex-1 py-2 text-sm rounded transition-all cursor-pointer hover:brightness-110"
           style={{
             backgroundColor: "transparent",
             color: "#b0a898",
             border: "1px solid #5a4a3a",
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.borderColor = "rgba(201, 164, 74, 0.5)";
+            e.currentTarget.style.color = "#d4ccc0";
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.borderColor = "#5a4a3a";
+            e.currentTarget.style.color = "#b0a898";
           }}
         >
           Back
@@ -105,10 +113,17 @@ export function OrcidVerificationStep({
         <button
           type="submit"
           disabled={loading || !orcidId}
-          className="flex-1 py-2 text-sm rounded font-semibold transition-all disabled:opacity-50"
+          className="flex-1 py-2 text-sm rounded font-semibold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
             backgroundColor: "#c9a44a",
             color: "#1a1816",
+          }}
+          onMouseEnter={e => {
+            if (!e.currentTarget.disabled)
+              e.currentTarget.style.backgroundColor = "#d4b45a";
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.backgroundColor = "#c9a44a";
           }}
         >
           {loading ? "Verifying..." : "Continue"}
