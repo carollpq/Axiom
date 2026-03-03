@@ -112,8 +112,8 @@ export function ExplorerListSkeleton() {
         <PulseBlock className="h-8 w-48 mb-4" />
         <PulseBlock className="h-10 w-full rounded-lg mb-4" />
         <div className="flex gap-2">
-          {["w-20", "w-24", "w-20", "w-16", "w-28"].map((w, i) => (
-            <PulseBlock key={i} className={`h-7 rounded-full ${w}`} />
+          {["w-24", "w-24", "w-28"].map((w, i) => (
+            <PulseBlock key={i} className={`h-[30px] rounded-[3px] ${w}`} />
           ))}
         </div>
       </div>

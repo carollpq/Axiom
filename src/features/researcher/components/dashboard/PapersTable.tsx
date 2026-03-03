@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { SearchInput } from "@/src/shared/components/SearchInput";
-import { FilterPills } from "@/src/shared/components/FilterPills";
 import { StatusBadge } from "./StatusBadge";
 import { PAPER_STATUSES } from "@/src/features/researcher/types/dashboard";
 import type { PaperRow, PaperStatus } from "@/src/features/researcher/types/dashboard";
@@ -27,23 +26,34 @@ export function PapersTable({ initialPapers }: Props) {
     });
   }, [initialPapers, statusFilter, searchQuery]);
 
-  const allStatuses: readonly ("All" | PaperStatus)[] = ["All", ...PAPER_STATUSES];
-
   return (
     <div>
-      <SearchInput
-        value={searchQuery}
-        onChange={setSearchQuery}
-        placeholder="Search papers by title or co-author..."
-        className="mb-4"
-      />
-
-      <div className="flex gap-1.5 mb-5 flex-wrap">
-        <FilterPills<"All" | PaperStatus>
-          options={allStatuses}
-          value={statusFilter}
-          onChange={setStatusFilter}
+      <div className="flex gap-3 items-center mb-5">
+        <SearchInput
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Search papers by title or co-author..."
+          className="flex-1"
         />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as "All" | PaperStatus)}
+          className="appearance-none rounded-[3px] py-[5px] pl-3 pr-7 text-[11px] font-serif cursor-pointer transition-all duration-300 outline-none"
+          style={{
+            background: statusFilter !== "All" ? "rgba(180,160,120,0.15)" : "rgba(45,42,38,0.5)",
+            border: `1px solid ${statusFilter !== "All" ? "rgba(180,160,120,0.3)" : "rgba(120,110,95,0.15)"}`,
+            color: statusFilter !== "All" ? "#c9b89e" : "#6a6050",
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236a6050' stroke-width='1.2' fill='none'/%3E%3C/svg%3E")`,
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "right 8px center",
+          }}
+          aria-label="Status"
+        >
+          <option value="All">Status</option>
+          {PAPER_STATUSES.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
       </div>
 
       {/* Table */}
