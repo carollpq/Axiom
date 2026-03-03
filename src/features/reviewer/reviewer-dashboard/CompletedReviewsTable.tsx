@@ -30,6 +30,16 @@ export function CompletedReviewsTable({ reviews, hoveredRow, onHoverRow }: Compl
         <span>On-Chain</span>
       </div>
 
+      {/* Empty state */}
+      {reviews.length === 0 && (
+        <div
+          className="px-5 py-10 text-center font-serif text-sm"
+          style={{ color: "#6a6050" }}
+        >
+          No completed reviews yet.
+        </div>
+      )}
+
       {/* Rows */}
       {reviews.map((r, i) => (
         <div

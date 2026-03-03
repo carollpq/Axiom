@@ -40,6 +40,8 @@ const PLACEHOLDER_FEEDBACK: FeedbackItem[] = [];
 export function useReviewerDashboard(
   initialAssigned: AssignedReview[],
   initialCompleted: CompletedReview[],
+  initialReputation?: ReputationScores | null,
+  initialBreakdown?: ReputationBreakdownItem[] | null,
 ) {
   const [activeTab, setActiveTab] = useState<ReviewerTab>("assigned");
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
@@ -86,7 +88,7 @@ export function useReviewerDashboard(
     completedReviews: initialCompleted,
     feedbackItems: PLACEHOLDER_FEEDBACK,
     reputationHistory: PLACEHOLDER_REPUTATION_HISTORY,
-    reputationBreakdown: PLACEHOLDER_REPUTATION_BREAKDOWN,
-    reputationScores: PLACEHOLDER_REPUTATION_SCORES,
+    reputationBreakdown: initialBreakdown ?? PLACEHOLDER_REPUTATION_BREAKDOWN,
+    reputationScores: initialReputation ?? PLACEHOLDER_REPUTATION_SCORES,
   };
 }

@@ -1,7 +1,10 @@
 import { AcceptedPapersClient } from "@/src/features/editor/components/accepted-papers.client";
-import { mockIssues } from "@/src/features/editor/mock-data";
 import { getSession } from "@/src/shared/lib/auth/auth";
-import { getJournalByEditorWallet, listJournalSubmissions } from "@/src/features/editor/queries";
+import {
+  getJournalByEditorWallet,
+  listJournalSubmissions,
+  listReviewerPool,
+} from "@/src/features/editor/queries";
 import { mapDbToPaperCardData, mapDbToReviewerWithStatus } from "@/src/features/editor/mappers/journal";
 import type { ReviewerWithStatus } from "@/src/shared/types/editor-dashboard";
 
@@ -11,7 +14,14 @@ export default async function AcceptedPapersPage() {
   if (sessionWallet) {
     const journal = await getJournalByEditorWallet(sessionWallet);
     if (journal) {
-      const allSubs = await listJournalSubmissions(journal.id);
+      const [allSubs, reviewers] = await Promise.all([
+        listJournalSubmissions(journal.id),
+        listReviewerPool(),
+      ]);
+
+      const nameByWallet: Record<string, string> = Object.fromEntries(
+        reviewers.map(u => [u.walletAddress as string, (u.displayName ?? u.walletAddress) as string]),
+      );
 
       const acceptedSubs = allSubs.filter(
         s => s.status === "accepted" || s.status === "published",
@@ -22,7 +32,8 @@ export default async function AcceptedPapersPage() {
       const reviewStatuses: Record<string, ReviewerWithStatus[]> = {};
       for (const s of acceptedSubs) {
         if (s.reviewAssignments && s.reviewAssignments.length > 0) {
-          reviewStatuses[s.id] = (s.reviewAssignments as { id: string; reviewerWallet: string; status: string }[]).map(mapDbToReviewerWithStatus);
+          reviewStatuses[s.id] = (s.reviewAssignments as { id: string; reviewerWallet: string; status: string }[])
+            .map(a => mapDbToReviewerWithStatus(a, nameByWallet));
         }
       }
 
@@ -30,18 +41,17 @@ export default async function AcceptedPapersPage() {
         <AcceptedPapersClient
           papers={papers}
           reviewStatuses={reviewStatuses}
-          issues={mockIssues}
+          issues={[]}
         />
       );
     }
   }
 
-  // Fallback would go here
   return (
     <AcceptedPapersClient
       papers={[]}
       reviewStatuses={{}}
-      issues={mockIssues}
+      issues={[]}
     />
   );
 }

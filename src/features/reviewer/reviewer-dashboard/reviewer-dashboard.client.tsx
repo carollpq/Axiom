@@ -9,14 +9,26 @@ import {
   CompletedReviewsTable,
   FeedbackPanel,
 } from "@/src/features/reviewer/reviewer-dashboard";
-import type { AssignedReview, CompletedReview } from "@/src/shared/types/reviewer-dashboard";
+import type {
+  AssignedReview,
+  CompletedReview,
+  ReputationScores,
+  ReputationBreakdownItem,
+} from "@/src/shared/types/reviewer-dashboard";
 
 interface Props {
   initialAssigned: AssignedReview[];
   initialCompleted: CompletedReview[];
+  reputationScores?: ReputationScores | null;
+  reputationBreakdown?: ReputationBreakdownItem[] | null;
 }
 
-export function ReviewerDashboardClient({ initialAssigned, initialCompleted }: Props) {
+export function ReviewerDashboardClient({
+  initialAssigned,
+  initialCompleted,
+  reputationScores: initialReputation,
+  reputationBreakdown: initialBreakdown,
+}: Props) {
   const {
     activeTab,
     setActiveTab,
@@ -37,7 +49,7 @@ export function ReviewerDashboardClient({ initialAssigned, initialCompleted }: P
     reputationHistory,
     reputationBreakdown,
     reputationScores,
-  } = useReviewerDashboard(initialAssigned, initialCompleted);
+  } = useReviewerDashboard(initialAssigned, initialCompleted, initialReputation, initialBreakdown);
 
   return (
     <div className="max-w-[1200px] mx-auto px-10 py-8">

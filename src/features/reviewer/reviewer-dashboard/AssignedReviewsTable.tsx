@@ -31,6 +31,16 @@ export function AssignedReviewsTable({ reviews, hoveredRow, onHoverRow, getUrgen
         <span></span>
       </div>
 
+      {/* Empty state */}
+      {reviews.length === 0 && (
+        <div
+          className="px-5 py-10 text-center font-serif text-sm"
+          style={{ color: "#6a6050" }}
+        >
+          No current assigned reviews.
+        </div>
+      )}
+
       {/* Rows */}
       {reviews.map((r, i) => {
         const u = getUrgencyStyle(r.daysLeft, r.status);
