@@ -4,27 +4,23 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/src/shared/context/UserContext";
 import { LoginFlow } from "@/src/features/auth/components/login-flow.client";
+import { ROLE_DASHBOARD_ROUTES } from "@/src/shared/lib/routes";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, isConnected } = useUser();
+  const { user } = useUser();
 
   useEffect(() => {
     // If user has a role, redirect to their dashboard
     if (user && user.roles && user.roles.length > 0) {
-      const roleRoutes: Record<string, string> = {
-        researcher: "/researcher",
-        editor: "/editor",
-        reviewer: "/reviewer",
-      };
       const primaryRole = user.roles[0];
-      router.push(roleRoutes[primaryRole] || "/researcher");
+      router.push(ROLE_DASHBOARD_ROUTES[primaryRole] || "/researcher");
     }
   }, [user, router]);
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center px-4"
+      className="min-h-screen flex flex-col items-center justify-center px-4"
       style={{ backgroundColor: "#1a1816" }}
     >
       <div
