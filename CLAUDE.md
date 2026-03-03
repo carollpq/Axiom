@@ -10,45 +10,36 @@ Axiom is a blockchain-backed academic publishing and peer review platform built 
 
 ### Project Status
 
-The codebase is a **partially functional full-stack application**. The researcher section has significant backend integration; editor and reviewer sections still use mock data.
+The codebase is a **functional full-stack application**. The researcher and editor sections have full backend integration with DB-backed data. The reviewer section still uses mock data for the dashboard UI but has complete API routes.
 
-**What's working end-to-end (researcher section):**
+**What's working end-to-end:**
 - ✅ **User authentication** — Multi-step login: role selector → wallet connect → ORCID verification → DB save → role-based dashboard routing
-- Thirdweb v5 wallet authentication → JWT in httpOnly cookie
-- Paper registration: client-side SHA-256 hashing → R2 presigned upload → Lit encryption → DB storage → Hedera HCS anchoring
-- Study type selection (original / negative result / replication / replication failed / meta-analysis) in Step 1 of registration wizard
-- Authorship contract creation + wallet signing (verified via viem `verifyMessage`) → HCS anchoring per signature
-- Contract modification → signature invalidation: editing after signing triggers `PATCH /api/contracts/[id]/reset-signatures`
-- Invite token generation: `POST /api/contracts/[id]/invite` mints token (7-day expiry) + `/invite/[token]` claim page
-- Paper submission to journal: `POST /api/papers/[id]/submit` → creates `submissions` row → HCS anchor → status → `submitted`
-- Journal list fetched from DB in Step 4 dropdown
-- Researcher dashboard + public explorer fetching real DB data
-- Neon PostgreSQL (prod) / SQLite (dev) via `DATABASE_URL`
+- ✅ **Paper registration** — Client-side SHA-256 hashing → R2 presigned upload → Lit encryption → DB storage → Hedera HCS anchoring
+- ✅ **Authorship contracts** — Creation + wallet signing (verified via viem `verifyMessage`) → HCS anchoring per signature. Modification → signature invalidation.
+- ✅ **Paper submission** — `POST /api/papers/[id]/submit` → `submissions` row → HCS anchor → status `submitted`
+- ✅ **Editor dashboard** — DB-backed submission pipeline (incoming → criteria published → reviewers assigned → under review → rebuttal → decision)
+- ✅ **Review criteria publishing** — `POST /api/submissions/[id]/criteria` → canonical JSON hash → HCS anchor → immutable criteria
+- ✅ **Reviewer assignment** — `POST /api/submissions/[id]/assign-reviewer` → `reviewAssignments` row with deadline tracking
+- ✅ **Review submission** — `POST /api/reviews/[id]` → per-criterion evaluations → hash → HCS anchor → reputation token minting
+- ✅ **Editorial decision** — `POST /api/submissions/[id]/decision` → `allCriteriaMet` computation → HCS anchor → reputation events
+- ✅ **Rebuttal phase** — Editor opens → researcher responds per-review → editor resolves → HCS anchored → reputation tokens minted
+- ✅ **Timeline enforcement** — Cron job at `/api/cron/deadlines` marks overdue assignments → `review_late` reputation tokens
+- ✅ **Notifications** — DB-backed with NotificationBell component, 30s polling, integrated across all pipeline stages
+- ✅ **`/verify` page** — Public PDF upload → client-side hash → DB lookup → verification result
+- ✅ **Review transparency** — `GET /api/papers/[id]/reviews` returns anonymized reviews after final decision (confidentialEditorComments always excluded)
+- ✅ **Anonymous reviewer ratings** — `POST /api/reviews/[id]/rate` with NO author reference stored
+- ✅ **PDF viewer** — react-pdf v10 / pdfjs-dist v5 in editor three-column views
+- ✅ **Researcher dashboard** — Real DB data + public explorer + pending actions (including rebuttal links)
 
 **What still uses mock data:**
-- Reviewer dashboard + review workspace (`(reviewer)/`)
-
-**Recently completed (UI/infra):**
-- ✅ **Multi-step authentication flow** — Role selector → Wallet connection → ORCID verification → Dashboard redirect
-- ✅ **User registration/role management** — `POST /api/auth/register-user` saves role + ORCID to DB
-- ✅ **Role-based dashboard routing** — Seamless redirect to researcher/editor/reviewer dashboards based on stored role
-- Editor UI fully redesigned to match researcher page visual style (DashboardHeader, flat stat cards, section label conventions, sidebar panel titles)
-- Editor dashboard with DB-backed submission pipeline (real data: incoming → criteria published → reviewers assigned → under review → decision pending → accepted/rejected)
-- Real PDF viewer implemented in editor three-column views (`PdfViewer` using react-pdf v10 / pdfjs-dist v5); shows placeholder until `fileUrl` is populated from presigned R2 URLs
+- Reviewer dashboard UI (`(reviewer)/`) — API routes exist but dashboard components not yet wired
 
 **What is not yet implemented:**
-- Pre-registered review criteria (journal publishes on-chain) — **TOP PRIORITY**
-- Review submission workflow (reviewer evaluates criteria) — **TOP PRIORITY**
-- HTS soulbound reputation token minting — **TOP PRIORITY**
-- Rebuttal phase (researcher challenges unfair reviews) **TOP PRIORITY**
-- Timeline enforcement with deadline tracking
-- Real-time researcher status updates / notifications
-- Reviewer search by reputation score
 - Lit Protocol decryption (encrypt works; decrypt not wired into UI)
-- `/verify` public hash verification page
+- Reviewer search by reputation score in assignment UI
 - Hedera mirror node lookups
 
-**Current stack:** Next.js 15 (App Router, Turbopack) · React 19 · Tailwind CSS v4 · Thirdweb v5 · TypeScript strict mode · Neon PostgreSQL/Drizzle ORM · Hedera SDK (HCS) · Lit Protocol SDK (encrypt only) · AWS SDK (Cloudflare R2) · react-pdf v10 (pdfjs-dist v5)
+**Current stack:** Next.js 15 (App Router, Turbopack) · React 19 · Tailwind CSS v4 · Thirdweb v5 · TypeScript strict mode · Neon PostgreSQL/Drizzle ORM · Hedera SDK (HCS + HTS) · Lit Protocol SDK (encrypt only) · AWS SDK (Cloudflare R2) · react-pdf v10 (pdfjs-dist v5)
 
 ## Common Commands
 
@@ -160,32 +151,31 @@ Each role group has its own layout using `RoleShell` from `src/shared/components
 
 ## Remaining Work (Priority Order)
 
-### Tier 1 — Core Review Pipeline (hackathon differentiators)
-1. ✅ **Journal dashboard: real data** — Replace mock data with DB-backed submission pipeline (Kanban: New → Criteria Published → Reviewers Assigned → Under Review → Decision Pending → Published/Rejected)
-2. ✅ **User authentication flow** — Multi-step login with wallet + ORCID + role selection (researcher/editor/reviewer) → role-based dashboard routing
-3. **Publish review criteria** — `POST /api/submissions/[id]/criteria` → hash + HCS anchor. Criteria become immutable. Editor UI: `CriteriaBuilder` component.
-3. **Publish review criteria** — `POST /api/submissions/[id]/criteria` → hash + HCS anchor. Criteria become immutable. Editor UI: `CriteriaBuilder` component.
-4. **Assign reviewers** — `POST /api/submissions/[id]/assign-reviewer` → create `review_assignments` row. Search reviewers by reputation score and field.
-5. **Reviewer dashboard: real data** — Assigned reviews, deadlines, reputation score card, completed reviews.
-6. **Review workspace: real data** — Display paper + criteria. Reviewer evaluates each criterion (yes/no/partially + comment). Submit → hash + HCS anchor.
-7. **HTS soulbound reputation tokens** — Mint on review events. Create `AXIOM_REVIEWER_REPUTATION` token on HTS. Mint via API on review submission.
-8. **Editorial decision flow** — System computes `allCriteriaMet`. If met but editor rejects → editor must provide public on-chain justification. Decision → HCS anchor. This is accountability, not a binding obligation to publish.
+### Completed
+- ✅ Journal dashboard: real data (DB-backed submission pipeline)
+- ✅ User authentication flow (wallet + ORCID + role selection)
+- ✅ Publish review criteria (hash + HCS anchor, immutable)
+- ✅ Assign reviewers (with deadline tracking)
+- ✅ Review submission (per-criterion evaluations + hash + HCS anchor)
+- ✅ HTS soulbound reputation tokens (mint on review events)
+- ✅ Editorial decision flow (`allCriteriaMet` computation + HCS anchor)
+- ✅ Rebuttal phase (open → respond → resolve, with HCS anchoring + reputation tokens)
+- ✅ Timeline enforcement (cron job checks overdue, mints `review_late` tokens)
+- ✅ Notifications (DB-backed, polling, integrated across all pipeline stages)
+- ✅ `/verify` page (public PDF hash verification)
+- ✅ Review transparency (anonymized reviews public after decision)
+- ✅ Anonymous reviewer ratings (no author reference stored)
 
-### Tier 2 — Rebuttal + Timeline
-9. **Rebuttal phase** — When criteria not fully met and rejection likely, editor opens rebuttal. Researcher submits per-review responses (agree/disagree + justification). Editor resolves. Rebuttal + resolution → HCS anchor. Reputation tokens minted based on outcome.
-10. **Timeline enforcement** — Track deadlines in `review_assignments`. Cron job checks overdue. Late = `review_late` HTS token. Researcher notifications at each stage.
-11. **Researcher status updates** — Notifications table + polling. "Reviewers assigned", "Review 1/3 done", "Rebuttal phase open", etc.
+### Still To Do
+1. **Reviewer dashboard: wire to real data** — Dashboard components exist but still use mock data. API routes are complete.
+2. **Wire Lit decrypt into explorer** — Researchers reading their own private papers.
+3. **Reviewer search by reputation** — Editor searches reviewers filtered by score, field, timeliness.
+4. **Hedera mirror node lookups** — Verify on-chain data from mirror node.
 
-### Tier 3 — Polish + Demo Features
-12. **Wire Lit decrypt into explorer** — Researchers reading their own private papers.
-13. **`/verify` page** — Upload PDF → client-side hash → check against DB/HCS.
-14. **Reviewer search by reputation** — Editor searches reviewers filtered by score, field, timeliness.
-15. **Review transparency** — After final decision, anonymized review comments visible on paper detail view.
-
-### Tier 4 — Stretch
-16. **Timeline enforcement smart contract** (Solidity on Hedera EVM)
-17. **HTS minting via System Contracts** (hybrid HTS + EVM)
-18. **Real ORCID OAuth flow**
+### Stretch
+5. **Timeline enforcement smart contract** (Solidity on Hedera EVM)
+6. **HTS minting via System Contracts** (hybrid HTS + EVM)
+7. **Real ORCID OAuth flow**
 
 ## Key Architecture Decisions
 
@@ -281,52 +271,49 @@ src/
 │   ├── globals.css                # Tailwind v4 import
 │   ├── login/page.tsx
 │   ├── onboarding/page.tsx
+│   ├── verify/page.tsx            # Public hash verification page
+│   ├── invite/[token]/page.tsx    # Invite claim page
 │   ├── api/
-│   │   ├── auth/me/route.ts       # GET: authenticated user ✅
-│   │   ├── activity/route.ts      # GET: activity feed ✅
-│   │   ├── contracts/             # CRUD + signing ✅
-│   │   ├── papers/                # CRUD + versions + submit ✅
-│   │   └── upload/presigned/      # R2 presigned URLs ✅
-│   │   # NEEDED:
-│   │   # ├── submissions/[id]/criteria/route.ts      🔲
-│   │   # ├── submissions/[id]/assign-reviewer/route.ts 🔲
-│   │   # ├── submissions/[id]/decision/route.ts      🔲
-│   │   # ├── reviews/route.ts + [id]/route.ts        🔲
-│   │   # ├── reviews/[id]/rate/route.ts              🔲
-│   │   # ├── rebuttals/[submissionId]/route.ts       🔲
-│   │   # ├── rebuttals/[submissionId]/resolve/route.ts 🔲
-│   │   # ├── journals/[id]/reviewers/route.ts        🔲
-│   │   # ├── reputation/[wallet]/route.ts            🔲
-│   │   # └── cron/reputation/ + cron/deadlines/      🔲
-│   ├── researcher/                # ✅ Real data
-│   ├── editor/                    # 🔲 Mock data (UI redesigned, PDF viewer wired)
-│   └── reviewer/                  # 🔲 Mock data
+│   │   ├── auth/                  # me/ + register-user/
+│   │   ├── activity/route.ts      # GET: activity feed
+│   │   ├── contracts/             # CRUD + signing + invite + reset-signatures
+│   │   ├── papers/                # CRUD + versions + submit + content + reviews
+│   │   ├── journals/route.ts      # GET: list journals
+│   │   ├── submissions/[id]/      # criteria/ + assign-reviewer/ + decision/ + open-rebuttal/
+│   │   ├── reviews/[id]/          # GET/POST review + rate/
+│   │   ├── rebuttals/[rebuttalId]/ # respond/ + resolve/
+│   │   ├── notifications/route.ts # GET: list + PATCH: mark read
+│   │   ├── verify/route.ts        # POST: hash verification (no auth)
+│   │   ├── cron/deadlines/route.ts # GET: deadline enforcement cron
+│   │   └── upload/presigned/      # R2 presigned URLs
+│   ├── (protected)/
+│   │   ├── researcher/            # Dashboard, paper_registration, contract_builder, public_explorer, rebuttal/[submissionId]
+│   │   ├── editor/                # Dashboard, incoming, under-review, accepted, management
+│   │   └── reviewer/              # Dashboard, review_workspace/[id]
 ├── features/
-│   ├── researcher/                # Components, hooks, reducers, config, mappers, types ✅
-│   ├── contracts/                 # DB queries + actions ✅
-│   ├── papers/                    # DB queries + actions ✅
-│   ├── users/                     # DB queries ✅
-│   ├── editor/                    # Mock components, types, redesigned UI 🔲
-│   └── reviewer/                  # Mock components, types, hooks, reducers 🔲
-│   # NEEDED:
-│   # ├── submissions/             # DB domain: queries + actions 🔲
-│   # ├── reviews/                 # DB domain: queries + actions 🔲
-│   # ├── rebuttals/               # DB domain: queries + actions 🔲
-│   # └── reputation/              # DB domain: queries + actions 🔲
+│   ├── auth/                      # Login flow components
+│   ├── researcher/                # Components, hooks, reducers, config, mappers, types
+│   ├── editor/                    # Components, hooks, queries, mappers, types (DB-backed)
+│   ├── reviewer/                  # Components, hooks, reducers (mock data still)
+│   ├── contracts/                 # DB queries + actions
+│   ├── papers/                    # DB queries + actions
+│   ├── users/                     # DB queries
+│   ├── reviews/                   # DB queries + actions
+│   ├── rebuttals/                 # DB queries + actions + hooks + components
+│   ├── notifications/             # DB queries + actions + NotificationBell component
+│   └── verify/                    # VerifyClient component
 └── shared/
-    ├── components/                # TopBar, Footer, RoleShell, PdfViewer, etc. ✅
-    ├── context/UserContext.tsx     # Wallet + session ✅
-    ├── hooks/useCurrentUser.ts    # Current user context ✅
+    ├── components/                # TopBar, Footer, RoleShell, DashboardHeader, PdfViewer, etc.
+    ├── context/UserContext.tsx     # Wallet + session
+    ├── hooks/useCurrentUser.ts    # Current user context
     ├── lib/
-    │   ├── auth/                  # JWT ✅
-    │   ├── db/schema.ts           # Drizzle schema ✅ (needs new tables)
-    │   ├── hedera/client.ts + hcs.ts  # HCS ✅
-    │   ├── lit/                   # Encrypt ✅, decrypt (not wired) 🔲
-    │   ├── hashing.ts             # SHA-256 ✅
-    │   └── storage.ts             # R2 ✅
-    │   # NEEDED:
-    │   # └── hedera/hts.ts        # HTS token operations 🔲
-    └── types/                     # Shared types ✅
+    │   ├── auth/                  # JWT
+    │   ├── db/schema.ts           # Drizzle schema (16 tables)
+    │   ├── hedera/client.ts + hcs.ts + hts.ts  # HCS + HTS
+    │   ├── lit/                   # Encrypt (decrypt not wired)
+    │   ├── hashing.ts             # SHA-256 + canonical JSON
+    │   └── storage.ts             # R2
+    └── types/                     # Shared types
 ```
 
 ## Coding Conventions
@@ -347,10 +334,15 @@ src/
 
 Drizzle ORM. Dev: SQLite. Prod: Neon PostgreSQL. Schema in `src/shared/lib/db/schema.ts`.
 
-**Existing tables:** `users`, `papers`, `paperVersions`, `authorshipContracts`, `contractContributors`, `journals`, `submissions`, `notifications`, `activityLog`
-
-**Tables to add:**
-- `reviewCriteria` — per-submission criteria (JSONB + hash + HCS tx)
+**All 16 tables:**
+- `users` — wallet, ORCID, role, research fields
+- `papers` — title, status, study type, visibility
+- `paperVersions` — versions with hashes + Hedera anchoring
+- `authorshipContracts` — authorship contracts with status tracking
+- `contractContributors` — contributors per contract with signatures + invite tokens
+- `journals` — journal metadata (name, editor wallet, reputation)
+- `submissions` — paper → journal submissions with status pipeline
+- `reviewCriteria` — per-submission criteria (JSONB + hash + HCS tx, immutable)
 - `reviewAssignments` — reviewer ↔ submission link with deadline tracking
 - `reviews` — structured criteria evaluations + recommendation + HCS tx
 - `rebuttals` — per-submission rebuttal with status/deadline/resolution
@@ -358,11 +350,18 @@ Drizzle ORM. Dev: SQLite. Prod: Neon PostgreSQL. Schema in `src/shared/lib/db/sc
 - `reviewerRatings` — anonymous author ratings (NO author reference column)
 - `reputationEvents` — append-only log with HTS token serial
 - `reputationScores` — materialized aggregate scores
+- `notifications` — user notifications (type, title, body, link, read status)
+
+**Key status types:**
+- `SubmissionStatusDb`: submitted → criteria_published → reviewers_assigned → under_review → rebuttal_open → revision_requested/accepted/rejected/published
+- `ReviewAssignmentStatusDb`: assigned → accepted/declined → submitted/late
+- `RebuttalStatusDb`: open → submitted → under_review → resolved
+- `RebuttalResolutionDb`: upheld | rejected | partial
 
 **Key conventions:**
 - `reputationEvents` is append-only — never update or delete.
 - `reviewerRatings` has NO author reference (anonymity by design). Never add one.
-- Paper status now includes `rebuttal_open` between `under_review` and decision states.
+- Paper status includes `rebuttal_open` between `under_review` and decision states.
 - `studyType` on papers: `original`, `negative_result`, `replication`, `replication_failed`, `meta_analysis`.
 
 ## Environment Variables
@@ -379,12 +378,11 @@ DATABASE_URL
 # Hedera (optional — graceful fallback)
 HEDERA_NETWORK, HEDERA_OPERATOR_ID, HEDERA_OPERATOR_KEY
 HCS_TOPIC_PAPERS, HCS_TOPIC_CONTRACTS, HCS_TOPIC_SUBMISSIONS
-
-# Planned HCS topics
 HCS_TOPIC_CRITERIA, HCS_TOPIC_REVIEWS, HCS_TOPIC_DECISIONS, HCS_TOPIC_RETRACTIONS
-
-# HTS (planned)
 HTS_REPUTATION_TOKEN_ID
+
+# Cron (optional — for deadline enforcement)
+CRON_SECRET
 
 # Cloudflare R2 (optional — graceful fallback)
 S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_ENDPOINT
