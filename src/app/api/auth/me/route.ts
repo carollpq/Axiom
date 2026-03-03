@@ -1,6 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getOrCreateUser } from "@/src/features/users/queries";
+import { registerUserRole } from "@/src/features/users/actions";
 import { requireSession } from "@/src/shared/lib/api-helpers";
+import { ROLES } from "@/src/features/auth/types";
+import { ORCID_REGEX } from "@/src/shared/lib/validation";
 
 export const runtime = "nodejs";
 
@@ -10,4 +13,40 @@ export async function GET() {
 
   const user = await getOrCreateUser(wallet);
   return NextResponse.json(user);
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const wallet = await requireSession();
+    if (wallet instanceof NextResponse) return wallet;
+
+    const { role, orcidId } = await request.json();
+
+    if (!ROLES.includes(role)) {
+      return NextResponse.json(
+        { message: "Invalid role" },
+        { status: 400 }
+      );
+    }
+
+    if (!ORCID_REGEX.test(orcidId)) {
+      return NextResponse.json(
+        { message: "Invalid ORCID format" },
+        { status: 400 }
+      );
+    }
+
+    await registerUserRole(wallet, role, orcidId);
+
+    return NextResponse.json(
+      { message: "User registered successfully" },
+      { status: 200 }
+    );
+  } catch (err) {
+    console.error("Register user error:", err);
+    return NextResponse.json(
+      { message: "Failed to register user" },
+      { status: 500 }
+    );
+  }
 }

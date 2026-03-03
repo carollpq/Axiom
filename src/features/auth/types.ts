@@ -1,1 +1,2 @@
-export type Role = "researcher" | "editor" | "reviewer";
+export const ROLES = ["researcher", "editor", "reviewer"] as const;
+export type Role = (typeof ROLES)[number];

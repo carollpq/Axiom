@@ -85,11 +85,10 @@ export function LoginFlow() {
     dispatch({ type: "SUBMIT_START" });
 
     try {
-      const response = await fetch("/api/auth/register-user", {
-        method: "POST",
+      const response = await fetch("/api/auth/me", {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          wallet: account?.address,
           role: state.selectedRole,
           orcidId,
         }),

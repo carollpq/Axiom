@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { ORCID_REGEX } from "@/src/shared/lib/validation";
 
 interface OrcidVerificationStepProps {
   onVerified: (orcidId: string) => void;
   onBack: () => void;
   loading: boolean;
 }
-
-const ORCID_REGEX = /^\d{4}-\d{4}-\d{4}-\d{3}[0-9X]$/;
 
 export function OrcidVerificationStep({
   onVerified,

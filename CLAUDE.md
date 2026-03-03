@@ -274,7 +274,7 @@ src/
 │   ├── verify/page.tsx            # Public hash verification page
 │   ├── invite/[token]/page.tsx    # Invite claim page
 │   ├── api/
-│   │   ├── auth/                  # me/ + register-user/
+│   │   ├── auth/                  # me/ (GET + PATCH)
 │   │   ├── activity/route.ts      # GET: activity feed
 │   │   ├── contracts/             # CRUD + signing + invite + reset-signatures
 │   │   ├── papers/                # CRUD + versions + submit + content + reviews
