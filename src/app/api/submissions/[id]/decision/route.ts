@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateSubmissionStatus } from "@/src/features/reviews/actions";
-import { createNotification } from "@/src/features/notifications/actions";
+import type { SubmissionStatusDb } from "@/src/shared/lib/db/schema";
 import {
   requireSession,
   requireSubmissionEditor,
-  anchorToHcs,
+  anchorAndNotify,
 } from "@/src/shared/lib/api-helpers";
 
 export const runtime = "nodejs";
 
 type Decision = "accept" | "reject" | "revise";
 
-const STATUS_MAP: Record<Decision, string> = {
+const STATUS_MAP: Record<Decision, SubmissionStatusDb> = {
   accept: "accepted",
   reject: "rejected",
   revise: "revision_requested",
@@ -47,14 +47,31 @@ export async function POST(
     );
   }
 
-  const { txId: hederaTxId } = await anchorToHcs("HCS_TOPIC_DECISIONS", {
-    type: "editorial_decision",
-    submissionId,
-    decision: body.decision,
-    allCriteriaMet: body.allCriteriaMet,
-    // Only include public justification in HCS — confidential comments stay off-chain
-    publicJustification: body.allCriteriaMet && body.decision === "reject" ? body.comment : null,
-    timestamp: new Date().toISOString(),
+  const authorWallet = submission.paper?.owner?.walletAddress;
+  const decisionLabel = body.decision === "accept" ? "accepted" : body.decision === "reject" ? "rejected" : "revision requested";
+
+  const { txId: hederaTxId } = await anchorAndNotify({
+    topic: "HCS_TOPIC_DECISIONS",
+    payload: {
+      type: "editorial_decision",
+      submissionId,
+      decision: body.decision,
+      allCriteriaMet: body.allCriteriaMet,
+      // Only include public justification in HCS — confidential comments stay off-chain
+      publicJustification: body.allCriteriaMet && body.decision === "reject" ? body.comment : null,
+      timestamp: new Date().toISOString(),
+    },
+    notifications: authorWallet
+      ? [
+          {
+            userWallet: authorWallet,
+            type: "decision_made",
+            title: `Paper ${decisionLabel}`,
+            body: `Your paper "${submission.paper.title}" has been ${decisionLabel}.`,
+            link: `/researcher`,
+          },
+        ]
+      : [],
   });
 
   const newStatus = STATUS_MAP[body.decision];
@@ -64,18 +81,6 @@ export async function POST(
     decisionTxId: hederaTxId ?? null,
     decidedAt: new Date().toISOString(),
   });
-
-  // Notify the paper author
-  if (submission.paper?.owner?.walletAddress) {
-    const decisionLabel = body.decision === "accept" ? "accepted" : body.decision === "reject" ? "rejected" : "revision requested";
-    await createNotification({
-      userWallet: submission.paper.owner.walletAddress,
-      type: "decision_made",
-      title: `Paper ${decisionLabel}`,
-      body: `Your paper "${submission.paper.title}" has been ${decisionLabel}.`,
-      link: `/researcher`,
-    });
-  }
 
   return NextResponse.json({ hederaTxId, status: newStatus });
 }

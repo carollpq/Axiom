@@ -4,6 +4,8 @@ import { resetContractSignatures } from "@/src/features/contracts/actions";
 import { getUserByWallet } from "@/src/features/users/queries";
 import { requireSession } from "@/src/shared/lib/api-helpers";
 
+export const runtime = "nodejs";
+
 export async function PATCH(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },

@@ -110,7 +110,7 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
     if (state.selectedContractId && contributor?.dbId) {
       try {
         await fetchApi(
-          `/api/contracts/${state.selectedContractId}/contributors?contributorId=${contributor.dbId}`,
+          `/api/contracts/${state.selectedContractId}/contributors/${contributor.dbId}`,
           { method: "DELETE" },
         );
       } catch (err) {

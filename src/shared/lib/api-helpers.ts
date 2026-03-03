@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/src/shared/lib/auth/auth";
 import { db } from "@/src/shared/lib/db";
-import { submissions } from "@/src/shared/lib/db/schema";
+import { submissions, reviews, rebuttals } from "@/src/shared/lib/db/schema";
+import type { NotificationTypeDb, ReputationEventTypeDb } from "@/src/shared/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { isHederaConfigured } from "@/src/shared/lib/hedera/client";
 import { submitHcsMessage } from "@/src/shared/lib/hedera/hcs";
 import { mintReputationToken } from "@/src/shared/lib/hedera/hts";
 import { createReputationEvent } from "@/src/features/reviews/actions";
+import { createNotification } from "@/src/features/notifications/actions";
+import { getRebuttalById } from "@/src/features/rebuttals/queries";
 
 /**
  * Auth guard — returns the lowercase wallet address or a 401 response.
@@ -91,19 +94,9 @@ export async function anchorToHcs(
  * Mint an HTS reputation token and create the corresponding reputation event.
  * Handles all error cases gracefully.
  */
-type ReputationEventType =
-  | "review_completed"
-  | "review_late"
-  | "editor_rating"
-  | "author_rating"
-  | "paper_published"
-  | "paper_retracted"
-  | "rebuttal_upheld"
-  | "rebuttal_overturned";
-
 export async function recordReputation(
   wallet: string,
-  eventType: ReputationEventType,
+  eventType: ReputationEventTypeDb,
   scoreDelta: number,
   details: string,
   mintMetadata: Record<string, unknown>,
@@ -136,4 +129,130 @@ export async function recordReputation(
  */
 export function daysFromNow(days: number): string {
   return new Date(Date.now() + days * 86_400_000).toISOString();
+}
+
+/**
+ * Rebuttal author guard — verifies the rebuttal exists and the session
+ * wallet matches the author. Uses a lighter query (no responses relation).
+ */
+export async function requireRebuttalAuthor(
+  rebuttalId: string,
+  wallet: string,
+) {
+  const rebuttal = await db.query.rebuttals.findFirst({
+    where: eq(rebuttals.id, rebuttalId),
+    with: {
+      submission: {
+        with: {
+          paper: { with: { owner: true } },
+          journal: true,
+        },
+      },
+    },
+  });
+
+  if (!rebuttal) {
+    return NextResponse.json(
+      { error: "Rebuttal not found" },
+      { status: 404 },
+    );
+  }
+
+  if (rebuttal.authorWallet.toLowerCase() !== wallet.toLowerCase()) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  return rebuttal;
+}
+
+/**
+ * Rebuttal editor guard — verifies the rebuttal exists and the session
+ * wallet matches the journal's editor. Returns the full rebuttal (with
+ * responses) via `getRebuttalById`.
+ */
+export async function requireRebuttalEditor(
+  rebuttalId: string,
+  wallet: string,
+) {
+  const rebuttal = await getRebuttalById(rebuttalId);
+
+  if (!rebuttal) {
+    return NextResponse.json(
+      { error: "Rebuttal not found" },
+      { status: 404 },
+    );
+  }
+
+  if (!rebuttal.submission?.journal) {
+    return NextResponse.json(
+      { error: "Submission not found" },
+      { status: 404 },
+    );
+  }
+
+  if (
+    rebuttal.submission.journal.editorWallet.toLowerCase() !==
+    wallet.toLowerCase()
+  ) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  return rebuttal;
+}
+
+/**
+ * Review + paper owner guard — verifies the review exists and the session
+ * wallet owns the paper. Returns the review (with submission.paper.owner) or 404/403.
+ */
+export async function requireReviewWithPaperOwner(
+  reviewId: string,
+  wallet: string,
+) {
+  const review = await db.query.reviews.findFirst({
+    where: eq(reviews.id, reviewId),
+    with: {
+      submission: {
+        with: { paper: { with: { owner: true } } },
+      },
+    },
+  });
+
+  if (!review) {
+    return NextResponse.json(
+      { error: "Review not found" },
+      { status: 404 },
+    );
+  }
+
+  if (
+    review.submission.paper.owner.walletAddress.toLowerCase() !==
+    wallet.toLowerCase()
+  ) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  return review;
+}
+
+/**
+ * Anchor a payload to HCS and fire notifications in parallel.
+ * Routes still own their DB mutations (those vary too much to generalize).
+ */
+export async function anchorAndNotify(opts: {
+  topic: HcsTopicEnvVar;
+  payload: Record<string, unknown>;
+  notifications: Array<{
+    userWallet: string;
+    type: NotificationTypeDb;
+    title: string;
+    body: string;
+    link?: string;
+  }>;
+}): Promise<{ txId?: string; consensusTimestamp?: string }> {
+  const [hcsResult] = await Promise.all([
+    anchorToHcs(opts.topic, opts.payload),
+    ...opts.notifications.map((n) => createNotification(n)),
+  ]);
+
+  return hcsResult;
 }

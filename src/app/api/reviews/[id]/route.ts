@@ -4,10 +4,9 @@ import { createReview, updateReviewHedera } from "@/src/features/reviews/actions
 import { db } from "@/src/shared/lib/db";
 import { paperVersions } from "@/src/shared/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { createNotification } from "@/src/features/notifications/actions";
 import {
   requireSession,
-  anchorToHcs,
+  anchorAndNotify,
   recordReputation,
 } from "@/src/shared/lib/api-helpers";
 
@@ -75,9 +74,11 @@ export async function POST(
     return NextResponse.json({ error: "Failed to create review" }, { status: 500 });
   }
 
-  const { txId: hederaTxId, consensusTimestamp: hederaTimestamp } = await anchorToHcs(
-    "HCS_TOPIC_REVIEWS",
-    {
+  const editorWallet = assignment.submission.journal?.editorWallet;
+
+  const { txId: hederaTxId, consensusTimestamp: hederaTimestamp } = await anchorAndNotify({
+    topic: "HCS_TOPIC_REVIEWS",
+    payload: {
       type: "review_submitted",
       reviewHash: body.reviewHash,
       reviewerWallet: session,
@@ -85,7 +86,18 @@ export async function POST(
       paperHash: latestVersion?.paperHash ?? null,
       timestamp: new Date().toISOString(),
     },
-  );
+    notifications: editorWallet
+      ? [
+          {
+            userWallet: editorWallet,
+            type: "review_submitted",
+            title: "Review submitted",
+            body: `A reviewer has submitted their review for "${assignment.submission.paper.title}".`,
+            link: `/editor/under-review`,
+          },
+        ]
+      : [],
+  });
 
   if (hederaTxId) {
     await updateReviewHedera(review.id, hederaTxId);
@@ -98,17 +110,6 @@ export async function POST(
     JSON.stringify({ reviewId: review.id, submissionId: assignment.submissionId }),
     { type: "review_completed", reviewId: review.id, submissionId: assignment.submissionId },
   );
-
-  // Notify editor that a review was submitted
-  if (assignment.submission.journal?.editorWallet) {
-    await createNotification({
-      userWallet: assignment.submission.journal.editorWallet,
-      type: "review_submitted",
-      title: "Review submitted",
-      body: `A reviewer has submitted their review for "${assignment.submission.paper.title}".`,
-      link: `/editor/under-review`,
-    });
-  }
 
   return NextResponse.json({
     reviewId: review.id,

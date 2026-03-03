@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getRebuttalById } from "@/src/features/rebuttals/queries";
 import { submitRebuttalResponses } from "@/src/features/rebuttals/actions";
-import { createNotification } from "@/src/features/notifications/actions";
 import { canonicalJson, hashString } from "@/src/shared/lib/hashing";
 import type { RebuttalPositionDb } from "@/src/shared/lib/db/schema";
-import { requireSession, anchorToHcs } from "@/src/shared/lib/api-helpers";
+import {
+  requireSession,
+  requireRebuttalAuthor,
+  anchorAndNotify,
+} from "@/src/shared/lib/api-helpers";
 
 export const runtime = "nodejs";
 
@@ -25,14 +27,8 @@ export async function POST(
 
   const { rebuttalId } = await params;
 
-  const rebuttal = await getRebuttalById(rebuttalId);
-  if (!rebuttal) {
-    return NextResponse.json({ error: "Rebuttal not found" }, { status: 404 });
-  }
-
-  if (rebuttal.authorWallet.toLowerCase() !== session.toLowerCase()) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const rebuttal = await requireRebuttalAuthor(rebuttalId, session);
+  if (rebuttal instanceof NextResponse) return rebuttal;
 
   if (rebuttal.status !== "open") {
     return NextResponse.json({ error: "Rebuttal is not open for responses" }, { status: 400 });
@@ -50,12 +46,28 @@ export async function POST(
 
   const rebuttalHash = await hashString(canonicalJson(body.responses));
 
-  const { txId: hederaTxId } = await anchorToHcs("HCS_TOPIC_DECISIONS", {
-    type: "rebuttal_submitted",
-    rebuttalId,
-    submissionId: rebuttal.submissionId,
-    rebuttalHash,
-    timestamp: new Date().toISOString(),
+  const editorWallet = rebuttal.submission?.journal?.editorWallet;
+
+  const { txId: hederaTxId } = await anchorAndNotify({
+    topic: "HCS_TOPIC_DECISIONS",
+    payload: {
+      type: "rebuttal_submitted",
+      rebuttalId,
+      submissionId: rebuttal.submissionId,
+      rebuttalHash,
+      timestamp: new Date().toISOString(),
+    },
+    notifications: editorWallet
+      ? [
+          {
+            userWallet: editorWallet,
+            type: "rebuttal_submitted",
+            title: "Rebuttal response submitted",
+            body: `The author has responded to the rebuttal for "${rebuttal.submission.paper?.title}".`,
+            link: `/editor/under-review`,
+          },
+        ]
+      : [],
   });
 
   const responses = body.responses.map((r) => ({
@@ -64,17 +76,6 @@ export async function POST(
   }));
 
   await submitRebuttalResponses(rebuttalId, responses, rebuttalHash, hederaTxId);
-
-  // Notify editor
-  if (rebuttal.submission?.journal?.editorWallet) {
-    await createNotification({
-      userWallet: rebuttal.submission.journal.editorWallet,
-      type: "rebuttal_submitted",
-      title: "Rebuttal response submitted",
-      body: `The author has responded to the rebuttal for "${rebuttal.submission.paper?.title}".`,
-      link: `/editor/under-review`,
-    });
-  }
 
   return NextResponse.json({ rebuttalHash, hederaTxId });
 }

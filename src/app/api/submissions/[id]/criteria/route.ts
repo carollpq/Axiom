@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { canonicalJson, hashString } from "@/src/shared/lib/hashing";
 import { publishCriteria } from "@/src/features/reviews/actions";
-import { createNotification } from "@/src/features/notifications/actions";
 import {
   requireSession,
   requireSubmissionEditor,
-  anchorToHcs,
+  anchorAndNotify,
 } from "@/src/shared/lib/api-helpers";
 
 export const runtime = "nodejs";
@@ -46,11 +45,27 @@ export async function POST(
   const criteriaJson = canonicalJson(body.criteria);
   const criteriaHash = await hashString(criteriaJson);
 
-  const { txId: hederaTxId } = await anchorToHcs("HCS_TOPIC_CRITERIA", {
-    type: "criteria_published",
-    submissionId,
-    criteriaHash,
-    timestamp: new Date().toISOString(),
+  const authorWallet = submission.paper?.owner?.walletAddress;
+
+  const { txId: hederaTxId } = await anchorAndNotify({
+    topic: "HCS_TOPIC_CRITERIA",
+    payload: {
+      type: "criteria_published",
+      submissionId,
+      criteriaHash,
+      timestamp: new Date().toISOString(),
+    },
+    notifications: authorWallet
+      ? [
+          {
+            userWallet: authorWallet,
+            type: "criteria_published",
+            title: "Review criteria published",
+            body: `Review criteria have been published for "${submission.paper.title}".`,
+            link: `/researcher`,
+          },
+        ]
+      : [],
   });
 
   const criteria = await publishCriteria({
@@ -62,17 +77,6 @@ export async function POST(
 
   if (!criteria) {
     return NextResponse.json({ error: "Failed to publish criteria" }, { status: 500 });
-  }
-
-  // Notify paper author
-  if (submission.paper?.owner?.walletAddress) {
-    await createNotification({
-      userWallet: submission.paper.owner.walletAddress,
-      type: "criteria_published",
-      title: "Review criteria published",
-      body: `Review criteria have been published for "${submission.paper.title}".`,
-      link: `/researcher`,
-    });
   }
 
   return NextResponse.json({ criteriaHash, hederaTxId });

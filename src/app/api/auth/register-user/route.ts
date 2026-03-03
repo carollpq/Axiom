@@ -4,6 +4,8 @@ import { db } from "@/src/shared/lib/db";
 import { users } from "@/src/shared/lib/db/schema";
 import { requireSession } from "@/src/shared/lib/api-helpers";
 
+export const runtime = "nodejs";
+
 const ORCID_REGEX = /^\d{4}-\d{4}-\d{4}-\d{3}[0-9X]$/;
 
 export async function POST(request: NextRequest) {

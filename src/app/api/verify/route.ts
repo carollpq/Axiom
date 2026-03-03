@@ -3,6 +3,8 @@ import { db } from "@/src/shared/lib/db";
 import { paperVersions } from "@/src/shared/lib/db/schema";
 import { eq } from "drizzle-orm";
 
+export const runtime = "nodejs";
+
 export async function POST(req: NextRequest) {
   const body = (await req.json()) as { hash?: string };
 

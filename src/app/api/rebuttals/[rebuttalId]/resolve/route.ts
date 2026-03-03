@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getRebuttalById } from "@/src/features/rebuttals/queries";
 import { resolveRebuttal } from "@/src/features/rebuttals/actions";
-import { createNotification } from "@/src/features/notifications/actions";
 import type { RebuttalResolutionDb } from "@/src/shared/lib/db/schema";
 import {
   requireSession,
-  anchorToHcs,
+  requireRebuttalEditor,
+  anchorAndNotify,
   recordReputation,
 } from "@/src/shared/lib/api-helpers";
 
@@ -20,18 +19,8 @@ export async function POST(
 
   const { rebuttalId } = await params;
 
-  const rebuttal = await getRebuttalById(rebuttalId);
-  if (!rebuttal) {
-    return NextResponse.json({ error: "Rebuttal not found" }, { status: 404 });
-  }
-
-  if (!rebuttal.submission?.journal) {
-    return NextResponse.json({ error: "Submission not found" }, { status: 404 });
-  }
-
-  if (rebuttal.submission.journal.editorWallet.toLowerCase() !== session.toLowerCase()) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const rebuttal = await requireRebuttalEditor(rebuttalId, session);
+  if (rebuttal instanceof NextResponse) return rebuttal;
 
   if (rebuttal.status !== "submitted") {
     return NextResponse.json({ error: "Rebuttal must be submitted before resolving" }, { status: 400 });
@@ -46,12 +35,26 @@ export async function POST(
     return NextResponse.json({ error: "Invalid resolution" }, { status: 400 });
   }
 
-  const { txId: hederaTxId } = await anchorToHcs("HCS_TOPIC_DECISIONS", {
-    type: "rebuttal_resolved",
-    rebuttalId,
-    submissionId: rebuttal.submissionId,
-    resolution: body.resolution,
-    timestamp: new Date().toISOString(),
+  const { txId: hederaTxId } = await anchorAndNotify({
+    topic: "HCS_TOPIC_DECISIONS",
+    payload: {
+      type: "rebuttal_resolved",
+      rebuttalId,
+      submissionId: rebuttal.submissionId,
+      resolution: body.resolution,
+      timestamp: new Date().toISOString(),
+    },
+    notifications: rebuttal.authorWallet
+      ? [
+          {
+            userWallet: rebuttal.authorWallet,
+            type: "rebuttal_resolved",
+            title: "Rebuttal resolved",
+            body: `Your rebuttal has been resolved: ${body.resolution}. ${body.editorNotes || ""}`.trim(),
+            link: `/researcher/rebuttal/${rebuttal.submissionId}`,
+          },
+        ]
+      : [],
   });
 
   await resolveRebuttal({
@@ -61,34 +64,25 @@ export async function POST(
     hederaTxId,
   });
 
-  // Mint reputation tokens for affected reviewers
+  // Mint reputation tokens for affected reviewers in parallel
   const reviewerWallets = new Set(
     rebuttal.responses.map((r) => r.review.reviewerWallet),
   );
 
-  for (const reviewerWallet of reviewerWallets) {
-    const eventType = body.resolution === "upheld" ? "rebuttal_upheld" : "rebuttal_overturned";
-    const scoreDelta = body.resolution === "upheld" ? -2 : body.resolution === "rejected" ? 1 : 0;
+  const eventType = body.resolution === "upheld" ? "rebuttal_upheld" as const : "rebuttal_overturned" as const;
+  const scoreDelta = body.resolution === "upheld" ? -2 : body.resolution === "rejected" ? 1 : 0;
 
-    await recordReputation(
-      reviewerWallet,
-      eventType,
-      scoreDelta,
-      `Rebuttal ${body.resolution} for submission ${rebuttal.submissionId}`,
-      { type: eventType, rebuttalId, resolution: body.resolution },
-    );
-  }
-
-  // Notify author
-  if (rebuttal.authorWallet) {
-    await createNotification({
-      userWallet: rebuttal.authorWallet,
-      type: "rebuttal_resolved",
-      title: "Rebuttal resolved",
-      body: `Your rebuttal has been resolved: ${body.resolution}. ${body.editorNotes || ""}`.trim(),
-      link: `/researcher/rebuttal/${rebuttal.submissionId}`,
-    });
-  }
+  await Promise.all(
+    [...reviewerWallets].map((reviewerWallet) =>
+      recordReputation(
+        reviewerWallet,
+        eventType,
+        scoreDelta,
+        `Rebuttal ${body.resolution} for submission ${rebuttal.submissionId}`,
+        { type: eventType, rebuttalId, resolution: body.resolution },
+      ),
+    ),
+  );
 
   return NextResponse.json({ resolution: body.resolution, hederaTxId });
 }

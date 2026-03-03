@@ -3,6 +3,8 @@ import { listNotifications, countUnread } from "@/src/features/notifications/que
 import { markAsRead, markAllAsRead } from "@/src/features/notifications/actions";
 import { requireSession } from "@/src/shared/lib/api-helpers";
 
+export const runtime = "nodejs";
+
 export async function GET() {
   const wallet = await requireSession();
   if (wallet instanceof NextResponse) return wallet;

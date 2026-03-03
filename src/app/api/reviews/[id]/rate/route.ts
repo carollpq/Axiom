@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/src/shared/lib/db";
-import { reviews, reviewerRatings } from "@/src/shared/lib/db/schema";
+import { reviewerRatings } from "@/src/shared/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { canonicalJson, hashString } from "@/src/shared/lib/hashing";
-import { requireSession, recordReputation } from "@/src/shared/lib/api-helpers";
+import {
+  requireSession,
+  requireReviewWithPaperOwner,
+  recordReputation,
+} from "@/src/shared/lib/api-helpers";
 
 export const runtime = "nodejs";
 
@@ -16,23 +20,8 @@ export async function POST(
 
   const { id: reviewId } = await params;
 
-  // Verify the review exists and the session user owns the paper
-  const review = await db.query.reviews.findFirst({
-    where: eq(reviews.id, reviewId),
-    with: {
-      submission: {
-        with: { paper: { with: { owner: true } } },
-      },
-    },
-  });
-
-  if (!review) {
-    return NextResponse.json({ error: "Review not found" }, { status: 404 });
-  }
-
-  if (review.submission.paper.owner.walletAddress.toLowerCase() !== session.toLowerCase()) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const review = await requireReviewWithPaperOwner(reviewId, session);
+  if (review instanceof NextResponse) return review;
 
   const body = (await req.json()) as { rating: number };
 
