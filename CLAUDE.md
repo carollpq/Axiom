@@ -13,6 +13,7 @@ Axiom is a blockchain-backed academic publishing and peer review platform built 
 The codebase is a **partially functional full-stack application**. The researcher section has significant backend integration; editor and reviewer sections still use mock data.
 
 **What's working end-to-end (researcher section):**
+- ✅ **User authentication** — Multi-step login: role selector → wallet connect → ORCID verification → DB save → role-based dashboard routing
 - Thirdweb v5 wallet authentication → JWT in httpOnly cookie
 - Paper registration: client-side SHA-256 hashing → R2 presigned upload → Lit encryption → DB storage → Hedera HCS anchoring
 - Study type selection (original / negative result / replication / replication failed / meta-analysis) in Step 1 of registration wizard
@@ -25,23 +26,25 @@ The codebase is a **partially functional full-stack application**. The researche
 - Neon PostgreSQL (prod) / SQLite (dev) via `DATABASE_URL`
 
 **What still uses mock data:**
-- Editor dashboard (`(editor)/`)
 - Reviewer dashboard + review workspace (`(reviewer)/`)
 
 **Recently completed (UI/infra):**
+- ✅ **Multi-step authentication flow** — Role selector → Wallet connection → ORCID verification → Dashboard redirect
+- ✅ **User registration/role management** — `POST /api/auth/register-user` saves role + ORCID to DB
+- ✅ **Role-based dashboard routing** — Seamless redirect to researcher/editor/reviewer dashboards based on stored role
 - Editor UI fully redesigned to match researcher page visual style (DashboardHeader, flat stat cards, section label conventions, sidebar panel titles)
+- Editor dashboard with DB-backed submission pipeline (real data: incoming → criteria published → reviewers assigned → under review → decision pending → accepted/rejected)
 - Real PDF viewer implemented in editor three-column views (`PdfViewer` using react-pdf v10 / pdfjs-dist v5); shows placeholder until `fileUrl` is populated from presigned R2 URLs
 
 **What is not yet implemented:**
 - Pre-registered review criteria (journal publishes on-chain) — **TOP PRIORITY**
 - Review submission workflow (reviewer evaluates criteria) — **TOP PRIORITY**
 - HTS soulbound reputation token minting — **TOP PRIORITY**
-- Rebuttal phase (researcher challenges unfair reviews)
+- Rebuttal phase (researcher challenges unfair reviews) **TOP PRIORITY**
 - Timeline enforcement with deadline tracking
 - Real-time researcher status updates / notifications
 - Reviewer search by reputation score
 - Lit Protocol decryption (encrypt works; decrypt not wired into UI)
-- ORCID OAuth (onboarding validates format client-side only)
 - `/verify` public hash verification page
 - Hedera mirror node lookups
 
@@ -154,29 +157,31 @@ Each role group has its own layout using `RoleShell` from `src/shared/components
 ## Remaining Work (Priority Order)
 
 ### Tier 1 — Core Review Pipeline (hackathon differentiators)
-1. **Journal dashboard: real data** — Replace mock data with DB-backed submission pipeline (Kanban: New → Criteria Published → Reviewers Assigned → Under Review → Decision Pending → Published/Rejected)
-2. **Publish review criteria** — `POST /api/submissions/[id]/criteria` → hash + HCS anchor. Criteria become immutable. Editor UI: `CriteriaBuilder` component.
-3. **Assign reviewers** — `POST /api/submissions/[id]/assign-reviewer` → create `review_assignments` row. Search reviewers by reputation score and field.
-4. **Reviewer dashboard: real data** — Assigned reviews, deadlines, reputation score card, completed reviews.
-5. **Review workspace: real data** — Display paper + criteria. Reviewer evaluates each criterion (yes/no/partially + comment). Submit → hash + HCS anchor.
-6. **HTS soulbound reputation tokens** — Mint on review events. Create `AXIOM_REVIEWER_REPUTATION` token on HTS. Mint via API on review submission.
-7. **Editorial decision flow** — System computes `allCriteriaMet`. If met but editor rejects → editor must provide public on-chain justification. Decision → HCS anchor. This is accountability, not a binding obligation to publish.
+1. ✅ **Journal dashboard: real data** — Replace mock data with DB-backed submission pipeline (Kanban: New → Criteria Published → Reviewers Assigned → Under Review → Decision Pending → Published/Rejected)
+2. ✅ **User authentication flow** — Multi-step login with wallet + ORCID + role selection (researcher/editor/reviewer) → role-based dashboard routing
+3. **Publish review criteria** — `POST /api/submissions/[id]/criteria` → hash + HCS anchor. Criteria become immutable. Editor UI: `CriteriaBuilder` component.
+3. **Publish review criteria** — `POST /api/submissions/[id]/criteria` → hash + HCS anchor. Criteria become immutable. Editor UI: `CriteriaBuilder` component.
+4. **Assign reviewers** — `POST /api/submissions/[id]/assign-reviewer` → create `review_assignments` row. Search reviewers by reputation score and field.
+5. **Reviewer dashboard: real data** — Assigned reviews, deadlines, reputation score card, completed reviews.
+6. **Review workspace: real data** — Display paper + criteria. Reviewer evaluates each criterion (yes/no/partially + comment). Submit → hash + HCS anchor.
+7. **HTS soulbound reputation tokens** — Mint on review events. Create `AXIOM_REVIEWER_REPUTATION` token on HTS. Mint via API on review submission.
+8. **Editorial decision flow** — System computes `allCriteriaMet`. If met but editor rejects → editor must provide public on-chain justification. Decision → HCS anchor. This is accountability, not a binding obligation to publish.
 
 ### Tier 2 — Rebuttal + Timeline
-8. **Rebuttal phase** — When criteria not fully met and rejection likely, editor opens rebuttal. Researcher submits per-review responses (agree/disagree + justification). Editor resolves. Rebuttal + resolution → HCS anchor. Reputation tokens minted based on outcome.
-9. **Timeline enforcement** — Track deadlines in `review_assignments`. Cron job checks overdue. Late = `review_late` HTS token. Researcher notifications at each stage.
-10. **Researcher status updates** — Notifications table + polling. "Reviewers assigned", "Review 1/3 done", "Rebuttal phase open", etc.
+9. **Rebuttal phase** — When criteria not fully met and rejection likely, editor opens rebuttal. Researcher submits per-review responses (agree/disagree + justification). Editor resolves. Rebuttal + resolution → HCS anchor. Reputation tokens minted based on outcome.
+10. **Timeline enforcement** — Track deadlines in `review_assignments`. Cron job checks overdue. Late = `review_late` HTS token. Researcher notifications at each stage.
+11. **Researcher status updates** — Notifications table + polling. "Reviewers assigned", "Review 1/3 done", "Rebuttal phase open", etc.
 
 ### Tier 3 — Polish + Demo Features
-11. **Wire Lit decrypt into explorer** — Researchers reading their own private papers.
-12. **`/verify` page** — Upload PDF → client-side hash → check against DB/HCS.
-13. **Reviewer search by reputation** — Editor searches reviewers filtered by score, field, timeliness.
-14. **Review transparency** — After final decision, anonymized review comments visible on paper detail view.
+12. **Wire Lit decrypt into explorer** — Researchers reading their own private papers.
+13. **`/verify` page** — Upload PDF → client-side hash → check against DB/HCS.
+14. **Reviewer search by reputation** — Editor searches reviewers filtered by score, field, timeliness.
+15. **Review transparency** — After final decision, anonymized review comments visible on paper detail view.
 
 ### Tier 4 — Stretch
-15. **Timeline enforcement smart contract** (Solidity on Hedera EVM)
-16. **HTS minting via System Contracts** (hybrid HTS + EVM)
-17. **Real ORCID OAuth flow**
+16. **Timeline enforcement smart contract** (Solidity on Hedera EVM)
+17. **HTS minting via System Contracts** (hybrid HTS + EVM)
+18. **Real ORCID OAuth flow**
 
 ## Key Architecture Decisions
 

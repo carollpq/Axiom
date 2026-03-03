@@ -54,12 +54,13 @@ export function mapDbToPoolReviewer(u: DbReviewer, scoreRow?: DbReputationScore 
 
 export function mapDbToPaperCardData(s: DbJournalSubmission): PaperCardData {
   const abstract = s.paper.abstract ?? "";
+  const submittedDate = s.submittedAt ? String(s.submittedAt).slice(0, 10) : "—";
   return {
     id: s.id,
     title: s.paper.title,
     authors: s.paper.owner?.displayName ?? s.paper.owner?.walletAddress ?? "Unknown",
     abstractSnippet: abstract.length > 180 ? abstract.slice(0, 177) + "…" : abstract,
-    submittedDate: s.submittedAt.slice(0, 10),
+    submittedDate,
   };
 }
 

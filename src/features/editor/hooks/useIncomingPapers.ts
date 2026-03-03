@@ -34,8 +34,7 @@ export function useIncomingPapers(
     // Map reviewer pool IDs to wallet addresses
     const reviewerWallets = assignedIds.map(id => {
       const reviewer = initialReviewerPool.find(r => r.id === id);
-      // If reviewer has an orcid field that might be a wallet, use id as fallback
-      return reviewer?.id ?? id;
+      return reviewer?.wallet ?? id;
     });
 
     try {
