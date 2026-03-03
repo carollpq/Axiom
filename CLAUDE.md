@@ -57,6 +57,23 @@ npm run lint                   # ESLint
 npm run format                 # Prettier formatting
 ```
 
+### Smart Contracts (Hardhat)
+
+The `contracts/` directory has its own `package.json` to isolate Hardhat dependencies from the Next.js app.
+
+```bash
+npm run contracts:install      # Install Hardhat dependencies (cd contracts && npm install)
+npm run contracts:compile      # Compile Solidity contracts
+npm run contracts:test         # Run Hardhat tests (local network)
+npm run contracts:deploy:testnet  # Deploy TimelineEnforcer to Hedera testnet
+```
+
+**Contract:** `TimelineEnforcer.sol` — On-chain deadline tracking for review assignments. Pure Solidity (no Hedera precompile dependency). HTS reputation minting remains SDK-only via `src/shared/lib/hedera/hts.ts`.
+
+**Env vars** (add to `.env.local`):
+- `HEDERA_EVM_PRIVATE_KEY` — ECDSA key for EVM transactions (if operator key is ED25519)
+- `TIMELINE_ENFORCER_ADDRESS` — Deployed TimelineEnforcer address
+
 ## Architecture
 
 ### Core Focus: Peer Review Quality & Accountability
