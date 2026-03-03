@@ -1,7 +1,6 @@
 import { listUserPapers } from "@/src/features/papers/queries";
 import { mapDbPaperToFrontend, computeStats } from "@/src/features/researcher/mappers/dashboard";
 import { StatCard } from "@/src/shared/components";
-import type { ApiPaper } from "@/src/shared/types/api";
 
 interface Props {
   papersPromise: ReturnType<typeof listUserPapers>;
@@ -9,7 +8,7 @@ interface Props {
 
 export async function StatsSection({ papersPromise }: Props) {
   const rawPapers = await papersPromise;
-  const papers = (rawPapers as unknown as ApiPaper[]).map(mapDbPaperToFrontend);
+  const papers = rawPapers.map(mapDbPaperToFrontend);
   const stats = computeStats(papers);
 
   return (

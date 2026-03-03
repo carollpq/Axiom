@@ -9,6 +9,11 @@ export function ReviewerGrid({ reviewers }: ReviewerGridProps) {
     <div className="mb-8">
       <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-4">Reviewer Pool</div>
       <div className="grid grid-cols-4 gap-4">
+        {reviewers.length === 0 && (
+          <div className="col-span-4 py-6 text-center text-[13px] text-[#6a6050] italic">
+            No reviewers in pool yet.
+          </div>
+        )}
         {reviewers.map((r) => (
           <div
             key={r.id}

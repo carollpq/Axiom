@@ -1,7 +1,6 @@
 import { listUserPapers } from "@/src/features/papers/queries";
 import { mapDbPaperToFrontend } from "@/src/features/researcher/mappers/dashboard";
-import { PapersTableClient } from "./papers-table.client";
-import type { ApiPaper } from "@/src/shared/types/api";
+import { PapersTable } from "./PapersTable";
 
 interface Props {
   papersPromise: ReturnType<typeof listUserPapers>;
@@ -9,6 +8,6 @@ interface Props {
 
 export async function PapersSection({ papersPromise }: Props) {
   const rawPapers = await papersPromise;
-  const papers = (rawPapers as unknown as ApiPaper[]).map(mapDbPaperToFrontend);
-  return <PapersTableClient initialPapers={papers} />;
+  const papers = rawPapers.map(mapDbPaperToFrontend);
+  return <PapersTable initialPapers={papers} />;
 }

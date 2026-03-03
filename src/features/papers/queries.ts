@@ -2,6 +2,12 @@ import { db } from "@/src/shared/lib/db";
 import { papers, users } from "@/src/shared/lib/db/schema";
 import { eq } from "drizzle-orm";
 
+/** Drizzle return type for papers with versions + contracts (no owner). */
+export type DbPaperWithRelations = Awaited<ReturnType<typeof listUserPapers>>[number];
+
+/** Drizzle return type for papers with versions + contracts + owner. */
+export type DbPaperWithOwner = NonNullable<Awaited<ReturnType<typeof getPaperById>>>;
+
 export async function listUserPapers(walletAddress: string) {
   const user = (
     await db

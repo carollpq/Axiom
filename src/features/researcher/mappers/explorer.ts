@@ -1,9 +1,9 @@
 import type { ExplorerPaper } from "@/src/features/researcher/types/explorer";
-import type { ApiPaper } from "@/src/shared/types/api";
+import type { DbPaperWithOwner } from "@/src/features/papers/queries";
 import { toPublicDisplayStatus } from "@/src/shared/lib/status-map";
 import { formatIsoDate, displayNameOrWallet, truncateHash, formatTimestampUtc } from "@/src/shared/lib/format";
 
-export function mapApiPaperToExplorer(p: ApiPaper): ExplorerPaper {
+export function mapApiPaperToExplorer(p: DbPaperWithOwner): ExplorerPaper {
   const latestVersion = p.versions?.[0] ?? null;
   const contract = p.contracts?.[0] ?? null;
 

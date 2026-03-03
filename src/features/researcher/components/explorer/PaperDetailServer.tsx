@@ -4,7 +4,6 @@ import { mapApiPaperToExplorer } from "@/src/features/researcher/mappers/explore
 import { RetractionBanner } from "./RetractionBanner";
 import { DetailHeader } from "./DetailHeader";
 import { PaperDetailShell } from "./PaperDetailShell.client";
-import type { ApiPaper } from "@/src/shared/types/api";
 
 interface PaperDetailServerProps {
   paperId: string;
@@ -27,7 +26,7 @@ export async function PaperDetailServer({ paperId }: PaperDetailServerProps) {
     );
   }
 
-  const paper = mapApiPaperToExplorer(raw as unknown as ApiPaper);
+  const paper = mapApiPaperToExplorer(raw);
 
   return (
     <div className="max-w-[900px] mx-auto py-8 px-10">

@@ -19,6 +19,9 @@ export function VersionsTab({ versions }: VersionsTabProps) {
     >
       <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-5">Version History</div>
 
+      {versions.length === 0 ? (
+        <p className="text-[13px] text-[#6a6050] italic">No version history available.</p>
+      ) : (
       <div className="relative pl-7">
         <div
           className="absolute w-0.5 left-[9px] top-2.5 bottom-2.5"
@@ -70,6 +73,7 @@ export function VersionsTab({ versions }: VersionsTabProps) {
           );
         })}
       </div>
+      )}
     </div>
   );
 }

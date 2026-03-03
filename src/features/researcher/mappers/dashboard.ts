@@ -1,17 +1,17 @@
 import type { PaperRow, StatCardData } from "@/src/features/researcher/types/dashboard";
-import type { ApiPaper } from "@/src/shared/types/api";
+import type { DbPaperWithRelations } from "@/src/features/papers/queries";
 import { toDisplayStatus } from "@/src/shared/lib/status-map";
 import { truncateHash, formatIsoDate } from "@/src/shared/lib/format";
 import { ScrollText, PenLine, Clock, Sparkles } from "lucide-react";
 
 /**
- * Converts a raw ApiPaper (nested DB shape) into a flat PaperRow for the
+ * Converts a Drizzle paper row (with relations) into a flat PaperRow for the
  * dashboard table. Derives three display-only fields:
  *   - coauthors: flattens contracts → contributors → names into a comma-separated string
  *   - hash: picks the first version's paperHash and truncates it for display
  *   - status: converts the DB enum (e.g. "contract_pending") to a display label
  */
-export function mapDbPaperToFrontend(p: ApiPaper): PaperRow {
+export function mapDbPaperToFrontend(p: DbPaperWithRelations): PaperRow {
   const coauthors =
     p.contracts
       ?.flatMap((c) => c.contributors ?? [])

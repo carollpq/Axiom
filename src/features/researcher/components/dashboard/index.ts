@@ -5,6 +5,5 @@ export { PapersTable } from "./PapersTable";
 export { PendingActionsList } from "./PendingActionsList";
 export { StatsSection } from "./stats.section";
 export { PapersSection } from "./papers.section";
-export { PapersTableClient } from "./papers-table.client";
 export { PendingSection } from "./pending.section";
 export { TabsShellClient } from "./tabs.shell.client";

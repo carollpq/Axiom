@@ -9,6 +9,14 @@ const typeStyles: Record<PendingAction["type"], { bg: string; color: string; ico
 };
 
 export function PendingActionsList({ actions }: { actions: PendingAction[] }) {
+  if (actions.length === 0) {
+    return (
+      <div className="px-5 py-10 text-center text-[13px] text-[#6a6050] italic">
+        No pending actions — you're all caught up.
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-2.5">
       {actions.map((a, i) => {

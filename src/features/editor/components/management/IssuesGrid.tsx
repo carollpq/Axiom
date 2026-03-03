@@ -11,6 +11,11 @@ export function IssuesGrid({ issues }: IssuesGridProps) {
         Issues
       </div>
       <div className="grid grid-cols-4 gap-4">
+        {issues.length === 0 && (
+          <div className="col-span-4 py-6 text-center text-[13px] text-[#6a6050] italic">
+            No issues created yet.
+          </div>
+        )}
         {issues.map((issue) => (
           <div
             key={issue.id}
