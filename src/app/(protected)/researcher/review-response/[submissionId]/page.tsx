@@ -59,7 +59,7 @@ export default async function ReviewResponsePage({
     : [];
 
   return (
-    <div className="max-w-[1000px] mx-auto px-10 py-8">
+    <div className="max-w-[1200px] mx-auto px-10 py-8">
       <ReviewResponseClient
         submissionId={submissionId}
         paperTitle={submission.paper.title}

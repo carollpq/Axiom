@@ -21,7 +21,7 @@ export default async function RebuttalPage({
 
   if (!rebuttal) {
     return (
-      <div className="max-w-[600px] mx-auto px-10 py-16 text-center">
+      <div className="max-w-[1200px] mx-auto px-10 py-16 text-center">
         <h1 className="text-[22px] text-[#e8e0d4] font-serif mb-2">
           No Rebuttal Found
         </h1>
@@ -51,7 +51,7 @@ export default async function RebuttalPage({
   }));
 
   return (
-    <div className="px-6 py-4">
+    <div className="max-w-[1200px] mx-auto px-10 py-8">
       <div className="mb-4">
         <h1 className="text-[22px] text-[#e8e0d4] font-serif">
           Rebuttal Response

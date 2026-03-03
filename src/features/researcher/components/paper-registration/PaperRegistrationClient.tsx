@@ -40,7 +40,7 @@ export function PaperRegistrationClient({ initialContracts, initialJournals }: P
   const showConfirmation = (registered || submitted) && step === 3;
 
   return (
-    <div className="max-w-[800px] mx-auto py-8 px-10">
+    <div className="max-w-[1200px] mx-auto py-8 px-10">
       {/* Breadcrumb + Header */}
       <div className="mb-2">
         <div className="text-[11px] text-[#6a6050] mb-2">

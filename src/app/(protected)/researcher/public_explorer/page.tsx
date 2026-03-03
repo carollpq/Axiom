@@ -22,7 +22,7 @@ export default async function PaperExplorer({ searchParams }: PageProps) {
   }
 
   return (
-    <div className="max-w-[1000px] mx-auto py-8 px-10">
+    <div className="max-w-[1200px] mx-auto py-8 px-10">
       <div className="mb-7">
         <h1 className="text-[28px] font-normal text-[#e8e0d4] m-0">
           Explore Papers

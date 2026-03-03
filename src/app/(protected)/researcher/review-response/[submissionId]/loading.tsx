@@ -1,6 +1,6 @@
 export default function ReviewResponseLoading() {
   return (
-    <div className="max-w-[1000px] mx-auto px-10 py-8">
+    <div className="max-w-[1200px] mx-auto px-10 py-8">
       <div className="h-8 w-64 rounded bg-[rgba(45,42,38,0.5)] animate-pulse mb-4" />
       <div className="h-4 w-96 rounded bg-[rgba(45,42,38,0.3)] animate-pulse mb-8" />
       {[1, 2, 3].map((i) => (

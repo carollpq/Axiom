@@ -107,7 +107,7 @@ export function ActivitySkeleton() {
 /** Explorer: search bar + filter chips + 5 paper cards */
 export function ExplorerListSkeleton() {
   return (
-    <div className="max-w-[1100px] mx-auto px-8 py-8">
+    <div className="max-w-[1200px] mx-auto px-10 py-8">
       <div className="mb-6">
         <PulseBlock className="h-8 w-48 mb-4" />
         <PulseBlock className="h-10 w-full rounded-lg mb-4" />
@@ -137,7 +137,7 @@ export function ExplorerListSkeleton() {
 /** Paper detail: back-button stub + title + three content sections */
 export function PaperDetailSkeleton() {
   return (
-    <div className="max-w-[900px] mx-auto py-8 px-10">
+    <div className="max-w-[1200px] mx-auto py-8 px-10">
       <PulseBlock className="h-3 w-28 mb-5" />
       <PulseBlock className="h-6 w-3/4 mb-2" />
       <PulseBlock className="h-3 w-48 mb-6" />
@@ -175,7 +175,7 @@ export function PaperDetailSkeleton() {
 /** Contract builder: heading + two content blocks */
 export function ContractBuilderSkeleton() {
   return (
-    <div className="max-w-[960px] mx-auto py-8 px-10">
+    <div className="max-w-[1200px] mx-auto py-8 px-10">
       <PulseBlock className="h-4 w-32 mb-2" />
       <PulseBlock className="h-8 w-72 mb-1" />
       <PulseBlock className="h-3 w-56 mb-8" />
@@ -206,7 +206,7 @@ export function ContractBuilderSkeleton() {
 /** Paper registration: heading + 4-step indicator + content block */
 export function PaperRegistrationSkeleton() {
   return (
-    <div className="max-w-[800px] mx-auto py-8 px-10">
+    <div className="max-w-[1200px] mx-auto py-8 px-10">
       <PulseBlock className="h-4 w-32 mb-2" />
       <PulseBlock className="h-8 w-80 mb-1" />
       <PulseBlock className="h-3 w-64 mb-8" />

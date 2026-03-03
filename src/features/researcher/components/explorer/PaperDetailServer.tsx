@@ -13,7 +13,7 @@ export async function PaperDetailServer({ paperId }: PaperDetailServerProps) {
   const raw = await getPaperById(paperId);
   if (!raw) {
     return (
-      <div className="max-w-[900px] mx-auto py-8 px-10">
+      <div className="max-w-[1200px] mx-auto py-8 px-10">
         <Link
           href="?paper="
           className="text-[#6a6050] text-xs font-serif flex items-center gap-1.5 mb-5 no-underline hover:text-[#c9b89e]"
@@ -29,7 +29,7 @@ export async function PaperDetailServer({ paperId }: PaperDetailServerProps) {
   const paper = mapApiPaperToExplorer(raw);
 
   return (
-    <div className="max-w-[900px] mx-auto py-8 px-10">
+    <div className="max-w-[1200px] mx-auto py-8 px-10">
       <Link
         href="/researcher/public_explorer"
         className="text-[#6a6050] text-xs font-serif flex items-center gap-1.5 mb-5 no-underline hover:text-[#c9b89e]"
