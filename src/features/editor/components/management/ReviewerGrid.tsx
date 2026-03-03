@@ -1,4 +1,4 @@
-import type { PoolReviewer } from "@/src/shared/types/editor-dashboard";
+import type { PoolReviewer } from "@/src/features/editor/types";
 
 interface ReviewerGridProps {
   reviewers: PoolReviewer[];

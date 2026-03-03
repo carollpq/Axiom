@@ -1,4 +1,4 @@
-import type { FeedbackItem, CompletedReview } from "@/src/shared/types/reviewer-dashboard";
+import type { FeedbackItem, CompletedReview } from "@/src/features/reviewer/types";
 import { Stars } from "./Stars";
 
 interface FeedbackPanelProps {

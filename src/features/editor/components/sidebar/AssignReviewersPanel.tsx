@@ -1,7 +1,7 @@
 "use client";
 
 import { SearchInput } from "@/src/shared/components/SearchInput";
-import type { PoolReviewer } from "@/src/shared/types/editor-dashboard";
+import type { PoolReviewer } from "@/src/features/editor/types";
 
 interface AssignReviewersPanelProps {
   reviewerPool: PoolReviewer[];

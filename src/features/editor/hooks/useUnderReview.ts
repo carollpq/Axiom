@@ -5,7 +5,7 @@ import type {
   PaperCardData,
   PoolReviewer,
   ReviewerWithStatus,
-} from "@/src/shared/types/editor-dashboard";
+} from "@/src/features/editor/types";
 
 export function useUnderReview(
   initialPapers: PaperCardData[],

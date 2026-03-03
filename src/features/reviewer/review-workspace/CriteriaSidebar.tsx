@@ -1,4 +1,4 @@
-import type { ReviewCriterion } from "@/src/shared/types/review-workspace";
+import type { ReviewCriterion } from "@/src/features/reviewer/types";
 
 interface CriteriaSidebarProps {
   criteria: ReviewCriterion[];

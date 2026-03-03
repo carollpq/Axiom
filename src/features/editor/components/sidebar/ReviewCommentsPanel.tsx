@@ -1,4 +1,4 @@
-import type { ReviewerWithStatus } from "@/src/shared/types/editor-dashboard";
+import type { ReviewerWithStatus } from "@/src/features/editor/types";
 
 interface ReviewCommentsPanelProps {
   reviewers: ReviewerWithStatus[];

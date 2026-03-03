@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import type { Visibility, SignedContract, RegisteredJournal } from "@/src/features/researcher/types/paper-registration";
+import { useReducer, useCallback, useRef } from "react";
+import type { SignedContract, RegisteredJournal } from "@/src/features/researcher/types/paper-registration";
 import { useCurrentUser } from "@/src/shared/hooks/useCurrentUser";
 import { fetchApi } from "@/src/shared/lib/api";
 import { hashFile } from "@/src/shared/lib/hashing";
@@ -10,119 +10,73 @@ import { buildWalletListConditions } from "@/src/shared/lib/lit/access-control";
 import { encryptFileWithLit } from "@/src/shared/lib/lit/encrypt";
 import { mapDbContractToSigned } from "@/src/features/researcher/mappers/contract";
 import type { ApiContract, ApiPaperVersion } from "@/src/shared/types/api";
-import type { StudyTypeDb } from "@/src/shared/lib/db/schema";
-
-const STEP_LABELS = ["Paper Details", "Provenance", "Contract", "Register / Submit"];
+import {
+  paperRegistrationReducer,
+  initialState,
+  canProceedStep1,
+} from "@/src/features/researcher/reducers/paper-registration";
+import { STEP_LABELS } from "@/src/features/researcher/config/paper-registration";
 
 export function usePaperRegistration(initialContracts: ApiContract[], initialJournals: RegisteredJournal[]) {
   const { user, isConnected, account } = useCurrentUser();
+  const [state, dispatch] = useReducer(paperRegistrationReducer, initialState);
 
-  // Navigation
-  const [step, setStep] = useState(0);
-
-  // Step 1: Paper Details
-  const [title, setTitle] = useState("");
-  const [abstract, setAbstract] = useState("");
-  const [fileName, setFileName] = useState("");
-  const [fileHash, setFileHash] = useState("");
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [visibility, setVisibility] = useState<Visibility>("private");
-  const [studyType, setStudyType] = useState<StudyTypeDb>("original");
-  const [keywords, setKeywords] = useState(["machine learning", "reproducibility"]);
-  const [keywordInput, setKeywordInput] = useState("");
-
-  // Step 2: Provenance
-  const [datasetHash, setDatasetHash] = useState("");
-  const [datasetUrl, setDatasetUrl] = useState("");
-  const [uploadedDatasetFile, setUploadedDatasetFile] = useState<File | null>(null);
-  const [codeRepo, setCodeRepo] = useState("");
-  const [codeCommit, setCodeCommit] = useState("");
-  const [envHash, setEnvHash] = useState("");
-  const [uploadedEnvFile, setUploadedEnvFile] = useState<File | null>(null);
-  const [githubConnected, setGithubConnected] = useState(false);
-
-  // Step 3: Contract
-  const [selectedContract, setSelectedContract] = useState<number | null>(null);
-
-  // Step 4: Confirmation
-  const [registered, setRegistered] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [selectedJournal, setSelectedJournal] = useState<string | null>(null);
-  const [paperId, setPaperId] = useState<string | null>(null);
-  const [txHash, setTxHash] = useState("");
-  const [txTimestamp, setTxTimestamp] = useState("");
-  const [registering, setRegistering] = useState(false);
+  const uploadedFileRef = useRef<File | null>(null);
+  const uploadedDatasetFileRef = useRef<File | null>(null);
+  const uploadedEnvFileRef = useRef<File | null>(null);
 
   // Contracts from server — filter to fully signed only
   const contracts: SignedContract[] = initialContracts
     .filter((c) => c.status === "fully_signed")
     .map(mapDbContractToSigned);
 
-  // Hashing state
-  const [isHashing, setIsHashing] = useState(false);
-
   // Derived
-  const contract = contracts.find(c => c.id === selectedContract);
-  const canProceedStep1 = !!(title.trim() && abstract.trim() && fileHash);
+  const contract = contracts.find(c => c.id === state.selectedContract);
 
   // Handlers
   const handleFileUpload = useCallback(async (file: File) => {
-    setFileName(file.name);
-    setFileHash("");
-    setUploadedFile(file);
-    setIsHashing(true);
+    dispatch({ type: "FILE_UPLOAD_START", fileName: file.name });
+    uploadedFileRef.current = file;
     try {
       const hash = await hashFile(file);
-      setFileHash(hash);
-    } finally {
-      setIsHashing(false);
+      dispatch({ type: "FILE_UPLOAD_COMPLETE", fileHash: hash });
+    } catch {
+      dispatch({ type: "FILE_UPLOAD_ERROR" });
     }
   }, []);
 
   const removeFile = () => {
-    setFileName("");
-    setFileHash("");
-    setUploadedFile(null);
+    dispatch({ type: "REMOVE_FILE" });
+    uploadedFileRef.current = null;
   };
 
   const handleDatasetUpload = useCallback(async (file: File) => {
-    setUploadedDatasetFile(file);
-    setIsHashing(true);
+    uploadedDatasetFileRef.current = file;
+    dispatch({ type: "DATASET_UPLOAD_START" });
     try {
       const hash = await hashFile(file);
-      setDatasetHash(hash);
-    } finally {
-      setIsHashing(false);
+      dispatch({ type: "DATASET_UPLOAD_COMPLETE", datasetHash: hash });
+    } catch {
+      dispatch({ type: "DATASET_UPLOAD_ERROR" });
     }
   }, []);
 
   const handleEnvUpload = useCallback(async (file: File) => {
-    setUploadedEnvFile(file);
-    setIsHashing(true);
+    uploadedEnvFileRef.current = file;
+    dispatch({ type: "ENV_UPLOAD_START" });
     try {
       const hash = await hashFile(file);
-      setEnvHash(hash);
-    } finally {
-      setIsHashing(false);
+      dispatch({ type: "ENV_UPLOAD_COMPLETE", envHash: hash });
+    } catch {
+      dispatch({ type: "ENV_UPLOAD_ERROR" });
     }
   }, []);
 
-  const simulateGithub = () => {
-    setGithubConnected(true);
-    setCodeRepo("https://github.com/areeves/transformer-reproducibility");
-    setCodeCommit("a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6");
-  };
+  const simulateGithub = () => dispatch({ type: "SIMULATE_GITHUB" });
 
-  const addKeyword = () => {
-    if (keywordInput.trim()) {
-      setKeywords(prev => [...prev, keywordInput.trim()]);
-      setKeywordInput("");
-    }
-  };
+  const addKeyword = () => dispatch({ type: "ADD_KEYWORD" });
 
-  const removeKeyword = (index: number) => {
-    setKeywords(prev => prev.filter((_, j) => j !== index));
-  };
+  const removeKeyword = (index: number) => dispatch({ type: "REMOVE_KEYWORD", index });
 
   const uploadToR2 = async (
     file: File,
@@ -158,19 +112,22 @@ export function usePaperRegistration(initialContracts: ApiContract[], initialJou
 
   const handleRegister = async () => {
     if (!isConnected || !user) {
-      setTxHash("0x" + Math.random().toString(16).slice(2, 10) + "..." + Math.random().toString(16).slice(2, 6));
-      setTxTimestamp("2026-02-08 11:42:15 UTC");
-      setRegistered(true);
+      dispatch({
+        type: "REGISTER_DEMO",
+        txHash: "0x" + Math.random().toString(16).slice(2, 10) + "..." + Math.random().toString(16).slice(2, 6),
+        txTimestamp: "2026-02-08 11:42:15 UTC",
+      });
       return;
     }
 
-    setRegistering(true);
+    dispatch({ type: "REGISTER_START" });
     try {
+      const uploadedFile = uploadedFileRef.current;
       let fileToUpload = uploadedFile;
       let litDataToEncryptHash: string | null = null;
       let litAccessConditionsJson: string | null = null;
 
-      if (uploadedFile && fileHash && isLitConfigured() && account?.address) {
+      if (uploadedFile && state.fileHash && isLitConfigured() && account?.address) {
         try {
           await getLitClient();
           const conditions = buildWalletListConditions([account.address]);
@@ -189,124 +146,141 @@ export function usePaperRegistration(initialContracts: ApiContract[], initialJou
       }
 
       const fileStorageKey = fileToUpload
-        ? await uploadToR2(fileToUpload, fileHash, "papers")
+        ? await uploadToR2(fileToUpload, state.fileHash, "papers")
         : null;
-      if (uploadedDatasetFile && datasetHash) {
-        await uploadToR2(uploadedDatasetFile, datasetHash, "datasets");
+      if (uploadedDatasetFileRef.current && state.datasetHash) {
+        await uploadToR2(uploadedDatasetFileRef.current, state.datasetHash, "datasets");
       }
-      if (uploadedEnvFile && envHash) {
-        await uploadToR2(uploadedEnvFile, envHash, "environments");
+      if (uploadedEnvFileRef.current && state.envHash) {
+        await uploadToR2(uploadedEnvFileRef.current, state.envHash, "environments");
       }
 
       const paper = await fetchApi<{ id: string }>("/api/papers", {
         method: "POST",
         body: JSON.stringify({
-          title,
-          abstract,
-          studyType,
+          title: state.title,
+          abstract: state.abstract,
+          studyType: state.studyType,
           litDataToEncryptHash,
           litAccessConditionsJson,
         }),
       });
-
-      setPaperId(paper.id);
 
       const version = await fetchApi<ApiPaperVersion>(
         `/api/papers/${paper.id}/versions`,
         {
           method: "POST",
           body: JSON.stringify({
-            paperHash: fileHash,
+            paperHash: state.fileHash,
             fileStorageKey,
-            datasetHash: datasetHash || null,
-            codeRepoUrl: codeRepo || null,
-            codeCommitHash: codeCommit || null,
-            envSpecHash: envHash || null,
+            datasetHash: state.datasetHash || null,
+            codeRepoUrl: state.codeRepo || null,
+            codeCommitHash: state.codeCommit || null,
+            envSpecHash: state.envHash || null,
           }),
         },
       );
 
       await fetchApi(`/api/papers/${paper.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ status: "registered", visibility }),
+        body: JSON.stringify({ status: "registered", visibility: state.visibility }),
       });
 
-      setTxHash(
-        version.hederaTxId ??
-          "pending — configure HEDERA_OPERATOR_ID/KEY to anchor on-chain",
-      );
-      setTxTimestamp(
-        version.hederaTimestamp
+      dispatch({
+        type: "REGISTER_SUCCESS",
+        paperId: paper.id,
+        txHash: version.hederaTxId ?? "pending — configure HEDERA_OPERATOR_ID/KEY to anchor on-chain",
+        txTimestamp: version.hederaTimestamp
           ? version.hederaTimestamp.replace("T", " ").slice(0, 19) + " UTC"
           : new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC",
-      );
-      setRegistered(true);
+      });
     } catch (err) {
       console.error("Registration failed:", err);
-    } finally {
-      setRegistering(false);
+      dispatch({ type: "REGISTER_ERROR" });
     }
   };
 
   const handleSubmit = async () => {
-    if (!paperId || !selectedJournal) return;
+    if (!state.paperId || !state.selectedJournal) return;
 
     try {
       const result = await fetchApi<{ submissionId?: string; hederaTxId?: string; hederaTimestamp?: string }>(
-        `/api/papers/${paperId}/submit`,
-        { method: "POST", body: JSON.stringify({ journalId: selectedJournal }) },
+        `/api/papers/${state.paperId}/submit`,
+        { method: "POST", body: JSON.stringify({ journalId: state.selectedJournal }) },
       );
-      setTxHash(result.hederaTxId ?? "pending — configure HEDERA_OPERATOR_ID/KEY to anchor on-chain");
-      setTxTimestamp(
-        result.hederaTimestamp
+      dispatch({
+        type: "SUBMIT_SUCCESS",
+        txHash: result.hederaTxId ?? "pending — configure HEDERA_OPERATOR_ID/KEY to anchor on-chain",
+        txTimestamp: result.hederaTimestamp
           ? result.hederaTimestamp.replace("T", " ").slice(0, 19) + " UTC"
           : new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC",
-      );
-      setSubmitted(true);
+      });
     } catch (err) {
       console.error("Submission failed:", err);
     }
   };
 
-  const goBack = () => { if (step > 0) setStep(step - 1); };
-  const goNext = () => { if (step < 3) setStep(step + 1); };
+  const goBack = () => dispatch({ type: "GO_BACK" });
+  const goNext = () => dispatch({ type: "GO_NEXT" });
 
   return {
     // Navigation
-    step,
-    setStep,
-    steps: STEP_LABELS,
+    step: state.step,
+    setStep: (step: number) => dispatch({ type: "SET_STEP", step }),
+    steps: STEP_LABELS as unknown as string[],
     goBack,
     goNext,
     // Step 1
-    title, setTitle,
-    abstract, setAbstract,
-    fileName, fileHash,
-    visibility, setVisibility,
-    studyType, setStudyType,
-    keywords, keywordInput, setKeywordInput,
-    handleFileUpload, removeFile, isHashing,
-    addKeyword, removeKeyword,
+    title: state.title,
+    setTitle: (title: string) => dispatch({ type: "SET_TITLE", title }),
+    abstract: state.abstract,
+    setAbstract: (abstract: string) => dispatch({ type: "SET_ABSTRACT", abstract }),
+    fileName: state.fileName,
+    fileHash: state.fileHash,
+    visibility: state.visibility,
+    setVisibility: (visibility: "private" | "public") => dispatch({ type: "SET_VISIBILITY", visibility }),
+    studyType: state.studyType,
+    setStudyType: (studyType: "original" | "negative_result" | "replication" | "replication_failed" | "meta_analysis") => dispatch({ type: "SET_STUDY_TYPE", studyType }),
+    keywords: state.keywords,
+    keywordInput: state.keywordInput,
+    setKeywordInput: (keywordInput: string) => dispatch({ type: "SET_KEYWORD_INPUT", keywordInput }),
+    handleFileUpload,
+    removeFile,
+    isHashing: state.isHashing,
+    addKeyword,
+    removeKeyword,
     // Step 2
-    datasetHash, setDatasetHash,
-    datasetUrl, setDatasetUrl,
-    codeRepo, setCodeRepo,
-    codeCommit, setCodeCommit,
-    envHash, setEnvHash,
-    githubConnected,
-    handleDatasetUpload, handleEnvUpload, simulateGithub,
+    datasetHash: state.datasetHash,
+    setDatasetHash: (datasetHash: string) => dispatch({ type: "SET_DATASET_HASH", datasetHash }),
+    datasetUrl: state.datasetUrl,
+    setDatasetUrl: (datasetUrl: string) => dispatch({ type: "SET_DATASET_URL", datasetUrl }),
+    codeRepo: state.codeRepo,
+    setCodeRepo: (codeRepo: string) => dispatch({ type: "SET_CODE_REPO", codeRepo }),
+    codeCommit: state.codeCommit,
+    setCodeCommit: (codeCommit: string) => dispatch({ type: "SET_CODE_COMMIT", codeCommit }),
+    envHash: state.envHash,
+    setEnvHash: (envHash: string) => dispatch({ type: "SET_ENV_HASH", envHash }),
+    githubConnected: state.githubConnected,
+    handleDatasetUpload,
+    handleEnvUpload,
+    simulateGithub,
     // Step 3
-    selectedContract, setSelectedContract,
+    selectedContract: state.selectedContract,
+    setSelectedContract: (selectedContract: number | null) => dispatch({ type: "SET_SELECTED_CONTRACT", selectedContract }),
     contracts,
     contract,
     // Step 4
-    registered, submitted,
-    selectedJournal, setSelectedJournal,
+    registered: state.registered,
+    submitted: state.submitted,
+    selectedJournal: state.selectedJournal,
+    setSelectedJournal: (selectedJournal: string | null) => dispatch({ type: "SET_SELECTED_JOURNAL", selectedJournal }),
     journals: initialJournals,
-    txHash, txTimestamp,
-    handleRegister, handleSubmit,
+    txHash: state.txHash,
+    txTimestamp: state.txTimestamp,
+    handleRegister,
+    handleSubmit,
     // Derived
-    canProceedStep1,
-    registering,
+    canProceedStep1: canProceedStep1(state),
+    registering: state.registering,
   };
 }

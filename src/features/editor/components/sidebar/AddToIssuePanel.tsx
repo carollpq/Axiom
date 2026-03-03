@@ -1,6 +1,6 @@
 "use client";
 
-import type { JournalIssue } from "@/src/shared/types/editor-dashboard";
+import type { JournalIssue } from "@/src/features/editor/types";
 
 interface AddToIssuePanelProps {
   issues: JournalIssue[];

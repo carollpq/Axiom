@@ -6,7 +6,7 @@ import {
   listReviewerPool,
 } from "@/src/features/editor/queries";
 import { mapDbToPaperCardData, mapDbToReviewerWithStatus } from "@/src/features/editor/mappers/journal";
-import type { ReviewerWithStatus } from "@/src/shared/types/editor-dashboard";
+import type { ReviewerWithStatus } from "@/src/features/editor/types";
 
 export default async function AcceptedPapersPage() {
   const sessionWallet = await getSession();

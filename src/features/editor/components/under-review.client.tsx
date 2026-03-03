@@ -11,7 +11,7 @@ import type {
   PaperCardData,
   PoolReviewer,
   ReviewerWithStatus,
-} from "@/src/shared/types/editor-dashboard";
+} from "@/src/features/editor/types";
 
 interface UnderReviewProps {
   papers: PaperCardData[];

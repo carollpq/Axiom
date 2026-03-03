@@ -10,7 +10,7 @@ import type {
   PaperCardData,
   ReviewerWithStatus,
   JournalIssue,
-} from "@/src/shared/types/editor-dashboard";
+} from "@/src/features/editor/types";
 
 interface AcceptedPapersProps {
   papers: PaperCardData[];

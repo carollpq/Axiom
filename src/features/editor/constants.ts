@@ -1,4 +1,4 @@
-import type { SubmissionStage, StageFilter, StageColorConfig, ReviewCriterion } from "@/src/shared/types/editor-dashboard";
+import type { SubmissionStage, StageFilter, StageColorConfig, ReviewCriterion } from "@/src/features/editor/types";
 
 export const pipelineStages: SubmissionStage[] = [
   "New",

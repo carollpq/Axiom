@@ -1,6 +1,6 @@
 "use client";
 
-import { useReviewWorkspace } from "@/src/shared/hooks/useReviewWorkspace";
+import { useReviewWorkspace } from "@/src/features/reviewer/hooks/useReviewWorkspace";
 import type { DbReviewAssignment } from "@/src/features/reviews/queries";
 import {
   MethodologyBanner,

@@ -1,4 +1,4 @@
-import type { ProvenanceEntry } from "@/src/shared/types/review-workspace";
+import type { ProvenanceEntry } from "@/src/features/reviewer/types";
 
 interface ProvenanceViewProps {
   provenance: ProvenanceEntry[];

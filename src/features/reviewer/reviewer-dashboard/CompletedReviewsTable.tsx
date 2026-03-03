@@ -1,6 +1,6 @@
 "use client";
 
-import type { CompletedReview } from "@/src/shared/types/reviewer-dashboard";
+import type { CompletedReview } from "@/src/features/reviewer/types";
 import { Stars } from "./Stars";
 
 interface CompletedReviewsTableProps {

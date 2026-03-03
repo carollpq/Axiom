@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReviewCriterion, CriterionRating, CriterionEvaluation as CriterionEvalType } from "@/src/shared/types/review-workspace";
+import type { ReviewCriterion, CriterionRating, CriterionEvaluation as CriterionEvalType } from "@/src/features/reviewer/types";
 
 interface CriterionEvaluationProps {
   criterion: ReviewCriterion;

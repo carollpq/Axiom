@@ -1,6 +1,6 @@
 "use client";
 
-import { useReviewerDashboard } from "@/src/shared/hooks/useReviewerDashboard";
+import { useReviewerDashboard } from "@/src/features/reviewer/hooks/useReviewerDashboard";
 import { DashboardHeader } from "@/src/shared/components";
 import {
   ReputationSection,
@@ -14,7 +14,7 @@ import type {
   CompletedReview,
   ReputationScores,
   ReputationBreakdownItem,
-} from "@/src/shared/types/reviewer-dashboard";
+} from "@/src/features/reviewer/types";
 
 interface Props {
   initialAssigned: AssignedReview[];

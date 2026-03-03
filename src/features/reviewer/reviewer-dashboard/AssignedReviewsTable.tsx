@@ -1,6 +1,6 @@
 "use client";
 
-import type { AssignedReview } from "@/src/shared/types/reviewer-dashboard";
+import type { AssignedReview } from "@/src/features/reviewer/types";
 import { StatusBadge } from "./StatusBadge";
 
 interface AssignedReviewsTableProps {

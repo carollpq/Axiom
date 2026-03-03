@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import type {
   PaperCardData,
   ReviewerWithStatus,
-} from "@/src/shared/types/editor-dashboard";
+} from "@/src/features/editor/types";
 
 export function useAcceptedPapers(
   initialPapers: PaperCardData[],

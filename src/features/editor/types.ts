@@ -41,8 +41,8 @@ export interface ReviewCriterion {
   type: string;
 }
 
-export type { BadgeColorConfig as StageColorConfig } from "./shared";
-export type { StatCardProps as JournalStatCardData } from "./shared";
+export type { BadgeColorConfig as StageColorConfig } from "@/src/shared/types/shared";
+export type { StatCardProps as JournalStatCardData } from "@/src/shared/types/shared";
 
 export type PipelineCounts = Record<SubmissionStage, number>;
 

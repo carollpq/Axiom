@@ -4,7 +4,7 @@ import type {
   ReviewStatus,
   ReputationScores,
   ReputationBreakdownItem,
-} from "@/src/shared/types/reviewer-dashboard";
+} from "@/src/features/reviewer/types";
 import type { DbAssignedReview, DbCompletedReview, DbReputationRow } from "../queries";
 
 function daysUntil(deadline: string | null): number {

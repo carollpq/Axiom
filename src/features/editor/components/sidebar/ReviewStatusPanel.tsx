@@ -1,4 +1,4 @@
-import type { ReviewerWithStatus, ReviewStatus } from "@/src/shared/types/editor-dashboard";
+import type { ReviewerWithStatus, ReviewStatus } from "@/src/features/editor/types";
 
 const statusColors: Record<ReviewStatus, { bg: string; text: string; border: string }> = {
   complete:    { bg: "rgba(120,180,120,0.15)", text: "#8fbc8f", border: "rgba(120,180,120,0.3)" },

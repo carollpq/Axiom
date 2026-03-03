@@ -1,4 +1,4 @@
-import type { ReviewStatus } from "@/src/shared/types/reviewer-dashboard";
+import type { ReviewStatus } from "@/src/features/reviewer/types";
 import type { BadgeColorConfig } from "@/src/shared/types/shared";
 import { Badge } from "@/src/shared/components";
 

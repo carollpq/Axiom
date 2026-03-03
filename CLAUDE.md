@@ -125,7 +125,11 @@ src/features/researcher/components/dashboard/papers-table.client.tsx
 src/features/{domain}/
 ├── index.ts       # Re-exports
 ├── queries.ts     # Drizzle read queries
-└── actions.ts     # Drizzle write mutations
+├── actions.ts     # Drizzle write mutations
+├── types.ts       # All types for this feature domain
+├── hooks/         # Thin hooks (useReducer + side effects only)
+├── reducers/      # Pure state machines (testable without React)
+└── config/        # Step definitions, constants
 ```
 
 #### Feature Import Rule
@@ -298,12 +302,12 @@ src/
 │   ├── editor/                    # 🔲 Mock data (UI redesigned, PDF viewer wired)
 │   └── reviewer/                  # 🔲 Mock data
 ├── features/
-│   ├── researcher/                # Components, hooks, mappers, types ✅
+│   ├── researcher/                # Components, hooks, reducers, config, mappers, types ✅
 │   ├── contracts/                 # DB queries + actions ✅
 │   ├── papers/                    # DB queries + actions ✅
 │   ├── users/                     # DB queries ✅
-│   ├── editor/                    # Mock components, redesigned UI 🔲
-│   └── reviewer/                  # Mock components 🔲
+│   ├── editor/                    # Mock components, types, redesigned UI 🔲
+│   └── reviewer/                  # Mock components, types, hooks, reducers 🔲
 │   # NEEDED:
 │   # ├── submissions/             # DB domain: queries + actions 🔲
 │   # ├── reviews/                 # DB domain: queries + actions 🔲
@@ -312,7 +316,7 @@ src/
 └── shared/
     ├── components/                # TopBar, Footer, RoleShell, PdfViewer, etc. ✅
     ├── context/UserContext.tsx     # Wallet + session ✅
-    ├── hooks/useAuthFetch.ts      # Mutation-triggered refreshes ✅
+    ├── hooks/useCurrentUser.ts    # Current user context ✅
     ├── lib/
     │   ├── auth/                  # JWT ✅
     │   ├── db/schema.ts           # Drizzle schema ✅ (needs new tables)

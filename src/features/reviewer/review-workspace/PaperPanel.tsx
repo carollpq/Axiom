@@ -1,4 +1,4 @@
-import type { PaperUnderReview } from "@/src/shared/types/review-workspace";
+import type { PaperUnderReview } from "@/src/features/reviewer/types";
 
 interface PaperPanelProps {
   paper: PaperUnderReview;

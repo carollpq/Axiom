@@ -1,4 +1,4 @@
-import type { ReputationBreakdownItem } from "@/src/shared/types/reviewer-dashboard";
+import type { ReputationBreakdownItem } from "@/src/features/reviewer/types";
 
 interface ReputationBreakdownProps {
   items: ReputationBreakdownItem[];

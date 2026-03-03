@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import type { PaperCardData, PoolReviewer } from "@/src/shared/types/editor-dashboard";
+import type { PaperCardData, PoolReviewer } from "@/src/features/editor/types";
 
 export function useIncomingPapers(
   initialPapers: PaperCardData[],

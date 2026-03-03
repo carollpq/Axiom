@@ -4,7 +4,7 @@ import type {
   ReviewerWithStatus,
   EditorProfile,
   JournalIssue,
-} from "@/src/shared/types/editor-dashboard";
+} from "@/src/features/editor/types";
 
 /* ── Editor profile ── */
 

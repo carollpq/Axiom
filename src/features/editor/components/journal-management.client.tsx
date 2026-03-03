@@ -1,6 +1,6 @@
 "use client";
 
-import type { PoolReviewer, JournalIssue } from "@/src/shared/types/editor-dashboard";
+import type { PoolReviewer, JournalIssue } from "@/src/features/editor/types";
 import { IssuesGrid } from "./management/IssuesGrid";
 import { EditableSection } from "./management/EditableSection";
 import { ReviewerGrid } from "./management/ReviewerGrid";

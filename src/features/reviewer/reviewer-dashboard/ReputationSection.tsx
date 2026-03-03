@@ -1,4 +1,4 @@
-import type { ReputationDataPoint, ReputationBreakdownItem } from "@/src/shared/types/reviewer-dashboard";
+import type { ReputationDataPoint, ReputationBreakdownItem } from "@/src/features/reviewer/types";
 import { ReputationCard } from "./ReputationCard";
 import { ReputationBreakdown } from "./ReputationBreakdown";
 import { QuickStats } from "./QuickStats";

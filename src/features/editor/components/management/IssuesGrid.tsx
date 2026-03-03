@@ -1,4 +1,4 @@
-import type { JournalIssue } from "@/src/shared/types/editor-dashboard";
+import type { JournalIssue } from "@/src/features/editor/types";
 
 interface IssuesGridProps {
   issues: JournalIssue[];

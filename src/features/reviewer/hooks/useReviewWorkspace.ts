@@ -1,17 +1,22 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useReducer, useMemo, useCallback } from "react";
 import type {
   CriterionRating,
-  CriterionEvaluation,
   GeneralComments,
   Recommendation,
-  SubmissionResult,
   PaperUnderReview,
   ReviewCriterion,
-} from "@/src/shared/types/review-workspace";
+} from "@/src/features/reviewer/types";
 import { canonicalJson, hashString } from "@/src/shared/lib/hashing";
 import type { DbReviewAssignment } from "@/src/features/reviews/queries";
+import {
+  reviewWorkspaceReducer,
+  createInitialState,
+  selectCompletedCount,
+  selectAllCriteriaMet,
+  selectCanSubmit,
+} from "@/src/features/reviewer/reducers/review-workspace";
 
 // Placeholder paper — used when no assignment is provided
 const PLACEHOLDER_PAPER: PaperUnderReview = {
@@ -107,93 +112,62 @@ export function useReviewWorkspace(assignment?: NonNullable<DbReviewAssignment>)
     [assignment],
   );
 
-  const [evaluations, setEvaluations] = useState<Record<number, CriterionEvaluation>>(() => {
-    const init: Record<number, CriterionEvaluation> = {};
-    // Use criteria length to initialize — will update if criteria changes
-    const c = assignment ? mapAssignmentToCriteria(assignment) : PLACEHOLDER_CRITERIA;
-    for (const criterion of c) {
-      init[criterion.id] = { criterionId: criterion.id, rating: null, comment: "" };
-    }
-    return init;
-  });
-
-  const [generalComments, setGeneralComments] = useState<GeneralComments>({
-    strengths: "",
-    weaknesses: "",
-    questionsForAuthors: "",
-    confidentialEditorComments: "",
-  });
-
-  const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
-  const [isDraft, setIsDraft] = useState(true);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
-  const [criteriaCollapsed, setCriteriaCollapsed] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const completedCount = useMemo(
-    () => Object.values(evaluations).filter(e => e.rating !== null).length,
-    [evaluations],
+  const [state, dispatch] = useReducer(
+    reviewWorkspaceReducer,
+    criteria,
+    createInitialState,
   );
 
-  const allCriteriaMet = useMemo(
-    () => Object.values(evaluations).every(e => e.rating === "Yes"),
-    [evaluations],
-  );
-
-  const canSubmit = useMemo(
-    () =>
-      Object.values(evaluations).every(e => e.rating !== null) &&
-      recommendation !== null &&
-      generalComments.strengths.trim().length > 0 &&
-      !isSubmitting,
-    [evaluations, recommendation, generalComments.strengths, isSubmitting],
-  );
+  const completedCount = selectCompletedCount(state);
+  const allCriteriaMet = selectAllCriteriaMet(state);
+  const canSubmit = selectCanSubmit(state);
 
   const setCriterionRating = useCallback((id: number, rating: CriterionRating) => {
-    setEvaluations(prev => ({ ...prev, [id]: { ...prev[id], rating } }));
+    dispatch({ type: "SET_CRITERION_RATING", id, rating });
   }, []);
 
   const setCriterionComment = useCallback((id: number, comment: string) => {
-    setEvaluations(prev => ({ ...prev, [id]: { ...prev[id], comment } }));
+    dispatch({ type: "SET_CRITERION_COMMENT", id, comment });
   }, []);
 
   const setGeneralComment = useCallback((field: keyof GeneralComments, value: string) => {
-    setGeneralComments(prev => ({ ...prev, [field]: value }));
+    dispatch({ type: "SET_GENERAL_COMMENT", field, value });
   }, []);
 
-  const saveDraft = useCallback(() => { setIsDraft(true); }, []);
+  const saveDraft = useCallback(() => {
+    dispatch({ type: "SAVE_DRAFT" });
+  }, []);
 
   const submitReview = useCallback(async () => {
     if (!canSubmit) return;
-    setIsSubmitting(true);
+    dispatch({ type: "SUBMIT_START" });
 
-    const met     = Object.values(evaluations).filter(e => e.rating === "Yes").length;
-    const partial = Object.values(evaluations).filter(e => e.rating === "Partially").length;
-    const notMet  = Object.values(evaluations).filter(e => e.rating === "No").length;
+    const met     = Object.values(state.evaluations).filter(e => e.rating === "Yes").length;
+    const partial = Object.values(state.evaluations).filter(e => e.rating === "Partially").length;
+    const notMet  = Object.values(state.evaluations).filter(e => e.rating === "No").length;
 
     // Compute review hash (excluding confidentialEditorComments — those never leave the server)
     const reviewPayload = {
-      evaluations,
-      recommendation,
-      strengths: generalComments.strengths,
-      weaknesses: generalComments.weaknesses,
-      questionsForAuthors: generalComments.questionsForAuthors,
+      evaluations: state.evaluations,
+      recommendation: state.recommendation,
+      strengths: state.generalComments.strengths,
+      weaknesses: state.generalComments.weaknesses,
+      questionsForAuthors: state.generalComments.questionsForAuthors,
     };
     const reviewHash = await hashString(canonicalJson(reviewPayload));
 
     if (!assignment) {
       // Placeholder mode — just show mock result
-      setSubmissionResult({
-        txHash: "0x" + Math.random().toString(16).slice(2, 10) + "..." + Math.random().toString(16).slice(2, 6),
-        timestamp: new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC",
-        paperHash: paper.provenance[0]?.hash.slice(0, 16) + "...",
-        reviewHash: reviewHash.slice(0, 16) + "...",
-        criteriaSummary: { met, partial, notMet },
+      dispatch({
+        type: "SUBMIT_SUCCESS",
+        submissionResult: {
+          txHash: "0x" + Math.random().toString(16).slice(2, 10) + "..." + Math.random().toString(16).slice(2, 6),
+          timestamp: new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC",
+          paperHash: paper.provenance[0]?.hash.slice(0, 16) + "...",
+          reviewHash: reviewHash.slice(0, 16) + "...",
+          criteriaSummary: { met, partial, notMet },
+        },
       });
-      setIsSubmitted(true);
-      setIsDraft(false);
-      setIsSubmitting(false);
       return;
     }
 
@@ -202,12 +176,12 @@ export function useReviewWorkspace(assignment?: NonNullable<DbReviewAssignment>)
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          criteriaEvaluations: evaluations,
-          strengths: generalComments.strengths,
-          weaknesses: generalComments.weaknesses,
-          questionsForAuthors: generalComments.questionsForAuthors,
-          confidentialEditorComments: generalComments.confidentialEditorComments,
-          recommendation,
+          criteriaEvaluations: state.evaluations,
+          strengths: state.generalComments.strengths,
+          weaknesses: state.generalComments.weaknesses,
+          questionsForAuthors: state.generalComments.questionsForAuthors,
+          confidentialEditorComments: state.generalComments.confidentialEditorComments,
+          recommendation: state.recommendation,
           reviewHash,
         }),
       });
@@ -215,39 +189,50 @@ export function useReviewWorkspace(assignment?: NonNullable<DbReviewAssignment>)
       if (!response.ok) {
         const err = await response.json().catch(() => ({ error: "Unknown error" }));
         console.error("[Review submit] API error:", err);
-        setIsSubmitting(false);
+        dispatch({ type: "SUBMIT_ERROR" });
         return;
       }
 
       const result = await response.json() as { reviewId: string; hederaTxId?: string; hederaTimestamp?: string };
 
-      setSubmissionResult({
-        txHash: result.hederaTxId ?? "pending",
-        timestamp: result.hederaTimestamp
-          ? new Date(result.hederaTimestamp).toISOString().replace("T", " ").slice(0, 19) + " UTC"
-          : new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC",
-        paperHash: paper.provenance[0]?.hash.slice(0, 16) + "...",
-        reviewHash: reviewHash.slice(0, 16) + "...",
-        criteriaSummary: { met, partial, notMet },
+      dispatch({
+        type: "SUBMIT_SUCCESS",
+        submissionResult: {
+          txHash: result.hederaTxId ?? "pending",
+          timestamp: result.hederaTimestamp
+            ? new Date(result.hederaTimestamp).toISOString().replace("T", " ").slice(0, 19) + " UTC"
+            : new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC",
+          paperHash: paper.provenance[0]?.hash.slice(0, 16) + "...",
+          reviewHash: reviewHash.slice(0, 16) + "...",
+          criteriaSummary: { met, partial, notMet },
+        },
       });
-      setIsSubmitted(true);
-      setIsDraft(false);
     } catch (err) {
       console.error("[Review submit] Unexpected error:", err);
-    } finally {
-      setIsSubmitting(false);
+      dispatch({ type: "SUBMIT_ERROR" });
     }
-  }, [assignment, canSubmit, evaluations, recommendation, generalComments, paper.provenance]);
+  }, [assignment, canSubmit, state.evaluations, state.recommendation, state.generalComments, paper.provenance]);
 
   return {
     paper,
     criteria,
-    evaluations, generalComments, recommendation,
-    isDraft, isSubmitted, submissionResult,
-    criteriaCollapsed, setCriteriaCollapsed,
-    completedCount, allCriteriaMet, canSubmit,
-    setCriterionRating, setCriterionComment, setGeneralComment,
-    setRecommendation, saveDraft, submitReview,
-    isSubmitting,
+    evaluations: state.evaluations,
+    generalComments: state.generalComments,
+    recommendation: state.recommendation,
+    isDraft: state.isDraft,
+    isSubmitted: state.isSubmitted,
+    submissionResult: state.submissionResult,
+    criteriaCollapsed: state.criteriaCollapsed,
+    setCriteriaCollapsed: (criteriaCollapsed: boolean) => dispatch({ type: "SET_CRITERIA_COLLAPSED", criteriaCollapsed }),
+    completedCount,
+    allCriteriaMet,
+    canSubmit,
+    setCriterionRating,
+    setCriterionComment,
+    setGeneralComment,
+    setRecommendation: (recommendation: Recommendation | null) => dispatch({ type: "SET_RECOMMENDATION", recommendation }),
+    saveDraft,
+    submitReview,
+    isSubmitting: state.isSubmitting,
   };
 }

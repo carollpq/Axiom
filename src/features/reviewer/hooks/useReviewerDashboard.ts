@@ -10,7 +10,7 @@ import type {
   ReputationDataPoint,
   ReputationBreakdownItem,
   ReputationScores,
-} from "@/src/shared/types/reviewer-dashboard";
+} from "@/src/features/reviewer/types";
 
 // Placeholder reputation data — requires reputationEvents table to be real
 const PLACEHOLDER_REPUTATION_HISTORY: ReputationDataPoint[] = [

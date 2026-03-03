@@ -1,6 +1,6 @@
 "use client";
 
-import type { PaperCardData } from "@/src/shared/types/editor-dashboard";
+import type { PaperCardData } from "@/src/features/editor/types";
 import { PaperListItem } from "./PaperListItem";
 
 interface PaperListProps {

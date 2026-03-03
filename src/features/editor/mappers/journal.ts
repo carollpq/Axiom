@@ -1,4 +1,4 @@
-import type { JournalSubmission, SubmissionStage, PoolReviewer, PaperCardData, ReviewerWithStatus } from "@/src/shared/types/editor-dashboard";
+import type { JournalSubmission, SubmissionStage, PoolReviewer, PaperCardData, ReviewerWithStatus } from "@/src/features/editor/types";
 import type { DbJournalSubmission, DbReviewer, DbReputationScore } from "../queries";
 
 function deriveStage(
