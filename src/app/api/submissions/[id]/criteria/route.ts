@@ -7,6 +7,7 @@ import { canonicalJson, hashString } from "@/src/shared/lib/hashing";
 import { publishCriteria } from "@/src/features/reviews/actions";
 import { isHederaConfigured } from "@/src/shared/lib/hedera/client";
 import { submitHcsMessage } from "@/src/shared/lib/hedera/hcs";
+import { createNotification } from "@/src/features/notifications/actions";
 
 export const runtime = "nodejs";
 
@@ -32,7 +33,7 @@ export async function POST(
   // Verify submission exists and editor owns the journal
   const submission = await db.query.submissions.findFirst({
     where: eq(submissions.id, submissionId),
-    with: { journal: true },
+    with: { journal: true, paper: { with: { owner: true } } },
   });
 
   if (!submission) {
@@ -84,6 +85,17 @@ export async function POST(
 
   if (!criteria) {
     return NextResponse.json({ error: "Failed to publish criteria" }, { status: 500 });
+  }
+
+  // Notify paper author
+  if (submission.paper?.owner?.walletAddress) {
+    await createNotification({
+      userWallet: submission.paper.owner.walletAddress,
+      type: "criteria_published",
+      title: "Review criteria published",
+      body: `Review criteria have been published for "${submission.paper.title}".`,
+      link: `/researcher`,
+    });
   }
 
   return NextResponse.json({ criteriaHash, hederaTxId });

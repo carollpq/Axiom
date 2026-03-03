@@ -8,6 +8,7 @@ import { db } from "@/src/shared/lib/db";
 import { paperVersions } from "@/src/shared/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { mintReputationToken } from "@/src/shared/lib/hedera/hts";
+import { createNotification } from "@/src/features/notifications/actions";
 
 export const runtime = "nodejs";
 
@@ -120,6 +121,17 @@ export async function POST(
     htsTokenSerial,
     hederaTxId,
   });
+
+  // Notify editor that a review was submitted
+  if (assignment.submission.journal?.editorWallet) {
+    await createNotification({
+      userWallet: assignment.submission.journal.editorWallet,
+      type: "review_submitted",
+      title: "Review submitted",
+      body: `A reviewer has submitted their review for "${assignment.submission.paper.title}".`,
+      link: `/editor/under-review`,
+    });
+  }
 
   return NextResponse.json({
     reviewId: review.id,

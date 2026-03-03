@@ -78,3 +78,16 @@ export interface JournalIssue {
   label: string;
   paperCount: number;
 }
+
+export interface RebuttalResponseInfo {
+  reviewId: string;
+  position: "agree" | "disagree";
+  justification: string;
+}
+
+export interface RebuttalInfo {
+  id: string;
+  submissionId: string;
+  status: "open" | "submitted" | "under_review" | "resolved";
+  responses: RebuttalResponseInfo[];
+}

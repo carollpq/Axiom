@@ -5,30 +5,35 @@ import { PdfViewer } from "@/src/shared/components/PdfViewer";
 import { PaperList } from "./PaperList.client";
 import { ReviewStatusPanel } from "./sidebar/ReviewStatusPanel";
 import { FinalDecisionPanel } from "./sidebar/FinalDecisionPanel";
+import { ResolveRebuttalPanel } from "./sidebar/ResolveRebuttalPanel";
 import { AssignReviewersPanel } from "./sidebar/AssignReviewersPanel";
 import { useUnderReview } from "@/src/features/editor/hooks/useUnderReview";
 import type {
   PaperCardData,
   PoolReviewer,
   ReviewerWithStatus,
+  RebuttalInfo,
 } from "@/src/features/editor/types";
 
 interface UnderReviewProps {
   papers: PaperCardData[];
   reviewerPool: PoolReviewer[];
   reviewStatuses: Record<string, ReviewerWithStatus[]>;
+  rebuttalsBySubmission?: Record<string, RebuttalInfo>;
 }
 
 export function UnderReviewClient({
   papers,
   reviewerPool,
   reviewStatuses,
+  rebuttalsBySubmission,
 }: UnderReviewProps) {
   const {
     selectedId,
     setSelectedId,
     selected,
     currentReviewers,
+    allCriteriaMet,
     editorComment,
     setEditorComment,
     decision,
@@ -40,7 +45,12 @@ export function UnderReviewClient({
     reviewerSearch,
     setReviewerSearch,
     timelineDays,
-  } = useUnderReview(papers, reviewerPool, reviewStatuses);
+    currentRebuttal,
+    openRebuttal,
+    resolveRebuttal,
+    isOpeningRebuttal,
+    isResolvingRebuttal,
+  } = useUnderReview(papers, reviewerPool, reviewStatuses, rebuttalsBySubmission);
 
   return (
     <ThreeColumnLayout
@@ -57,13 +67,31 @@ export function UnderReviewClient({
         selectedId ? (
           <>
             <ReviewStatusPanel reviewers={currentReviewers} />
-            <FinalDecisionPanel
-              comment={editorComment}
-              onCommentChange={setEditorComment}
-              decision={decision}
-              onDecisionChange={setDecision}
-              onRelease={releaseToAuthor}
-            />
+            {currentRebuttal && currentRebuttal.status === "submitted" ? (
+              <ResolveRebuttalPanel
+                rebuttalId={currentRebuttal.id}
+                responses={currentRebuttal.responses.map((r, i) => ({
+                  reviewId: r.reviewId,
+                  reviewerLabel: `Reviewer ${String.fromCharCode(65 + i)}`,
+                  position: r.position,
+                  justification: r.justification,
+                }))}
+                onResolve={resolveRebuttal}
+                isResolving={isResolvingRebuttal}
+              />
+            ) : (
+              <FinalDecisionPanel
+                comment={editorComment}
+                onCommentChange={setEditorComment}
+                decision={decision}
+                onDecisionChange={setDecision}
+                onRelease={releaseToAuthor}
+                allReviewsComplete={allCriteriaMet}
+                hasRebuttal={!!currentRebuttal}
+                onOpenRebuttal={openRebuttal}
+                isOpeningRebuttal={isOpeningRebuttal}
+              />
+            )}
             <AssignReviewersPanel
               reviewerPool={reviewerPool}
               assignedIds={additionalAssigned}

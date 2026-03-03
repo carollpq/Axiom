@@ -93,6 +93,16 @@ export async function publishCriteria(input: PublishCriteriaInput) {
   return criteria;
 }
 
+export async function markAssignmentLate(assignmentId: string) {
+  return (
+    await db
+      .update(reviewAssignments)
+      .set({ status: "late" })
+      .where(eq(reviewAssignments.id, assignmentId))
+      .returning()
+  )[0] ?? null;
+}
+
 export interface CreateAssignmentInput {
   submissionId: string;
   reviewerWallet: string;

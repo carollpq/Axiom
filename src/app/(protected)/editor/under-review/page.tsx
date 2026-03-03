@@ -7,6 +7,7 @@ import {
   listReputationScores,
 } from "@/src/features/editor/queries";
 import { mapDbToPaperCardData, mapDbToPoolReviewer, mapDbToReviewerWithStatus } from "@/src/features/editor/mappers/journal";
+import { getRebuttalBySubmission } from "@/src/features/rebuttals/queries";
 import type { ReviewerWithStatus } from "@/src/features/editor/types";
 
 export default async function UnderReviewPage() {
@@ -27,7 +28,7 @@ export default async function UnderReviewPage() {
       );
 
       const underReviewSubs = allSubs.filter(
-        s => s.status === "reviewers_assigned" || s.status === "under_review",
+        s => s.status === "reviewers_assigned" || s.status === "under_review" || s.status === "rebuttal_open",
       );
 
       const papers = underReviewSubs.map(mapDbToPaperCardData);
@@ -41,11 +42,35 @@ export default async function UnderReviewPage() {
         }
       }
 
+      // Fetch rebuttal data for submissions in rebuttal_open status (in parallel)
+      const rebuttalEntries = await Promise.all(
+        underReviewSubs
+          .filter(s => s.status === "rebuttal_open")
+          .map(async (s) => {
+            const rebuttal = await getRebuttalBySubmission(s.id);
+            if (!rebuttal) return null;
+            return [s.id, {
+              id: rebuttal.id,
+              submissionId: rebuttal.submissionId,
+              status: rebuttal.status as "open" | "submitted" | "under_review" | "resolved",
+              responses: rebuttal.responses.map(r => ({
+                reviewId: r.reviewId,
+                position: r.position as "agree" | "disagree",
+                justification: r.justification,
+              })),
+            }] as const;
+          }),
+      );
+      const rebuttalsBySubmission = Object.fromEntries(
+        rebuttalEntries.filter((e): e is NonNullable<typeof e> => e !== null),
+      );
+
       return (
         <UnderReviewClient
           papers={papers}
           reviewerPool={reviewerPool}
           reviewStatuses={reviewStatuses}
+          rebuttalsBySubmission={rebuttalsBySubmission}
         />
       );
     }

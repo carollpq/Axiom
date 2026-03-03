@@ -36,6 +36,14 @@ export default function LoginPage() {
       >
         <LoginFlow />
       </div>
+      <div className="mt-6 text-center">
+        <a
+          href="/verify"
+          className="text-[12px] text-[#6a6050] hover:text-[#c9a44a] font-serif transition-colors"
+        >
+          Verify a paper
+        </a>
+      </div>
     </div>
   );
 }

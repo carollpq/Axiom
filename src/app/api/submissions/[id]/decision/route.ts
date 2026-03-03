@@ -4,6 +4,7 @@ import { db } from "@/src/shared/lib/db";
 import { submissions } from "@/src/shared/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { updateSubmissionStatus } from "@/src/features/reviews/actions";
+import { createNotification } from "@/src/features/notifications/actions";
 import { isHederaConfigured } from "@/src/shared/lib/hedera/client";
 import { submitHcsMessage } from "@/src/shared/lib/hedera/hcs";
 
@@ -30,7 +31,7 @@ export async function POST(
 
   const submission = await db.query.submissions.findFirst({
     where: eq(submissions.id, submissionId),
-    with: { journal: true },
+    with: { journal: true, paper: { with: { owner: true } } },
   });
 
   if (!submission) {
@@ -85,6 +86,18 @@ export async function POST(
     decisionTxId: hederaTxId ?? null,
     decidedAt: new Date().toISOString(),
   });
+
+  // Notify the paper author
+  if (submission.paper?.owner?.walletAddress) {
+    const decisionLabel = body.decision === "accept" ? "accepted" : body.decision === "reject" ? "rejected" : "revision requested";
+    await createNotification({
+      userWallet: submission.paper.owner.walletAddress,
+      type: "decision_made",
+      title: `Paper ${decisionLabel}`,
+      body: `Your paper "${submission.paper.title}" has been ${decisionLabel}.`,
+      link: `/researcher`,
+    });
+  }
 
   return NextResponse.json({ hederaTxId, status: newStatus });
 }

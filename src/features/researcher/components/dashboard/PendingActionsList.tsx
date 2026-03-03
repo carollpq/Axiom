@@ -1,9 +1,11 @@
+import Link from "next/link";
 import type { PendingAction } from "@/src/features/researcher/types/dashboard";
 
 const typeStyles: Record<PendingAction["type"], { bg: string; color: string; icon: string }> = {
   sign: { bg: "rgba(180,140,100,0.15)", color: "#c4956a", icon: "\u270D" },
   revision: { bg: "rgba(200,130,100,0.15)", color: "#d4845a", icon: "\u21BB" },
   review: { bg: "rgba(130,160,200,0.15)", color: "#7a9fc7", icon: "\u25C9" },
+  rebuttal: { bg: "rgba(90,122,154,0.15)", color: "#5a7a9a", icon: "\u2694" },
 };
 
 export function PendingActionsList({ actions }: { actions: PendingAction[] }) {
@@ -11,9 +13,8 @@ export function PendingActionsList({ actions }: { actions: PendingAction[] }) {
     <div className="flex flex-col gap-2.5">
       {actions.map((a, i) => {
         const s = typeStyles[a.type];
-        return (
+        const content = (
           <div
-            key={i}
             className="flex items-start gap-3.5 px-5 py-4 bg-[rgba(45,42,38,0.5)] border border-[rgba(120,110,95,0.15)] rounded-r-[6px]"
             style={{ borderLeft: `3px solid ${a.urgent ? "#c4956a" : "rgba(120,110,95,0.3)"}` }}
           >
@@ -34,6 +35,11 @@ export function PendingActionsList({ actions }: { actions: PendingAction[] }) {
             )}
           </div>
         );
+
+        if (a.link) {
+          return <Link key={i} href={a.link} className="no-underline">{content}</Link>;
+        }
+        return <div key={i}>{content}</div>;
       })}
     </div>
   );

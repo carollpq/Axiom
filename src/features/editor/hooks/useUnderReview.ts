@@ -5,12 +5,14 @@ import type {
   PaperCardData,
   PoolReviewer,
   ReviewerWithStatus,
+  RebuttalInfo,
 } from "@/src/features/editor/types";
 
 export function useUnderReview(
   initialPapers: PaperCardData[],
   initialReviewerPool: PoolReviewer[],
   reviewStatuses: Record<string, ReviewerWithStatus[]>,
+  rebuttalsBySubmission?: Record<string, RebuttalInfo>,
 ) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editorComment, setEditorComment] = useState("");
@@ -19,6 +21,8 @@ export function useUnderReview(
   const [reviewerSearch, setReviewerSearch] = useState("");
   const [timelineDays] = useState(21);
   const [isReleasingDecision, setIsReleasingDecision] = useState(false);
+  const [isOpeningRebuttal, setIsOpeningRebuttal] = useState(false);
+  const [isResolvingRebuttal, setIsResolvingRebuttal] = useState(false);
 
   const selected = useMemo(
     () => initialPapers.find((p) => p.id === selectedId) ?? null,
@@ -64,6 +68,50 @@ export function useUnderReview(
     }
   }
 
+  const currentRebuttal = useMemo(() => {
+    if (!selectedId || !rebuttalsBySubmission) return null;
+    return rebuttalsBySubmission[selectedId] ?? null;
+  }, [selectedId, rebuttalsBySubmission]);
+
+  async function openRebuttal() {
+    if (!selectedId) return;
+    setIsOpeningRebuttal(true);
+    try {
+      const res = await fetch(`/api/submissions/${selectedId}/open-rebuttal`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Unknown error" }));
+        console.error("[openRebuttal] API error:", err);
+      }
+    } catch (err) {
+      console.error("[openRebuttal] Unexpected error:", err);
+    } finally {
+      setIsOpeningRebuttal(false);
+    }
+  }
+
+  async function resolveRebuttal(resolution: "upheld" | "rejected" | "partial", notes: string) {
+    if (!currentRebuttal) return;
+    setIsResolvingRebuttal(true);
+    try {
+      const res = await fetch(`/api/rebuttals/${currentRebuttal.id}/resolve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resolution, editorNotes: notes }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Unknown error" }));
+        console.error("[resolveRebuttal] API error:", err);
+      }
+    } catch (err) {
+      console.error("[resolveRebuttal] Unexpected error:", err);
+    } finally {
+      setIsResolvingRebuttal(false);
+    }
+  }
+
   function assignReviewer(id: string) {
     setAdditionalAssigned((prev) => (prev.includes(id) ? prev : [...prev, id]));
   }
@@ -92,5 +140,10 @@ export function useUnderReview(
     setReviewerSearch,
     timelineDays,
     isReleasingDecision,
+    currentRebuttal,
+    openRebuttal,
+    resolveRebuttal,
+    isOpeningRebuttal,
+    isResolvingRebuttal,
   };
 }

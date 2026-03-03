@@ -18,10 +18,11 @@ export interface PaperRow {
 }
 
 export interface PendingAction {
-  type: "sign" | "revision" | "review";
+  type: "sign" | "revision" | "review" | "rebuttal";
   text: string;
   time: string;
   urgent: boolean;
+  link?: string;
 }
 
 export interface ActivityItem {

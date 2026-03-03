@@ -6,6 +6,10 @@ interface FinalDecisionPanelProps {
   decision: string;
   onDecisionChange: (v: string) => void;
   onRelease: () => void;
+  allReviewsComplete?: boolean;
+  hasRebuttal?: boolean;
+  onOpenRebuttal?: () => void;
+  isOpeningRebuttal?: boolean;
 }
 
 export function FinalDecisionPanel({
@@ -14,6 +18,10 @@ export function FinalDecisionPanel({
   decision,
   onDecisionChange,
   onRelease,
+  allReviewsComplete,
+  hasRebuttal,
+  onOpenRebuttal,
+  isOpeningRebuttal,
 }: FinalDecisionPanelProps) {
   return (
     <div
@@ -65,6 +73,21 @@ export function FinalDecisionPanel({
           Release to Author
         </button>
       </div>
+
+      {allReviewsComplete && !hasRebuttal && onOpenRebuttal && (
+        <button
+          onClick={onOpenRebuttal}
+          disabled={isOpeningRebuttal}
+          className="mt-3 w-full px-4 py-2 rounded text-[12px] font-serif cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{
+            background: "rgba(90,122,154,0.15)",
+            border: "1px solid rgba(90,122,154,0.3)",
+            color: "#5a7a9a",
+          }}
+        >
+          {isOpeningRebuttal ? "Opening..." : "Open Rebuttal Phase"}
+        </button>
+      )}
     </div>
   );
 }
