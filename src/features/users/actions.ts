@@ -6,7 +6,8 @@ import type { Role } from "@/src/features/auth/types";
 export async function registerUserRole(
   walletAddress: string,
   role: Role,
-  orcidId: string
+  orcidId: string,
+  displayName: string,
 ) {
   const walletLower = walletAddress.toLowerCase();
 
@@ -27,6 +28,7 @@ export async function registerUserRole(
       .set({
         roles: updatedRoles,
         orcidId,
+        displayName,
         updatedAt: new Date().toISOString(),
       })
       .where(eq(users.walletAddress, walletLower));
@@ -35,6 +37,7 @@ export async function registerUserRole(
       walletAddress: walletLower,
       roles: [role],
       orcidId,
+      displayName,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });

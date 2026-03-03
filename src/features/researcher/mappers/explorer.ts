@@ -21,7 +21,7 @@ export function mapApiPaperToExplorer(p: ApiPaper): ExplorerPaper {
             name: displayNameOrWallet(p.owner.displayName, p.owner.walletAddress),
             pct: 100,
             orcid: p.owner.orcidId ?? "\u2014",
-            role: "Researcher",
+            role: "Researcher", // TODO: Use Role type + capitalize() for display consistency
           },
         ]
       : [];

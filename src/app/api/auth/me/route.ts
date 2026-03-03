@@ -20,7 +20,7 @@ export async function PATCH(request: NextRequest) {
     const wallet = await requireSession();
     if (wallet instanceof NextResponse) return wallet;
 
-    const { role, orcidId } = await request.json();
+    const { role, orcidId, displayName } = await request.json();
 
     if (!ROLES.includes(role)) {
       return NextResponse.json(
@@ -36,7 +36,14 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    await registerUserRole(wallet, role, orcidId);
+    if (typeof displayName !== "string" || !displayName.trim()) {
+      return NextResponse.json(
+        { message: "Display name is required" },
+        { status: 400 }
+      );
+    }
+
+    await registerUserRole(wallet, role, orcidId, displayName.trim());
 
     return NextResponse.json(
       { message: "User registered successfully" },

@@ -1,9 +1,11 @@
 "use client";
 
+import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useActiveAccount } from "thirdweb/react";
 import { ConnectButton } from "thirdweb/react";
+import { ChevronDown } from "lucide-react";
 import { client } from "@/src/shared/lib/thirdweb";
 import {
   getLoginPayload,
@@ -11,6 +13,11 @@ import {
   doLogout,
   isLoggedIn,
 } from "@/src/shared/lib/auth/actions";
+import { NotificationBell } from "@/src/features/notifications/components/NotificationBell.client";
+import { useClickOutside } from "@/src/shared/hooks/useClickOutside";
+import { ROLES } from "@/src/features/auth/types";
+import { ROLE_DASHBOARD_ROUTES } from "@/src/shared/lib/routes";
+import { capitalize } from "@/src/shared/lib/format";
 import type { NavItemData, UserProfile } from "@/src/shared/types/shared";
 
 function NavItem({ label, href, active }: { label: string; href: string; active: boolean }) {
@@ -22,38 +29,111 @@ function NavItem({ label, href, active }: { label: string; href: string; active:
         color: active ? "#c9b89e" : "#7a7a7a",
         borderBottom: active ? "1px solid #c9b89e" : "1px solid transparent",
       }}
+      onMouseEnter={(e) => {
+        if (!active) {
+          e.currentTarget.style.color = "#c9b89e";
+          e.currentTarget.style.borderBottom = "1px solid rgba(201, 184, 158, 0.4)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!active) {
+          e.currentTarget.style.color = "#7a7a7a";
+          e.currentTarget.style.borderBottom = "1px solid transparent";
+        }
+      }}
     >
       {label}
     </Link>
   );
 }
 
-function NotificationBell({ count }: { count: number }) {
-  return (
-    <div className="relative cursor-pointer">
-      <span className="text-[18px] text-[#8a8070]">{"\uD83D\uDD14"}</span>
-      {count > 0 && (
-        <span className="absolute -top-1 -right-1.5 bg-[#c4956a] text-[#1a1816] text-[9px] font-sans font-bold rounded-full w-4 h-4 flex items-center justify-center">
-          {count}
-        </span>
-      )}
-    </div>
-  );
-}
-
 function UserBadge({ user }: { user: UserProfile }) {
+  const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useClickOutside(ref, isOpen, useCallback(() => setIsOpen(false), []));
+
+  function handleSwitch(role: string) {
+    setIsOpen(false);
+    const route = ROLE_DASHBOARD_ROUTES[role];
+    if (route) router.push(route);
+  }
+
   return (
-    <div className="flex items-center gap-2.5 px-3.5 py-1.5 bg-[rgba(120,110,95,0.1)] border border-[rgba(120,110,95,0.2)] rounded">
-      <div className="w-7 h-7 rounded-full bg-[linear-gradient(135deg,#3a3530,#5a5345)] flex items-center justify-center text-xs text-[#c9b89e]">
-        {user.initials}
-      </div>
-      <div>
-        <div className="text-xs text-[#c9b89e]">{user.name}</div>
-        <div className="text-[10px] text-[#6a6050]">
-          {user.wallet} - {user.role}
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2.5 px-3.5 py-1.5 rounded border cursor-pointer"
+        style={{
+          background: "rgba(120,110,95,0.1)",
+          borderColor: "rgba(120,110,95,0.2)",
+        }}
+      >
+        <div className="text-left">
+          <div className="text-xs text-[#c9b89e]">
+            {user.displayName ?? capitalize(user.role)}
+          </div>
+          <div className="text-[10px] text-[#6a6050]">{user.wallet}</div>
         </div>
-      </div>
-      <span className="text-[10px] text-[#6a6050] ml-1">{"\u25BC"}</span>
+        <ChevronDown
+          size={12}
+          className="ml-1 transition-transform duration-200"
+          style={{
+            color: "#6a6050",
+            transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+          }}
+        />
+      </button>
+
+      {isOpen && (
+        <div
+          className="absolute right-0 top-full mt-1.5 w-full min-w-[180px] rounded-lg z-50 py-1"
+          style={{
+            background: "rgba(35,32,28,0.98)",
+            border: "1px solid rgba(120,110,95,0.25)",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+          }}
+        >
+          <div
+            className="px-3 py-2 text-[10px] uppercase tracking-wider"
+            style={{ color: "#6a6050", borderBottom: "1px solid rgba(120,110,95,0.15)" }}
+          >
+            Roles
+          </div>
+          {ROLES.map((role) => {
+            const isActive = role === user.role;
+            const hasRole = user.roles.includes(role);
+            return (
+              <button
+                key={role}
+                onClick={() => hasRole && handleSwitch(role)}
+                disabled={!hasRole}
+                className="w-full text-left px-3 py-2 text-[12px] font-serif transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{
+                  background: isActive ? "rgba(201,164,74,0.08)" : "transparent",
+                  color: isActive ? "#c9a44a" : hasRole ? "#b0a898" : "#4a4238",
+                  border: "none",
+                  cursor: isActive ? "default" : hasRole ? "pointer" : "not-allowed",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive && hasRole) e.currentTarget.style.background = "rgba(120,110,95,0.15)";
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive && hasRole) e.currentTarget.style.background = "transparent";
+                }}
+              >
+                {capitalize(role)}
+                {isActive && (
+                  <span className="ml-2 text-[10px]" style={{ color: "#6a6050" }}>
+                    (current)
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -82,7 +162,7 @@ export function TopBar({ navItems, user }: { navItems: NavItemData[]; user: User
       <div className="flex items-center gap-5">
         {account && (
           <>
-            <NotificationBell count={user.notificationCount} />
+            <NotificationBell />
             <UserBadge user={user} />
           </>
         )}

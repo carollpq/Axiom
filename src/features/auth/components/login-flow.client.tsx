@@ -81,7 +81,7 @@ export function LoginFlow() {
     return () => clearTimeout(timeout);
   }, [state.step, state.selectedRole, router]);
 
-  const handleOrcidVerified = async (orcidId: string) => {
+  const handleOrcidVerified = async (orcidId: string, displayName: string) => {
     dispatch({ type: "SUBMIT_START" });
 
     try {
@@ -91,6 +91,7 @@ export function LoginFlow() {
         body: JSON.stringify({
           role: state.selectedRole,
           orcidId,
+          displayName,
         }),
         credentials: "include",
       });

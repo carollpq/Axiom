@@ -1,18 +1,16 @@
 import { RoleShell } from "@/src/shared/components";
+import { getSession } from "@/src/shared/lib/auth/auth";
+import { getUserByWallet } from "@/src/features/users/queries";
 import { reviewerNavItems } from "@/src/features/reviewer/nav";
-import type { UserProfile } from "@/src/shared/types/shared";
+import { buildUserProfile } from "@/src/shared/lib/format";
 
-const reviewerUser: UserProfile = {
-  name: "Dr. K. Tanaka",
-  initials: "KT",
-  wallet: "—",
-  role: "Reviewer",
-  notificationCount: 0,
-};
+export default async function ReviewerLayout({ children }: { children: React.ReactNode }) {
+  const wallet = (await getSession())!;
+  const user = await getUserByWallet(wallet);
+  const profile = buildUserProfile(wallet, user, "reviewer");
 
-export default function ReviewerLayout({ children }: { children: React.ReactNode }) {
   return (
-    <RoleShell navItems={reviewerNavItems} user={reviewerUser}>
+    <RoleShell navItems={reviewerNavItems} user={profile}>
       {children}
     </RoleShell>
   );
