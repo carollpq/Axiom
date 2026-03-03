@@ -31,6 +31,13 @@ export interface FeedbackItem {
   reviewId: number;
   usefulness: number;
   comment: string;
+  protocols?: {
+    actionableFeedback: number;
+    deepEngagement: number;
+    fairObjective: number;
+    justifiedRecommendation: number;
+    appropriateExpertise: number;
+  };
 }
 
 export interface ReputationDataPoint {

@@ -91,24 +91,27 @@ For the full architecture document, see [`docs/architecture.md`](docs/architectu
 ## Features
 
 ### Researcher
-- **Dashboard** — Paper management, pending actions (rebuttals, unsigned contracts), activity feed
+- **Dashboard** — Paper management, pending actions (rebuttals, review responses, unsigned contracts), activity feed
 - **Paper registration** — 6-step wizard: metadata → authorship → provenance → journal selection → file upload → confirmation. Client-side SHA-256 hash → R2 upload → Lit encryption → HCS anchor.
-- **Authorship contracts** — Define contribution splits, collect cryptographic signatures, invite collaborators
+- **Authorship contracts** — Define contribution splits, collect cryptographic signatures, invite collaborators. Backend validates all signatures before submission.
+- **Co-author visibility** — Co-authors on authorship contracts see papers on their dashboard automatically
+- **Review response** — View anonymized reviews, rate each reviewer on 5 quality protocols (actionable feedback, deep engagement, fair/objective, justified recommendation, appropriate expertise), and accept reviews or request rebuttal
+- **Rebuttal workspace** — Challenge specific reviewer comments (agree/disagree + justification per review). Researcher-initiated — authors decide when to invoke rebuttal.
 - **Public explorer** — Search/browse papers, verify on-chain proof, view version history
-- **Rebuttal workspace** — Challenge specific reviewer comments (agree/disagree + justification per review)
-- **Notifications** — Real-time updates at every pipeline stage
+- **Notifications** — Real-time updates at every pipeline stage (including "Viewed by Editor" status)
 
 ### Editor
-- **Submission pipeline** — Kanban view: submitted → criteria published → reviewers assigned → under review → rebuttal → decision
+- **Submission pipeline** — Kanban view: submitted → viewed by editor → criteria published → reviewers assigned → under review → reviews completed → rebuttal → decision
 - **Criteria builder** — Publish structured review criteria (immutable on HCS)
-- **Reviewer assignment** — Assign from reviewer pool with reputation scores
-- **Decision flow** — Accept/reject with `allCriteriaMet` computation. Rejection with criteria met requires public justification.
-- **Rebuttal management** — Open rebuttal phase, review author responses, resolve with reputation impact
+- **Reviewer assignment** — Assign from reviewer pool with reputation scores. Minimum 2 reviewers must accept before submission transitions to "under review".
+- **Decision flow** — Accept/reject with `allCriteriaMet` computation. Rejection with criteria met requires public justification. Shows author response status (accepted / rebuttal requested).
+- **Rebuttal management** — Review author responses, resolve with reputation impact
 
 ### Reviewer
-- **Dashboard** — Assigned reviews, deadlines, reputation score breakdown
+- **Dashboard** — Assigned reviews, deadlines, reputation score breakdown with 5-protocol feedback display
+- **Assignment acceptance** — Accept or decline review assignments via API
 - **Review workspace** — Evaluate paper against published criteria with structured feedback
-- **Reputation** — Soulbound HTS tokens tracking review quality across journals
+- **Reputation** — Soulbound HTS tokens tracking review quality across journals with 5-dimensional quality data
 
 ### Public
 - **`/verify`** — Upload any PDF, client-side hash, verify against on-chain registration
@@ -215,14 +218,14 @@ src/
 │   │   ├── auth/                   # Authentication endpoints
 │   │   ├── papers/                 # Paper CRUD + submit + reviews
 │   │   ├── contracts/              # Authorship contract CRUD + signing
-│   │   ├── submissions/[id]/       # criteria + assign-reviewer + decision + open-rebuttal
+│   │   ├── submissions/[id]/       # criteria + assign-reviewer + accept-assignment + view + author-response + decision
 │   │   ├── reviews/[id]/           # Review submission + rating
 │   │   ├── rebuttals/[rebuttalId]/ # Respond + resolve
 │   │   ├── notifications/          # List + mark read
 │   │   ├── cron/deadlines/         # Deadline enforcement
 │   │   └── verify/                 # Hash verification
 │   └── (protected)/
-│       ├── researcher/             # Researcher dashboard + tools
+│       ├── researcher/             # Researcher dashboard + tools + review-response
 │       ├── editor/                 # Editor dashboard + pipeline
 │       └── reviewer/               # Reviewer dashboard + workspace
 ├── features/

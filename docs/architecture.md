@@ -294,11 +294,21 @@ Domain-scoped topics. Each is an ordered, immutable append-only log.
 |---|---|---|---|
 | `papers` | Draft registrations, version anchoring | `{type, paperHash, authorWallet, studyType, provenanceHashes, visibility, timestamp}` | ✅ Implemented |
 | `contracts` | Authorship contract creation, signatures | `{type, contractHash, signerWallet, paperHash, signatures[], contributionSplits[], timestamp}` | ✅ Implemented |
-| `submissions` | Paper submission events | `{type, paperHash, contractHash, journalId, timestamp}` | ✅ Implemented |
-| `criteria` | Journal review criteria publication | `{type, journalId, submissionId, criteriaHash, criteria[], timestamp}` | 🔲 Not yet |
-| `reviews` | Review hash anchoring | `{type, reviewHash, reviewerWallet, paperHash, criteriaHash, criteriaEvaluations, timestamp}` | 🔲 Not yet |
-| `decisions` | Accept/reject with justification | `{type, journalId, paperHash, decision, justification?, criteriaHash, allCriteriaMet, timestamp}` | 🔲 Not yet |
+| `submissions` | Paper submission events, status transitions | `{type, paperHash, contractHash, journalId, timestamp}` | ✅ Implemented |
+| `criteria` | Journal review criteria publication | `{type, journalId, submissionId, criteriaHash, criteria[], timestamp}` | ✅ Implemented |
+| `reviews` | Review hash anchoring + author comments | `{type, reviewHash, reviewerWallet, paperHash, criteriaHash, criteriaEvaluations, timestamp}` | ✅ Implemented |
+| `decisions` | Accept/reject with justification, rebuttal requests | `{type, journalId, paperHash, decision, justification?, criteriaHash, allCriteriaMet, timestamp}` | ✅ Implemented |
 | `retractions` | Retraction records | `{type, paperHash, requestingParty, reason, failedComponent, timestamp}` | 🔲 Not yet |
+
+#### Additional HCS Events (anchored to existing topics)
+
+| Event | Topic | Payload | Status |
+|---|---|---|---|
+| `viewed_by_editor` | `submissions` | `{type, submissionId, editorWallet, timestamp}` | ✅ Implemented |
+| `assignment_accepted` | `submissions` | `{type, submissionId, reviewerWallet, acceptedCount, timestamp}` | ✅ Implemented |
+| `author_response` | `submissions` | `{type, submissionId, action, authorWallet, timestamp}` | ✅ Implemented |
+| `rebuttal_requested` | `decisions` | `{type, submissionId, authorWallet, deadline, timestamp}` | ✅ Implemented |
+| `author_comment` | `reviews` | `{type, reviewId, commentHash, timestamp}` | ✅ Implemented |
 
 ### 5.3 HCS Message Flow
 
@@ -353,6 +363,20 @@ Each NFT metadata:
     "timestamp": "ISO8601",
     "score": number,
     "details": { ... }
+}
+
+For `author_rating` events, metadata now includes 5-dimensional quality data:
+{
+    "type": "author_rating",
+    "protocols": {
+        "actionable_feedback": 4,
+        "deep_engagement": 5,
+        "fair_objective": 3,
+        "justified_recommendation": 4,
+        "appropriate_expertise": 5
+    },
+    "overall": 4,
+    "reviewId": "uuid"
 }
 ```
 
@@ -491,26 +515,24 @@ This addresses the P5 problem identified by our research contacts: "Authors are 
 
 ### 8.2 Workflow
 
+**Key design decision:** Rebuttals are researcher-initiated, not editor-initiated. After all reviews are submitted, the submission transitions to `reviews_completed` and the researcher decides whether to accept the reviews or request a rebuttal.
+
 ```
-Reviews submitted
+All reviews submitted → status: reviews_completed
     │
     ▼
-Editor reviews all evaluations
+Researcher views anonymized reviews + rates each (5-protocol)
     │
-    ├── All criteria met → Publish (journal bound)
+    ├── "Accept Reviews" → authorResponseStatus: accepted
+    │       → Editor makes final decision
     │
-    ├── Some criteria not met → Two options:
+    ├── "Request Rebuttal" → authorResponseStatus: rebuttal_requested
+    │       → status: rebuttal_open (14-day deadline)
     │       │
-    │       ├── Rejection likely → Trigger rebuttal phase
-    │       │       │
-    │       │       ▼
-    │       │   Author receives reviews + notification
-    │       │   "Rebuttal phase open — 14 days to respond"
-    │       │       │
-    │       │       ▼
-    │       │   Author submits rebuttal:
-    │       │   - Per-comment responses (agree / disagree + justification)
-    │       │   - Additional evidence or clarification
+    │       ▼
+    │   Author submits rebuttal:
+    │   - Per-comment responses (agree / disagree + justification)
+    │   - Additional evidence or clarification
     │       │   - Rebuttal hashed and recorded on HCS
     │       │       │
     │       │       ▼
@@ -823,9 +845,12 @@ CREATE TABLE submissions (
     version_id      UUID NOT NULL REFERENCES paper_versions(id),
     contract_id     UUID NOT NULL REFERENCES authorship_contracts(id),
     status          TEXT NOT NULL DEFAULT 'submitted',
-    -- 'submitted' | 'criteria_published' | 'reviewers_assigned' |
-    -- 'under_review' | 'reviews_complete' | 'rebuttal_open' |
+    -- 'submitted' | 'viewed_by_editor' | 'criteria_published' | 'reviewers_assigned' |
+    -- 'under_review' | 'reviews_completed' | 'rebuttal_open' |
     -- 'decision_pending' | 'published' | 'rejected' | 'revision_requested'
+    author_response_status TEXT,      -- 'pending' | 'accepted' | 'rebuttal_requested'
+    author_response_at     TIMESTAMPTZ,
+    author_response_tx_id  TEXT,
     criteria_hash   TEXT,
     criteria_tx_id  TEXT,
     decision        TEXT,                             -- 'accept' | 'reject' | 'revise'
@@ -910,10 +935,19 @@ CREATE TABLE rebuttal_responses (
 CREATE TABLE reviewer_ratings (
     id              UUID PRIMARY KEY,
     review_id       UUID NOT NULL REFERENCES reviews(id) UNIQUE,
-    rating          INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    -- 5-protocol ratings (each 1-5)
+    actionable_feedback     INT NOT NULL CHECK (actionable_feedback BETWEEN 1 AND 5),
+    deep_engagement         INT NOT NULL CHECK (deep_engagement BETWEEN 1 AND 5),
+    fair_objective          INT NOT NULL CHECK (fair_objective BETWEEN 1 AND 5),
+    justified_recommendation INT NOT NULL CHECK (justified_recommendation BETWEEN 1 AND 5),
+    appropriate_expertise   INT NOT NULL CHECK (appropriate_expertise BETWEEN 1 AND 5),
+    overall_rating          INT NOT NULL CHECK (overall_rating BETWEEN 1 AND 5),
+    -- Optional anonymous comment
+    comment         TEXT,
+    comment_hash    TEXT,
     -- NO author reference — anonymity by design (FR-6.3)
-    rating_hash     TEXT NOT NULL,
-    reputation_token_serial INT,
+    rating_hash     TEXT,
+    reputation_token_serial TEXT,
     created_at      TIMESTAMPTZ DEFAULT now()
 );
 
@@ -1011,31 +1045,29 @@ app/api/
 │       └── reset-signatures/route.ts  # PATCH ✅
 ├── submissions/
 │   └── [id]/
-│       ├── criteria/route.ts          # POST: publish criteria → HCS 🔲
-│       ├── assign-reviewer/route.ts   # POST 🔲
-│       └── decision/route.ts          # POST: accept/reject → HCS 🔲
+│       ├── criteria/route.ts          # POST: publish criteria → HCS ✅
+│       ├── assign-reviewer/route.ts   # POST ✅
+│       ├── accept-assignment/route.ts # POST: reviewer accepts/declines → auto under_review ✅
+│       ├── view/route.ts             # POST: editor views → viewed_by_editor → HCS ✅
+│       ├── author-response/route.ts   # POST: researcher accepts/requests rebuttal → HCS ✅
+│       ├── open-rebuttal/route.ts     # POST: DEPRECATED (returns 410 Gone) ✅
+│       └── decision/route.ts          # POST: accept/reject → HCS ✅
 ├── reviews/
-│   ├── route.ts                       # GET: reviewer's assigned reviews 🔲
-│   ├── [id]/route.ts                  # GET/POST: review detail / submit → HCS 🔲
-│   └── [id]/rate/route.ts             # POST: author rates reviewer 🔲
+│   ├── route.ts                       # GET: reviewer's assigned reviews ✅
+│   ├── [id]/route.ts                  # GET/POST: review detail / submit → HCS ✅
+│   └── [id]/rate/route.ts             # POST: 5-protocol rating + comment → HCS ✅
 ├── rebuttals/
-│   ├── [submissionId]/route.ts        # GET/POST: view/submit rebuttal 🔲
-│   └── [submissionId]/resolve/route.ts # POST: editor resolves 🔲
+│   ├── [rebuttalId]/respond/route.ts  # POST: author responds per-review ✅
+│   └── [rebuttalId]/resolve/route.ts  # POST: editor resolves ✅
 ├── journals/
-│   ├── route.ts                       # GET: list journals 🔲
-│   └── [id]/
-│       ├── submissions/route.ts       # GET: journal's submission pipeline 🔲
-│       └── reviewers/route.ts         # GET: search reviewers by reputation 🔲
-├── reputation/
-│   └── [wallet]/route.ts             # GET: public reputation profile 🔲
-├── hedera/
-│   └── verify/route.ts               # GET: verify hash on-chain 🔲
+│   └── route.ts                       # GET: list journals ✅
+├── notifications/route.ts             # GET/PATCH: list + mark read ✅
+├── verify/route.ts                    # POST: hash verification (no auth) ✅
 ├── upload/
 │   └── presigned/route.ts            # POST ✅
 ├── activity/route.ts                  # GET ✅
 └── cron/
-    ├── reputation/route.ts            # Recompute scores + mint HTS tokens 🔲
-    └── deadlines/route.ts             # Check review deadlines 🔲
+    └── deadlines/route.ts             # Check review deadlines ✅
 ```
 
 ### 12.2 Key New API Contracts

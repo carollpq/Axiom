@@ -6,10 +6,28 @@ import { canonicalJson, hashString } from "@/src/shared/lib/hashing";
 import {
   requireSession,
   requireReviewWithPaperOwner,
+  anchorToHcs,
   recordReputation,
 } from "@/src/shared/lib/api-helpers";
 
 export const runtime = "nodejs";
+
+interface RatingBody {
+  actionableFeedback: number;
+  deepEngagement: number;
+  fairObjective: number;
+  justifiedRecommendation: number;
+  appropriateExpertise: number;
+  comment?: string;
+}
+
+const PROTOCOL_KEYS = [
+  "actionableFeedback",
+  "deepEngagement",
+  "fairObjective",
+  "justifiedRecommendation",
+  "appropriateExpertise",
+] as const;
 
 export async function POST(
   req: NextRequest,
@@ -23,10 +41,17 @@ export async function POST(
   const review = await requireReviewWithPaperOwner(reviewId, session);
   if (review instanceof NextResponse) return review;
 
-  const body = (await req.json()) as { rating: number };
+  const body = (await req.json()) as RatingBody;
 
-  if (!body.rating || body.rating < 1 || body.rating > 5 || !Number.isInteger(body.rating)) {
-    return NextResponse.json({ error: "Rating must be an integer 1-5" }, { status: 400 });
+  // Validate each protocol is integer 1-5
+  for (const key of PROTOCOL_KEYS) {
+    const val = body[key];
+    if (!val || !Number.isInteger(val) || val < 1 || val > 5) {
+      return NextResponse.json(
+        { error: `${key} must be an integer 1-5` },
+        { status: 400 },
+      );
+    }
   }
 
   // Check if already rated
@@ -37,25 +62,69 @@ export async function POST(
     return NextResponse.json({ error: "Review already rated" }, { status: 409 });
   }
 
-  const ratingHash = await hashString(canonicalJson({ rating: body.rating, reviewId }));
+  const overallRating = Math.round(
+    PROTOCOL_KEYS.reduce((sum, k) => sum + body[k], 0) / PROTOCOL_KEYS.length,
+  );
+
+  const ratingHash = await hashString(
+    canonicalJson({
+      reviewId,
+      actionableFeedback: body.actionableFeedback,
+      deepEngagement: body.deepEngagement,
+      fairObjective: body.fairObjective,
+      justifiedRecommendation: body.justifiedRecommendation,
+      appropriateExpertise: body.appropriateExpertise,
+    }),
+  );
+
+  let commentHash: string | null = null;
+  if (body.comment?.trim()) {
+    commentHash = await hashString(canonicalJson({ comment: body.comment, reviewId }));
+
+    // Anchor comment hash to HCS
+    await anchorToHcs("HCS_TOPIC_REVIEWS", {
+      type: "author_comment",
+      reviewId,
+      commentHash,
+      timestamp: new Date().toISOString(),
+    });
+  }
 
   const { serial } = await recordReputation(
     review.reviewerWallet,
     "author_rating",
-    body.rating - 3, // 1→-2, 2→-1, 3→0, 4→+1, 5→+2
-    `Author rating: ${body.rating}/5`,
-    { type: "author_rating", rating: body.rating, reviewId },
+    overallRating - 3, // 1→-2, 2→-1, 3→0, 4→+1, 5→+2
+    `Author rating: ${overallRating}/5`,
+    {
+      type: "author_rating",
+      protocols: {
+        actionable_feedback: body.actionableFeedback,
+        deep_engagement: body.deepEngagement,
+        fair_objective: body.fairObjective,
+        justified_recommendation: body.justifiedRecommendation,
+        appropriate_expertise: body.appropriateExpertise,
+      },
+      overall: overallRating,
+      reviewId,
+    },
   );
 
   const [ratingRow] = await db
     .insert(reviewerRatings)
     .values({
       reviewId,
-      rating: body.rating,
+      actionableFeedback: body.actionableFeedback,
+      deepEngagement: body.deepEngagement,
+      fairObjective: body.fairObjective,
+      justifiedRecommendation: body.justifiedRecommendation,
+      appropriateExpertise: body.appropriateExpertise,
+      overallRating,
+      comment: body.comment?.trim() || null,
+      commentHash,
       ratingHash,
       reputationTokenSerial: serial ?? null,
     })
     .returning();
 
-  return NextResponse.json({ success: true, ratingId: ratingRow?.id });
+  return NextResponse.json({ success: true, ratingId: ratingRow?.id, overallRating });
 }

@@ -1,6 +1,8 @@
 export type PaperStatus =
   | "Published"
   | "Under Review"
+  | "Reviews Complete"
+  | "Viewed by Editor"
   | "Contract Pending"
   | "Revision Requested"
   | "Draft"
@@ -44,7 +46,9 @@ export const PAPER_STATUSES: PaperStatus[] = [
   "Draft",
   "Contract Pending",
   "Submitted",
+  "Viewed by Editor",
   "Under Review",
+  "Reviews Complete",
   "Revision Requested",
   "Published",
 ];

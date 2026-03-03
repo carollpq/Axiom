@@ -40,6 +40,19 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Check if authorship contract exists and is fully signed
+  const contract = paper.contracts?.[0];
+  if (contract && contract.status !== "fully_signed") {
+    const unsigned = contract.contributors?.filter(c => c.status !== "signed") ?? [];
+    return NextResponse.json({
+      error: "All co-authors must sign the authorship contract before submission",
+      unsignedContributors: unsigned.map(c => ({
+        wallet: c.contributorWallet,
+        name: c.contributorName,
+      })),
+    }, { status: 400 });
+  }
+
   if (paper.status !== "registered") {
     return NextResponse.json(
       { error: "Paper must be registered before submitting" },

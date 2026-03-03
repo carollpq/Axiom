@@ -1,8 +1,25 @@
-import type { PaperRow, StatCardData } from "@/src/features/researcher/types/dashboard";
+import type { PaperRow, PaperStatus, StatCardData } from "@/src/features/researcher/types/dashboard";
 import type { DbPaperWithRelations } from "@/src/features/papers/queries";
 import { toDisplayStatus } from "@/src/shared/lib/status-map";
 import { truncateHash, formatIsoDate } from "@/src/shared/lib/format";
 import { ScrollText, PenLine, Clock, Sparkles } from "lucide-react";
+
+/**
+ * Derives the best display status by combining paper status with
+ * the latest submission status (if any). Submission-level statuses
+ * like "viewed_by_editor" and "reviews_completed" are more granular
+ * than the paper-level "submitted" status.
+ */
+function derivePaperDisplayStatus(p: DbPaperWithRelations): PaperStatus {
+  // If a submission exists, prefer its status for more granular display
+  const latestSub = p.submissions?.at(-1);
+  if (latestSub) {
+    const subDisplay = toDisplayStatus(latestSub.status);
+    // Only use submission status if it's more specific than the paper status
+    if (subDisplay !== "Draft") return subDisplay;
+  }
+  return toDisplayStatus(p.status);
+}
 
 /**
  * Converts a Drizzle paper row (with relations) into a flat PaperRow for the
@@ -22,7 +39,7 @@ export function mapDbPaperToFrontend(p: DbPaperWithRelations): PaperRow {
   return {
     id: p.id,
     title: p.title,
-    status: toDisplayStatus(p.status),
+    status: derivePaperDisplayStatus(p),
     coauthors,
     date: formatIsoDate(p.createdAt),
     hash: truncateHash(p.versions?.[0]?.paperHash ?? "\u2014"),
