@@ -52,10 +52,12 @@ export type PipelineCounts = Record<SubmissionStage, number>;
 
 export interface PaperCardData {
   id: string;
+  paperId: string;
   title: string;
   authors: string;
   abstractSnippet: string;
   submittedDate: string;
+  hasLitData: boolean;
   fileUrl?: string;
 }
 

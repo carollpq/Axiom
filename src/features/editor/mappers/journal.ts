@@ -59,10 +59,12 @@ export function mapDbToPaperCardData(s: DbJournalSubmission): PaperCardData {
   const submittedDate = s.submittedAt ? formatIsoDate(String(s.submittedAt)) : "—";
   return {
     id: s.id,
+    paperId: s.paper.id,
     title: s.paper.title,
     authors: s.paper.owner?.displayName ?? s.paper.owner?.walletAddress ?? "Unknown",
     abstractSnippet: abstract.length > 180 ? abstract.slice(0, 177) + "…" : abstract,
     submittedDate,
+    hasLitData: !!(s.paper.litDataToEncryptHash && s.paper.litAccessConditionsJson),
   };
 }
 

@@ -7,6 +7,7 @@ import { AssignReviewersPanel } from "./sidebar/AssignReviewersPanel";
 import { DeskRejectPanel } from "./sidebar/DeskRejectPanel";
 import { CriteriaBuilder } from "./CriteriaBuilder";
 import { useIncomingPapers } from "@/src/features/editor/hooks/useIncomingPapers";
+import { useDecryptPaper } from "@/src/shared/hooks/useDecryptPaper";
 import type { PaperCardData, PoolReviewer } from "@/src/features/editor/types";
 
 interface IncomingPapersProps {
@@ -31,6 +32,11 @@ export function IncomingPapersClient({ papers, reviewerPool }: IncomingPapersPro
     submitDeskReject,
   } = useIncomingPapers(papers, reviewerPool);
 
+  const { fileUrl: decryptedUrl } = useDecryptPaper(
+    selected?.hasLitData ? selected.paperId : null,
+    true,
+  );
+
   return (
     <ThreeColumnLayout
       list={
@@ -42,7 +48,7 @@ export function IncomingPapersClient({ papers, reviewerPool }: IncomingPapersPro
         />
       }
       viewer={
-        <PdfViewer fileUrl={selected?.fileUrl} title={selected?.title} />
+        <PdfViewer fileUrl={decryptedUrl ?? selected?.fileUrl} title={selected?.title} />
       }
       sidebar={
         selectedId ? (

@@ -1,5 +1,9 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import type { ExplorerPaper } from "@/src/features/researcher/types/explorer";
 import { DecryptButton } from "./DecryptButton";
+import { PdfViewer } from "@/src/shared/components/PdfViewer";
 
 interface OverviewTabProps {
   paper: ExplorerPaper;
@@ -19,6 +23,13 @@ function studyTypeLabel(raw: string): string {
 }
 
 export function OverviewTab({ paper, paperId }: OverviewTabProps) {
+  const [decryptedUrl, setDecryptedUrl] = useState<string | null>(null);
+
+  // Reset when paper changes (blob lifecycle managed by DecryptButton's hook)
+  useEffect(() => {
+    setDecryptedUrl(null);
+  }, [paperId]);
+
   return (
     <div>
       {/* Authors & Contributions */}
@@ -71,9 +82,20 @@ export function OverviewTab({ paper, paperId }: OverviewTabProps) {
           >View Full Paper {"\u2197"}</button>
         )}
         {paper.visibility === "private" && (
-          <DecryptButton paperId={paperId} hasLitData={!!paper.litDataToEncryptHash} />
+          <DecryptButton
+            paperId={paperId}
+            hasLitData={!!paper.litDataToEncryptHash}
+            onDecrypted={setDecryptedUrl}
+          />
         )}
       </div>
+
+      {/* Inline PDF Viewer (after decryption) */}
+      {decryptedUrl && (
+        <div style={{ ...sectionStyle, padding: 0, height: 600, overflow: "hidden" }}>
+          <PdfViewer fileUrl={decryptedUrl} title={paper.title} />
+        </div>
+      )}
     </div>
   );
 }
