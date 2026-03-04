@@ -1,5 +1,6 @@
 import type { Visibility } from "@/src/features/researcher/types/paper-registration";
 import type { StudyTypeDb } from "@/src/shared/lib/db/schema";
+import { PAPER_LIMITS } from "@/src/features/researcher/config/paper-registration";
 
 export interface PaperRegistrationState {
   // Navigation
@@ -208,6 +209,26 @@ export function paperRegistrationReducer(
   }
 }
 
-export function canProceedStep1(state: PaperRegistrationState): boolean {
-  return !!(state.title.trim() && state.abstract.trim() && state.fileHash);
+export interface Step1Errors {
+  title?: string;
+  abstract?: string;
+  file?: string;
+}
+
+export function validateStep1(state: PaperRegistrationState): Step1Errors {
+  const errors: Step1Errors = {};
+
+  const title = state.title.trim();
+  if (!title) errors.title = "Title is required";
+  else if (title.length < PAPER_LIMITS.title.min) errors.title = `Title must be at least ${PAPER_LIMITS.title.min} characters`;
+  else if (title.length > PAPER_LIMITS.title.max) errors.title = `Title must be at most ${PAPER_LIMITS.title.max} characters`;
+
+  const abstract = state.abstract.trim();
+  if (!abstract) errors.abstract = "Abstract is required";
+  else if (abstract.length < PAPER_LIMITS.abstract.min) errors.abstract = `Abstract must be at least ${PAPER_LIMITS.abstract.min} characters`;
+  else if (abstract.length > PAPER_LIMITS.abstract.max) errors.abstract = `Abstract must be at most ${PAPER_LIMITS.abstract.max} characters`;
+
+  if (!state.fileHash) errors.file = "Please upload a PDF file";
+
+  return errors;
 }

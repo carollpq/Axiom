@@ -21,7 +21,7 @@ export async function updatePaperVersionHedera(
 
 export interface CreatePaperInput {
   title: string;
-  abstract?: string | null;
+  abstract: string;
   studyType?: StudyTypeDb;
   wallet: string;
   litDataToEncryptHash?: string | null;

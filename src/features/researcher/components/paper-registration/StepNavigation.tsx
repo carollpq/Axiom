@@ -1,11 +1,10 @@
 interface StepNavigationProps {
   step: number;
-  canProceed: boolean;
   onBack: () => void;
   onNext: () => void;
 }
 
-export function StepNavigation({ step, canProceed, onBack, onNext }: StepNavigationProps) {
+export function StepNavigation({ step, onBack, onNext }: StepNavigationProps) {
   const canGoBack = step > 0;
   const showNext = step < 3;
 
@@ -25,14 +24,13 @@ export function StepNavigation({ step, canProceed, onBack, onNext }: StepNavigat
 
       {showNext && (
         <button
-          onClick={canProceed ? onNext : undefined}
-          disabled={!canProceed}
+          onClick={onNext}
           className="py-2.5 px-6 rounded font-serif text-[13px]"
           style={{
-            background: canProceed ? "linear-gradient(135deg, rgba(180,160,120,0.2), rgba(160,140,100,0.1))" : "rgba(120,110,95,0.1)",
-            border: "1px solid " + (canProceed ? "rgba(180,160,120,0.3)" : "rgba(120,110,95,0.15)"),
-            color: canProceed ? "#d4c8a8" : "#4a4238",
-            cursor: canProceed ? "pointer" : "not-allowed",
+            background: "linear-gradient(135deg, rgba(180,160,120,0.2), rgba(160,140,100,0.1))",
+            border: "1px solid rgba(180,160,120,0.3)",
+            color: "#d4c8a8",
+            cursor: "pointer",
           }}
         >Next {"\u2192"}</button>
       )}

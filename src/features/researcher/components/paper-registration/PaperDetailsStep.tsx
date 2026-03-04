@@ -3,7 +3,10 @@
 import { useRef } from "react";
 import type { Visibility } from "@/src/features/researcher/types/paper-registration";
 import type { StudyTypeDb } from "@/src/shared/lib/db/schema";
-import { inputStyle, labelStyle as baseLabelStyle } from "./styles";
+import type { Step1Errors } from "@/src/features/researcher/reducers/paper-registration";
+import { VISIBILITY_OPTIONS, STUDY_TYPE_OPTIONS } from "@/src/features/researcher/config/paper-registration";
+import { FormSelect } from "@/src/shared/components/FormSelect";
+import { inputStyle, labelStyle as baseLabelStyle, errorStyle, errorBorder } from "./styles";
 
 const labelStyle: React.CSSProperties = { ...baseLabelStyle, fontSize: 11 };
 
@@ -17,6 +20,7 @@ interface PaperDetailsStepProps {
   studyType: StudyTypeDb;
   keywords: string[];
   keywordInput: string;
+  errors?: Step1Errors;
   onTitleChange: (v: string) => void;
   onAbstractChange: (v: string) => void;
   onVisibilityChange: (v: Visibility) => void;
@@ -28,21 +32,9 @@ interface PaperDetailsStepProps {
   onFileRemove: () => void;
 }
 
-const visibilityOptions = [
-  { key: "private" as const, label: "Private Draft", desc: "Only hash recorded. Content not accessible to others." },
-  { key: "public" as const, label: "Public Draft", desc: "Content accessible via the platform." },
-];
-
-const studyTypeOptions: { key: StudyTypeDb; label: string }[] = [
-  { key: "original", label: "Original Research" },
-  { key: "negative_result", label: "Negative Result" },
-  { key: "replication", label: "Replication" },
-  { key: "replication_failed", label: "Replication Failed" },
-  { key: "meta_analysis", label: "Meta-Analysis" },
-];
-
 export function PaperDetailsStep({
   title, abstract, fileName, fileHash, isHashing, visibility, studyType, keywords, keywordInput,
+  errors,
   onTitleChange, onAbstractChange, onVisibilityChange, onStudyTypeChange, onKeywordInputChange,
   onAddKeyword, onRemoveKeyword, onFileUpload, onFileRemove,
 }: PaperDetailsStepProps) {
@@ -67,8 +59,9 @@ export function PaperDetailsStep({
         <input
           type="text" placeholder="Enter paper title..."
           value={title} onChange={e => onTitleChange(e.target.value)}
-          style={inputStyle}
+          style={{ ...inputStyle, ...(errors?.title ? { border: errorBorder } : {}) }}
         />
+        {errors?.title && <div style={errorStyle}>{errors.title}</div>}
       </div>
 
       {/* Abstract */}
@@ -78,8 +71,9 @@ export function PaperDetailsStep({
           placeholder="Enter abstract..."
           value={abstract} onChange={e => onAbstractChange(e.target.value)}
           rows={5}
-          style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
+          style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6, ...(errors?.abstract ? { border: errorBorder } : {}) }}
         />
+        {errors?.abstract && <div style={errorStyle}>{errors.abstract}</div>}
       </div>
 
       {/* File upload */}
@@ -95,7 +89,7 @@ export function PaperDetailsStep({
         <div
           className="rounded-md text-center cursor-pointer transition-all duration-300"
           style={{
-            border: "2px dashed rgba(120,110,95,0.25)",
+            border: errors?.file ? errorBorder : "2px dashed rgba(120,110,95,0.25)",
             padding: fileName ? "14px 18px" : "32px 18px",
             background: fileName ? "rgba(120,180,120,0.04)" : "transparent",
           }}
@@ -129,13 +123,14 @@ export function PaperDetailsStep({
             </div>
           )}
         </div>
+        {errors?.file && <div style={errorStyle}>{errors.file}</div>}
       </div>
 
       {/* Visibility */}
       <div className="mb-[18px]">
         <label style={labelStyle}>Visibility</label>
         <div className="flex gap-2.5">
-          {visibilityOptions.map(v => (
+          {VISIBILITY_OPTIONS.map(v => (
             <button
               key={v.key}
               onClick={() => onVisibilityChange(v.key)}
@@ -163,22 +158,16 @@ export function PaperDetailsStep({
       {/* Study Type */}
       <div className="mb-[18px]">
         <label style={labelStyle}>Study Type</label>
-        <div className="flex flex-wrap gap-2">
-          {studyTypeOptions.map(opt => (
-            <button
-              key={opt.key}
-              onClick={() => onStudyTypeChange(opt.key)}
-              className="py-2 px-3 text-left cursor-pointer rounded-md transition-all duration-300 text-[12px]"
-              style={{
-                background: studyType === opt.key ? "rgba(180,160,120,0.08)" : "rgba(30,28,24,0.4)",
-                border: "1px solid " + (studyType === opt.key ? "rgba(180,160,120,0.3)" : "rgba(120,110,95,0.12)"),
-                color: studyType === opt.key ? "#d4c8a8" : "#6a6050",
-              }}
-            >
-              {opt.label}
-            </button>
+        <FormSelect
+          value={studyType}
+          onChange={e => onStudyTypeChange(e.target.value as StudyTypeDb)}
+          className="w-full"
+          style={{ padding: "10px 14px", fontSize: 13 }}
+        >
+          {STUDY_TYPE_OPTIONS.map(opt => (
+            <option key={opt.key} value={opt.key}>{opt.label}</option>
           ))}
-        </div>
+        </FormSelect>
       </div>
 
       {/* Keywords */}

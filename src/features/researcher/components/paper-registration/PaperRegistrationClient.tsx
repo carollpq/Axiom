@@ -20,7 +20,6 @@ export function PaperRegistrationClient({ initialContracts, initialJournals }: P
   const { navigation, paperDetails, provenance, contractLinking, registration, validation } =
     usePaperRegistration(initialContracts, initialJournals);
 
-  const canProceed = navigation.step === 0 ? validation.canProceedStep1 : true;
   const showConfirmation = (registration.registered || registration.submitted) && navigation.step === 3;
 
   return (
@@ -48,6 +47,7 @@ export function PaperRegistrationClient({ initialContracts, initialJournals }: P
           fileName={paperDetails.fileName} fileHash={paperDetails.fileHash} isHashing={paperDetails.isHashing}
           visibility={paperDetails.visibility} studyType={paperDetails.studyType}
           keywords={paperDetails.keywords} keywordInput={paperDetails.keywordInput}
+          errors={validation.step1Errors}
           onTitleChange={paperDetails.setTitle} onAbstractChange={paperDetails.setAbstract}
           onVisibilityChange={paperDetails.setVisibility} onStudyTypeChange={paperDetails.setStudyType}
           onKeywordInputChange={paperDetails.setKeywordInput}
@@ -111,7 +111,6 @@ export function PaperRegistrationClient({ initialContracts, initialJournals }: P
       {!showConfirmation && (
         <StepNavigation
           step={navigation.step}
-          canProceed={canProceed}
           onBack={navigation.goBack}
           onNext={navigation.goNext}
         />

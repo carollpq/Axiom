@@ -34,3 +34,11 @@ export const subsectionStyle: React.CSSProperties = {
   borderRadius: 6,
   border: "1px solid rgba(120,110,95,0.1)",
 };
+
+export const errorStyle: React.CSSProperties = {
+  color: "#d4645a",
+  fontSize: 10,
+  marginTop: 4,
+};
+
+export const errorBorder = "1px solid rgba(212,100,90,0.4)";

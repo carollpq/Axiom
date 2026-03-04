@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducer, useCallback, useRef, useMemo } from "react";
+import { useReducer, useCallback, useRef, useMemo, useState } from "react";
 import type { SignedContract, RegisteredJournal } from "@/src/features/researcher/types/paper-registration";
 import { useCurrentUser } from "@/src/shared/hooks/useCurrentUser";
 import { fetchApi } from "@/src/shared/lib/api";
@@ -14,7 +14,7 @@ import type { ApiContract, ApiPaperVersion } from "@/src/shared/types/api";
 import {
   paperRegistrationReducer,
   initialState,
-  canProceedStep1,
+  validateStep1,
 } from "@/src/features/researcher/reducers/paper-registration";
 import { STEP_LABELS } from "@/src/features/researcher/config/paper-registration";
 
@@ -221,8 +221,20 @@ export function usePaperRegistration(initialContracts: ApiContract[], initialJou
     }
   };
 
+  const [showErrors, setShowErrors] = useState(false);
+
+  const step1Errors = validateStep1(state);
+  const canProceedStep1 = Object.keys(step1Errors).length === 0;
+
   const goBack = () => dispatch({ type: "GO_BACK" });
-  const goNext = () => dispatch({ type: "GO_NEXT" });
+  const goNext = () => {
+    if (state.step === 0 && !canProceedStep1) {
+      setShowErrors(true);
+      return;
+    }
+    setShowErrors(false);
+    dispatch({ type: "GO_NEXT" });
+  };
 
   return {
     navigation: { step: state.step, steps: STEP_LABELS as unknown as string[], goBack, goNext },
@@ -280,6 +292,8 @@ export function usePaperRegistration(initialContracts: ApiContract[], initialJou
       handleRegister,
       handleSubmit,
     },
-    validation: { canProceedStep1: canProceedStep1(state) },
+    validation: {
+      step1Errors: showErrors ? step1Errors : undefined,
+    },
   };
 }
