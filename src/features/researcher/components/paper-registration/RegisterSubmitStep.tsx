@@ -2,6 +2,7 @@
 
 import type { SignedContract, RegisteredJournal } from "@/src/features/researcher/types/paper-registration";
 import { HashDisplay } from "./HashDisplay";
+import { inputStyle, labelStyle } from "./styles";
 
 interface RegisterSubmitStepProps {
   title: string;
@@ -14,22 +15,14 @@ interface RegisterSubmitStepProps {
   journals: RegisteredJournal[];
   selectedJournal: string | null;
   onSelectJournal: (id: string | null) => void;
+  registering: boolean;
   onRegister: () => void;
   onSubmit: () => void;
 }
 
-const inputStyle: React.CSSProperties = {
-  width: "100%", padding: "10px 14px", background: "rgba(30,28,24,0.8)",
-  border: "1px solid rgba(120,110,95,0.25)", borderRadius: 4,
-  color: "#d4ccc0", fontFamily: "'Georgia', serif", fontSize: 13, outline: "none",
-  boxSizing: "border-box",
-};
-
-const labelStyle: React.CSSProperties = { fontSize: 10, color: "#8a8070", marginBottom: 6, display: "block" };
-
 export function RegisterSubmitStep({
   title, fileHash, datasetHash, codeCommit, envHash, visibility,
-  contract, journals, selectedJournal, onSelectJournal, onRegister, onSubmit,
+  contract, journals, selectedJournal, registering, onSelectJournal, onRegister, onSubmit,
 }: RegisterSubmitStepProps) {
   const canSubmit = !!(contract && selectedJournal);
 
@@ -46,7 +39,7 @@ export function RegisterSubmitStep({
         <HashDisplay label="Dataset" hash={datasetHash} />
         <HashDisplay label="Code Commit" hash={codeCommit} />
         <HashDisplay label="Environment" hash={envHash} />
-        <HashDisplay label="Contract" hash={contract ? contract.hash.replace("0x", "") + "0000" : ""} />
+        <HashDisplay label="Contract" hash={contract ? contract.hash : ""} />
         <div className="mt-3 flex gap-2">
           <span
             className="text-[10px] py-0.5 px-2.5 rounded-sm"
@@ -74,12 +67,15 @@ export function RegisterSubmitStep({
           </div>
           <button
             onClick={onRegister}
-            className="py-3 px-7 rounded text-[#d4c8a8] font-serif text-sm cursor-pointer"
+            disabled={registering}
+            className="py-3 px-7 rounded text-[#d4c8a8] font-serif text-sm"
             style={{
               background: "linear-gradient(135deg, rgba(180,160,120,0.25), rgba(160,140,100,0.15))",
               border: "1px solid rgba(180,160,120,0.4)",
+              cursor: registering ? "not-allowed" : "pointer",
+              opacity: registering ? 0.6 : 1,
             }}
-          >Register on Hedera</button>
+          >{registering ? "Registering..." : "Register on Hedera"}</button>
         </div>
 
         {/* Submit */}

@@ -1,20 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import type { SignedContract } from "@/src/features/researcher/types/paper-registration";
+import { inputStyle } from "./styles";
 
 interface ContractLinkingStepProps {
-  selectedContract: number | null;
+  selectedContract: string | null;
   contracts: SignedContract[];
   contract: SignedContract | undefined;
-  onSelectContract: (id: number | null) => void;
+  onSelectContract: (id: string | null) => void;
 }
-
-const inputStyle: React.CSSProperties = {
-  width: "100%", padding: "10px 14px", background: "rgba(30,28,24,0.8)",
-  border: "1px solid rgba(120,110,95,0.25)", borderRadius: 4,
-  color: "#d4ccc0", fontFamily: "'Georgia', serif", fontSize: 13, outline: "none",
-  boxSizing: "border-box",
-};
 
 export function ContractLinkingStep({ selectedContract, contracts, contract, onSelectContract }: ContractLinkingStepProps) {
   return (
@@ -36,7 +31,7 @@ export function ContractLinkingStep({ selectedContract, contracts, contract, onS
       <label className="text-[11px] text-[#8a8070] mb-1.5 block">Select Fully Signed Contract</label>
       <select
         value={selectedContract || ""}
-        onChange={e => onSelectContract(e.target.value ? Number(e.target.value) : null)}
+        onChange={e => onSelectContract(e.target.value || null)}
         style={{ ...inputStyle, appearance: "none", cursor: "pointer", marginBottom: 16 }}
       >
         <option value="">-- No contract (register only) --</option>
@@ -76,10 +71,11 @@ export function ContractLinkingStep({ selectedContract, contracts, contract, onS
         >
           <div className="text-xs text-[#6a6050] mb-2">No contract selected</div>
           <div className="text-[11px] text-[#4a4238] mb-3.5">You can still register your draft for timestamped proof of disclosure</div>
-          <button
-            className="rounded py-2 px-[18px] text-[#7a9fc7] text-xs cursor-pointer font-serif"
+          <Link
+            href="/researcher/contract_builder"
+            className="inline-block rounded py-2 px-[18px] text-[#7a9fc7] text-xs cursor-pointer font-serif no-underline"
             style={{ background: "none", border: "1px solid rgba(130,160,200,0.25)" }}
-          >Create New Contract {"\u2192"}</button>
+          >Create New Contract {"\u2192"}</Link>
         </div>
       )}
     </div>

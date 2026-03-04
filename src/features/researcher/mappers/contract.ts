@@ -43,13 +43,13 @@ export function mapApiPapersToDrafts(
     });
 }
 
-export function mapDbContractToSigned(c: ApiContract, index: number): SignedContract {
+export function mapDbContractToSigned(c: ApiContract): SignedContract {
   const contribSummary = c.contributors
     .map((cc) => `${cc.contributorName ?? "Unknown"} (${cc.contributionPct}%)`)
     .join(", ");
 
   return {
-    id: index + 1,
+    id: c.id,
     title: c.paperTitle,
     hash: c.contractHash ?? "\u2014",
     contributors: contribSummary || "\u2014",

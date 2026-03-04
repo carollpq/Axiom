@@ -1,3 +1,6 @@
+"use client";
+
+import { useRouter } from "next/navigation";
 import type { SignedContract } from "@/src/features/researcher/types/paper-registration";
 import { HashDisplay } from "./HashDisplay";
 
@@ -15,6 +18,8 @@ interface ConfirmationScreenProps {
 export function ConfirmationScreen({
   submitted, txHash, txTimestamp, fileHash, datasetHash, codeCommit, envHash, contract,
 }: ConfirmationScreenProps) {
+  const router = useRouter();
+
   return (
     <div
       className="rounded-lg text-center p-10 mb-5"
@@ -49,11 +54,12 @@ export function ConfirmationScreen({
         <HashDisplay label="Dataset" hash={datasetHash} />
         <HashDisplay label="Code" hash={codeCommit} />
         <HashDisplay label="Environment" hash={envHash} />
-        {contract && <HashDisplay label="Contract" hash={contract.hash.replace("0x", "") + "0000"} />}
+        {contract && <HashDisplay label="Contract" hash={contract.hash} />}
       </div>
 
       <div className="flex gap-3 justify-center mt-6">
         <button
+          onClick={() => router.push("/researcher/public_explorer")}
           className="py-2.5 px-6 rounded text-[#d4c8a8] font-serif text-[13px] cursor-pointer"
           style={{
             background: "linear-gradient(135deg, rgba(180,160,120,0.2), rgba(160,140,100,0.1))",
@@ -61,6 +67,7 @@ export function ConfirmationScreen({
           }}
         >View Paper {"\u2192"}</button>
         <button
+          onClick={() => router.push("/researcher")}
           className="py-2.5 px-6 rounded text-[#8a8070] font-serif text-[13px] cursor-pointer"
           style={{ background: "none", border: "1px solid rgba(120,110,95,0.2)" }}
         >Return to Dashboard</button>

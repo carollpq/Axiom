@@ -25,7 +25,7 @@ export interface PaperRegistrationState {
   githubConnected: boolean;
 
   // Step 3: Contract
-  selectedContract: number | null;
+  selectedContract: string | null;
 
   // Step 4: Confirmation
   registered: boolean;
@@ -65,7 +65,6 @@ export const initialState: PaperRegistrationState = {
 };
 
 export type PaperRegistrationAction =
-  | { type: "SET_STEP"; step: number }
   | { type: "GO_BACK" }
   | { type: "GO_NEXT" }
   | { type: "SET_TITLE"; title: string }
@@ -91,7 +90,7 @@ export type PaperRegistrationAction =
   | { type: "SET_DATASET_HASH"; datasetHash: string }
   | { type: "SET_ENV_HASH"; envHash: string }
   | { type: "SIMULATE_GITHUB" }
-  | { type: "SET_SELECTED_CONTRACT"; selectedContract: number | null }
+  | { type: "SET_SELECTED_CONTRACT"; selectedContract: string | null }
   | { type: "SET_SELECTED_JOURNAL"; selectedJournal: string | null }
   | { type: "REGISTER_START" }
   | { type: "REGISTER_SUCCESS"; paperId: string; txHash: string; txTimestamp: string }
@@ -104,8 +103,6 @@ export function paperRegistrationReducer(
   action: PaperRegistrationAction,
 ): PaperRegistrationState {
   switch (action.type) {
-    case "SET_STEP":
-      return { ...state, step: action.step };
     case "GO_BACK":
       return state.step > 0 ? { ...state, step: state.step - 1 } : state;
     case "GO_NEXT":

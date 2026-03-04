@@ -17,27 +17,11 @@ interface PaperRegistrationClientProps {
 }
 
 export function PaperRegistrationClient({ initialContracts, initialJournals }: PaperRegistrationClientProps) {
-  const {
-    step, steps, goBack, goNext,
-    title, setTitle, abstract, setAbstract,
-    fileName, fileHash, visibility, setVisibility,
-    keywords, keywordInput, setKeywordInput,
-    handleFileUpload, removeFile, isHashing, addKeyword, removeKeyword,
-    datasetHash, setDatasetHash, datasetUrl, setDatasetUrl,
-    codeRepo, setCodeRepo, codeCommit, setCodeCommit,
-    envHash, setEnvHash, githubConnected,
-    handleDatasetUpload, handleEnvUpload, simulateGithub,
-    selectedContract, setSelectedContract, contracts, contract,
-    registered, submitted,
-    selectedJournal, setSelectedJournal, journals,
-    txHash, txTimestamp,
-    handleRegister, handleSubmit,
-    canProceedStep1,
-    studyType, setStudyType,
-  } = usePaperRegistration(initialContracts, initialJournals);
+  const { navigation, paperDetails, provenance, contractLinking, registration, validation } =
+    usePaperRegistration(initialContracts, initialJournals);
 
-  const canProceed = step === 0 ? canProceedStep1 : true;
-  const showConfirmation = (registered || submitted) && step === 3;
+  const canProceed = navigation.step === 0 ? validation.canProceedStep1 : true;
+  const showConfirmation = (registration.registered || registration.submitted) && navigation.step === 3;
 
   return (
     <div className="max-w-[1200px] mx-auto py-8 px-10">
@@ -54,80 +38,82 @@ export function PaperRegistrationClient({ initialContracts, initialJournals }: P
 
       {/* Step Indicator */}
       <div className="mt-7">
-        <StepIndicator steps={steps} current={step} />
+        <StepIndicator steps={navigation.steps} current={navigation.step} />
       </div>
 
       {/* Step 1: Paper Details */}
-      {step === 0 && (
+      {navigation.step === 0 && (
         <PaperDetailsStep
-          title={title} abstract={abstract}
-          fileName={fileName} fileHash={fileHash} isHashing={isHashing}
-          visibility={visibility} studyType={studyType} keywords={keywords} keywordInput={keywordInput}
-          onTitleChange={setTitle} onAbstractChange={setAbstract}
-          onVisibilityChange={setVisibility} onStudyTypeChange={setStudyType}
-          onKeywordInputChange={setKeywordInput}
-          onAddKeyword={addKeyword} onRemoveKeyword={removeKeyword}
-          onFileUpload={handleFileUpload} onFileRemove={removeFile}
+          title={paperDetails.title} abstract={paperDetails.abstract}
+          fileName={paperDetails.fileName} fileHash={paperDetails.fileHash} isHashing={paperDetails.isHashing}
+          visibility={paperDetails.visibility} studyType={paperDetails.studyType}
+          keywords={paperDetails.keywords} keywordInput={paperDetails.keywordInput}
+          onTitleChange={paperDetails.setTitle} onAbstractChange={paperDetails.setAbstract}
+          onVisibilityChange={paperDetails.setVisibility} onStudyTypeChange={paperDetails.setStudyType}
+          onKeywordInputChange={paperDetails.setKeywordInput}
+          onAddKeyword={paperDetails.addKeyword} onRemoveKeyword={paperDetails.removeKeyword}
+          onFileUpload={paperDetails.handleFileUpload} onFileRemove={paperDetails.removeFile}
         />
       )}
 
       {/* Step 2: Provenance */}
-      {step === 1 && (
+      {navigation.step === 1 && (
         <ProvenanceStep
-          fileHash={fileHash}
-          datasetHash={datasetHash} datasetUrl={datasetUrl}
-          codeRepo={codeRepo} codeCommit={codeCommit}
-          envHash={envHash} githubConnected={githubConnected}
-          onDatasetHashChange={setDatasetHash} onDatasetUrlChange={setDatasetUrl}
-          onCodeRepoChange={setCodeRepo} onCodeCommitChange={setCodeCommit}
-          onEnvHashChange={setEnvHash}
-          onDatasetUpload={handleDatasetUpload}
-          onEnvUpload={handleEnvUpload}
-          onGithubConnect={simulateGithub}
+          fileHash={paperDetails.fileHash}
+          datasetHash={provenance.datasetHash} datasetUrl={provenance.datasetUrl}
+          codeRepo={provenance.codeRepo} codeCommit={provenance.codeCommit}
+          envHash={provenance.envHash} githubConnected={provenance.githubConnected}
+          onDatasetHashChange={provenance.setDatasetHash} onDatasetUrlChange={provenance.setDatasetUrl}
+          onCodeRepoChange={provenance.setCodeRepo} onCodeCommitChange={provenance.setCodeCommit}
+          onEnvHashChange={provenance.setEnvHash}
+          onDatasetUpload={provenance.handleDatasetUpload}
+          onEnvUpload={provenance.handleEnvUpload}
+          onGithubConnect={provenance.simulateGithub}
         />
       )}
 
       {/* Step 3: Contract Linking */}
-      {step === 2 && (
+      {navigation.step === 2 && (
         <ContractLinkingStep
-          selectedContract={selectedContract}
-          contracts={contracts}
-          contract={contract}
-          onSelectContract={setSelectedContract}
+          selectedContract={contractLinking.selectedContract}
+          contracts={contractLinking.contracts}
+          contract={contractLinking.contract}
+          onSelectContract={contractLinking.setSelectedContract}
         />
       )}
 
       {/* Step 4: Register / Submit */}
-      {step === 3 && !showConfirmation && (
+      {navigation.step === 3 && !showConfirmation && (
         <RegisterSubmitStep
-          title={title} fileHash={fileHash}
-          datasetHash={datasetHash} codeCommit={codeCommit}
-          envHash={envHash} visibility={visibility}
-          contract={contract} journals={journals}
-          selectedJournal={selectedJournal}
-          onSelectJournal={setSelectedJournal}
-          onRegister={handleRegister} onSubmit={handleSubmit}
+          title={paperDetails.title} fileHash={paperDetails.fileHash}
+          datasetHash={provenance.datasetHash} codeCommit={provenance.codeCommit}
+          envHash={provenance.envHash} visibility={paperDetails.visibility}
+          contract={contractLinking.contract} journals={registration.journals}
+          selectedJournal={registration.selectedJournal}
+          registering={registration.registering}
+          onSelectJournal={registration.setSelectedJournal}
+          onRegister={registration.handleRegister} onSubmit={registration.handleSubmit}
         />
       )}
 
       {/* Confirmation Screen */}
       {showConfirmation && (
         <ConfirmationScreen
-          submitted={submitted}
-          txHash={txHash} txTimestamp={txTimestamp}
-          fileHash={fileHash} datasetHash={datasetHash}
-          codeCommit={codeCommit} envHash={envHash}
-          contract={contract}
+          submitted={registration.submitted}
+          txHash={registration.txHash} txTimestamp={registration.txTimestamp}
+          fileHash={paperDetails.fileHash} datasetHash={provenance.datasetHash}
+          codeCommit={provenance.codeCommit} envHash={provenance.envHash}
+          contract={contractLinking.contract}
         />
       )}
 
       {/* Navigation */}
       {!showConfirmation && (
         <StepNavigation
-          step={step}
+          step={navigation.step}
           canProceed={canProceed}
-          onBack={goBack}
-          onNext={goNext}
+          onBack={navigation.goBack}
+          onNext={navigation.goNext}
         />
       )}
     </div>

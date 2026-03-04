@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import type { ProvenanceItem } from "@/src/features/researcher/types/paper-registration";
+import { inputStyle, labelStyle, sectionStyle, subsectionStyle } from "./styles";
 
 interface ProvenanceStepProps {
   fileHash: string;
@@ -20,25 +21,6 @@ interface ProvenanceStepProps {
   onEnvUpload: (file: File) => void;
   onGithubConnect: () => void;
 }
-
-const inputStyle: React.CSSProperties = {
-  width: "100%", padding: "10px 14px", background: "rgba(30,28,24,0.8)",
-  border: "1px solid rgba(120,110,95,0.25)", borderRadius: 4,
-  color: "#d4ccc0", fontFamily: "'Georgia', serif", fontSize: 13, outline: "none",
-  boxSizing: "border-box",
-};
-
-const labelStyle: React.CSSProperties = { fontSize: 10, color: "#8a8070", marginBottom: 6, display: "block" };
-
-const sectionStyle: React.CSSProperties = {
-  background: "rgba(45,42,38,0.5)", border: "1px solid rgba(120,110,95,0.2)",
-  borderRadius: 8, padding: 24, marginBottom: 20,
-};
-
-const subsectionStyle: React.CSSProperties = {
-  padding: 18, background: "rgba(30,28,24,0.4)", borderRadius: 6,
-  border: "1px solid rgba(120,110,95,0.1)",
-};
 
 export function ProvenanceStep({
   fileHash, datasetHash, datasetUrl, codeRepo, codeCommit, envHash, githubConnected,
@@ -98,6 +80,7 @@ export function ProvenanceStep({
               >Upload</button>
             </div>
           </div>
+          {/* TODO: persist datasetUrl to DB via POST /api/papers/[id]/versions */}
           <div>
             <label style={labelStyle}>External URL (Zenodo, Figshare, etc.)</label>
             <input

@@ -3,6 +3,9 @@
 import { useRef } from "react";
 import type { Visibility } from "@/src/features/researcher/types/paper-registration";
 import type { StudyTypeDb } from "@/src/shared/lib/db/schema";
+import { inputStyle, labelStyle as baseLabelStyle } from "./styles";
+
+const labelStyle: React.CSSProperties = { ...baseLabelStyle, fontSize: 11 };
 
 interface PaperDetailsStepProps {
   title: string;
@@ -24,15 +27,6 @@ interface PaperDetailsStepProps {
   onFileUpload: (file: File) => void;
   onFileRemove: () => void;
 }
-
-const inputStyle: React.CSSProperties = {
-  width: "100%", padding: "10px 14px", background: "rgba(30,28,24,0.8)",
-  border: "1px solid rgba(120,110,95,0.25)", borderRadius: 4,
-  color: "#d4ccc0", fontFamily: "'Georgia', serif", fontSize: 13, outline: "none",
-  boxSizing: "border-box",
-};
-
-const labelStyle: React.CSSProperties = { fontSize: 11, color: "#8a8070", marginBottom: 6, display: "block" };
 
 const visibilityOptions = [
   { key: "private" as const, label: "Private Draft", desc: "Only hash recorded. Content not accessible to others." },
@@ -188,6 +182,7 @@ export function PaperDetailsStep({
       </div>
 
       {/* Keywords */}
+      {/* TODO: persist keywords to DB via POST /api/papers */}
       <div>
         <label style={labelStyle}>Research Fields / Keywords</label>
         <div className="flex flex-wrap gap-1.5 mb-2">
