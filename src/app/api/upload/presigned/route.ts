@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isStorageConfigured, getPresignedUploadUrl } from "@/src/shared/lib/storage";
 import { requireSession } from "@/src/shared/lib/api-helpers";
+import type { UploadFolder } from "@/src/shared/lib/upload";
 
 export const runtime = "nodejs";
 
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
   const { hash, contentType, folder } = body as {
     hash: string;
     contentType: string;
-    folder: "papers" | "datasets" | "environments";
+    folder: UploadFolder;
   };
 
   if (!hash || !folder) {

@@ -36,6 +36,7 @@ export interface PaperRegistrationState {
   txHash: string;
   txTimestamp: string;
   registering: boolean;
+  submitting: boolean;
 }
 
 export const initialState: PaperRegistrationState = {
@@ -63,6 +64,7 @@ export const initialState: PaperRegistrationState = {
   txHash: "",
   txTimestamp: "",
   registering: false,
+  submitting: false,
 };
 
 export type PaperRegistrationAction =
@@ -97,7 +99,9 @@ export type PaperRegistrationAction =
   | { type: "REGISTER_SUCCESS"; paperId: string; txHash: string; txTimestamp: string }
   | { type: "REGISTER_DEMO"; txHash: string; txTimestamp: string }
   | { type: "REGISTER_ERROR" }
-  | { type: "SUBMIT_SUCCESS"; txHash: string; txTimestamp: string };
+  | { type: "SUBMIT_START" }
+  | { type: "SUBMIT_SUCCESS"; txHash: string; txTimestamp: string }
+  | { type: "SUBMIT_ERROR" };
 
 export function paperRegistrationReducer(
   state: PaperRegistrationState,
@@ -196,13 +200,18 @@ export function paperRegistrationReducer(
     case "REGISTER_ERROR":
       return { ...state, registering: false };
 
+    case "SUBMIT_START":
+      return { ...state, submitting: true };
     case "SUBMIT_SUCCESS":
       return {
         ...state,
+        submitting: false,
         submitted: true,
         txHash: action.txHash,
         txTimestamp: action.txTimestamp,
       };
+    case "SUBMIT_ERROR":
+      return { ...state, submitting: false };
 
     default:
       return state;

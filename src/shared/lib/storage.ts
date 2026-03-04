@@ -1,5 +1,6 @@
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import type { UploadFolder } from "@/src/shared/lib/upload";
 
 export function isStorageConfigured(): boolean {
   return !!(
@@ -34,7 +35,7 @@ function getS3Client(): S3Client {
 export async function getPresignedUploadUrl(
   hash: string,
   contentType: string,
-  folder: "papers" | "datasets" | "environments",
+  folder: UploadFolder,
 ): Promise<{ uploadUrl: string; objectKey: string }> {
   const objectKey = `${folder}/${hash}`;
   const command = new PutObjectCommand({

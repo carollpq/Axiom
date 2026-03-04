@@ -9,6 +9,7 @@ import { hashFile } from "@/src/shared/lib/hashing";
 import { isLitConfigured, getLitClient } from "@/src/shared/lib/lit/client";
 import { buildWalletListConditions } from "@/src/shared/lib/lit/access-control";
 import { encryptFileWithLit } from "@/src/shared/lib/lit/encrypt";
+import { uploadToR2 } from "@/src/shared/lib/upload";
 import { mapDbContractToSigned } from "@/src/features/researcher/mappers/contract";
 import type { ApiContract, ApiPaperVersion } from "@/src/shared/types/api";
 import {
@@ -17,6 +18,65 @@ import {
   validateStep1,
 } from "@/src/features/researcher/reducers/paper-registration";
 import { STEP_LABELS } from "@/src/features/researcher/config/paper-registration";
+
+interface EncryptResult {
+  fileToUpload: File;
+  r2Hash: string;
+  litDataToEncryptHash: string | null;
+  litAccessConditionsJson: string | null;
+}
+
+async function encryptFileIfConfigured(
+  file: File,
+  fileHash: string,
+  walletAddress: string | undefined,
+): Promise<EncryptResult> {
+  if (!isLitConfigured() || !walletAddress) {
+    return { fileToUpload: file, r2Hash: fileHash, litDataToEncryptHash: null, litAccessConditionsJson: null };
+  }
+
+  try {
+    await getLitClient();
+    const conditions = buildWalletListConditions([walletAddress]);
+    const encrypted = await encryptFileWithLit(file, conditions);
+    const encryptedFile = new File(
+      [encrypted.ciphertext],
+      file.name + ".enc",
+      { type: "application/octet-stream" },
+    );
+    const r2Hash = await hashFile(encryptedFile);
+    return {
+      fileToUpload: encryptedFile,
+      r2Hash,
+      litDataToEncryptHash: encrypted.dataToEncryptHash,
+      litAccessConditionsJson: encrypted.accessConditionsJson,
+    };
+  } catch (litErr) {
+    console.warn("[Lit] Encryption skipped:", litErr);
+    return { fileToUpload: file, r2Hash: fileHash, litDataToEncryptHash: null, litAccessConditionsJson: null };
+  }
+}
+
+interface UploadFilesInput {
+  paper: { file: File; hash: string };
+  dataset?: { file: File; hash: string };
+  env?: { file: File; hash: string };
+}
+
+async function uploadAllFiles(input: UploadFilesInput): Promise<string> {
+  const uploads: Promise<string>[] = [
+    uploadToR2(input.paper.file, input.paper.hash, "papers"),
+  ];
+  if (input.dataset) {
+    uploads.push(uploadToR2(input.dataset.file, input.dataset.hash, "datasets"));
+  }
+  if (input.env) {
+    uploads.push(uploadToR2(input.env.file, input.env.hash, "environments"));
+  }
+
+  const [fileStorageKey] = await Promise.all(uploads);
+  return fileStorageKey;
+}
 
 export function usePaperRegistration(initialContracts: ApiContract[], initialJournals: RegisteredJournal[]) {
   const { user, isConnected, account } = useCurrentUser();
@@ -50,10 +110,10 @@ export function usePaperRegistration(initialContracts: ApiContract[], initialJou
     }
   }, []);
 
-  const removeFile = () => {
+  const removeFile = useCallback(() => {
     dispatch({ type: "REMOVE_FILE" });
     uploadedFileRef.current = null;
-  };
+  }, []);
 
   const handleDatasetUpload = useCallback(async (file: File) => {
     uploadedDatasetFileRef.current = file;
@@ -77,43 +137,11 @@ export function usePaperRegistration(initialContracts: ApiContract[], initialJou
     }
   }, []);
 
-  const simulateGithub = () => dispatch({ type: "SIMULATE_GITHUB" });
+  const simulateGithub = useCallback(() => dispatch({ type: "SIMULATE_GITHUB" }), []);
 
-  const addKeyword = () => dispatch({ type: "ADD_KEYWORD" });
+  const addKeyword = useCallback(() => dispatch({ type: "ADD_KEYWORD" }), []);
 
-  const removeKeyword = (index: number) => dispatch({ type: "REMOVE_KEYWORD", index });
-
-  const uploadToR2 = async (
-    file: File,
-    hash: string,
-    folder: "papers" | "datasets" | "environments",
-  ): Promise<string | null> => {
-    try {
-      const { uploadUrl, objectKey } = await fetchApi<{
-        uploadUrl: string;
-        objectKey: string;
-      }>("/api/upload/presigned", {
-        method: "POST",
-        body: JSON.stringify({
-          hash,
-          contentType: file.type || "application/octet-stream",
-          folder,
-        }),
-      });
-
-      const r2Response = await fetch(uploadUrl, {
-        method: "PUT",
-        body: file,
-        headers: { "Content-Type": file.type || "application/octet-stream" },
-      });
-
-      if (!r2Response.ok) throw new Error(`R2 PUT failed: ${r2Response.status}`);
-      return objectKey;
-    } catch (err) {
-      console.warn("[R2] Upload skipped:", err);
-      return null;
-    }
-  };
+  const removeKeyword = useCallback((index: number) => dispatch({ type: "REMOVE_KEYWORD", index }), []);
 
   const handleRegister = async () => {
     if (!isConnected || !user) {
@@ -128,37 +156,20 @@ export function usePaperRegistration(initialContracts: ApiContract[], initialJou
     dispatch({ type: "REGISTER_START" });
     try {
       const uploadedFile = uploadedFileRef.current;
-      let fileToUpload = uploadedFile;
-      let litDataToEncryptHash: string | null = null;
-      let litAccessConditionsJson: string | null = null;
-
-      if (uploadedFile && state.fileHash && isLitConfigured() && account?.address) {
-        try {
-          await getLitClient();
-          const conditions = buildWalletListConditions([account.address]);
-          const encrypted = await encryptFileWithLit(uploadedFile, conditions);
-          fileToUpload = new File(
-            [encrypted.ciphertext],
-            uploadedFile.name + ".enc",
-            { type: "application/octet-stream" },
-          );
-          litDataToEncryptHash = encrypted.dataToEncryptHash;
-          litAccessConditionsJson = encrypted.accessConditionsJson;
-        } catch (litErr) {
-          console.warn("[Lit] Encryption skipped:", litErr);
-          fileToUpload = uploadedFile;
-        }
+      if (!uploadedFile || !state.fileHash) {
+        throw new Error("No file uploaded");
       }
 
-      const fileStorageKey = fileToUpload
-        ? await uploadToR2(fileToUpload, state.fileHash, "papers")
-        : null;
-      if (uploadedDatasetFileRef.current && state.datasetHash) {
-        await uploadToR2(uploadedDatasetFileRef.current, state.datasetHash, "datasets");
-      }
-      if (uploadedEnvFileRef.current && state.envHash) {
-        await uploadToR2(uploadedEnvFileRef.current, state.envHash, "environments");
-      }
+      const { fileToUpload, r2Hash, litDataToEncryptHash, litAccessConditionsJson } =
+        await encryptFileIfConfigured(uploadedFile, state.fileHash, account?.address);
+
+      const datasetFile = uploadedDatasetFileRef.current;
+      const envFile = uploadedEnvFileRef.current;
+      const fileStorageKey = await uploadAllFiles({
+        paper: { file: fileToUpload, hash: r2Hash },
+        ...(datasetFile && state.datasetHash ? { dataset: { file: datasetFile, hash: state.datasetHash } } : {}),
+        ...(envFile && state.envHash ? { env: { file: envFile, hash: state.envHash } } : {}),
+      });
 
       const paper = await fetchApi<{ id: string }>("/api/papers", {
         method: "POST",
@@ -206,6 +217,7 @@ export function usePaperRegistration(initialContracts: ApiContract[], initialJou
   const handleSubmit = async () => {
     if (!state.paperId || !state.selectedJournal) return;
 
+    dispatch({ type: "SUBMIT_START" });
     try {
       const result = await fetchApi<{ submissionId?: string; hederaTxId?: string; hederaTimestamp?: string }>(
         `/api/papers/${state.paperId}/submit`,
@@ -218,6 +230,7 @@ export function usePaperRegistration(initialContracts: ApiContract[], initialJou
       });
     } catch (err) {
       console.error("Submission failed:", err);
+      dispatch({ type: "SUBMIT_ERROR" });
     }
   };
 
@@ -283,6 +296,7 @@ export function usePaperRegistration(initialContracts: ApiContract[], initialJou
     registration: {
       registered: state.registered,
       submitted: state.submitted,
+      submitting: state.submitting,
       registering: state.registering,
       selectedJournal: state.selectedJournal,
       setSelectedJournal: (selectedJournal: string | null) => dispatch({ type: "SET_SELECTED_JOURNAL", selectedJournal }),
