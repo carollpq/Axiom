@@ -19,8 +19,7 @@
     "contracts:deploy:testnet": "npm --prefix contracts run deploy:testnet"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.995.0",
-    "@aws-sdk/s3-request-presigner": "^3.995.0",
+    "@web3-storage/w3up-client": "^17.3.0",
     "@hashgraph/sdk": "^2.80.0",
     "@lit-protocol/auth-helpers": "^8.2.1",
     "@lit-protocol/constants": "^9.0.1",

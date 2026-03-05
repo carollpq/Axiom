@@ -14,7 +14,7 @@ The codebase is a **functional full-stack application**. The researcher and edit
 
 **What's working end-to-end:**
 - ✅ **User authentication** — Multi-step login: role selector → wallet connect → ORCID verification → DB save → role-based dashboard routing
-- ✅ **Paper registration** — Client-side SHA-256 hashing → R2 presigned upload → Lit encryption → DB storage → Hedera HCS anchoring
+- ✅ **Paper registration** — Client-side SHA-256 hashing → IPFS upload (web3.storage) → Lit encryption → DB storage → Hedera HCS anchoring
 - ✅ **Authorship contracts** — Creation + wallet signing (verified via viem `verifyMessage`) → HCS anchoring per signature. Modification → signature invalidation.
 - ✅ **Paper submission** — `POST /api/papers/[id]/submit` → `submissions` row → HCS anchor → status `submitted`
 - ✅ **Editor dashboard** — DB-backed submission pipeline (incoming → criteria published → reviewers assigned → under review → rebuttal → decision)
@@ -45,7 +45,7 @@ The codebase is a **functional full-stack application**. The researcher and edit
 - Reviewer search by reputation score in assignment UI
 - Hedera mirror node lookups
 
-**Current stack:** Next.js 15 (App Router, Turbopack) · React 19 · Tailwind CSS v4 · Thirdweb v5 · TypeScript strict mode · Neon PostgreSQL/Drizzle ORM · Hedera SDK (HCS + HTS) · Lit Protocol SDK (encrypt only) · AWS SDK (Cloudflare R2) · react-pdf v10 (pdfjs-dist v5)
+**Current stack:** Next.js 15 (App Router, Turbopack) · React 19 · Tailwind CSS v4 · Thirdweb v5 · TypeScript strict mode · Neon PostgreSQL/Drizzle ORM · Hedera SDK (HCS + HTS) · Lit Protocol SDK (encrypt only) · web3.storage (IPFS + Filecoin) · react-pdf v10 (pdfjs-dist v5)
 
 ## Common Commands
 
@@ -107,7 +107,7 @@ src/features/{domain}/mappers/{domain}.ts            # Pure mapping functions
 
 **The split:** server fetches, client interacts.
 
-**What stays client-side forever:** wallet signing (`account.signMessage`), file hashing (Web Crypto API), Lit encryption, R2 uploads, `useUser()` / `useActiveAccount()`.
+**What stays client-side forever:** wallet signing (`account.signMessage`), file hashing (Web Crypto API), Lit encryption, IPFS uploads, `useUser()` / `useActiveAccount()`.
 
 **What stays as API routes:** all mutations (`POST`, `PATCH`, `DELETE`).
 
@@ -310,7 +310,7 @@ src/
 │   │   ├── notifications/route.ts # GET: list + PATCH: mark read
 │   │   ├── verify/route.ts        # POST: hash verification (no auth)
 │   │   ├── cron/deadlines/route.ts # GET: deadline enforcement cron
-│   │   └── upload/presigned/      # R2 presigned URLs
+│   │   └── upload/ipfs/            # IPFS upload via web3.storage
 │   ├── (protected)/
 │   │   ├── researcher/            # Dashboard, paper_registration, contract_builder, authorship-contracts, create-submission, view-submissions, paper-version-control, public_explorer, rebuttal/[submissionId], review-response/[submissionId]
 │   │   ├── editor/                # Dashboard, incoming, under-review, accepted, management
@@ -337,7 +337,7 @@ src/
     │   ├── hedera/client.ts + hcs.ts + hts.ts  # HCS + HTS
     │   ├── lit/                   # Encrypt (decrypt not wired)
     │   ├── hashing.ts             # SHA-256 + canonical JSON
-    │   └── storage.ts             # R2
+    │   └── storage.ts             # IPFS (web3.storage)
     └── types/                     # Shared types
 ```
 
@@ -350,7 +350,7 @@ src/
 - **Dynamic routes:** `[id]` not `[paperId]`.
 - **No localStorage/sessionStorage.** React context + httpOnly cookies.
 - **API routes using Hedera SDK:** `export const runtime = 'nodejs'`.
-- **Graceful degradation:** Hedera, Lit, R2 all fall back if env vars missing.
+- **Graceful degradation:** Hedera, Lit, IPFS all fall back if env vars missing.
 - **Auth:** `getSession()` from `@/src/shared/lib/auth/auth`. Never trust wallet from request body.
 - **Validation:** `createInsertSchema(table)` from `drizzle-zod`. Don't duplicate DB schema.
 - **Canonical JSON:** Always `canonicalJson()` from `lib/hashing.ts` for anything hashed. Never raw `JSON.stringify()`.
@@ -411,8 +411,8 @@ HTS_REPUTATION_TOKEN_ID
 # Cron (optional — for deadline enforcement)
 CRON_SECRET
 
-# Cloudflare R2 (optional — graceful fallback)
-S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_ENDPOINT
+# IPFS / web3.storage (optional — graceful fallback)
+W3_PRINCIPAL_KEY, W3_DELEGATION_PROOF
 
 # Lit Protocol (optional — graceful fallback)
 NEXT_PUBLIC_LIT_NETWORK

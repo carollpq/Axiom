@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isStorageConfigured, getPresignedUploadUrl } from "@/src/shared/lib/storage";
+import { isStorageConfigured, uploadToIPFS } from "@/src/shared/lib/storage";
 import { requireSession } from "@/src/shared/lib/api-helpers";
 import type { UploadFolder } from "@/src/shared/lib/upload";
 
@@ -16,16 +16,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const body = await req.json();
-  const { hash, contentType, folder } = body as {
-    hash: string;
-    contentType: string;
-    folder: UploadFolder;
-  };
+  const formData = await req.formData();
+  const file = formData.get("file") as File | null;
+  const hash = formData.get("hash") as string | null;
+  const folder = formData.get("folder") as string | null;
 
-  if (!hash || !folder) {
+  if (!file || !hash || !folder) {
     return NextResponse.json(
-      { error: "hash and folder are required" },
+      { error: "file, hash, and folder are required" },
       { status: 400 },
     );
   }
@@ -35,16 +33,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await getPresignedUploadUrl(
-      hash,
-      contentType || "application/octet-stream",
-      folder,
-    );
-    return NextResponse.json(result);
+    const fileName = `${folder}/${hash}`;
+    const cid = await uploadToIPFS(file, fileName);
+    return NextResponse.json({ cid });
   } catch (err) {
-    console.error("[R2] Presigned URL generation failed:", err);
+    console.error("[IPFS] Upload failed:", err);
     return NextResponse.json(
-      { error: "Failed to generate upload URL" },
+      { error: "Failed to upload to IPFS" },
       { status: 500 },
     );
   }

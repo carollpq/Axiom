@@ -6,7 +6,7 @@ import type { AccessControlConditions } from "@lit-protocol/types";
 
 export interface LitEncryptResult {
   /**
-   * Lit-encrypted ciphertext as a base64 string — upload this to R2.
+   * Lit-encrypted ciphertext as a base64 string — upload this to IPFS.
    * When decrypting, pass this value back to litClient.decrypt().
    */
   ciphertext: string;
@@ -24,7 +24,7 @@ export interface LitEncryptResult {
  *
  * IMPORTANT: The SHA-256 of the original plaintext must be computed BEFORE
  * calling this. That hash goes on-chain and in the DB as `paperHash`.
- * The `ciphertext` returned here is a separate artifact stored in R2.
+ * The `ciphertext` returned here is a separate artifact stored on IPFS.
  */
 export async function encryptFileWithLit(
   file: File,

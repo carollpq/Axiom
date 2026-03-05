@@ -140,7 +140,7 @@ Journals join (free, no revenue impact)
 | **Frontend** | Next.js 15 (App Router, Turbopack) | Pages, wallet integration, client-side hashing, Lit encrypt/decrypt |
 | **API Layer** | Next.js Route Handlers (Vercel) | Business logic, off-chain CRUD, Hedera submission orchestration |
 | **Database** | PostgreSQL (Neon) / SQLite (dev) | Users, papers, contracts, reviews, reputation, submissions |
-| **File Storage** | Cloudflare R2 | Lit-encrypted paper PDFs, datasets, environment specs |
+| **File Storage** | IPFS via web3.storage (Filecoin archival) | Lit-encrypted paper PDFs, datasets, environment specs |
 | **Blockchain (Consensus)** | Hedera HCS | Immutable audit logs: papers, contracts, reviews, criteria, decisions |
 | **Blockchain (Tokens)** | Hedera HTS | Soulbound reputation NFTs for reviewers |
 | **Blockchain (Contracts)** | Hedera Smart Contracts (EVM) | Timeline enforcement, deadline penalties |
@@ -171,7 +171,7 @@ Journals join (free, no revenue impact)
          ▼
 ┌──────────────────────────────────────────────────────────────┐
 │                   OFF-CHAIN DATA LAYER                         │
-│  PostgreSQL/SQLite (structured) · Cloudflare R2 (encrypted)   │
+│  PostgreSQL/SQLite (structured) · IPFS/Filecoin (encrypted)   │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -195,7 +195,7 @@ Authors formally define contribution percentages, all co-authors cryptographical
 
 Authors register paper drafts by submitting a cryptographic hash. Each registration includes timestamp, author DID/wallet, and is immutably stored on HCS.
 
-**Current state:** Functional. Client-side SHA-256 hashing → Lit encryption → R2 presigned upload → DB storage → HCS anchoring. Study type selection (original / negative result / replication / replication failed / meta-analysis) implemented in registration wizard.
+**Current state:** Functional. Client-side SHA-256 hashing → Lit encryption → IPFS upload (web3.storage) → DB storage → HCS anchoring. Study type selection (original / negative result / replication / replication failed / meta-analysis) implemented in registration wizard.
 
 ### 4.3 Immutable Paper Versioning & Provenance (FR-3) ✅ Partially Implemented
 
@@ -464,7 +464,7 @@ During review, paper content must be accessible to specific people (authors, ass
 ### 7.3 Encryption Flow
 
 ```
-Author                          Lit Network                    R2 Storage
+Author                          Lit Network                    IPFS
     │                                │                              │
     │  1. Upload PDF                 │                              │
     │  2. hashFile(pdf) → paperHash  │                              │
@@ -475,7 +475,7 @@ Author                          Lit Network                    R2 Storage
     │  ◄── key shares ──────────────│                              │
     │                                │                              │
     │  5. Encrypt PDF client-side    │                              │
-    │  6. Upload encrypted blob ─────┼──────────────────────────────►│
+    │  6. POST to /api/upload/ipfs → pin encrypted blob ───────────►│
     │                                │                              │
     │  ✅ On-chain hash = hash of ORIGINAL (unencrypted) file      │
 ```
@@ -698,23 +698,25 @@ This is a stretch goal for the hackathon. The MVP uses off-chain deadline tracki
 
 ### 10.1 Strategy
 
-Cloudflare R2 (S3-compatible) with content-addressed naming. Non-public files are Lit-encrypted.
+IPFS via web3.storage (pinning + Filecoin archival) with content-addressed storage. Non-public files are Lit-encrypted. Files are referenced by CID (Content Identifier) in the database.
 
 ```
-Bucket structure:
-papers/{sha256hash}.enc           # Lit-encrypted (draft + under review)
-papers/{sha256hash}               # Plaintext (published, if journal allows)
-datasets/{sha256hash}.enc         # Lit-encrypted datasets
+IPFS naming convention:
+papers/{sha256hash}               # Lit-encrypted (draft + under review) or plaintext
+datasets/{sha256hash}             # Lit-encrypted datasets
 environments/{sha256hash}         # Environment specs
+
+Each file is pinned on IPFS and archived to Filecoin via web3.storage.
+Retrieval via w3s.link gateway: https://w3s.link/ipfs/{cid}
 ```
 
 ### 10.2 Upload Flow
 
 1. Client computes SHA-256 of original file
 2. Client encrypts via Lit SDK with access conditions
-3. Client requests presigned PUT URL from API
-4. Client uploads encrypted blob directly to R2 (bypasses Vercel 4.5MB limit)
-5. API stores: original hash, Lit metadata, R2 key
+3. Client POSTs encrypted file as FormData to `/api/upload/ipfs`
+4. API pins file to IPFS via web3.storage w3up client, returns CID
+5. API stores: original hash, Lit metadata, CID (as `fileStorageKey`)
 6. On-chain: hash of ORIGINAL file is recorded on HCS
 
 ---
@@ -781,7 +783,7 @@ CREATE TABLE paper_versions (
     code_commit_hash    TEXT,
     code_repo_url       TEXT,
     environment_hash    TEXT,
-    file_storage_key    TEXT,                         -- R2 key
+    file_storage_key    TEXT,                         -- IPFS CID
     hedera_tx_id        TEXT,
     hedera_timestamp    TIMESTAMPTZ,
     created_at          TIMESTAMPTZ DEFAULT now(),
@@ -1064,7 +1066,7 @@ app/api/
 ├── notifications/route.ts             # GET/PATCH: list + mark read ✅
 ├── verify/route.ts                    # POST: hash verification (no auth) ✅
 ├── upload/
-│   └── presigned/route.ts            # POST ✅
+│   └── ipfs/route.ts                 # POST ✅
 ├── activity/route.ts                  # GET ✅
 └── cron/
     └── deadlines/route.ts             # Check review deadlines ✅
@@ -1280,7 +1282,7 @@ Author                  Journal Editor           Reviewer              Hedera
 ### 15.2 Paper Registration (Current Implementation)
 
 ```
-Author                     Lit Network       API           Hedera      R2
+Author                     Lit Network       API           Hedera      IPFS
   │                            │               │              │          │
   │ Fill details, upload PDF   │               │              │          │
   │ hashFile(pdf) → paperHash  │               │              │          │
@@ -1290,9 +1292,9 @@ Author                     Lit Network       API           Hedera      R2
   │ ◄── encryption key ────────│               │              │          │
   │ Encrypt PDF client-side    │               │              │          │
   │                            │               │              │          │
-  │ GET presigned URL ────────────────────────►│              │          │
-  │ ◄── presigned PUT URL ─────────────────────│              │          │
-  │ Upload encrypted blob ─────────────────────┼──────────────┼─────────►│
+  │ POST /api/upload/ipfs (FormData) ─────────►│              │          │
+  │                            │               │── pin file ──┼─────────►│
+  │ ◄── { cid } ──────────────────────────────│              │          │
   │                            │               │              │          │
   │ POST /api/papers ─────────────────────────►│              │          │
   │  { paperHash, litMeta,     │               │── HCS msg ──►│          │
@@ -1316,7 +1318,7 @@ Vercel Project
 │   ├── HEDERA_NETWORK, HEDERA_OPERATOR_ID, HEDERA_OPERATOR_KEY
 │   ├── HCS_TOPIC_* (7 topics)
 │   ├── HTS_REPUTATION_TOKEN_ID
-│   ├── S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_ENDPOINT
+│   ├── W3_PRINCIPAL_KEY, W3_DELEGATION_PROOF
 │   ├── NEXT_PUBLIC_LIT_NETWORK
 │   └── UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
 ├── Cron Jobs:
@@ -1330,7 +1332,7 @@ Vercel Project
 
 | Threat | Mitigation |
 |---|---|
-| **Paper content leak during review** | Lit-encrypted on R2. Only authorized wallets can decrypt. |
+| **Paper content leak during review** | Lit-encrypted on IPFS. Only authorized wallets can decrypt. |
 | **Wallet impersonation** | Thirdweb signature verification. JWT derived from verified wallet. |
 | **Hash tampering** | Client-side hashing. On-chain hash is source of truth. |
 | **Contract modification after signing** | Signature invalidation + re-signing required. Previous versions on-chain. |

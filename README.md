@@ -48,7 +48,7 @@ Axiom moves the critical trust infrastructure of academic publishing onto Hedera
 | Wallets | Thirdweb v5 (MetaMask, HashPack) |
 | Access Control | Lit Protocol (threshold encryption) |
 | Database | Neon PostgreSQL (prod) / Drizzle ORM |
-| File Storage | Cloudflare R2 (S3-compatible) |
+| File Storage | IPFS via web3.storage (Filecoin archival) |
 | PDF Viewing | react-pdf v10 / pdfjs-dist v5 |
 | Deployment | Vercel |
 | Identity | ORCID verification |
@@ -78,11 +78,11 @@ Axiom moves the critical trust infrastructure of academic publishing onto Hedera
          ▼
 ┌──────────────────────────────────────────────────────────────┐
 │                   OFF-CHAIN DATA LAYER                         │
-│  Neon PostgreSQL (structured) · Cloudflare R2 (encrypted files)│
+│  Neon PostgreSQL (structured) · IPFS/Filecoin (encrypted files)│
 └──────────────────────────────────────────────────────────────┘
 ```
 
-**Core principle:** No paper content or PII is stored on-chain — only cryptographic hashes and metadata. Content lives off-chain (Lit-encrypted on R2); Hedera provides the immutable proof layer.
+**Core principle:** No paper content or PII is stored on-chain — only cryptographic hashes and metadata. Content lives off-chain (Lit-encrypted on IPFS); Hedera provides the immutable proof layer.
 
 For the full architecture document, see [`docs/architecture.md`](docs/architecture.md).
 
@@ -92,7 +92,7 @@ For the full architecture document, see [`docs/architecture.md`](docs/architectu
 
 ### Researcher
 - **Dashboard** — Stats overview (new submissions, under review, pending, accepted, rejected) + submission carousel + papers table + pending actions list + quick action buttons
-- **Paper registration** — 4-step wizard: paper details (title, abstract, file, visibility, study type, keywords) → provenance (dataset hash, code repo, commit, env spec) → contract linking → register/submit confirmation. Client-side SHA-256 hash → R2 upload → Lit encryption → HCS anchor.
+- **Paper registration** — 4-step wizard: paper details (title, abstract, file, visibility, study type, keywords) → provenance (dataset hash, code repo, commit, env spec) → contract linking → register/submit confirmation. Client-side SHA-256 hash → IPFS upload → Lit encryption → HCS anchor.
 - **Authorship contracts** — Three-tab interface: build new contracts (define contribution splits, invite collaborators), sign pending contracts, view contract status. Backend validates all signatures before submission.
 - **Paper version control** — View version history per paper, upload new versions, download existing versions
 - **Create submission** — Select paper version, journal, and authorship contract to submit for review
@@ -163,11 +163,9 @@ HTS_REPUTATION_TOKEN_ID=0.0.xxxxx
 # Cron (optional)
 CRON_SECRET=your-cron-secret
 
-# Cloudflare R2 (optional — graceful fallback)
-S3_BUCKET=axiom-files
-S3_ACCESS_KEY_ID=your_access_key
-S3_SECRET_ACCESS_KEY=your_secret_key
-S3_ENDPOINT=https://your-account.r2.cloudflarestorage.com
+# IPFS / web3.storage (optional — graceful fallback)
+W3_PRINCIPAL_KEY=your_ed25519_principal_key
+W3_DELEGATION_PROOF=base64_encoded_delegation_proof
 
 # Lit Protocol (optional — graceful fallback)
 NEXT_PUBLIC_LIT_NETWORK=cayenne
@@ -251,7 +249,7 @@ src/
         ├── hedera/                 # HCS + HTS integration
         ├── lit/                    # Lit Protocol encryption
         ├── hashing.ts              # SHA-256 + canonical JSON
-        └── storage.ts              # R2 presigned URLs
+        └── storage.ts              # IPFS upload/fetch (web3.storage)
 ```
 
 ---

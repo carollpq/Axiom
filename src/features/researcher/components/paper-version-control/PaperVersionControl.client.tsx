@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import { ChevronRight, ChevronDown, Download, Upload } from "lucide-react";
 import { hashFile } from "@/src/shared/lib/hashing";
-import { uploadToR2 } from "@/src/shared/lib/upload";
+import { uploadToIPFS } from "@/src/shared/lib/upload";
 import { formatIsoDate } from "@/src/shared/lib/format";
 
 interface PaperVersion {
@@ -52,7 +52,7 @@ export function PaperVersionControlClient({ papers }: Props) {
 
       try {
         const hash = await hashFile(file);
-        const fileStorageKey = await uploadToR2(file, hash, "papers");
+        const fileStorageKey = await uploadToIPFS(file, hash, "papers");
 
         const res = await fetch(`/api/papers/${paperId}/versions`, {
           method: "POST",

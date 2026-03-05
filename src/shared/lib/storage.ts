@@ -1,72 +1,57 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import type { UploadFolder } from "@/src/shared/lib/upload";
+import * as Client from "@web3-storage/w3up-client";
+import { StoreMemory } from "@web3-storage/w3up-client/stores/memory";
+import * as Signer from "@ucanto/principal/ed25519";
+import * as Delegation from "@ucanto/core/delegation";
 
 export function isStorageConfigured(): boolean {
   return !!(
-    process.env.S3_BUCKET &&
-    process.env.S3_ACCESS_KEY_ID &&
-    process.env.S3_SECRET_ACCESS_KEY &&
-    process.env.S3_ENDPOINT
+    process.env.W3_PRINCIPAL_KEY && process.env.W3_DELEGATION_PROOF
   );
 }
 
-let _client: S3Client | null = null;
+let _clientPromise: Promise<Client.Client> | null = null;
 
-function getS3Client(): S3Client {
-  if (!_client) {
-    _client = new S3Client({
-      region: "auto",
-      endpoint: process.env.S3_ENDPOINT!,
-      credentials: {
-        accessKeyId: process.env.S3_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
-      },
+async function initW3Client(): Promise<Client.Client> {
+  const principal = Signer.parse(process.env.W3_PRINCIPAL_KEY!);
+  const client = await Client.create({ principal, store: new StoreMemory() });
+
+  const proofBytes = Buffer.from(process.env.W3_DELEGATION_PROOF!, "base64");
+  const proof = await Delegation.extract(proofBytes);
+  if (!proof.ok) throw new Error("Failed to parse delegation proof");
+
+  await client.addProof(proof.ok);
+  return client;
+}
+
+function getW3Client(): Promise<Client.Client> {
+  if (!_clientPromise) {
+    _clientPromise = initW3Client().catch((err) => {
+      _clientPromise = null;
+      throw err;
     });
   }
-  return _client;
+  return _clientPromise;
 }
 
 /**
- * Generate a presigned PUT URL for direct-to-R2 upload.
- * Object key = `{folder}/{hash}` (content-addressed storage).
- * URL expires in 15 minutes per architecture spec.
+ * Upload a file to IPFS via web3.storage and return the CID string.
  */
-export async function getPresignedUploadUrl(
-  hash: string,
-  contentType: string,
-  folder: UploadFolder,
-): Promise<{ uploadUrl: string; objectKey: string }> {
-  const objectKey = `${folder}/${hash}`;
-  const command = new PutObjectCommand({
-    Bucket: process.env.S3_BUCKET!,
-    Key: objectKey,
-    ContentType: contentType,
-  });
-
-  const uploadUrl = await getSignedUrl(getS3Client(), command, {
-    expiresIn: 15 * 60, // 15 minutes
-  });
-
-  return { uploadUrl, objectKey };
+export async function uploadToIPFS(
+  file: Blob & { name?: string },
+  fileName: string,
+): Promise<string> {
+  const client = await getW3Client();
+  const uploadable = Object.assign(file, { name: fileName });
+  const cid = await client.uploadFile(uploadable);
+  return cid.toString();
 }
 
 /**
- * Fetch an object from R2 and return its full contents as a Buffer.
+ * Fetch a file from IPFS via the w3s.link gateway.
  */
-export async function getFileFromR2(objectKey: string): Promise<Buffer> {
-  const command = new GetObjectCommand({
-    Bucket: process.env.S3_BUCKET!,
-    Key: objectKey,
-  });
-
-  const response = await getS3Client().send(command);
-  if (!response.Body) throw new Error("Empty response body from R2");
-
-  // ReadableStream → Buffer (Node.js environment)
-  const chunks: Uint8Array[] = [];
-  for await (const chunk of response.Body as AsyncIterable<Uint8Array>) {
-    chunks.push(chunk);
-  }
-  return Buffer.concat(chunks);
+export async function getFileFromIPFS(cid: string): Promise<Buffer> {
+  const res = await fetch(`https://w3s.link/ipfs/${cid}`);
+  if (!res.ok) throw new Error(`IPFS fetch failed: ${res.status}`);
+  const arrayBuffer = await res.arrayBuffer();
+  return Buffer.from(arrayBuffer);
 }

@@ -1,35 +1,29 @@
-import { fetchApi } from "@/src/shared/lib/api";
-
 export type UploadFolder = "papers" | "datasets" | "environments";
 
 /**
- * Upload a file to R2 via presigned URL.
- * Throws on failure — callers must handle errors.
+ * Upload a file to IPFS via the /api/upload/ipfs route.
+ * Returns the CID string.
  */
-export async function uploadToR2(
+export async function uploadToIPFS(
   file: File,
   hash: string,
   folder: UploadFolder,
 ): Promise<string> {
-  const contentType = file.type || "application/octet-stream";
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("hash", hash);
+  formData.append("folder", folder);
 
-  const { uploadUrl, objectKey } = await fetchApi<{
-    uploadUrl: string;
-    objectKey: string;
-  }>("/api/upload/presigned", {
+  const res = await fetch("/api/upload/ipfs", {
     method: "POST",
-    body: JSON.stringify({ hash, contentType, folder }),
+    body: formData,
   });
 
-  const r2Response = await fetch(uploadUrl, {
-    method: "PUT",
-    body: file,
-    headers: { "Content-Type": contentType },
-  });
-
-  if (!r2Response.ok) {
-    throw new Error(`R2 PUT failed: ${r2Response.status}`);
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({ error: "Upload failed" }));
+    throw new Error(data.error || `IPFS upload failed: ${res.status}`);
   }
 
-  return objectKey;
+  const { cid } = await res.json();
+  return cid;
 }

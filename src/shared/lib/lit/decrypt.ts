@@ -68,7 +68,7 @@ async function getSessionSigs(
  * Decrypts a Lit-encrypted ciphertext.
  * The user's wallet must prove it meets the access conditions.
  *
- * @param ciphertext            - The base64 string retrieved from R2
+ * @param ciphertext            - The base64 string retrieved from IPFS
  * @param dataToEncryptHash     - Hash stored in DB at encryption time
  * @param accessControlConditions - Conditions stored in DB at encryption time
  * @param walletAddress         - Connected wallet address

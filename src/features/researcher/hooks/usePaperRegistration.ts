@@ -9,7 +9,7 @@ import { hashFile } from "@/src/shared/lib/hashing";
 import { isLitConfigured, getLitClient } from "@/src/shared/lib/lit/client";
 import { buildWalletListConditions } from "@/src/shared/lib/lit/access-control";
 import { encryptFileWithLit } from "@/src/shared/lib/lit/encrypt";
-import { uploadToR2 } from "@/src/shared/lib/upload";
+import { uploadToIPFS } from "@/src/shared/lib/upload";
 import { mapDbContractToSigned } from "@/src/features/researcher/mappers/contract";
 import type { ApiContract, ApiPaperVersion } from "@/src/shared/types/api";
 import {
@@ -21,7 +21,7 @@ import { STEP_LABELS } from "@/src/features/researcher/config/paper-registration
 
 interface EncryptResult {
   fileToUpload: File;
-  r2Hash: string;
+  uploadHash: string;
   litDataToEncryptHash: string | null;
   litAccessConditionsJson: string | null;
 }
@@ -32,7 +32,7 @@ async function encryptFileIfConfigured(
   walletAddress: string | undefined,
 ): Promise<EncryptResult> {
   if (!isLitConfigured() || !walletAddress) {
-    return { fileToUpload: file, r2Hash: fileHash, litDataToEncryptHash: null, litAccessConditionsJson: null };
+    return { fileToUpload: file, uploadHash: fileHash, litDataToEncryptHash: null, litAccessConditionsJson: null };
   }
 
   try {
@@ -44,16 +44,16 @@ async function encryptFileIfConfigured(
       file.name + ".enc",
       { type: "application/octet-stream" },
     );
-    const r2Hash = await hashFile(encryptedFile);
+    const uploadHash = await hashFile(encryptedFile);
     return {
       fileToUpload: encryptedFile,
-      r2Hash,
+      uploadHash,
       litDataToEncryptHash: encrypted.dataToEncryptHash,
       litAccessConditionsJson: encrypted.accessConditionsJson,
     };
   } catch (litErr) {
     console.warn("[Lit] Encryption skipped:", litErr);
-    return { fileToUpload: file, r2Hash: fileHash, litDataToEncryptHash: null, litAccessConditionsJson: null };
+    return { fileToUpload: file, uploadHash: fileHash, litDataToEncryptHash: null, litAccessConditionsJson: null };
   }
 }
 
@@ -65,13 +65,13 @@ interface UploadFilesInput {
 
 async function uploadAllFiles(input: UploadFilesInput): Promise<string> {
   const uploads: Promise<string>[] = [
-    uploadToR2(input.paper.file, input.paper.hash, "papers"),
+    uploadToIPFS(input.paper.file, input.paper.hash, "papers"),
   ];
   if (input.dataset) {
-    uploads.push(uploadToR2(input.dataset.file, input.dataset.hash, "datasets"));
+    uploads.push(uploadToIPFS(input.dataset.file, input.dataset.hash, "datasets"));
   }
   if (input.env) {
-    uploads.push(uploadToR2(input.env.file, input.env.hash, "environments"));
+    uploads.push(uploadToIPFS(input.env.file, input.env.hash, "environments"));
   }
 
   const [fileStorageKey] = await Promise.all(uploads);
@@ -160,13 +160,13 @@ export function usePaperRegistration(initialContracts: ApiContract[], initialJou
         throw new Error("No file uploaded");
       }
 
-      const { fileToUpload, r2Hash, litDataToEncryptHash, litAccessConditionsJson } =
+      const { fileToUpload, uploadHash, litDataToEncryptHash, litAccessConditionsJson } =
         await encryptFileIfConfigured(uploadedFile, state.fileHash, account?.address);
 
       const datasetFile = uploadedDatasetFileRef.current;
       const envFile = uploadedEnvFileRef.current;
       const fileStorageKey = await uploadAllFiles({
-        paper: { file: fileToUpload, hash: r2Hash },
+        paper: { file: fileToUpload, hash: uploadHash },
         ...(datasetFile && state.datasetHash ? { dataset: { file: datasetFile, hash: state.datasetHash } } : {}),
         ...(envFile && state.envHash ? { env: { file: envFile, hash: state.envHash } } : {}),
       });
