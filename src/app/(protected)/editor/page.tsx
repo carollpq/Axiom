@@ -1,29 +1,24 @@
-import { DashboardOverview } from "@/src/features/editor/components/dashboard-overview.client";
+import { Suspense } from "react";
 import { getSession } from "@/src/shared/lib/auth/auth";
 import { getUserByWallet } from "@/src/features/users/queries";
 import { getJournalByEditorWallet, listJournalSubmissions } from "@/src/features/editor/queries";
-import { mockDashboardStats, mockEditorProfile } from "@/src/features/editor/mock-data";
 import { mapDbToEditorProfile } from "@/src/features/editor/mappers/journal";
 import { getInitials } from "@/src/shared/lib/format";
-import type { StatCardProps } from "@/src/shared/types/shared";
+import { DashboardHeader } from "@/src/shared/components";
+import { StatsSection } from "@/src/features/editor/components/dashboard/stats.section";
+import { CarouselSection } from "@/src/features/editor/components/dashboard/carousel.section";
+import { QuickActions } from "@/src/features/editor/components/dashboard-overview.client";
+import {
+  StatsSkeleton,
+  CarouselSkeleton,
+} from "@/src/features/editor/components/skeletons";
 import type { EditorProfile } from "@/src/features/editor/types";
-
-function mockStatsArray(): StatCardProps[] {
-  const s = mockDashboardStats;
-  return [
-    { label: "New Submissions", value: s.newSubmissions },
-    { label: "Awaiting Reviewer Assignment", value: s.awaitingAssignment },
-    { label: "Under Review", value: s.underReview },
-    { label: "Accepted Papers", value: s.acceptedPapers },
-    { label: "Rejected Papers", value: s.rejectedPapers, alert: true },
-  ];
-}
 
 export default async function JournalDashboard() {
   const sessionWallet = await getSession();
 
-  let stats: StatCardProps[];
-  let editorProfile: EditorProfile;
+  let editorProfile: EditorProfile | null = null;
+  let subsPromise: ReturnType<typeof listJournalSubmissions> | null = null;
 
   if (sessionWallet) {
     const [user, journal] = await Promise.all([
@@ -34,53 +29,57 @@ export default async function JournalDashboard() {
     editorProfile = mapDbToEditorProfile(user, journal, getInitials);
 
     if (journal) {
-      const subs = await listJournalSubmissions(journal.id);
-
-      // Single-pass metric computation
-      let newSubmissions = 0, awaitingAssignment = 0, underReview = 0, accepted = 0, rejected = 0;
-      for (const s of subs) {
-        const countAccepted = () =>
-          (s.reviewAssignments ?? []).filter((a: { status: string }) => a.status === "accepted" || a.status === "submitted").length;
-
-        switch (s.status) {
-          case "submitted":
-          case "viewed_by_editor":
-            newSubmissions++;
-            break;
-          case "criteria_published":
-          case "reviewers_assigned":
-            if (s.status === "reviewers_assigned" && countAccepted() >= 2) underReview++;
-            else awaitingAssignment++;
-            break;
-          case "under_review":
-          case "reviews_completed":
-          case "rebuttal_open":
-            underReview++;
-            break;
-          case "accepted":
-          case "published":
-            accepted++;
-            break;
-          case "rejected":
-            rejected++;
-            break;
-        }
-      }
-
-      stats = [
-        { label: "New Submissions", value: newSubmissions },
-        { label: "Awaiting Reviewer Assignment", value: awaitingAssignment },
-        { label: "Under Review", value: underReview },
-        { label: "Accepted Papers", value: accepted },
-        { label: "Rejected Papers", value: rejected, alert: true },
-      ];
-    } else {
-      stats = mockStatsArray();
+      subsPromise = listJournalSubmissions(journal.id);
     }
-  } else {
-    editorProfile = mockEditorProfile;
-    stats = mockStatsArray();
   }
 
-  return <DashboardOverview stats={stats} editorProfile={editorProfile} />;
+  return (
+    <div className="max-w-[1200px] mx-auto px-10 py-8">
+      {/* Header row with compact profile */}
+      <div className="flex items-center gap-4 mb-6">
+        <div className="flex-1">
+          <DashboardHeader role="editor" />
+        </div>
+        {editorProfile && (
+          <div className="flex items-center gap-3 shrink-0">
+            <div
+              className="rounded-full flex items-center justify-center font-serif text-sm"
+              style={{
+                width: 40,
+                height: 40,
+                background: "linear-gradient(135deg, rgba(120,110,95,0.3), rgba(80,72,60,0.3))",
+                border: "2px solid rgba(120,110,95,0.3)",
+                color: "#c9b89e",
+              }}
+            >
+              {editorProfile.initials}
+            </div>
+            <div>
+              <div className="font-serif text-[13px] text-[#e8e0d4]">{editorProfile.name}</div>
+              <div className="text-[11px] text-[#6a6050]">{editorProfile.journalName}</div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {subsPromise ? (
+        <>
+          <Suspense fallback={<StatsSkeleton />}>
+            <StatsSection subsPromise={subsPromise} />
+          </Suspense>
+
+          <Suspense fallback={<CarouselSkeleton />}>
+            <CarouselSection subsPromise={subsPromise} />
+          </Suspense>
+        </>
+      ) : (
+        <>
+          <StatsSkeleton />
+          <CarouselSkeleton />
+        </>
+      )}
+
+      <QuickActions />
+    </div>
+  );
 }

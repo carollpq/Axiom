@@ -7,6 +7,7 @@ import { ReviewCommentsPanel } from "./sidebar/ReviewCommentsPanel";
 import { AddToIssuePanel } from "./sidebar/AddToIssuePanel";
 import { useAcceptedPapers } from "@/src/features/editor/hooks/useAcceptedPapers";
 import { useDecryptPaper } from "@/src/shared/hooks/useDecryptPaper";
+import { SelectionPlaceholder } from "@/src/shared/components/SelectionPlaceholder";
 import type {
   PaperCardData,
   ReviewerWithStatus,
@@ -40,12 +41,14 @@ export function AcceptedPapersClient({
 
   return (
     <ThreeColumnLayout
+      title="Accepted Papers"
+      countLabel={`${papers.length} ${papers.length === 1 ? "paper" : "papers"}`}
+      sidebarTitle="Details"
       list={
         <PaperList
           papers={papers}
           selectedId={selectedId}
           onSelect={setSelectedId}
-          sectionTitle="Accepted Papers"
         />
       }
       viewer={<PdfViewer fileUrl={decryptedUrl ?? selected?.fileUrl} title={selected?.title} />}
@@ -60,9 +63,7 @@ export function AcceptedPapersClient({
             />
           </>
         ) : (
-          <div className="p-6 text-center text-[#6a6050] font-serif text-sm">
-            Select a paper to view reviews
-          </div>
+          <SelectionPlaceholder message="Select a paper to view details" />
         )
       }
     />

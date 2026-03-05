@@ -6,7 +6,7 @@ const ROLE_CONFIG: Record<Role, { title: string; subtitle: string }> = {
     subtitle: "Manage your research, contracts, and submissions",
   },
   editor: {
-    title: "Journal Dashboard",
+    title: "Editor Dashboard",
     subtitle: "Manage submissions, review criteria, and publication decisions",
   },
   reviewer: {

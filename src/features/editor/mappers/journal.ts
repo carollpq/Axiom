@@ -2,7 +2,7 @@ import type { JournalSubmission, SubmissionStage, PoolReviewer, PaperCardData, R
 import type { DbJournalSubmission, DbReviewer, DbReputationScore } from "../queries";
 import { formatIsoDate, truncateHash, displayNameOrWallet, toFivePointScale } from "@/src/shared/lib/format";
 
-function deriveStage(
+export function deriveStage(
   status: string,
   criteriaHash: string | null,
   reviewerWallets: string[],

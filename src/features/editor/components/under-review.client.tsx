@@ -15,6 +15,7 @@ import type {
   ReviewerWithStatus,
   RebuttalInfo,
 } from "@/src/features/editor/types";
+import { SelectionPlaceholder } from "@/src/shared/components/SelectionPlaceholder";
 import type { AuthorResponseStatusDb } from "@/src/shared/lib/db/schema";
 
 interface UnderReviewProps {
@@ -69,12 +70,14 @@ export function UnderReviewClient({
 
   return (
     <ThreeColumnLayout
+      title="Under Review"
+      countLabel={`${papers.length} ${papers.length === 1 ? "paper" : "papers"}`}
+      sidebarTitle="Review Status"
       list={
         <PaperList
           papers={papers}
           selectedId={selectedId}
           onSelect={setSelectedId}
-          sectionTitle="Under Review"
         />
       }
       viewer={<PdfViewer fileUrl={decryptedUrl ?? selected?.fileUrl} title={selected?.title} />}
@@ -118,9 +121,7 @@ export function UnderReviewClient({
             />
           </>
         ) : (
-          <div className="p-6 text-center text-[#6a6050] font-serif text-sm">
-            Select a paper to view review status
-          </div>
+          <SelectionPlaceholder message="Select a paper to view review status" />
         )
       }
     />

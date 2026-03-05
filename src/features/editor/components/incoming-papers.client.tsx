@@ -8,6 +8,7 @@ import { DeskRejectPanel } from "./sidebar/DeskRejectPanel";
 import { CriteriaBuilder } from "./CriteriaBuilder";
 import { useIncomingPapers } from "@/src/features/editor/hooks/useIncomingPapers";
 import { useDecryptPaper } from "@/src/shared/hooks/useDecryptPaper";
+import { SelectionPlaceholder } from "@/src/shared/components/SelectionPlaceholder";
 import type { PaperCardData, PoolReviewer } from "@/src/features/editor/types";
 
 interface IncomingPapersProps {
@@ -39,12 +40,14 @@ export function IncomingPapersClient({ papers, reviewerPool }: IncomingPapersPro
 
   return (
     <ThreeColumnLayout
+      title="Incoming Papers"
+      countLabel={`${papers.length} ${papers.length === 1 ? "paper" : "papers"}`}
+      sidebarTitle="Actions"
       list={
         <PaperList
           papers={papers}
           selectedId={selectedId}
           onSelect={setSelectedId}
-          sectionTitle="Incoming Papers"
         />
       }
       viewer={
@@ -72,9 +75,7 @@ export function IncomingPapersClient({ papers, reviewerPool }: IncomingPapersPro
             />
           </>
         ) : (
-          <div className="p-6 text-center text-[#6a6050] font-serif text-sm">
-            Select a paper to view actions
-          </div>
+          <SelectionPlaceholder message="Select a paper to view actions" />
         )
       }
     />
