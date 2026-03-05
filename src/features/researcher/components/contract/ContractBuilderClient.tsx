@@ -19,6 +19,7 @@ export function ContractBuilderClient({ initialDrafts }: ContractBuilderClientPr
     showInviteModal, inviteLink, selectedContractId, error,
     totalPct, isValid, signedCount, allSigned, hasSigned, draft, drafts, currentUserWallet,
     setSelectedDraft, setNewTitle, setShowAddRow,
+    generating,
     updateContributor, removeContributor, addContributorFromSearch, generateContract, handleSign, handleInvite, closeInviteModal,
   } = useContractBuilder(initialDrafts);
 
@@ -34,6 +35,7 @@ export function ContractBuilderClient({ initialDrafts }: ContractBuilderClientPr
           newTitle={newTitle}
           drafts={drafts}
           draft={draft}
+          disabled={generating}
           onSelectDraft={setSelectedDraft}
           onNewTitle={setNewTitle}
         />
@@ -43,8 +45,10 @@ export function ContractBuilderClient({ initialDrafts }: ContractBuilderClientPr
           totalPct={totalPct}
           isValid={isValid}
           hasSigned={hasSigned}
+          signedCount={signedCount}
           currentUserWallet={currentUserWallet}
           showAddRow={showAddRow}
+          disabled={generating}
           onAddFromSearch={addContributorFromSearch}
           onUpdate={updateContributor}
           onRemove={removeContributor}

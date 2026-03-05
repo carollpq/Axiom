@@ -8,10 +8,9 @@ import type { UserSearchResult } from "@/src/shared/types/api";
 interface AuthorSearchProps {
   onSelect: (result: UserSearchResult) => void;
   onCancel: () => void;
-  onInvite: () => void;
 }
 
-export function AuthorSearch({ onSelect, onCancel, onInvite }: AuthorSearchProps) {
+export function AuthorSearch({ onSelect, onCancel }: AuthorSearchProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<UserSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -110,11 +109,6 @@ export function AuthorSearch({ onSelect, onCancel, onInvite }: AuthorSearchProps
         className="rounded py-2 px-3 text-[#6a6050] text-xs cursor-pointer font-serif"
         style={{ background: "none", border: "1px solid rgba(120,110,95,0.15)" }}
       >Cancel</button>
-      <button
-        onClick={onInvite}
-        className="rounded py-2 px-3 text-[#7a9fc7] text-[11px] cursor-pointer font-serif"
-        style={{ background: "none", border: "1px solid rgba(130,160,200,0.25)" }}
-      >Invite Off-Platform</button>
     </div>
   );
 }

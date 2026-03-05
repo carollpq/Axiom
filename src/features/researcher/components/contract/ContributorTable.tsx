@@ -2,6 +2,7 @@
 
 import type { Contributor } from "@/src/features/researcher/types/contract";
 import { PercentageBar } from "./PercentageBar";
+import { SignatureProgress } from "./SignatureProgress";
 import { ContributorRow } from "./ContributorRow";
 import { AuthorSearch } from "./AuthorSearch";
 import type { UserSearchResult } from "@/src/shared/types/api";
@@ -11,8 +12,10 @@ interface ContributorTableProps {
   totalPct: number;
   isValid: boolean;
   hasSigned: boolean;
+  signedCount: number;
   currentUserWallet: string;
   showAddRow: boolean;
+  disabled?: boolean;
   onAddFromSearch: (result: UserSearchResult) => void | Promise<void>;
   onUpdate: (id: number, field: string, value: string | number) => void;
   onRemove: (id: number) => void | Promise<void>;
@@ -22,8 +25,8 @@ interface ContributorTableProps {
 }
 
 export function ContributorTable({
-  contributors, totalPct, isValid, hasSigned, currentUserWallet,
-  showAddRow,
+  contributors, totalPct, isValid, hasSigned, signedCount, currentUserWallet,
+  showAddRow, disabled,
   onAddFromSearch, onUpdate, onRemove, onSign, onInvite, onSetShowAddRow,
 }: ContributorTableProps) {
   return (
@@ -31,7 +34,10 @@ export function ContributorTable({
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px]">Contributors</div>
-        <PercentageBar totalPct={totalPct} isValid={isValid} />
+        <div className="flex items-center gap-4">
+          <SignatureProgress signed={signedCount} total={contributors.length} />
+          <PercentageBar totalPct={totalPct} isValid={isValid} />
+        </div>
       </div>
 
       {/* Validation warning */}
@@ -73,6 +79,7 @@ export function ContributorTable({
           isCurrentUser={c.wallet === currentUserWallet}
           isLast={i === contributors.length - 1}
           showAddRow={showAddRow}
+          disabled={disabled}
           onUpdate={onUpdate}
           onRemove={onRemove}
           onSign={onSign}
@@ -85,12 +92,12 @@ export function ContributorTable({
         <AuthorSearch
           onSelect={onAddFromSearch}
           onCancel={() => onSetShowAddRow(false)}
-          onInvite={() => onInvite()}
         />
       ) : (
         <button
           onClick={() => onSetShowAddRow(true)}
-          className="w-full py-2.5 mt-2.5 rounded text-[#6a6050] font-serif text-xs cursor-pointer transition-all duration-300"
+          disabled={disabled}
+          className="w-full py-2.5 mt-2.5 rounded text-[#6a6050] font-serif text-xs cursor-pointer transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           style={{ background: "transparent", border: "1px dashed rgba(120,110,95,0.25)" }}
         >+ Add Contributor</button>
       )}

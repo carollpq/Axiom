@@ -1,6 +1,6 @@
 import { db } from "@/src/shared/lib/db";
 import { users } from "@/src/shared/lib/db/schema";
-import { eq, or, like } from "drizzle-orm";
+import { eq, or, ilike } from "drizzle-orm";
 import type { UserSearchResult } from "@/src/shared/types/api";
 
 export async function getUserByWallet(walletAddress: string) {
@@ -53,9 +53,9 @@ export async function searchUsers(query: string): Promise<UserSearchResult[]> {
     .from(users)
     .where(
       or(
-        like(users.displayName, pattern),
-        like(users.orcidId, pattern),
-        like(users.walletAddress, pattern),
+        ilike(users.displayName, pattern),
+        ilike(users.orcidId, pattern),
+        ilike(users.walletAddress, pattern),
       ),
     )
     .limit(10);

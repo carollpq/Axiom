@@ -21,6 +21,7 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
   const { user, account } = useCurrentUser();
   const [state, dispatch] = useReducer(contractBuilderReducer, initialState);
   const [error, setError] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
 
   // When a draft is selected, load its pre-mapped contributors
   useEffect(() => {
@@ -265,14 +266,18 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
     updateContributor,
     removeContributor,
     addContributorFromSearch,
+    generating,
     generateContract: async () => {
       try {
         setError(null);
+        setGenerating(true);
         const id = await handleCreateContract();
         if (!id) setError("Please select a paper or enter a title first.");
       } catch (err) {
         console.error("Generate contract failed:", err);
         setError("Failed to generate contract.");
+      } finally {
+        setGenerating(false);
       }
     },
     handleSign,
