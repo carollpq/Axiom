@@ -5,7 +5,6 @@ export interface ContractBuilderState {
   newTitle: string;
   contributors: Contributor[];
   showAddRow: boolean;
-  addWallet: string;
   showPreview: boolean;
   showInviteModal: boolean;
   inviteLink: string;
@@ -17,7 +16,6 @@ export const initialState: ContractBuilderState = {
   newTitle: "",
   contributors: [],
   showAddRow: false,
-  addWallet: "",
   showPreview: false,
   showInviteModal: false,
   inviteLink: "",
@@ -32,13 +30,10 @@ export type ContractBuilderAction =
   | { type: "UPDATE_CONTRIBUTOR"; id: number; field: string; value: string | number }
   | { type: "REMOVE_CONTRIBUTOR"; id: number }
   | { type: "ADD_CONTRIBUTOR"; contributor: Contributor }
-  | { type: "CONTRIBUTOR_ADDED_CLEAR" }
   | { type: "SET_SHOW_ADD_ROW"; showAddRow: boolean }
-  | { type: "SET_ADD_WALLET"; addWallet: string }
   | { type: "SET_SHOW_PREVIEW"; showPreview: boolean }
   | { type: "SHOW_INVITE_MODAL"; inviteLink: string }
   | { type: "CLOSE_INVITE_MODAL" }
-  | { type: "SET_SELECTED_CONTRACT_ID"; selectedContractId: string | null }
   | { type: "SIGN_DEMO"; id: number; txHash: string; signedAt: string }
   | { type: "CONTRACT_CREATED"; selectedContractId: string; contributorDbIds: (string | undefined)[] };
 
@@ -95,18 +90,11 @@ export function contractBuilderReducer(
       return {
         ...state,
         contributors: [...state.contributors, action.contributor],
-        addWallet: "",
         showAddRow: false,
       };
 
-    case "CONTRIBUTOR_ADDED_CLEAR":
-      return { ...state, addWallet: "", showAddRow: false };
-
     case "SET_SHOW_ADD_ROW":
       return { ...state, showAddRow: action.showAddRow };
-
-    case "SET_ADD_WALLET":
-      return { ...state, addWallet: action.addWallet };
 
     case "SET_SHOW_PREVIEW":
       return { ...state, showPreview: action.showPreview };
@@ -116,9 +104,6 @@ export function contractBuilderReducer(
 
     case "CLOSE_INVITE_MODAL":
       return { ...state, showInviteModal: false };
-
-    case "SET_SELECTED_CONTRACT_ID":
-      return { ...state, selectedContractId: action.selectedContractId };
 
     case "SIGN_DEMO":
       return {

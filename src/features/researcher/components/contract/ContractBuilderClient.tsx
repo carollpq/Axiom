@@ -15,11 +15,11 @@ interface ContractBuilderClientProps {
 
 export function ContractBuilderClient({ initialDrafts }: ContractBuilderClientProps) {
   const {
-    selectedDraft, newTitle, contributors, showAddRow, addWallet,
+    selectedDraft, newTitle, contributors, showAddRow,
     showInviteModal, inviteLink, selectedContractId, error,
     totalPct, isValid, signedCount, allSigned, hasSigned, draft, drafts, currentUserWallet,
-    setSelectedDraft, setNewTitle, setShowAddRow, setAddWallet,
-    updateContributor, removeContributor, addContributor, handleSign, handleInvite, closeInviteModal,
+    setSelectedDraft, setNewTitle, setShowAddRow,
+    updateContributor, removeContributor, addContributorFromSearch, generateContract, handleSign, handleInvite, closeInviteModal,
   } = useContractBuilder(initialDrafts);
 
   return (
@@ -45,14 +45,12 @@ export function ContractBuilderClient({ initialDrafts }: ContractBuilderClientPr
           hasSigned={hasSigned}
           currentUserWallet={currentUserWallet}
           showAddRow={showAddRow}
-          addWallet={addWallet}
+          onAddFromSearch={addContributorFromSearch}
           onUpdate={updateContributor}
           onRemove={removeContributor}
           onSign={handleSign}
-          onAdd={addContributor}
           onInvite={handleInvite}
           onSetShowAddRow={setShowAddRow}
-          onSetAddWallet={setAddWallet}
         />
 
         <ContractPreview
@@ -64,6 +62,7 @@ export function ContractBuilderClient({ initialDrafts }: ContractBuilderClientPr
           signedCount={signedCount}
           paperId={draft?.dbId}
           contractId={selectedContractId}
+          onGenerateContract={generateContract}
         />
 
         <ModificationWarning visible={hasSigned} />

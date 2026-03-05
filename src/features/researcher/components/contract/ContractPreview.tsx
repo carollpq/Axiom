@@ -15,13 +15,15 @@ interface ContractPreviewProps {
   signedCount: number;
   paperId?: string;
   contractId?: string | null;
+  onGenerateContract: () => Promise<void>;
 }
 
 export function ContractPreview({
   title, draft, contributors,
-  allSigned, isValid, signedCount, paperId, contractId,
+  allSigned, isValid, signedCount, paperId, contractId, onGenerateContract,
 }: ContractPreviewProps) {
   const remaining = contributors.length - signedCount;
+  const canGenerate = isValid && contributors.length > 0;
   const [showModal, setShowModal] = useState(false);
   const [journals, setJournals] = useState<RegisteredJournal[]>([]);
   const [selectedJournalId, setSelectedJournalId] = useState<string>("");
@@ -97,9 +99,23 @@ export function ContractPreview({
             </div>
           </div>
 
-          {/* Submission status & action */}
+          {/* Generate / Submission actions */}
           <div className="mt-4 text-right">
-            {submitted ? (
+            {!contractId && !submitted ? (
+              <button
+                onClick={onGenerateContract}
+                disabled={!canGenerate}
+                className="py-3 px-8 rounded font-serif text-sm tracking-wide"
+                style={{
+                  background: canGenerate
+                    ? "linear-gradient(135deg, rgba(180,160,120,0.25), rgba(160,140,100,0.15))"
+                    : "rgba(120,110,95,0.1)",
+                  border: "1px solid " + (canGenerate ? "rgba(180,160,120,0.4)" : "rgba(120,110,95,0.15)"),
+                  color: canGenerate ? "#d4c8a8" : "#4a4238",
+                  cursor: canGenerate ? "pointer" : "not-allowed",
+                }}
+              >Generate Contract</button>
+            ) : submitted ? (
               <div>
                 <div className="text-sm text-[#8fbc8f] mb-1">{"\u2713"} Paper Submitted</div>
                 <div className="text-[11px] text-[#6a6050]">Your paper has been submitted to the journal and is awaiting review.</div>

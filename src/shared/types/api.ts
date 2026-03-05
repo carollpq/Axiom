@@ -70,3 +70,5 @@ export interface DbUser {
   roles: string[];
   researchFields: string[];
 }
+
+export type UserSearchResult = Pick<DbUser, "id" | "walletAddress" | "displayName" | "orcidId">;

@@ -20,7 +20,7 @@ export function ContributorRow({ contributor: c, isValid, hasSigned, isCurrentUs
     <div
       className="grid items-center gap-2 py-3 px-3.5"
       style={{
-        gridTemplateColumns: "1.8fr 0.8fr 0.5fr 1.2fr 0.8fr 0.3fr",
+        gridTemplateColumns: "2fr 0.5fr 1.2fr 0.8fr 0.3fr",
         background: c.status === "signed" ? "rgba(120,180,120,0.03)" : "transparent",
         border: "1px solid rgba(120,110,95,0.08)",
         borderTop: "none",
@@ -40,9 +40,6 @@ export function ContributorRow({ contributor: c, isValid, hasSigned, isCurrentUs
         <div className="text-[10px] text-[#5a7a9a] font-mono mt-0.5">{c.wallet}</div>
       </div>
 
-      {/* ORCID */}
-      <div className="text-[11px]" style={{ color: c.orcid === "\u2014" ? "#4a4238" : "#8a8070" }}>{c.orcid}</div>
-
       {/* Percentage */}
       <input
         type="number" min="0" max="100" value={c.pct}
@@ -51,9 +48,9 @@ export function ContributorRow({ contributor: c, isValid, hasSigned, isCurrentUs
         style={{ background: "rgba(30,28,24,0.6)", border: "1px solid rgba(120,110,95,0.2)" }}
       />
 
-      {/* Role */}
+      {/* Task */}
       <input
-        type="text" placeholder="Describe role..." value={c.role}
+        type="text" placeholder="Describe task..." value={c.role}
         onChange={e => onUpdate(c.id, "role", e.target.value)}
         className="w-full py-1.5 px-2 rounded-sm text-[#b0a898] font-serif text-[11px] outline-none box-border"
         style={{ background: "rgba(30,28,24,0.6)", border: "1px solid rgba(120,110,95,0.2)" }}

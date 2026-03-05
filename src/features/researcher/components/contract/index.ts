@@ -2,6 +2,7 @@ export { PaperSelection } from "./PaperSelection";
 export { PercentageBar } from "./PercentageBar";
 export { ContributorRow } from "./ContributorRow";
 export { ContributorTable } from "./ContributorTable";
+export { AuthorSearch } from "./AuthorSearch";
 export { ContractPreview } from "./ContractPreview";
 export { ModificationWarning } from "./ModificationWarning";
 export { InviteModal } from "./InviteModal";

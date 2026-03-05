@@ -1,6 +1,7 @@
 import { db } from "@/src/shared/lib/db";
 import { users } from "@/src/shared/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, or, like } from "drizzle-orm";
+import type { UserSearchResult } from "@/src/shared/types/api";
 
 export async function getUserByWallet(walletAddress: string) {
   return (
@@ -37,4 +38,25 @@ export async function getOrCreateUser(walletAddress: string) {
       })
       .returning()
   )[0];
+}
+
+export async function searchUsers(query: string): Promise<UserSearchResult[]> {
+  const escaped = query.replace(/[%_]/g, "\\$&");
+  const pattern = `%${escaped}%`;
+  return db
+    .select({
+      id: users.id,
+      walletAddress: users.walletAddress,
+      displayName: users.displayName,
+      orcidId: users.orcidId,
+    })
+    .from(users)
+    .where(
+      or(
+        like(users.displayName, pattern),
+        like(users.orcidId, pattern),
+        like(users.walletAddress, pattern),
+      ),
+    )
+    .limit(10);
 }

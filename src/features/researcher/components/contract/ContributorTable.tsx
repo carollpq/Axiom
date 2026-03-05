@@ -3,6 +3,8 @@
 import type { Contributor } from "@/src/features/researcher/types/contract";
 import { PercentageBar } from "./PercentageBar";
 import { ContributorRow } from "./ContributorRow";
+import { AuthorSearch } from "./AuthorSearch";
+import type { UserSearchResult } from "@/src/shared/types/api";
 
 interface ContributorTableProps {
   contributors: Contributor[];
@@ -11,20 +13,18 @@ interface ContributorTableProps {
   hasSigned: boolean;
   currentUserWallet: string;
   showAddRow: boolean;
-  addWallet: string;
+  onAddFromSearch: (result: UserSearchResult) => void | Promise<void>;
   onUpdate: (id: number, field: string, value: string | number) => void;
   onRemove: (id: number) => void | Promise<void>;
   onSign: (id: number) => void | Promise<void>;
-  onAdd: () => void | Promise<void>;
   onInvite: (dbId?: string) => void | Promise<void>;
   onSetShowAddRow: (show: boolean) => void;
-  onSetAddWallet: (wallet: string) => void;
 }
 
 export function ContributorTable({
   contributors, totalPct, isValid, hasSigned, currentUserWallet,
-  showAddRow, addWallet,
-  onUpdate, onRemove, onSign, onAdd, onInvite, onSetShowAddRow, onSetAddWallet,
+  showAddRow,
+  onAddFromSearch, onUpdate, onRemove, onSign, onInvite, onSetShowAddRow,
 }: ContributorTableProps) {
   return (
     <div className="rounded-lg p-6 mb-6" style={{ background: "rgba(45,42,38,0.5)", border: "1px solid rgba(120,110,95,0.2)" }}>
@@ -54,13 +54,13 @@ export function ContributorTable({
       <div
         className="grid py-2.5 px-3.5 rounded-t-md text-[10px] text-[#6a6050] uppercase tracking-[1.2px] gap-2"
         style={{
-          gridTemplateColumns: "1.8fr 0.8fr 0.5fr 1.2fr 0.8fr 0.3fr",
+          gridTemplateColumns: "2fr 0.5fr 1.2fr 0.8fr 0.3fr",
           background: "rgba(30,28,24,0.4)",
           border: "1px solid rgba(120,110,95,0.1)",
           borderBottom: "none",
         }}
       >
-        <span>Contributor</span><span>ORCID</span><span>%</span><span>Role</span><span>Signature</span><span></span>
+        <span>Contributor</span><span>%</span><span>Task</span><span>Signature</span><span></span>
       </div>
 
       {/* Rows */}
@@ -80,43 +80,13 @@ export function ContributorTable({
         />
       ))}
 
-      {/* Add contributor row */}
+      {/* Add contributor */}
       {showAddRow ? (
-        <div
-          className="flex gap-2.5 py-3 px-3.5 items-center rounded-b-md"
-          style={{
-            border: "1px solid rgba(120,110,95,0.08)",
-            borderTop: "none",
-            background: "rgba(30,28,24,0.3)",
-          }}
-        >
-          <input
-            type="text"
-            placeholder="Wallet address or DID..."
-            value={addWallet}
-            onChange={e => onSetAddWallet(e.target.value)}
-            className="flex-1 py-2 px-3 rounded text-[#d4ccc0] font-mono text-xs outline-none"
-            style={{ background: "rgba(30,28,24,0.6)", border: "1px solid rgba(120,110,95,0.2)" }}
-          />
-          <button
-            onClick={onAdd}
-            className="rounded py-2 px-4 text-[#d4c8a8] font-serif text-xs cursor-pointer"
-            style={{
-              background: "linear-gradient(135deg, rgba(180,160,120,0.2), rgba(160,140,100,0.1))",
-              border: "1px solid rgba(180,160,120,0.3)",
-            }}
-          >Add</button>
-          <button
-            onClick={() => { onSetShowAddRow(false); onSetAddWallet(""); }}
-            className="rounded py-2 px-3 text-[#6a6050] text-xs cursor-pointer font-serif"
-            style={{ background: "none", border: "1px solid rgba(120,110,95,0.15)" }}
-          >Cancel</button>
-          <button
-            onClick={() => onInvite()}
-            className="rounded py-2 px-3 text-[#7a9fc7] text-[11px] cursor-pointer font-serif"
-            style={{ background: "none", border: "1px solid rgba(130,160,200,0.25)" }}
-          >Invite Off-Platform</button>
-        </div>
+        <AuthorSearch
+          onSelect={onAddFromSearch}
+          onCancel={() => onSetShowAddRow(false)}
+          onInvite={() => onInvite()}
+        />
       ) : (
         <button
           onClick={() => onSetShowAddRow(true)}
@@ -124,7 +94,6 @@ export function ContributorTable({
           style={{ background: "transparent", border: "1px dashed rgba(120,110,95,0.25)" }}
         >+ Add Contributor</button>
       )}
-
     </div>
   );
 }
