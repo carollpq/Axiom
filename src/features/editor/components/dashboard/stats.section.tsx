@@ -1,14 +1,12 @@
-import { listJournalSubmissions } from "@/src/features/editor/queries";
 import { StatCard } from "@/src/shared/components/StatCard";
 import type { StatCardProps } from "@/src/shared/types/shared";
+import type { DbJournalSubmission } from "@/src/features/editor/queries";
 
 interface Props {
-  subsPromise: ReturnType<typeof listJournalSubmissions>;
+  subs: DbJournalSubmission[];
 }
 
-export async function StatsSection({ subsPromise }: Props) {
-  const subs = await subsPromise;
-
+export function StatsSection({ subs }: Props) {
   let newSubmissions = 0,
     awaitingAssignment = 0,
     underReview = 0,

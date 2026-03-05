@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { getSession } from "@/src/shared/lib/auth/auth";
 import { getUserByWallet } from "@/src/features/users/queries";
 import { getJournalByEditorWallet, listJournalSubmissions } from "@/src/features/editor/queries";
@@ -8,17 +7,14 @@ import { DashboardHeader } from "@/src/shared/components";
 import { StatsSection } from "@/src/features/editor/components/dashboard/stats.section";
 import { CarouselSection } from "@/src/features/editor/components/dashboard/carousel.section";
 import { QuickActions } from "@/src/features/editor/components/dashboard-overview.client";
-import {
-  StatsSkeleton,
-  CarouselSkeleton,
-} from "@/src/features/editor/components/skeletons";
 import type { EditorProfile } from "@/src/features/editor/types";
+import type { DbJournalSubmission } from "@/src/features/editor/queries";
 
 export default async function JournalDashboard() {
   const sessionWallet = await getSession();
 
   let editorProfile: EditorProfile | null = null;
-  let subsPromise: ReturnType<typeof listJournalSubmissions> | null = null;
+  let subs: DbJournalSubmission[] = [];
 
   if (sessionWallet) {
     const [user, journal] = await Promise.all([
@@ -29,7 +25,7 @@ export default async function JournalDashboard() {
     editorProfile = mapDbToEditorProfile(user, journal, getInitials);
 
     if (journal) {
-      subsPromise = listJournalSubmissions(journal.id);
+      subs = await listJournalSubmissions(journal.id);
     }
   }
 
@@ -62,22 +58,8 @@ export default async function JournalDashboard() {
         )}
       </div>
 
-      {subsPromise ? (
-        <>
-          <Suspense fallback={<StatsSkeleton />}>
-            <StatsSection subsPromise={subsPromise} />
-          </Suspense>
-
-          <Suspense fallback={<CarouselSkeleton />}>
-            <CarouselSection subsPromise={subsPromise} />
-          </Suspense>
-        </>
-      ) : (
-        <>
-          <StatsSkeleton />
-          <CarouselSkeleton />
-        </>
-      )}
+      <StatsSection subs={subs} />
+      <CarouselSection subs={subs} />
 
       <QuickActions />
     </div>

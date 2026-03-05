@@ -1,16 +1,14 @@
-import { listJournalSubmissions } from "@/src/features/editor/queries";
 import { deriveStage } from "@/src/features/editor/mappers/journal";
 import { formatIsoDate } from "@/src/shared/lib/format";
 import { SubmissionCarousel } from "./SubmissionCarousel.client";
 import type { EditorCarouselCard } from "./SubmissionCarousel.client";
+import type { DbJournalSubmission } from "@/src/features/editor/queries";
 
 interface Props {
-  subsPromise: ReturnType<typeof listJournalSubmissions>;
+  subs: DbJournalSubmission[];
 }
 
-export async function CarouselSection({ subsPromise }: Props) {
-  const subs = await subsPromise;
-
+export function CarouselSection({ subs }: Props) {
   const cards: EditorCarouselCard[] = subs.map((s) => {
     const wallets = (s.reviewerWallets as string[] | null) ?? [];
     return {
