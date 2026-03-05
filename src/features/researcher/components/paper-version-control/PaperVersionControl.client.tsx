@@ -162,6 +162,7 @@ export function PaperVersionControlClient({ papers }: Props) {
     upload.isHashing, upload.studyType, upload.keywords, upload.keywordInput,
     upload.isRegistering, upload.registered, upload.registeredPaperId, upload.error]);
 
+  const isFormBusy = upload.isRegistering || upload.isHashing;
   const uploadErrors = showUploadErrors ? validationErrors : {};
 
   const handleRegister = () => {
@@ -253,6 +254,7 @@ export function PaperVersionControlClient({ papers }: Props) {
                     isHashing={upload.isHashing}
                     onRemove={upload.removeFile}
                     error={uploadErrors.file}
+                    disabled={isFormBusy}
                   />
                 </div>
 
@@ -266,9 +268,11 @@ export function PaperVersionControlClient({ papers }: Props) {
                     placeholder="Enter paper title..."
                     value={upload.title}
                     onChange={(e) => upload.setTitle(e.target.value)}
+                    disabled={isFormBusy}
                     style={{
                       ...inputStyle,
                       ...(uploadErrors.title ? { border: "1px solid rgba(212,100,90,0.4)" } : {}),
+                      ...(isFormBusy ? { opacity: 0.5 } : {}),
                     }}
                   />
                   {uploadErrors.title && (
@@ -285,12 +289,14 @@ export function PaperVersionControlClient({ papers }: Props) {
                     placeholder="Enter abstract..."
                     value={upload.abstract}
                     onChange={(e) => upload.setAbstract(e.target.value)}
+                    disabled={isFormBusy}
                     rows={5}
                     style={{
                       ...inputStyle,
                       resize: "vertical" as const,
                       lineHeight: 1.6,
                       ...(uploadErrors.abstract ? { border: "1px solid rgba(212,100,90,0.4)" } : {}),
+                      ...(isFormBusy ? { opacity: 0.5 } : {}),
                     }}
                   />
                   {uploadErrors.abstract && (
@@ -304,12 +310,14 @@ export function PaperVersionControlClient({ papers }: Props) {
                   <select
                     value={upload.studyType}
                     onChange={(e) => upload.setStudyType(e.target.value as StudyTypeDb)}
+                    disabled={isFormBusy}
                     className="w-full rounded-[6px] px-3 py-2 text-[12px] font-serif text-[#d4ccc0] outline-none cursor-pointer"
                     style={{
                       background: "rgba(30,28,24,0.6)",
                       border: "1px solid rgba(120,110,95,0.2)",
                       padding: "10px 14px",
                       fontSize: 13,
+                      ...(isFormBusy ? { opacity: 0.5 } : {}),
                     }}
                   >
                     {STUDY_TYPE_OPTIONS.map((opt) => (
@@ -340,8 +348,9 @@ export function PaperVersionControlClient({ papers }: Props) {
                       >
                         {k}
                         <span
-                          onClick={() => upload.removeKeyword(i)}
-                          className="cursor-pointer text-[#6a6050] text-[13px]"
+                          onClick={isFormBusy ? undefined : () => upload.removeKeyword(i)}
+                          className={`text-[#6a6050] text-[13px] ${isFormBusy ? "" : "cursor-pointer"}`}
+                          style={isFormBusy ? { opacity: 0.5 } : undefined}
                         >
                           {"\u2715"}
                         </span>
@@ -358,14 +367,17 @@ export function PaperVersionControlClient({ papers }: Props) {
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && upload.keywordInput.trim()) upload.addKeyword();
                         }}
-                        style={{ ...inputStyle, flex: 1 }}
+                        disabled={isFormBusy}
+                        style={{ ...inputStyle, flex: 1, ...(isFormBusy ? { opacity: 0.5 } : {}) }}
                       />
                       <button
                         onClick={upload.addKeyword}
+                        disabled={isFormBusy}
                         className="rounded py-0 px-4 text-[#8a8070] text-xs cursor-pointer font-serif"
                         style={{
                           background: "rgba(120,110,95,0.1)",
                           border: "1px solid rgba(120,110,95,0.2)",
+                          ...(isFormBusy ? { opacity: 0.5 } : {}),
                         }}
                       >
                         Add
@@ -379,13 +391,13 @@ export function PaperVersionControlClient({ papers }: Props) {
                   <button
                     type="button"
                     onClick={handleRegister}
-                    disabled={upload.isRegistering || upload.isHashing}
+                    disabled={isFormBusy}
                     className="px-6 py-2.5 rounded-md text-[13px] font-medium cursor-pointer transition-colors"
                     style={{
                       background: "rgba(201,164,74,0.15)",
                       color: "#c9a44a",
                       border: "1px solid rgba(201,164,74,0.3)",
-                      opacity: upload.isRegistering || upload.isHashing ? 0.5 : 1,
+                      opacity: isFormBusy ? 0.5 : 1,
                     }}
                   >
                     {upload.isRegistering ? "Registering..." : "Register Paper"}

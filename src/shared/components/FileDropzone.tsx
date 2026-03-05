@@ -11,6 +11,7 @@ interface FileDropzoneProps {
   isHashing: boolean;
   onRemove: () => void;
   error?: string;
+  disabled?: boolean;
 }
 
 export function FileDropzone({
@@ -22,8 +23,10 @@ export function FileDropzone({
   isHashing,
   onRemove,
   error,
+  disabled,
 }: FileDropzoneProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isInteractive = !disabled;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -46,8 +49,10 @@ export function FileDropzone({
           border: error ? "1px solid rgba(212,100,90,0.4)" : "2px dashed rgba(120,110,95,0.25)",
           padding: fileName ? "14px 18px" : "32px 18px",
           background: fileName ? "rgba(120,180,120,0.04)" : "transparent",
+          opacity: disabled ? 0.5 : 1,
+          pointerEvents: disabled ? "none" : undefined,
         }}
-        onClick={!fileName ? () => fileInputRef.current?.click() : undefined}
+        onClick={!fileName && isInteractive ? () => fileInputRef.current?.click() : undefined}
       >
         {fileName ? (
           <div className="flex justify-between items-center">
