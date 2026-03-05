@@ -312,12 +312,12 @@ src/
 │   │   ├── cron/deadlines/route.ts # GET: deadline enforcement cron
 │   │   └── upload/presigned/      # R2 presigned URLs
 │   ├── (protected)/
-│   │   ├── researcher/            # Dashboard, paper_registration, contract_builder, public_explorer, rebuttal/[submissionId], review-response/[submissionId]
+│   │   ├── researcher/            # Dashboard, paper_registration, contract_builder, authorship-contracts, create-submission, view-submissions, paper-version-control, public_explorer, rebuttal/[submissionId], review-response/[submissionId]
 │   │   ├── editor/                # Dashboard, incoming, under-review, accepted, management
 │   │   └── reviewer/              # Dashboard, review_workspace/[id]
 ├── features/
 │   ├── auth/                      # Login flow components
-│   ├── researcher/                # Components, hooks, reducers, config, mappers, types
+│   ├── researcher/                # Components, hooks, reducers, config, constants, mappers, queries, types, nav
 │   ├── editor/                    # Components, hooks, queries, mappers, types (DB-backed)
 │   ├── reviewer/                  # Components, hooks, reducers (mock data still)
 │   ├── contracts/                 # DB queries + actions

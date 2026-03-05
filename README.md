@@ -91,13 +91,16 @@ For the full architecture document, see [`docs/architecture.md`](docs/architectu
 ## Features
 
 ### Researcher
-- **Dashboard** — Paper management, pending actions (rebuttals, review responses, unsigned contracts), activity feed
-- **Paper registration** — 6-step wizard: metadata → authorship → provenance → journal selection → file upload → confirmation. Client-side SHA-256 hash → R2 upload → Lit encryption → HCS anchor.
-- **Authorship contracts** — Define contribution splits, collect cryptographic signatures, invite collaborators. Backend validates all signatures before submission.
+- **Dashboard** — Stats overview (new submissions, under review, pending, accepted, rejected) + submission carousel + papers table + pending actions list + quick action buttons
+- **Paper registration** — 4-step wizard: paper details (title, abstract, file, visibility, study type, keywords) → provenance (dataset hash, code repo, commit, env spec) → contract linking → register/submit confirmation. Client-side SHA-256 hash → R2 upload → Lit encryption → HCS anchor.
+- **Authorship contracts** — Three-tab interface: build new contracts (define contribution splits, invite collaborators), sign pending contracts, view contract status. Backend validates all signatures before submission.
+- **Paper version control** — View version history per paper, upload new versions, download existing versions
+- **Create submission** — Select paper version, journal, and authorship contract to submit for review
+- **View submissions** — Track submissions through the review pipeline with reviewer assignment status, anonymized review feedback, and editor decisions
 - **Co-author visibility** — Co-authors on authorship contracts see papers on their dashboard automatically
 - **Review response** — View anonymized reviews, rate each reviewer on 5 quality protocols (actionable feedback, deep engagement, fair/objective, justified recommendation, appropriate expertise), and accept reviews or request rebuttal
 - **Rebuttal workspace** — Challenge specific reviewer comments (agree/disagree + justification per review). Researcher-initiated — authors decide when to invoke rebuttal.
-- **Public explorer** — Search/browse papers, verify on-chain proof, view version history
+- **Public explorer** — Search/filter/sort public papers in grid view, detail view with tabs (overview, provenance, versions, reviews), Lit decrypt for private papers
 - **Notifications** — Real-time updates at every pipeline stage (including "Viewed by Editor" status)
 
 ### Editor
@@ -225,11 +228,11 @@ src/
 │   │   ├── cron/deadlines/         # Deadline enforcement
 │   │   └── verify/                 # Hash verification
 │   └── (protected)/
-│       ├── researcher/             # Researcher dashboard + tools + review-response
+│       ├── researcher/             # Dashboard, paper_registration, contract_builder, authorship-contracts, create-submission, view-submissions, paper-version-control, public_explorer, rebuttal/[submissionId], review-response/[submissionId]
 │       ├── editor/                 # Editor dashboard + pipeline
 │       └── reviewer/               # Reviewer dashboard + workspace
 ├── features/
-│   ├── researcher/                 # Researcher UI (components, hooks, reducers)
+│   ├── researcher/                 # Researcher UI (components, hooks, reducers, config, constants, mappers, queries, types, nav)
 │   ├── editor/                     # Editor UI (components, hooks, queries)
 │   ├── reviewer/                   # Reviewer UI (components, hooks, reducers)
 │   ├── reviews/                    # Review DB queries + actions
