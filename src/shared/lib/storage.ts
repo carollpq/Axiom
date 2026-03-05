@@ -1,56 +1,46 @@
-import * as Client from "@web3-storage/w3up-client";
-import { StoreMemory } from "@web3-storage/w3up-client/stores/memory";
-import * as Signer from "@ucanto/principal/ed25519";
-import * as Delegation from "@ucanto/core/delegation";
+const PINATA_JWT = process.env.PINATA_JWT;
+const PINATA_GATEWAY =
+  process.env.PINATA_GATEWAY_URL || "https://gateway.pinata.cloud";
 
 export function isStorageConfigured(): boolean {
-  return !!(
-    process.env.W3_PRINCIPAL_KEY && process.env.W3_DELEGATION_PROOF
-  );
-}
-
-let _clientPromise: Promise<Client.Client> | null = null;
-
-async function initW3Client(): Promise<Client.Client> {
-  const principal = Signer.parse(process.env.W3_PRINCIPAL_KEY!);
-  const client = await Client.create({ principal, store: new StoreMemory() });
-
-  const proofBytes = Buffer.from(process.env.W3_DELEGATION_PROOF!, "base64");
-  const proof = await Delegation.extract(proofBytes);
-  if (!proof.ok) throw new Error("Failed to parse delegation proof");
-
-  await client.addProof(proof.ok);
-  return client;
-}
-
-function getW3Client(): Promise<Client.Client> {
-  if (!_clientPromise) {
-    _clientPromise = initW3Client().catch((err) => {
-      _clientPromise = null;
-      throw err;
-    });
-  }
-  return _clientPromise;
+  return !!PINATA_JWT;
 }
 
 /**
- * Upload a file to IPFS via web3.storage and return the CID string.
+ * Upload a file to IPFS via Pinata and return the CID string.
  */
 export async function uploadToIPFS(
   file: Blob & { name?: string },
   fileName: string,
 ): Promise<string> {
-  const client = await getW3Client();
-  const uploadable = Object.assign(file, { name: fileName });
-  const cid = await client.uploadFile(uploadable);
-  return cid.toString();
+  const formData = new FormData();
+  formData.append("file", file, fileName);
+
+  const metadata = JSON.stringify({ name: fileName });
+  formData.append("pinataMetadata", metadata);
+
+  const res = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${PINATA_JWT}`,
+    },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => "Unknown error");
+    throw new Error(`Pinata upload failed (${res.status}): ${err}`);
+  }
+
+  const data = await res.json();
+  return data.IpfsHash;
 }
 
 /**
- * Fetch a file from IPFS via the w3s.link gateway.
+ * Fetch a file from IPFS via the Pinata gateway.
  */
 export async function getFileFromIPFS(cid: string): Promise<Buffer> {
-  const res = await fetch(`https://w3s.link/ipfs/${cid}`);
+  const res = await fetch(`${PINATA_GATEWAY}/ipfs/${cid}`);
   if (!res.ok) throw new Error(`IPFS fetch failed: ${res.status}`);
   const arrayBuffer = await res.arrayBuffer();
   return Buffer.from(arrayBuffer);
