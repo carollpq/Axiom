@@ -1,8 +1,6 @@
 import type { Visibility } from "@/src/features/researcher/types/paper-registration";
 import type { StudyTypeDb } from "@/src/shared/lib/db/schema";
 
-export const STEP_LABELS = ["Paper Details", "Provenance", "Contract", "Register / Submit"] as const;
-
 export const STUDY_TYPE_VALUES = [
   "original", "negative_result", "replication", "replication_failed", "meta_analysis",
 ] as const satisfies readonly StudyTypeDb[];

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { listUserPapers } from "@/src/features/papers/queries";
 import { createPaper } from "@/src/features/papers/actions";
 import { requireSession, validationError } from "@/src/shared/lib/api-helpers";
-import { STUDY_TYPE_VALUES, PAPER_LIMITS } from "@/src/features/researcher/config/paper-registration";
+import { STUDY_TYPE_VALUES, PAPER_LIMITS } from "@/src/features/researcher/config/upload";
 
 export const runtime = "nodejs";
 
