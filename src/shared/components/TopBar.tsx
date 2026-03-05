@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useActiveAccount } from "thirdweb/react";
 import { ConnectButton } from "thirdweb/react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { client } from "@/src/shared/lib/thirdweb";
 import {
   getLoginPayload,
@@ -18,34 +17,23 @@ import { useClickOutside } from "@/src/shared/hooks/useClickOutside";
 import { ROLES } from "@/src/features/auth/types";
 import { ROLE_DASHBOARD_ROUTES } from "@/src/shared/lib/routes";
 import { capitalize } from "@/src/shared/lib/format";
-import type { NavItemData, UserProfile } from "@/src/shared/types/shared";
+import { useSidebar } from "@/src/shared/context/SidebarContext";
+import type { UserProfile } from "@/src/shared/types/shared";
 
-function NavItem({ label, href, active }: { label: string; href: string; active: boolean }) {
-  return (
-    <Link
-      href={href}
-      className="text-[13px] font-serif cursor-pointer px-4 py-2 tracking-[1px] transition-all duration-300"
-      style={{
-        color: active ? "#c9b89e" : "#7a7a7a",
-        borderBottom: active ? "1px solid #c9b89e" : "1px solid transparent",
-      }}
-      onMouseEnter={(e) => {
-        if (!active) {
-          e.currentTarget.style.color = "#c9b89e";
-          e.currentTarget.style.borderBottom = "1px solid rgba(201, 184, 158, 0.4)";
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!active) {
-          e.currentTarget.style.color = "#7a7a7a";
-          e.currentTarget.style.borderBottom = "1px solid transparent";
-        }
-      }}
-    >
-      {label}
-    </Link>
-  );
-}
+const CONNECT_AUTH = { isLoggedIn, getLoginPayload, doLogin, doLogout } as const;
+const CONNECT_BUTTON_CONFIG = {
+  label: "Connect Wallet",
+  style: {
+    backgroundColor: "rgba(201, 164, 74, 0.15)",
+    color: "#c9a44a",
+    border: "1px solid rgba(201, 164, 74, 0.3)",
+    borderRadius: "6px",
+    fontSize: "13px",
+    fontFamily: "Georgia, serif",
+    padding: "6px 16px",
+    height: "34px",
+  },
+} as const;
 
 function UserBadge({ user }: { user: UserProfile }) {
   const router = useRouter();
@@ -138,27 +126,21 @@ function UserBadge({ user }: { user: UserProfile }) {
   );
 }
 
-export function TopBar({ navItems, user }: { navItems: NavItemData[]; user: UserProfile }) {
-  const pathname = usePathname();
+export function TopBar({ user }: { user: UserProfile }) {
   const account = useActiveAccount();
+  const { collapsed, toggle } = useSidebar();
 
   return (
-    <nav className="flex items-center justify-between px-10 h-14 border-b border-[rgba(120,110,95,0.2)] bg-[rgba(25,23,20,0.9)] backdrop-blur-[10px] sticky top-0 z-[100]">
-      <div className="flex items-center gap-8">
-        <span className="font-serif text-[22px] italic text-[#c9b89e] tracking-[2px]">
-          Axiom
-        </span>
-        <div className="flex">
-          {navItems.map((item) => (
-            <NavItem
-              key={item.label}
-              label={item.label}
-              href={item.href}
-              active={pathname === item.href}
-            />
-          ))}
-        </div>
-      </div>
+    <nav className="flex items-center justify-between px-4 h-12 border-b border-[rgba(120,110,95,0.2)] bg-[rgba(25,23,20,0.9)] backdrop-blur-[10px] sticky top-0 z-[100]">
+      <button
+        onClick={toggle}
+        className="cursor-pointer transition-colors duration-150"
+        style={{ color: "#7a7a7a" }}
+        onMouseEnter={(e) => (e.currentTarget.style.color = "#c9b89e")}
+        onMouseLeave={(e) => (e.currentTarget.style.color = "#7a7a7a")}
+      >
+        {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+      </button>
       <div className="flex items-center gap-5">
         {account && (
           <>
@@ -168,21 +150,9 @@ export function TopBar({ navItems, user }: { navItems: NavItemData[]; user: User
         )}
         <ConnectButton
           client={client}
-          auth={{ isLoggedIn, getLoginPayload, doLogin, doLogout }}
+          auth={CONNECT_AUTH}
           theme="dark"
-          connectButton={{
-            label: "Connect Wallet",
-            style: {
-              backgroundColor: "rgba(201, 164, 74, 0.15)",
-              color: "#c9a44a",
-              border: "1px solid rgba(201, 164, 74, 0.3)",
-              borderRadius: "6px",
-              fontSize: "13px",
-              fontFamily: "Georgia, serif",
-              padding: "6px 16px",
-              height: "34px",
-            },
-          }}
+          connectButton={CONNECT_BUTTON_CONFIG}
         />
       </div>
     </nav>

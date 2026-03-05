@@ -25,10 +25,11 @@ export interface StatCardProps {
   alert?: boolean;
 }
 
-/** Navigation item data */
+/** Navigation item data — icon is a string name resolved on the client */
 export interface NavItemData {
   label: string;
   href: string;
+  icon?: string;
 }
 
 /** User profile for TopBar display */

@@ -5,6 +5,7 @@ export { StatCard } from "./StatCard";
 export { TopBar } from "./TopBar";
 export { Footer } from "./Footer";
 export { RoleShell } from "./RoleShell";
+export { Sidebar } from "./Sidebar.client";
 export { StatusBadge } from "./StatusBadge";
 export { DashboardHeader } from "./DashboardHeader";
 export { FileDropzone } from "./FileDropzone";
