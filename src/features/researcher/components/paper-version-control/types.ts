@@ -1,13 +1,10 @@
-export interface PaperVersion {
-  id: string;
-  versionNumber: number;
-  paperHash: string;
-  fileStorageKey: string | null;
-  createdAt: string;
-}
+import type { ApiPaper, ApiPaperVersion } from "@/src/shared/types/api";
 
-export interface PaperWithVersions {
-  id: string;
-  title: string;
+export type PaperVersion = Pick<
+  ApiPaperVersion,
+  "id" | "versionNumber" | "paperHash" | "fileStorageKey" | "createdAt"
+>;
+
+export type PaperWithVersions = Pick<ApiPaper, "id" | "title"> & {
   versions: PaperVersion[];
-}
+};
