@@ -124,6 +124,7 @@ export function ContributorTable({
           style={{ background: "transparent", border: "1px dashed rgba(120,110,95,0.25)" }}
         >+ Add Contributor</button>
       )}
+
     </div>
   );
 }

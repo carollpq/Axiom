@@ -4,7 +4,6 @@ import { useContractBuilder } from "@/src/features/researcher/hooks/useContractB
 import { AlertBanner } from "@/src/shared/components/AlertBanner";
 import { PaperSelection } from "./PaperSelection";
 import { ContributorTable } from "./ContributorTable";
-import { SignatureProgress } from "./SignatureProgress";
 import { ContractPreview } from "./ContractPreview";
 import { ModificationWarning } from "./ModificationWarning";
 import { InviteModal } from "./InviteModal";
@@ -54,12 +53,6 @@ export function ContractBuilderClient({ initialDrafts }: ContractBuilderClientPr
           onInvite={handleInvite}
           onSetShowAddRow={setShowAddRow}
           onSetAddWallet={setAddWallet}
-        />
-
-        <SignatureProgress
-          contributors={contributors}
-          signedCount={signedCount}
-          allSigned={allSigned}
         />
 
         <ContractPreview
