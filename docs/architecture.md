@@ -1193,8 +1193,8 @@ src/app/
 ├── verify/page.tsx                # Public paper verification tool 🔲
 ├── author/
 │   ├── page.tsx                   # Author dashboard ✅
-│   ├── contract_builder/page.tsx  # Authorship contracts ✅
-│   ├── paper_registration/page.tsx # Paper registration ✅
+│   ├── authorship-contracts/page.tsx # Authorship contracts (build + sign + manage) ✅
+│   ├── paper-version-control/page.tsx # Paper registration + version management ✅
 │   └── public_explorer/page.tsx   # Paper explorer ✅
 ├── journal/
 │   ├── page.tsx                   # Journal dashboard (submissions pipeline) 🔲 mock

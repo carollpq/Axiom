@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { ExistingDraft, Contributor } from "@/src/features/researcher/types/contract";
+import type { ExistingDraft } from "@/src/features/researcher/types/contract";
 import { ContractBuilderClient } from "@/src/features/researcher/components/contract/ContractBuilderClient";
 import { ContractsToSign } from "./ContractsToSign";
 import { ContractsStatus } from "./ContractsStatus";

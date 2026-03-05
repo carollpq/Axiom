@@ -226,7 +226,7 @@ src/
 │   │   ├── cron/deadlines/         # Deadline enforcement
 │   │   └── verify/                 # Hash verification
 │   └── (protected)/
-│       ├── researcher/             # Dashboard, paper_registration, contract_builder, authorship-contracts, create-submission, view-submissions, paper-version-control, public_explorer, rebuttal/[submissionId], review-response/[submissionId]
+│       ├── researcher/             # Dashboard, authorship-contracts, create-submission, view-submissions, paper-version-control (includes paper registration), rebuttal/[submissionId], review-response/[submissionId]
 │       ├── editor/                 # Editor dashboard + pipeline
 │       └── reviewer/               # Reviewer dashboard + workspace
 ├── features/

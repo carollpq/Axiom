@@ -312,7 +312,7 @@ src/
 │   │   ├── cron/deadlines/route.ts # GET: deadline enforcement cron
 │   │   └── upload/ipfs/            # IPFS upload via web3.storage
 │   ├── (protected)/
-│   │   ├── researcher/            # Dashboard, paper_registration, contract_builder, authorship-contracts, create-submission, view-submissions, paper-version-control, public_explorer, rebuttal/[submissionId], review-response/[submissionId]
+│   │   ├── researcher/            # Dashboard, authorship-contracts, create-submission, view-submissions, paper-version-control (includes paper registration), rebuttal/[submissionId], review-response/[submissionId]
 │   │   ├── editor/                # Dashboard, incoming, under-review, accepted, management
 │   │   └── reviewer/              # Dashboard, review_workspace/[id]
 ├── features/
