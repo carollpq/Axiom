@@ -251,7 +251,7 @@ export function Sidebar({ navItems, user }: { navItems: NavItemData[]; user: Use
 
   return (
     <aside
-      className="fixed left-0 top-0 z-[90] flex h-screen flex-col border-r"
+      className="fixed left-0 top-0 z-[90] flex h-screen flex-col overflow-x-hidden border-r"
       style={{
         width: collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED,
         background: "rgba(25,23,20,0.95)",
@@ -269,7 +269,7 @@ export function Sidebar({ navItems, user }: { navItems: NavItemData[]; user: Use
         </span>
       </div>
 
-      <nav className="mt-4 flex flex-1 flex-col gap-0.5 overflow-y-auto">
+      <nav className="mt-4 flex flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-hidden">
         {navItems.map((item) => (
           <NavItem
             key={item.href}
@@ -282,7 +282,7 @@ export function Sidebar({ navItems, user }: { navItems: NavItemData[]; user: Use
 
       {/* Wallet address at bottom */}
       <div
-        className="shrink-0 border-t"
+        className="shrink-0 overflow-hidden border-t"
         style={{ borderColor: "rgba(120,110,95,0.2)" }}
       >
         <WalletSection user={user} collapsed={collapsed} />

@@ -18,7 +18,7 @@ function ShellInner({ navItems, user, children }: RoleShellProps) {
 
   return (
     <div
-      className="min-h-screen text-[#d4ccc0] font-serif"
+      className="min-h-screen overflow-x-hidden text-[#d4ccc0] font-serif"
       style={{
         background: "#1a1816",
         backgroundImage:
