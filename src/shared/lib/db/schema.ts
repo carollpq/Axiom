@@ -18,8 +18,6 @@ export type StudyTypeDb =
   | "replication"
   | "replication_failed";
 
-export type VisibilityDb = "private" | "under_review" | "public";
-
 export type ContractStatusDb =
   | "draft"
   | "pending_signatures"
@@ -121,10 +119,6 @@ export const papers = pgTable("papers", {
     .notNull()
     .$type<StudyTypeDb>()
     .default("original"),
-  visibility: text("visibility")
-    .notNull()
-    .$type<VisibilityDb>()
-    .default("private"),
   currentVersion: integer("current_version").notNull().default(1),
   ownerId: text("owner_id")
     .notNull()

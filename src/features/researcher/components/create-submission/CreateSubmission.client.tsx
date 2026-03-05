@@ -5,9 +5,8 @@ import { useRouter } from "next/navigation";
 import { useUpload } from "@/src/features/researcher/hooks/useUpload";
 import { FileDropzone } from "@/src/shared/components/FileDropzone";
 import { HashDisplay } from "@/src/shared/components/HashDisplay";
-import { VISIBILITY_OPTIONS, STUDY_TYPE_OPTIONS, PAPER_LIMITS } from "@/src/features/researcher/config/upload";
+import { STUDY_TYPE_OPTIONS, PAPER_LIMITS } from "@/src/features/researcher/config/upload";
 import { validateUpload } from "@/src/features/researcher/reducers/upload";
-import type { Visibility } from "@/src/features/researcher/types/paper-registration";
 import type { StudyTypeDb } from "@/src/shared/lib/db/schema";
 
 interface PaperOption {
@@ -137,7 +136,6 @@ export function CreateSubmissionClient({ papers: initialPapers, journals, contra
     fileName: upload.fileName,
     fileHash: upload.fileHash,
     isHashing: upload.isHashing,
-    visibility: upload.visibility,
     studyType: upload.studyType,
     keywords: upload.keywords,
     keywordInput: upload.keywordInput,
@@ -154,7 +152,6 @@ export function CreateSubmissionClient({ papers: initialPapers, journals, contra
       fileName: upload.fileName,
       fileHash: upload.fileHash,
       isHashing: upload.isHashing,
-      visibility: upload.visibility,
       studyType: upload.studyType,
       keywords: upload.keywords,
       keywordInput: upload.keywordInput,
@@ -327,53 +324,6 @@ export function CreateSubmissionClient({ papers: initialPapers, journals, contra
                     </option>
                   ))}
                 </select>
-              </div>
-
-              {/* Visibility */}
-              <div className="mb-[18px]">
-                <label style={labelStyle}>Visibility</label>
-                <div className="flex gap-2.5">
-                  {VISIBILITY_OPTIONS.map((v) => (
-                    <button
-                      key={v.key}
-                      onClick={() => upload.setVisibility(v.key)}
-                      className="flex-1 py-3 px-4 text-left cursor-pointer rounded-md transition-all duration-300"
-                      style={{
-                        background:
-                          upload.visibility === v.key
-                            ? "rgba(180,160,120,0.08)"
-                            : "rgba(30,28,24,0.4)",
-                        border:
-                          "1px solid " +
-                          (upload.visibility === v.key
-                            ? "rgba(180,160,120,0.3)"
-                            : "rgba(120,110,95,0.12)"),
-                      }}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <div
-                          className="w-4 h-4 rounded-full flex items-center justify-center"
-                          style={{
-                            border:
-                              "2px solid " +
-                              (upload.visibility === v.key ? "#c9b89e" : "rgba(120,110,95,0.3)"),
-                          }}
-                        >
-                          {upload.visibility === v.key && (
-                            <div className="w-2 h-2 rounded-full bg-[#c9b89e]" />
-                          )}
-                        </div>
-                        <span
-                          className="text-[13px]"
-                          style={{ color: upload.visibility === v.key ? "#d4c8a8" : "#8a8070" }}
-                        >
-                          {v.label}
-                        </span>
-                      </div>
-                      <div className="text-[10px] text-[#5a5345] ml-6">{v.desc}</div>
-                    </button>
-                  ))}
-                </div>
               </div>
 
               {/* Keywords */}

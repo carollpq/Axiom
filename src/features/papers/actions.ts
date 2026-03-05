@@ -1,7 +1,7 @@
 import { db } from "@/src/shared/lib/db";
 import { papers, paperVersions, submissions, users } from "@/src/shared/lib/db/schema";
 import { eq } from "drizzle-orm";
-import type { PaperStatusDb, StudyTypeDb, VisibilityDb } from "@/src/shared/lib/db/schema";
+import type { PaperStatusDb, StudyTypeDb } from "@/src/shared/lib/db/schema";
 
 export async function updatePaperVersionHedera(
   versionId: string,
@@ -58,7 +58,6 @@ export interface UpdatePaperInput {
   title?: string;
   abstract?: string;
   status?: PaperStatusDb;
-  visibility?: VisibilityDb;
 }
 
 export async function updatePaper(id: string, input: UpdatePaperInput) {

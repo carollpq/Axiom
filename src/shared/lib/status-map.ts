@@ -26,26 +26,6 @@ export function toDisplayStatus(dbStatus: string): PaperStatus {
   return statusMap[dbStatus] ?? "Draft";
 }
 
-/**
- * Maps DB paper_status enum -> display string for public-facing contexts
- * (explorer, verify page) where "Retracted" must be shown explicitly.
- */
-export function toPublicDisplayStatus(dbStatus: string): string {
-  const map: Record<string, string> = {
-    draft: "Draft",
-    registered: "Draft",
-    contract_pending: "Contract Pending",
-    submitted: "Submitted",
-    viewed_by_editor: "Viewed by Editor",
-    under_review: "Under Review",
-    reviews_completed: "Reviews Complete",
-    revision_requested: "Revision Requested",
-    published: "Published",
-    retracted: "Retracted",
-  };
-  return map[dbStatus] ?? "Draft";
-}
-
 /** Maps frontend display string -> DB enum for filtering */
 const reverseMap: Record<PaperStatus, string[]> = {
   Draft: ["draft", "registered"],

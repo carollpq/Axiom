@@ -1,4 +1,3 @@
-import type { Visibility } from "@/src/features/researcher/types/paper-registration";
 import type { StudyTypeDb } from "@/src/shared/lib/db/schema";
 
 export const STUDY_TYPE_VALUES = [
@@ -10,11 +9,6 @@ export const PAPER_LIMITS = {
   abstract: { min: 20, max: 10_000 },
   keywords: { max: 20 },
 } as const;
-
-export const VISIBILITY_OPTIONS: { key: Visibility; label: string; desc: string }[] = [
-  { key: "private", label: "Private Draft", desc: "Only hash recorded. Content not accessible to others." },
-  { key: "public", label: "Public Draft", desc: "Content accessible via the platform." },
-];
 
 export const STUDY_TYPE_OPTIONS: { key: StudyTypeDb; label: string }[] = [
   { key: "original", label: "Original Research" },

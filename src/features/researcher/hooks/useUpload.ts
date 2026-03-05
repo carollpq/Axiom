@@ -14,7 +14,6 @@ import {
   initialUploadState,
   validateUpload,
 } from "@/src/features/researcher/reducers/upload";
-import type { Visibility } from "@/src/features/researcher/types/paper-registration";
 import type { StudyTypeDb } from "@/src/shared/lib/db/schema";
 
 async function encryptFileIfConfigured(
@@ -123,7 +122,7 @@ export function useUpload(onRegistered?: (paperId: string, title: string) => voi
 
       await fetchApi(`/api/papers/${paper.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ status: "registered", visibility: state.visibility }),
+        body: JSON.stringify({ status: "registered" }),
       });
 
       dispatch({ type: "REGISTER_SUCCESS", paperId: paper.id });
@@ -149,8 +148,6 @@ export function useUpload(onRegistered?: (paperId: string, title: string) => voi
     removeFile,
     studyType: state.studyType,
     setStudyType: (studyType: StudyTypeDb) => dispatch({ type: "SET_STUDY_TYPE", studyType }),
-    visibility: state.visibility,
-    setVisibility: (visibility: Visibility) => dispatch({ type: "SET_VISIBILITY", visibility }),
     keywords: state.keywords,
     keywordInput: state.keywordInput,
     setKeywordInput: (v: string) => dispatch({ type: "SET_KEYWORD_INPUT", keywordInput: v }),

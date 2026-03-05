@@ -1,4 +1,3 @@
-import type { Visibility } from "@/src/features/researcher/types/paper-registration";
 import type { StudyTypeDb } from "@/src/shared/lib/db/schema";
 import { PAPER_LIMITS } from "@/src/features/researcher/config/upload";
 
@@ -8,7 +7,6 @@ export interface UploadState {
   fileName: string;
   fileHash: string;
   isHashing: boolean;
-  visibility: Visibility;
   studyType: StudyTypeDb;
   keywords: string[];
   keywordInput: string;
@@ -24,7 +22,6 @@ export const initialUploadState: UploadState = {
   fileName: "",
   fileHash: "",
   isHashing: false,
-  visibility: "private",
   studyType: "original",
   keywords: [],
   keywordInput: "",
@@ -41,7 +38,6 @@ export type UploadAction =
   | { type: "FILE_UPLOAD_COMPLETE"; fileHash: string }
   | { type: "FILE_UPLOAD_ERROR" }
   | { type: "REMOVE_FILE" }
-  | { type: "SET_VISIBILITY"; visibility: Visibility }
   | { type: "SET_STUDY_TYPE"; studyType: StudyTypeDb }
   | { type: "SET_KEYWORD_INPUT"; keywordInput: string }
   | { type: "ADD_KEYWORD" }
@@ -67,8 +63,6 @@ export function uploadReducer(state: UploadState, action: UploadAction): UploadS
     case "REMOVE_FILE":
       return { ...state, fileName: "", fileHash: "" };
 
-    case "SET_VISIBILITY":
-      return { ...state, visibility: action.visibility };
     case "SET_STUDY_TYPE":
       return { ...state, studyType: action.studyType };
 

@@ -43,7 +43,6 @@ export interface ApiPaper {
   status: string;
   abstract?: string | null;
   studyType?: string | null;
-  visibility?: string | null;
   litDataToEncryptHash?: string | null;
   litAccessConditionsJson?: string | null;
   createdAt: string;
