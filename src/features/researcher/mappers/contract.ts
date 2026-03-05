@@ -43,6 +43,46 @@ export function mapApiPapersToDrafts(
     });
 }
 
+function mapContributorSummary(cc: ApiContractContributor) {
+  return {
+    name: cc.contributorName ?? "Unknown",
+    role: cc.roleDescription ?? "",
+    pct: cc.contributionPct,
+    status: cc.status,
+  };
+}
+
+export function mapContractsToSign(
+  contracts: Awaited<ReturnType<typeof import("@/src/features/contracts/queries").listContractsToSign>>,
+  currentWallet: string,
+) {
+  return contracts
+    .filter((c) => c.creator?.walletAddress?.toLowerCase() !== currentWallet)
+    .map((c) => ({
+      id: c.id,
+      paperTitle: c.paperTitle,
+      contributors: c.contributors.map((cc) => ({
+        ...mapContributorSummary(cc),
+        wallet: cc.contributorWallet,
+      })),
+    }));
+}
+
+export function mapOwnedContractsForStatus(contracts: ApiContract[]) {
+  return contracts.map((c) => {
+    const pendingCount = c.contributors.filter(
+      (cc) => cc.status === "pending",
+    ).length;
+    return {
+      id: c.id,
+      paperTitle: c.paperTitle,
+      allSigned: c.status === "fully_signed",
+      pendingCount,
+      contributors: c.contributors.map(mapContributorSummary),
+    };
+  });
+}
+
 export function mapDbContractToSigned(c: ApiContract): SignedContract {
   const contribSummary = c.contributors
     .map((cc) => `${cc.contributorName ?? "Unknown"} (${cc.contributionPct}%)`)

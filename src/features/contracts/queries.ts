@@ -1,6 +1,6 @@
 import { db } from "@/src/shared/lib/db";
 import { authorshipContracts, contractContributors, users } from "@/src/shared/lib/db/schema";
-import { and, eq, gt } from "drizzle-orm";
+import { and, eq, gt, inArray } from "drizzle-orm";
 
 export async function listUserContracts(walletAddress: string) {
   const user = (
@@ -46,6 +46,23 @@ export async function getContributorByInviteToken(token: string) {
   if (!contract) return null;
 
   return { contributor, contract };
+}
+
+export async function listContractsToSign(walletAddress: string) {
+  const pendingIds = db
+    .selectDistinct({ id: contractContributors.contractId })
+    .from(contractContributors)
+    .where(
+      and(
+        eq(contractContributors.contributorWallet, walletAddress.toLowerCase()),
+        eq(contractContributors.status, "pending"),
+      ),
+    );
+
+  return db.query.authorshipContracts.findMany({
+    where: inArray(authorshipContracts.id, pendingIds),
+    with: { contributors: true, creator: true },
+  });
 }
 
 export async function getContractById(id: string) {
