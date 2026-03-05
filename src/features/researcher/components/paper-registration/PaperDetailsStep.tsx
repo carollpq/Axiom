@@ -4,7 +4,7 @@ import { useRef } from "react";
 import type { Visibility } from "@/src/features/researcher/types/paper-registration";
 import type { StudyTypeDb } from "@/src/shared/lib/db/schema";
 import type { Step1Errors } from "@/src/features/researcher/reducers/paper-registration";
-import { VISIBILITY_OPTIONS, STUDY_TYPE_OPTIONS } from "@/src/features/researcher/config/paper-registration";
+import { VISIBILITY_OPTIONS, STUDY_TYPE_OPTIONS, PAPER_LIMITS } from "@/src/features/researcher/config/paper-registration";
 import { FormSelect } from "@/src/shared/components/FormSelect";
 import { inputStyle, labelStyle as baseLabelStyle, errorStyle, errorBorder } from "./styles";
 
@@ -173,7 +173,12 @@ export function PaperDetailsStep({
       {/* Keywords */}
       {/* TODO: persist keywords to DB via POST /api/papers */}
       <div>
-        <label style={labelStyle}>Research Fields / Keywords</label>
+        <label style={labelStyle}>
+          Research Fields / Keywords
+          <span className="ml-2 text-[10px] text-[#6a6050]">
+            {keywords.length}/{PAPER_LIMITS.keywords.max}
+          </span>
+        </label>
         <div className="flex flex-wrap gap-1.5 mb-2">
           {keywords.map((k, i) => (
             <span
@@ -189,19 +194,23 @@ export function PaperDetailsStep({
             </span>
           ))}
         </div>
-        <div className="flex gap-2">
-          <input
-            type="text" placeholder="Add keyword..."
-            value={keywordInput} onChange={e => onKeywordInputChange(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter" && keywordInput.trim()) onAddKeyword(); }}
-            style={{ ...inputStyle, flex: 1 }}
-          />
-          <button
-            onClick={onAddKeyword}
-            className="rounded py-0 px-4 text-[#8a8070] text-xs cursor-pointer font-serif"
-            style={{ background: "rgba(120,110,95,0.1)", border: "1px solid rgba(120,110,95,0.2)" }}
-          >Add</button>
-        </div>
+        {keywords.length < PAPER_LIMITS.keywords.max ? (
+          <div className="flex gap-2">
+            <input
+              type="text" placeholder="Add keyword..."
+              value={keywordInput} onChange={e => onKeywordInputChange(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && keywordInput.trim()) onAddKeyword(); }}
+              style={{ ...inputStyle, flex: 1 }}
+            />
+            <button
+              onClick={onAddKeyword}
+              className="rounded py-0 px-4 text-[#8a8070] text-xs cursor-pointer font-serif"
+              style={{ background: "rgba(120,110,95,0.1)", border: "1px solid rgba(120,110,95,0.2)" }}
+            >Add</button>
+          </div>
+        ) : (
+          <div className="text-[10px] text-[#6a6050]">Maximum keywords reached</div>
+        )}
       </div>
     </div>
   );

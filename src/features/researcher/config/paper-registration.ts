@@ -10,6 +10,7 @@ export const STUDY_TYPE_VALUES = [
 export const PAPER_LIMITS = {
   title: { min: 3, max: 500 },
   abstract: { min: 20, max: 10_000 },
+  keywords: { max: 20 },
 } as const;
 
 export const VISIBILITY_OPTIONS: { key: Visibility; label: string; desc: string }[] = [

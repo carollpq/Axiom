@@ -1,6 +1,7 @@
 "use client";
 
 import { useContractBuilder } from "@/src/features/researcher/hooks/useContractBuilder";
+import { AlertBanner } from "@/src/shared/components/AlertBanner";
 import { PaperSelection } from "./PaperSelection";
 import { ContributorTable } from "./ContributorTable";
 import { SignatureProgress } from "./SignatureProgress";
@@ -17,7 +18,7 @@ interface ContractBuilderClientProps {
 export function ContractBuilderClient({ initialDrafts }: ContractBuilderClientProps) {
   const {
     selectedDraft, newTitle, contributors, showAddRow, addWallet,
-    showPreview, showInviteModal, inviteLink, selectedContractId,
+    showPreview, showInviteModal, inviteLink, selectedContractId, error,
     totalPct, isValid, signedCount, allSigned, hasSigned, draft, drafts, currentUserWallet,
     setSelectedDraft, setNewTitle, setShowAddRow, setAddWallet, setShowPreview,
     updateContributor, removeContributor, addContributor, handleSign, handleInvite, closeInviteModal,
@@ -26,6 +27,10 @@ export function ContractBuilderClient({ initialDrafts }: ContractBuilderClientPr
   return (
     <>
       <div>
+        {error && (
+          <AlertBanner variant="error" className="mb-4">{error}</AlertBanner>
+        )}
+
         <PaperSelection
           selectedDraft={selectedDraft}
           newTitle={newTitle}

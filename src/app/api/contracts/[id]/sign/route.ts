@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { getContractById } from "@/src/features/contracts/queries";
 import { signContributor, updateContractHedera } from "@/src/features/contracts/actions";
 import { verifyMessage } from "viem";
-import { requireSession, anchorToHcs } from "@/src/shared/lib/api-helpers";
+import { requireSession, anchorToHcs, validationError } from "@/src/shared/lib/api-helpers";
+import { EVM_ADDRESS_REGEX, HEX_SIGNATURE_REGEX } from "@/src/shared/lib/validation";
+
+const signSchema = z.object({
+  contributorWallet: z.string().regex(EVM_ADDRESS_REGEX, "Invalid wallet address"),
+  signature: z.string().regex(HEX_SIGNATURE_REGEX, "Invalid signature format"),
+  contractHash: z.string().optional(),
+});
 
 export const runtime = "nodejs";
 
@@ -15,18 +23,9 @@ export async function POST(
 
   const { id } = await params;
   const body = await req.json();
-  const { contributorWallet, signature, contractHash } = body as {
-    contributorWallet?: string;
-    signature?: string;
-    contractHash?: string;
-  };
-
-  if (!contributorWallet || !signature) {
-    return NextResponse.json(
-      { error: "contributorWallet and signature are required" },
-      { status: 400 },
-    );
-  }
+  const parsed = signSchema.safeParse(body);
+  if (!parsed.success) return validationError(parsed.error);
+  const { contributorWallet, signature, contractHash } = parsed.data;
 
   if (contributorWallet.toLowerCase() !== session) {
     return NextResponse.json(

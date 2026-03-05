@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { db } from "@/src/shared/lib/db";
 import { reviewerRatings } from "@/src/shared/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -8,18 +9,19 @@ import {
   requireReviewWithPaperOwner,
   anchorToHcs,
   recordReputation,
+  validationError,
 } from "@/src/shared/lib/api-helpers";
 
 export const runtime = "nodejs";
 
-interface RatingBody {
-  actionableFeedback: number;
-  deepEngagement: number;
-  fairObjective: number;
-  justifiedRecommendation: number;
-  appropriateExpertise: number;
-  comment?: string;
-}
+const ratingSchema = z.object({
+  actionableFeedback: z.number().int().min(1).max(5),
+  deepEngagement: z.number().int().min(1).max(5),
+  fairObjective: z.number().int().min(1).max(5),
+  justifiedRecommendation: z.number().int().min(1).max(5),
+  appropriateExpertise: z.number().int().min(1).max(5),
+  comment: z.string().trim().max(10_000).nullish(),
+});
 
 const PROTOCOL_KEYS = [
   "actionableFeedback",
@@ -41,18 +43,14 @@ export async function POST(
   const review = await requireReviewWithPaperOwner(reviewId, session);
   if (review instanceof NextResponse) return review;
 
-  const body = (await req.json()) as RatingBody;
+  const body = await req.json();
+  const parsed = ratingSchema.safeParse(body);
+  if (!parsed.success) return validationError(parsed.error);
 
-  // Validate each protocol is integer 1-5
-  for (const key of PROTOCOL_KEYS) {
-    const val = body[key];
-    if (!val || !Number.isInteger(val) || val < 1 || val > 5) {
-      return NextResponse.json(
-        { error: `${key} must be an integer 1-5` },
-        { status: 400 },
-      );
-    }
-  }
+  const {
+    actionableFeedback, deepEngagement, fairObjective,
+    justifiedRecommendation, appropriateExpertise, comment,
+  } = parsed.data;
 
   // Check if already rated
   const existing = await db.query.reviewerRatings.findFirst({
@@ -63,23 +61,20 @@ export async function POST(
   }
 
   const overallRating = Math.round(
-    PROTOCOL_KEYS.reduce((sum, k) => sum + body[k], 0) / PROTOCOL_KEYS.length,
+    PROTOCOL_KEYS.reduce((sum, k) => sum + parsed.data[k], 0) / PROTOCOL_KEYS.length,
   );
 
   const ratingHash = await hashString(
     canonicalJson({
       reviewId,
-      actionableFeedback: body.actionableFeedback,
-      deepEngagement: body.deepEngagement,
-      fairObjective: body.fairObjective,
-      justifiedRecommendation: body.justifiedRecommendation,
-      appropriateExpertise: body.appropriateExpertise,
+      actionableFeedback, deepEngagement, fairObjective,
+      justifiedRecommendation, appropriateExpertise,
     }),
   );
 
   let commentHash: string | null = null;
-  if (body.comment?.trim()) {
-    commentHash = await hashString(canonicalJson({ comment: body.comment, reviewId }));
+  if (comment?.trim()) {
+    commentHash = await hashString(canonicalJson({ comment, reviewId }));
 
     // Anchor comment hash to HCS
     await anchorToHcs("HCS_TOPIC_REVIEWS", {
@@ -98,11 +93,11 @@ export async function POST(
     {
       type: "author_rating",
       protocols: {
-        actionable_feedback: body.actionableFeedback,
-        deep_engagement: body.deepEngagement,
-        fair_objective: body.fairObjective,
-        justified_recommendation: body.justifiedRecommendation,
-        appropriate_expertise: body.appropriateExpertise,
+        actionable_feedback: actionableFeedback,
+        deep_engagement: deepEngagement,
+        fair_objective: fairObjective,
+        justified_recommendation: justifiedRecommendation,
+        appropriate_expertise: appropriateExpertise,
       },
       overall: overallRating,
       reviewId,
@@ -113,13 +108,10 @@ export async function POST(
     .insert(reviewerRatings)
     .values({
       reviewId,
-      actionableFeedback: body.actionableFeedback,
-      deepEngagement: body.deepEngagement,
-      fairObjective: body.fairObjective,
-      justifiedRecommendation: body.justifiedRecommendation,
-      appropriateExpertise: body.appropriateExpertise,
+      actionableFeedback, deepEngagement, fairObjective,
+      justifiedRecommendation, appropriateExpertise,
       overallRating,
-      comment: body.comment?.trim() || null,
+      comment: comment?.trim() || null,
       commentHash,
       ratingHash,
       reputationTokenSerial: serial ?? null,

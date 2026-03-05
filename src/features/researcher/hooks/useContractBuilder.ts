@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducer, useEffect } from "react";
+import { useReducer, useEffect, useState } from "react";
 import type { Contributor, ExistingDraft } from "@/src/features/researcher/types/contract";
 import { useCurrentUser } from "@/src/shared/hooks/useCurrentUser";
 import { fetchApi } from "@/src/shared/lib/api";
@@ -20,6 +20,7 @@ import {
 export function useContractBuilder(initialDrafts: ExistingDraft[]) {
   const { user, account } = useCurrentUser();
   const [state, dispatch] = useReducer(contractBuilderReducer, initialState);
+  const [error, setError] = useState<string | null>(null);
 
   // When a draft is selected, load its pre-mapped contributors
   useEffect(() => {
@@ -157,8 +158,10 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
           },
         );
         newContributor.dbId = result.id;
+        setError(null);
       } catch (err) {
         console.error("Add contributor failed:", err);
+        setError("Failed to add contributor.");
         return;
       }
     }
@@ -207,9 +210,11 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
         }),
       });
 
+      setError(null);
       await refreshContributors(contractId);
     } catch (err) {
       console.error("Signing failed:", err);
+      setError("Signing failed. Please try again.");
     }
   };
 
@@ -226,9 +231,11 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
           body: JSON.stringify({ contributorId: contributorDbId }),
         },
       );
+      setError(null);
       dispatch({ type: "SHOW_INVITE_MODAL", inviteLink: res.inviteLink });
     } catch (err) {
       console.error("Invite generation failed:", err);
+      setError("Failed to generate invite link.");
     }
   };
 
@@ -245,6 +252,7 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
     showInviteModal: state.showInviteModal,
     inviteLink: state.inviteLink,
     selectedContractId: state.selectedContractId,
+    error,
     // Derived
     totalPct,
     isValid,

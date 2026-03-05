@@ -135,7 +135,7 @@ export function paperRegistrationReducer(
     case "SET_KEYWORD_INPUT":
       return { ...state, keywordInput: action.keywordInput };
     case "ADD_KEYWORD":
-      return state.keywordInput.trim()
+      return state.keywordInput.trim() && state.keywords.length < PAPER_LIMITS.keywords.max
         ? { ...state, keywords: [...state.keywords, state.keywordInput.trim()], keywordInput: "" }
         : state;
     case "REMOVE_KEYWORD":

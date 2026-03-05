@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { submitRebuttalResponses } from "@/src/features/rebuttals/actions";
 import { canonicalJson, hashString } from "@/src/shared/lib/hashing";
 import type { RebuttalPositionDb } from "@/src/shared/lib/db/schema";
@@ -6,17 +7,20 @@ import {
   requireSession,
   requireRebuttalAuthor,
   anchorAndNotify,
+  validationError,
 } from "@/src/shared/lib/api-helpers";
 
 export const runtime = "nodejs";
 
-interface ResponseInput {
-  reviewId: string;
-  criterionId?: string;
-  position: RebuttalPositionDb;
-  justification: string;
-  evidence?: string;
-}
+const respondSchema = z.object({
+  responses: z.array(z.object({
+    reviewId: z.string().min(1),
+    criterionId: z.string().nullish(),
+    position: z.enum(["agree", "disagree"] as [RebuttalPositionDb, ...RebuttalPositionDb[]]),
+    justification: z.string().trim().min(10).max(10_000),
+    evidence: z.string().trim().max(10_000).nullish(),
+  })).min(1).max(50),
+});
 
 export async function POST(
   req: NextRequest,
@@ -38,13 +42,11 @@ export async function POST(
     return NextResponse.json({ error: "Rebuttal deadline has passed" }, { status: 400 });
   }
 
-  const body = (await req.json()) as { responses: ResponseInput[] };
+  const body = await req.json();
+  const parsed = respondSchema.safeParse(body);
+  if (!parsed.success) return validationError(parsed.error);
 
-  if (!body.responses || !Array.isArray(body.responses) || body.responses.length === 0) {
-    return NextResponse.json({ error: "At least one response is required" }, { status: 400 });
-  }
-
-  const rebuttalHash = await hashString(canonicalJson(body.responses));
+  const rebuttalHash = await hashString(canonicalJson(parsed.data.responses));
 
   const editorWallet = rebuttal.submission?.journal?.editorWallet;
 
@@ -70,7 +72,7 @@ export async function POST(
       : [],
   });
 
-  const responses = body.responses.map((r) => ({
+  const responses = parsed.data.responses.map((r) => ({
     ...r,
     rebuttalId,
   }));
