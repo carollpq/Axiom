@@ -28,7 +28,9 @@ export function PaperSelection({ selectedDraft, newTitle, drafts, draft, onSelec
           >
             <option value="">-- Choose a draft --</option>
             {drafts.map(d => (
-              <option key={d.id} value={d.id}>{d.title}</option>
+              <option key={d.id} value={d.id}>
+                {d.title}{d.registered ? " \u2713 Registered" : ""}
+              </option>
             ))}
           </select>
         </div>
@@ -51,8 +53,12 @@ export function PaperSelection({ selectedDraft, newTitle, drafts, draft, onSelec
         </div>
       </div>
       {draft && (
-        <div className="mt-3 text-[11px] text-[#5a7a9a] font-mono">
-          Draft hash: {draft.hash} {"\u2197"}
+        <div className="mt-3 text-[11px] flex items-center gap-2">
+          {draft.registered ? (
+            <span className="text-[#8fbc8f]">Paper registered and verified on-chain</span>
+          ) : (
+            <span className="text-[#c9a44a]">Paper not yet registered — upload it on the Paper Version Control page first</span>
+          )}
         </div>
       )}
     </div>

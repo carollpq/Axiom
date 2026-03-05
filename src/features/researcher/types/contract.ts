@@ -20,6 +20,7 @@ export interface ExistingDraft {
   dbId?: string; // DB UUID of the paper record
   title: string;
   hash: string;
+  registered: boolean;       // true if paper has been uploaded & hashed
   contractId?: string;       // DB UUID of the matching authorship contract, if one exists
   contributors?: Contributor[]; // pre-mapped contributors for that contract
 }

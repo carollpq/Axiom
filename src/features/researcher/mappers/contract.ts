@@ -25,7 +25,7 @@ export function mapApiPapersToDrafts(
   contracts: ApiContract[],
 ): ExistingDraft[] {
   return papers
-    .filter((p) => p.status === "draft" || p.status === "contract_pending")
+    .filter((p) => p.status === "draft" || p.status === "registered" || p.status === "contract_pending")
     .map((p, i) => {
       const match = contracts.find((c) =>
         c.paperId ? c.paperId === p.id : c.paperTitle === p.title,
@@ -35,6 +35,7 @@ export function mapApiPapersToDrafts(
         dbId: p.id,
         title: p.title,
         hash: p.versions?.[0]?.paperHash ?? "\u2014",
+        registered: p.status === "registered" || p.status === "contract_pending",
         contractId: match?.id,
         contributors: match?.contributors.length
           ? mapApiContributors(match.contributors)
