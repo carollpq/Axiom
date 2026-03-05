@@ -61,10 +61,10 @@ export function FileDropzone({
                 <span>{"\uD83D\uDCC4"}</span> {fileName}
               </div>
               {isHashing ? (
-                <div className="text-[10px] text-[#c9a44a] font-mono mt-1">Computing SHA-256...</div>
+                <div className="text-[10px] text-[#c9a44a] font-mono mt-1">Generating digital fingerprint...</div>
               ) : (
                 <div className="text-[10px] text-[#5a7a9a] font-mono mt-1">
-                  SHA-256: {hash.slice(0, 16)}...{hash.slice(-8)}
+                  Fingerprint: {hash.slice(0, 16)}...{hash.slice(-8)}
                 </div>
               )}
             </div>
@@ -80,7 +80,7 @@ export function FileDropzone({
           <div>
             <div className="text-2xl text-[#4a4238] mb-2">{"\u2B06"}</div>
             <div className="text-[13px] text-[#6a6050]">{label}</div>
-            <div className="text-[10px] text-[#4a4238] mt-1">SHA-256 hash computed client-side for transparency</div>
+            <div className="text-[10px] text-[#4a4238] mt-1">A unique digital fingerprint is generated locally — your file never leaves your device</div>
           </div>
         )}
       </div>

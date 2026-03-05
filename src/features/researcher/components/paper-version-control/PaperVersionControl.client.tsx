@@ -7,7 +7,6 @@ import { uploadToIPFS } from "@/src/shared/lib/upload";
 import { formatIsoDate } from "@/src/shared/lib/format";
 import { useUpload } from "@/src/features/researcher/hooks/useUpload";
 import { FileDropzone } from "@/src/shared/components/FileDropzone";
-import { HashDisplay } from "@/src/shared/components/HashDisplay";
 import { STUDY_TYPE_OPTIONS, PAPER_LIMITS } from "@/src/features/researcher/config/upload";
 import { validateUpload } from "@/src/features/researcher/reducers/upload";
 import type { StudyTypeDb } from "@/src/shared/lib/db/schema";
@@ -236,7 +235,18 @@ export function PaperVersionControlClient({ papers }: Props) {
                 <div className="text-[12px] text-[#b0a898] mb-3">
                   &ldquo;{upload.title}&rdquo; has been added to your repository.
                 </div>
-                {upload.fileHash && <HashDisplay label="Paper Hash (SHA-256)" hash={upload.fileHash} />}
+                {upload.fileHash && (
+                  <div className="text-[11px] text-[#8a8070] mt-1">
+                    A unique digital fingerprint has been recorded and timestamped on the blockchain for this file.
+                  </div>
+                )}
+                <button
+                  onClick={() => upload.reset()}
+                  className="mt-4 ml-auto block cursor-pointer rounded-md px-4 py-2 text-[13px] font-medium text-[#c9a44a] transition-colors hover:text-[#d4b45a]"
+                  style={{ background: "rgba(201,164,74,0.1)", border: "1px solid rgba(201,164,74,0.25)" }}
+                >
+                  Register another paper
+                </button>
               </div>
             ) : (
               <>
