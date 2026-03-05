@@ -25,14 +25,14 @@ function ShellInner({ navItems, user, children }: RoleShellProps) {
           "radial-gradient(ellipse at 20% 0%, rgba(60,55,45,0.3) 0%, transparent 50%), radial-gradient(ellipse at 80% 100%, rgba(50,45,35,0.2) 0%, transparent 50%)",
       }}
     >
-      <Sidebar navItems={navItems} />
+      <Sidebar navItems={navItems} user={user} />
       <div
         style={{
           marginLeft,
           transition: "margin-left 200ms ease-in-out",
         }}
       >
-        <TopBar user={user} />
+        <TopBar />
         {children}
         <Footer />
       </div>
