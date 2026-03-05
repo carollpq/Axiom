@@ -52,6 +52,8 @@ async function encryptFileIfConfigured(
   }
 }
 
+export type UseUploadReturn = ReturnType<typeof useUpload>;
+
 export function useUpload(onRegistered?: (paperId: string, title: string) => void) {
   const { user, isConnected, account } = useCurrentUser();
   const [state, dispatch] = useReducer(uploadReducer, initialUploadState);
