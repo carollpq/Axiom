@@ -6,9 +6,10 @@ import {
   listReviewerPool,
   listReputationScores,
 } from "@/src/features/editor/queries";
-import { mapDbToPaperCardData, mapDbToPoolReviewer, mapDbToReviewerWithStatus } from "@/src/features/editor/mappers/journal";
+import { mapDbToPaperCardData, mapDbToReviewerWithStatus, buildReviewerPool, buildNameByWallet } from "@/src/features/editor/mappers/journal";
 import { getRebuttalBySubmission } from "@/src/features/rebuttals/queries";
 import type { ReviewerWithStatus } from "@/src/features/editor/types";
+import type { AuthorResponseStatusDb } from "@/src/shared/lib/db/schema";
 
 export default async function UnderReviewPage() {
   const sessionWallet = await getSession();
@@ -22,24 +23,23 @@ export default async function UnderReviewPage() {
         listReputationScores(),
       ]);
 
-      const scoreByWallet = Object.fromEntries(scores.map(s => [s.userWallet, s]));
-      const nameByWallet: Record<string, string> = Object.fromEntries(
-        reviewers.map(u => [u.walletAddress as string, (u.displayName ?? u.walletAddress) as string]),
-      );
+      const nameByWallet = buildNameByWallet(reviewers);
 
       const underReviewSubs = allSubs.filter(
-        s => s.status === "reviewers_assigned" || s.status === "under_review" || s.status === "rebuttal_open",
+        s => s.status === "reviewers_assigned" || s.status === "under_review" || s.status === "reviews_completed" || s.status === "rebuttal_open",
       );
 
       const papers = underReviewSubs.map(mapDbToPaperCardData);
-      const reviewerPool = reviewers.map(u => mapDbToPoolReviewer(u, scoreByWallet[u.walletAddress as string]));
+      const reviewerPool = buildReviewerPool(reviewers, scores);
 
       const reviewStatuses: Record<string, ReviewerWithStatus[]> = {};
+      const authorResponseStatuses: Record<string, AuthorResponseStatusDb | null> = {};
       for (const s of underReviewSubs) {
         if (s.reviewAssignments && s.reviewAssignments.length > 0) {
           reviewStatuses[s.id] = (s.reviewAssignments as { id: string; reviewerWallet: string; status: string }[])
             .map(a => mapDbToReviewerWithStatus(a, nameByWallet));
         }
+        authorResponseStatuses[s.id] = (s.authorResponseStatus as AuthorResponseStatusDb | null) ?? null;
       }
 
       // Fetch rebuttal data for submissions in rebuttal_open status (in parallel)
@@ -70,6 +70,7 @@ export default async function UnderReviewPage() {
           papers={papers}
           reviewerPool={reviewerPool}
           reviewStatuses={reviewStatuses}
+          authorResponseStatuses={authorResponseStatuses}
           rebuttalsBySubmission={rebuttalsBySubmission}
         />
       );
@@ -81,6 +82,7 @@ export default async function UnderReviewPage() {
       papers={[]}
       reviewerPool={[]}
       reviewStatuses={{}}
+      authorResponseStatuses={{}}
     />
   );
 }

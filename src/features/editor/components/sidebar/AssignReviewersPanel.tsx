@@ -60,7 +60,7 @@ export function AssignReviewersPanel({
                 border: "1px solid rgba(120,110,95,0.15)",
               }}
             >
-              <span className="text-[12px] text-[#d4ccc0] font-serif">
+              <span className="text-[12px] text-[#d4ccc0] font-serif truncate">
                 {r.name}
               </span>
               <button
@@ -87,7 +87,7 @@ export function AssignReviewersPanel({
                 border: "1px solid rgba(120,110,95,0.1)",
               }}
             >
-              <div>
+              <div className="min-w-0 truncate">
                 <span className="text-[12px] text-[#c9b89e] font-serif">
                   {r.name}
                 </span>
@@ -95,7 +95,7 @@ export function AssignReviewersPanel({
                   {r.field} &middot; {r.score}
                 </span>
               </div>
-              <span className="text-[10px] text-[#8a8070]">+ Assign</span>
+              <span className="text-[10px] text-[#8a8070] shrink-0">+ Assign</span>
             </button>
           ))}
         </div>

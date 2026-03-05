@@ -35,7 +35,8 @@ export interface PoolReviewer {
   score: number;
   orcid: string;
   reviews: number;
-  wallet?: string;
+  wallet: string;
+  institution: string;
 }
 
 export interface CriterionTemplate {
@@ -68,6 +69,13 @@ export interface ReviewerWithStatus {
   name: string;
   status: AssignmentDisplayStatus;
   hasComment: boolean;
+  reviewContent?: ReviewCommentData;
+}
+
+export interface ReviewCommentData {
+  strengths: string | null;
+  weaknesses: string | null;
+  recommendation: string | null;
 }
 
 export interface EditorProfile {

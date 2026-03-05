@@ -27,6 +27,7 @@ export async function listJournalSubmissions(journalId?: string) {
       journal: true,
       reviewCriteria: true,
       reviewAssignments: true,
+      reviews: true,
     },
     orderBy: (s, { desc }) => [desc(s.submittedAt)],
   });

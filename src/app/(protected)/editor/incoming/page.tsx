@@ -23,7 +23,7 @@ export default async function IncomingPapersPage() {
       const scoreByWallet = Object.fromEntries(scores.map(s => [s.userWallet, s]));
 
       const incomingSubs = allSubs.filter(
-        s => s.status === "submitted" || s.status === "criteria_published",
+        s => s.status === "submitted" || s.status === "viewed_by_editor" || s.status === "criteria_published",
       );
 
       const reviewerPool = reviewers.map(u => mapDbToPoolReviewer(u, scoreByWallet[u.walletAddress as string]));

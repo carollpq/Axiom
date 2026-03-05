@@ -101,12 +101,12 @@ export const mockAcceptedPapers: PaperCardData[] = [
 /* ── Reviewer pool ── */
 
 export const mockReviewerPool: PoolReviewer[] = [
-  { id: "r1", name: "Dr. Emily Watson", field: "Machine Learning", score: 4.7, orcid: "0000-0001-2345-6789", reviews: 23 },
-  { id: "r2", name: "Dr. James Liu", field: "Quantum Computing", score: 4.5, orcid: "0000-0002-3456-7890", reviews: 18 },
-  { id: "r3", name: "Dr. Priya Mehta", field: "NLP", score: 4.2, orcid: "0000-0003-4567-8901", reviews: 31 },
-  { id: "r4", name: "Dr. Carlos Rivera", field: "Computer Vision", score: 3.9, orcid: "0000-0004-5678-9012", reviews: 12 },
-  { id: "r5", name: "Dr. Anna Kowalski", field: "Statistics", score: 4.8, orcid: "0000-0005-6789-0123", reviews: 27 },
-  { id: "r6", name: "Dr. Omar Hassan", field: "Distributed Systems", score: 4.1, orcid: "0000-0006-7890-1234", reviews: 15 },
+  { id: "r1", name: "Dr. Emily Watson", field: "Machine Learning", score: 4.7, orcid: "0000-0001-2345-6789", reviews: 23, wallet: "0xmock1", institution: "MIT" },
+  { id: "r2", name: "Dr. James Liu", field: "Quantum Computing", score: 4.5, orcid: "0000-0002-3456-7890", reviews: 18, wallet: "0xmock2", institution: "Stanford University" },
+  { id: "r3", name: "Dr. Priya Mehta", field: "NLP", score: 4.2, orcid: "0000-0003-4567-8901", reviews: 31, wallet: "0xmock3", institution: "Oxford University" },
+  { id: "r4", name: "Dr. Carlos Rivera", field: "Computer Vision", score: 3.9, orcid: "0000-0004-5678-9012", reviews: 12, wallet: "0xmock4", institution: "ETH Zurich" },
+  { id: "r5", name: "Dr. Anna Kowalski", field: "Statistics", score: 4.8, orcid: "0000-0005-6789-0123", reviews: 27, wallet: "0xmock5", institution: "Cambridge University" },
+  { id: "r6", name: "Dr. Omar Hassan", field: "Distributed Systems", score: 4.1, orcid: "0000-0006-7890-1234", reviews: 15, wallet: "0xmock6", institution: "Carnegie Mellon" },
 ];
 
 /* ── Review statuses (for under-review view) ── */

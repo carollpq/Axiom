@@ -15,11 +15,13 @@ import type {
   ReviewerWithStatus,
   RebuttalInfo,
 } from "@/src/features/editor/types";
+import type { AuthorResponseStatusDb } from "@/src/shared/lib/db/schema";
 
 interface UnderReviewProps {
   papers: PaperCardData[];
   reviewerPool: PoolReviewer[];
   reviewStatuses: Record<string, ReviewerWithStatus[]>;
+  authorResponseStatuses: Record<string, AuthorResponseStatusDb | null>;
   rebuttalsBySubmission?: Record<string, RebuttalInfo>;
 }
 
@@ -27,6 +29,7 @@ export function UnderReviewClient({
   papers,
   reviewerPool,
   reviewStatuses,
+  authorResponseStatuses,
   rebuttalsBySubmission,
 }: UnderReviewProps) {
   const {
@@ -34,7 +37,9 @@ export function UnderReviewClient({
     setSelectedId,
     selected,
     currentReviewers,
-    allCriteriaMet,
+    allReviewsComplete,
+    currentAuthorResponseStatus,
+    canMakeDecision,
     editorComment,
     setEditorComment,
     decision,
@@ -47,11 +52,15 @@ export function UnderReviewClient({
     setReviewerSearch,
     timelineDays,
     currentRebuttal,
-    openRebuttal,
     resolveRebuttal,
-    isOpeningRebuttal,
     isResolvingRebuttal,
-  } = useUnderReview(papers, reviewerPool, reviewStatuses, rebuttalsBySubmission);
+  } = useUnderReview({
+    initialPapers: papers,
+    initialReviewerPool: reviewerPool,
+    reviewStatuses,
+    authorResponseStatuses,
+    rebuttalsBySubmission,
+  });
 
   const { fileUrl: decryptedUrl } = useDecryptPaper(
     selected?.hasLitData ? selected.paperId : null,
@@ -92,10 +101,9 @@ export function UnderReviewClient({
                 decision={decision}
                 onDecisionChange={setDecision}
                 onRelease={releaseToAuthor}
-                allReviewsComplete={allCriteriaMet}
-                hasRebuttal={!!currentRebuttal}
-                onOpenRebuttal={openRebuttal}
-                isOpeningRebuttal={isOpeningRebuttal}
+                allReviewsComplete={allReviewsComplete}
+                authorResponseStatus={currentAuthorResponseStatus}
+                canMakeDecision={canMakeDecision}
               />
             )}
             <AssignReviewersPanel

@@ -1,4 +1,4 @@
-import type { JournalSubmission, SubmissionStage, PoolReviewer, PaperCardData, ReviewerWithStatus } from "@/src/features/editor/types";
+import type { JournalSubmission, SubmissionStage, PoolReviewer, PaperCardData, ReviewerWithStatus, EditorProfile } from "@/src/features/editor/types";
 import type { DbJournalSubmission, DbReviewer, DbReputationScore } from "../queries";
 import { formatIsoDate, truncateHash, displayNameOrWallet, toFivePointScale } from "@/src/shared/lib/format";
 
@@ -51,6 +51,8 @@ export function mapDbToPoolReviewer(u: DbReviewer, scoreRow?: DbReputationScore 
     score: scoreRow ? toFivePointScale(scoreRow.overallScore) : 0,
     orcid: String(u.orcidId ?? "—"),
     reviews: scoreRow?.reviewCount ?? 0,
+    wallet: String(u.walletAddress),
+    institution: String(u.institution ?? "—"),
   };
 }
 
@@ -65,6 +67,31 @@ export function mapDbToPaperCardData(s: DbJournalSubmission): PaperCardData {
     abstractSnippet: abstract.length > 180 ? abstract.slice(0, 177) + "…" : abstract,
     submittedDate,
     hasLitData: !!(s.paper.litDataToEncryptHash && s.paper.litAccessConditionsJson),
+  };
+}
+
+export function buildReviewerPool(reviewers: DbReviewer[], scores: DbReputationScore[]): PoolReviewer[] {
+  const scoreByWallet = Object.fromEntries(scores.map(s => [s.userWallet, s]));
+  return reviewers.map(u => mapDbToPoolReviewer(u, scoreByWallet[u.walletAddress as string]));
+}
+
+export function buildNameByWallet(reviewers: DbReviewer[]): Record<string, string> {
+  return Object.fromEntries(
+    reviewers.map(u => [u.walletAddress as string, (u.displayName ?? u.walletAddress) as string]),
+  );
+}
+
+export function mapDbToEditorProfile(
+  user: { displayName: string | null; institution: string | null } | null,
+  journal: { name: string } | null,
+  getInitialsFn: (name: string) => string,
+): EditorProfile {
+  const name = user?.displayName ?? "Editor";
+  return {
+    name,
+    initials: getInitialsFn(name),
+    affiliation: user?.institution ?? "—",
+    journalName: journal?.name ?? "—",
   };
 }
 

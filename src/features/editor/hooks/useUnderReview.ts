@@ -8,13 +8,23 @@ import type {
   ReviewerWithStatus,
   RebuttalInfo,
 } from "@/src/features/editor/types";
+import type { AuthorResponseStatusDb } from "@/src/shared/lib/db/schema";
 
-export function useUnderReview(
-  initialPapers: PaperCardData[],
-  initialReviewerPool: PoolReviewer[],
-  reviewStatuses: Record<string, ReviewerWithStatus[]>,
-  rebuttalsBySubmission?: Record<string, RebuttalInfo>,
-) {
+interface UseUnderReviewOptions {
+  initialPapers: PaperCardData[];
+  initialReviewerPool: PoolReviewer[];
+  reviewStatuses: Record<string, ReviewerWithStatus[]>;
+  authorResponseStatuses: Record<string, AuthorResponseStatusDb | null>;
+  rebuttalsBySubmission?: Record<string, RebuttalInfo>;
+}
+
+export function useUnderReview({
+  initialPapers,
+  initialReviewerPool,
+  reviewStatuses,
+  authorResponseStatuses,
+  rebuttalsBySubmission,
+}: UseUnderReviewOptions) {
   const { selectedId, setSelectedId, selected } = useSelection(initialPapers);
   const [editorComment, setEditorComment] = useState("");
   const [decision, setDecision] = useState("");
@@ -22,7 +32,6 @@ export function useUnderReview(
   const [reviewerSearch, setReviewerSearch] = useState("");
   const [timelineDays] = useState(21);
   const [isReleasingDecision, setIsReleasingDecision] = useState(false);
-  const [isOpeningRebuttal, setIsOpeningRebuttal] = useState(false);
   const [isResolvingRebuttal, setIsResolvingRebuttal] = useState(false);
 
   const currentReviewers = useMemo(
@@ -30,13 +39,15 @@ export function useUnderReview(
     [selectedId, reviewStatuses],
   );
 
-  const allCriteriaMet = useMemo(() => {
-    // Derive from reviewers: all must have submitted (status = "complete")
+  const allReviewsComplete = useMemo(() => {
     return currentReviewers.length > 0 && currentReviewers.every(r => r.status === "complete");
   }, [currentReviewers]);
 
+  const currentAuthorResponseStatus = selectedId ? (authorResponseStatuses[selectedId] ?? null) : null;
+  const canMakeDecision = currentAuthorResponseStatus === "accepted" || currentAuthorResponseStatus === "rebuttal_requested";
+
   async function releaseToAuthor() {
-    if (!selectedId || !decision) return;
+    if (!selectedId || !decision || !canMakeDecision) return;
     setIsReleasingDecision(true);
 
     try {
@@ -46,7 +57,7 @@ export function useUnderReview(
         body: JSON.stringify({
           decision: decision as "accept" | "reject" | "revise",
           comment: editorComment,
-          allCriteriaMet,
+          allCriteriaMet: allReviewsComplete,
         }),
       });
 
@@ -68,25 +79,6 @@ export function useUnderReview(
     if (!selectedId || !rebuttalsBySubmission) return null;
     return rebuttalsBySubmission[selectedId] ?? null;
   }, [selectedId, rebuttalsBySubmission]);
-
-  async function openRebuttal() {
-    if (!selectedId) return;
-    setIsOpeningRebuttal(true);
-    try {
-      const res = await fetch(`/api/submissions/${selectedId}/open-rebuttal`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Unknown error" }));
-        console.error("[openRebuttal] API error:", err);
-      }
-    } catch (err) {
-      console.error("[openRebuttal] Unexpected error:", err);
-    } finally {
-      setIsOpeningRebuttal(false);
-    }
-  }
 
   async function resolveRebuttal(resolution: "upheld" | "rejected" | "partial", notes: string) {
     if (!currentRebuttal) return;
@@ -123,7 +115,9 @@ export function useUnderReview(
     setSelectedId,
     selected,
     currentReviewers,
-    allCriteriaMet,
+    allReviewsComplete,
+    currentAuthorResponseStatus,
+    canMakeDecision,
     editorComment,
     setEditorComment,
     decision,
@@ -137,9 +131,7 @@ export function useUnderReview(
     timelineDays,
     isReleasingDecision,
     currentRebuttal,
-    openRebuttal,
     resolveRebuttal,
-    isOpeningRebuttal,
     isResolvingRebuttal,
   };
 }

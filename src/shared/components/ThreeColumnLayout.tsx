@@ -24,10 +24,11 @@ export function ThreeColumnLayout({ list, viewer, sidebar }: ThreeColumnLayoutPr
 
       {/* Right – sidebar */}
       <div
-        className="overflow-y-auto"
+        className="shrink-0"
         style={{
           width: 320,
-          minWidth: 280,
+          overflowY: "auto",
+          overflowX: "clip",
           borderLeft: "1px solid rgba(120,110,95,0.15)",
         }}
       >
