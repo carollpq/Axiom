@@ -11,16 +11,38 @@ import {
   mapDbToReputationBreakdown,
 } from "@/src/features/reviewer/mappers/reviewer";
 import { ReviewerDashboardClient } from "@/src/features/reviewer/reviewer-dashboard/reviewer-dashboard.client";
+import { getUserByWallet } from "@/src/features/users/queries";
 
 export default async function ReviewerDashboard() {
   // wallet is guaranteed non-null by (protected)/layout.tsx
   const wallet = (await getSession())!;
 
-  const [rawAssigned, rawCompleted, repRow] = await Promise.all([
+  const [rawAssigned, rawCompleted, repRow, userProfile] = await Promise.all([
     listAssignedReviews(wallet),
     listCompletedReviews(wallet),
     getReviewerReputation(wallet),
+    getUserByWallet(wallet),
   ]);
+
+  // Extract unique journals from assigned and completed reviews
+  const journalsReviewed = new Set<string>();
+  rawAssigned.forEach((a) => {
+    if (a.submission.journal?.name) journalsReviewed.add(a.submission.journal.name);
+  });
+  rawCompleted.forEach((c) => {
+    if (c.submission.journal?.name) journalsReviewed.add(c.submission.journal.name);
+  });
+
+  // Calculate average days to deadline for assigned reviews with deadlines
+  let averageDaysToDeadline = 0;
+  const assignedWithDeadlines = rawAssigned.filter((a) => a.deadline);
+  if (assignedWithDeadlines.length > 0) {
+    const totalDays = assignedWithDeadlines.reduce((sum, a) => {
+      const daysLeft = Math.max(0, Math.ceil((new Date(a.deadline!).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+      return sum + daysLeft;
+    }, 0);
+    averageDaysToDeadline = Math.round((totalDays / assignedWithDeadlines.length) * 10) / 10;
+  }
 
   return (
     <ReviewerDashboardClient
@@ -28,6 +50,9 @@ export default async function ReviewerDashboard() {
       initialCompleted={rawCompleted.map(mapDbToCompletedReview)}
       reputationScores={repRow ? mapDbToReputationScores(repRow) : null}
       reputationBreakdown={repRow ? mapDbToReputationBreakdown(repRow) : null}
+      userProfile={userProfile}
+      journalsReviewed={Array.from(journalsReviewed)}
+      averageDaysToDeadline={averageDaysToDeadline}
     />
   );
 }

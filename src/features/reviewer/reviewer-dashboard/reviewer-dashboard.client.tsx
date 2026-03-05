@@ -2,25 +2,27 @@
 
 import { useReviewerDashboard } from "@/src/features/reviewer/hooks/useReviewerDashboard";
 import { DashboardHeader } from "@/src/shared/components";
-import {
-  ReputationSection,
-  TabBar,
-  AssignedReviewsTable,
-  CompletedReviewsTable,
-  FeedbackPanel,
-} from "@/src/features/reviewer/reviewer-dashboard";
 import type {
   AssignedReview,
   CompletedReview,
   ReputationScores,
   ReputationBreakdownItem,
+  UserProfile,
 } from "@/src/features/reviewer/types";
+import { PerformanceMetrics } from "./PerformanceMetrics";
+import { ResearchersInsights } from "./ResearchersInsights";
+import { ReviewerProfileCard } from "./ReviewerProfileCard";
+import { AssignedReviewsTable } from "./AssignedReviewsTable";
+import { CompletedReviewsTable } from "./CompletedReviewsTable";
 
 interface Props {
   initialAssigned: AssignedReview[];
   initialCompleted: CompletedReview[];
   reputationScores?: ReputationScores | null;
   reputationBreakdown?: ReputationBreakdownItem[] | null;
+  userProfile?: UserProfile | null;
+  journalsReviewed?: string[];
+  averageDaysToDeadline?: number;
 }
 
 export function ReviewerDashboardClient({
@@ -28,71 +30,144 @@ export function ReviewerDashboardClient({
   initialCompleted,
   reputationScores: initialReputation,
   reputationBreakdown: initialBreakdown,
+  userProfile,
+  journalsReviewed = [],
+  averageDaysToDeadline = 0,
 }: Props) {
   const {
-    activeTab,
-    setActiveTab,
     hoveredRow,
     setHoveredRow,
-    expandedHistory,
-    setExpandedHistory,
-    totalReviews,
-    activeCount,
-    overdueCount,
-    averageUsefulness,
-    tabs,
     getUrgencyStyle,
-    getReviewForFeedback,
     assignedReviews,
     completedReviews,
-    feedbackItems,
-    reputationHistory,
-    reputationBreakdown,
     reputationScores,
   } = useReviewerDashboard(initialAssigned, initialCompleted, initialReputation, initialBreakdown);
 
   return (
-    <div className="max-w-[1200px] mx-auto px-10 py-8">
-      <DashboardHeader role="reviewer" />
+    <div className="min-h-screen" style={{ backgroundColor: "#1a1816" }}>
+      <div className="max-w-full mx-auto px-12 py-8">
+        <DashboardHeader role="reviewer" />
 
-      <ReputationSection
-        overall={reputationScores.overall}
-        change={reputationScores.change}
-        history={reputationHistory}
-        breakdown={reputationBreakdown}
-        totalReviews={totalReviews}
-        activeCount={activeCount}
-        overdueCount={overdueCount}
-        expandedHistory={expandedHistory}
-        onToggleHistory={() => setExpandedHistory(!expandedHistory)}
-      />
+        {/* Dashboard View */}
+        <div className="mt-8 grid grid-cols-3 gap-8">
+          {/* Left Column: Metrics and Insights */}
+          <div className="col-span-2 space-y-8">
+            {/* Performance Metrics */}
+            <PerformanceMetrics
+              reliabilityScore={reputationScores.overall}
+              completedReviews={completedReviews.length}
+              invites={initialAssigned.length}
+              averageDaysToDeadline={averageDaysToDeadline}
+            />
 
-      <TabBar tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+            {/* Reviewed For and Researchers Insights */}
+            <ResearchersInsights
+              journalsReviewed={journalsReviewed}
+              insights={[
+                "I found X's reviews very constructive. He is truly enthusiastic about his field.",
+                "I found X's reviews very constructive. He is truly enthusiastic about his field.",
+              ]}
+            />
+          </div>
 
-      {activeTab === "assigned" && (
-        <AssignedReviewsTable
-          reviews={assignedReviews}
-          hoveredRow={hoveredRow}
-          onHoverRow={setHoveredRow}
-          getUrgencyStyle={getUrgencyStyle}
-        />
-      )}
+          {/* Right Column: Profile Card */}
+          <div>
+            <ReviewerProfileCard
+              name={userProfile?.displayName || "Reviewer Name"}
+              affiliation={userProfile?.institution || "Affiliation"}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-      {activeTab === "completed" && (
-        <CompletedReviewsTable
-          reviews={completedReviews}
-          hoveredRow={hoveredRow}
-          onHoverRow={setHoveredRow}
-        />
-      )}
+export function IncomingInvitesClient({
+  initialAssigned,
+}: {
+  initialAssigned: AssignedReview[];
+}) {
+  return (
+    <div className="min-h-screen" style={{ backgroundColor: "#1a1816" }}>
+      <div className="max-w-full mx-auto px-12 py-8">
+        <DashboardHeader role="reviewer" />
 
-      {activeTab === "feedback" && (
-        <FeedbackPanel
-          feedbackItems={feedbackItems}
-          averageUsefulness={averageUsefulness}
-          getReviewForFeedback={getReviewForFeedback}
-        />
-      )}
+        <div className="mt-8">
+          <h2 className="text-xl font-bold mb-4" style={{ color: "#d4ccc0" }}>
+            Incoming Invites ({initialAssigned.filter(a => a.status === "Pending").length})
+          </h2>
+          <div
+            className="rounded-lg p-8 text-center"
+            style={{
+              backgroundColor: "rgba(120,110,95,0.15)",
+              color: "#8a8070",
+            }}
+          >
+            <p>Pending review invitations will appear here</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function PapersUnderReviewClient({
+  initialAssigned,
+}: {
+  initialAssigned: AssignedReview[];
+}) {
+  const { hoveredRow, setHoveredRow, getUrgencyStyle } = useReviewerDashboard(
+    initialAssigned,
+    [],
+    null,
+    null
+  );
+
+  return (
+    <div className="min-h-screen" style={{ backgroundColor: "#1a1816" }}>
+      <div className="max-w-full mx-auto px-12 py-8">
+        <DashboardHeader role="reviewer" />
+
+        <div className="mt-8">
+          <h2 className="text-xl font-bold mb-4" style={{ color: "#d4ccc0" }}>
+            Papers Under Review ({initialAssigned.length})
+          </h2>
+          <AssignedReviewsTable
+            reviews={initialAssigned}
+            hoveredRow={hoveredRow}
+            onHoverRow={setHoveredRow}
+            getUrgencyStyle={getUrgencyStyle}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function CompletedPapersClient({
+  initialCompleted,
+}: {
+  initialCompleted: CompletedReview[];
+}) {
+  const { hoveredRow, setHoveredRow } = useReviewerDashboard([], initialCompleted, null, null);
+
+  return (
+    <div className="min-h-screen" style={{ backgroundColor: "#1a1816" }}>
+      <div className="max-w-full mx-auto px-12 py-8">
+        <DashboardHeader role="reviewer" />
+
+        <div className="mt-8">
+          <h2 className="text-xl font-bold mb-4" style={{ color: "#d4ccc0" }}>
+            Completed Papers ({initialCompleted.length})
+          </h2>
+          <CompletedReviewsTable
+            reviews={initialCompleted}
+            hoveredRow={hoveredRow}
+            onHoverRow={setHoveredRow}
+          />
+        </div>
+      </div>
     </div>
   );
 }

@@ -10,3 +10,7 @@ export { TabBar } from "./TabBar";
 export { AssignedReviewsTable } from "./AssignedReviewsTable";
 export { CompletedReviewsTable } from "./CompletedReviewsTable";
 export { FeedbackPanel } from "./FeedbackPanel";
+export { DashboardTabBar } from "./DashboardTabBar";
+export { PerformanceMetrics } from "./PerformanceMetrics";
+export { ResearchersInsights } from "./ResearchersInsights";
+export { ReviewerProfileCard } from "./ReviewerProfileCard";

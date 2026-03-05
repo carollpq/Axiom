@@ -43,7 +43,7 @@ export function useReviewerDashboard(
   initialReputation?: ReputationScores | null,
   initialBreakdown?: ReputationBreakdownItem[] | null,
 ) {
-  const [activeTab, setActiveTab] = useState<ReviewerTab>("assigned");
+  const [activeTab, setActiveTab] = useState<ReviewerTab>("dashboard");
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
   const [expandedHistory, setExpandedHistory] = useState(false);
 
@@ -60,9 +60,10 @@ export function useReviewerDashboard(
   );
 
   const tabs: ReviewerTabConfig[] = [
-    { key: "assigned",  label: "Assigned Reviews",  count: initialAssigned.length },
-    { key: "completed", label: "Completed Reviews",  count: initialCompleted.length },
-    { key: "feedback",  label: "Feedback Received",  count: PLACEHOLDER_FEEDBACK.length },
+    { key: "dashboard",  label: "Dashboard", count: 0 },
+    { key: "invites", label: "Incoming Invites", count: initialAssigned.length },
+    { key: "assigned", label: "Papers Under Review",  count: initialAssigned.length },
+    { key: "completed", label: "Completed Papers",  count: initialCompleted.length },
   ];
 
   function getUrgencyStyle(daysLeft: number, status: string) {

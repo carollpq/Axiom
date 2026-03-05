@@ -36,9 +36,10 @@ The codebase is a **functional full-stack application**. The researcher and edit
 - ✅ **Author review response** — `POST /api/submissions/[id]/author-response` → researcher accepts reviews or requests rebuttal → HCS anchored
 - ✅ **Review-response page** — Researcher views anonymized reviews, rates each (5-protocol), and accepts or requests rebuttal in a single flow
 - ✅ **Backend contract validation** — `POST /api/papers/[id]/submit` validates authorship contract is fully signed before submission
+- ✅ **Reviewer dashboard** — New layout with performance metrics, researchers insights, profile card, real DB-backed data + API integration
 
 **What still uses mock data:**
-- Reviewer dashboard UI (`(reviewer)/`) — API routes exist but dashboard components not yet wired
+- None — All main features now have DB-backed data integration
 
 **What is not yet implemented:**
 - Lit Protocol decryption (encrypt works; decrypt not wired into UI)
@@ -188,9 +189,10 @@ Each role group has its own layout using `RoleShell` from `src/shared/components
 - ✅ `/verify` page (public PDF hash verification)
 - ✅ Review transparency (anonymized reviews public after decision)
 - ✅ Anonymous reviewer ratings (no author reference stored)
+- ✅ Reviewer dashboard: new layout (performance metrics, profile card, researchers insights) with DB-backed data integration
 
 ### Still To Do
-1. **Reviewer dashboard: wire to real data** — Dashboard components exist but still use mock data. API routes are complete.
+1. **Researchers insights population** — `GET /api/reviews/[id]/rate` returns author ratings; need aggregation logic to populate insights feed on reviewer dashboard
 2. **Wire Lit decrypt into explorer** — Researchers reading their own private papers.
 3. **Reviewer search by reputation** — Editor searches reviewers filtered by score, field, timeliness.
 4. **Hedera mirror node lookups** — Verify on-chain data from mirror node.

@@ -4,7 +4,7 @@ import type { TabConfig } from "@/src/shared/types/shared";
 
 export type ReviewerDisplayStatus = "Late" | "In Progress" | "Pending" | "Submitted";
 
-export type ReviewerTab = "assigned" | "completed" | "feedback";
+export type ReviewerTab = "dashboard" | "invites" | "assigned" | "completed";
 
 export interface AssignedReview {
   id: number;
@@ -58,6 +58,15 @@ export interface ReputationScores {
   editorAvg: number;
   authorAvg: number;
   postPub: number;
+}
+
+export interface UserProfile {
+  id?: string;
+  walletAddress?: string;
+  displayName?: string | null;
+  institution?: string | null;
+  orcidId?: string | null;
+  researchFields?: string[];
 }
 
 export type ReviewerTabConfig = TabConfig<ReviewerTab>;
