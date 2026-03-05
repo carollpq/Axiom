@@ -29,25 +29,6 @@ interface Props {
   papers: PaperWithVersions[];
 }
 
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "10px 14px",
-  background: "rgba(30,28,24,0.8)",
-  border: "1px solid rgba(120,110,95,0.25)",
-  borderRadius: 4,
-  color: "#d4ccc0",
-  fontFamily: "'Georgia', serif",
-  fontSize: 13,
-  outline: "none",
-  boxSizing: "border-box",
-};
-
-const labelStyle: React.CSSProperties = {
-  fontSize: 11,
-  color: "#8a8070",
-  marginBottom: 6,
-  display: "block",
-};
 
 export function PaperVersionControlClient({ papers }: Props) {
   const [expandedPaper, setExpandedPaper] = useState<string | null>(null);
@@ -252,7 +233,7 @@ export function PaperVersionControlClient({ papers }: Props) {
               <>
                 {/* PDF Upload */}
                 <div className="mb-[18px]">
-                  <label style={labelStyle}>
+                  <label className="input-label">
                     Paper File (PDF) <span className="text-[#d4645a]">*</span>
                   </label>
                   <FileDropzone
@@ -270,7 +251,7 @@ export function PaperVersionControlClient({ papers }: Props) {
 
                 {/* Title */}
                 <div className="mb-[18px]">
-                  <label style={labelStyle}>
+                  <label className="input-label">
                     Title <span className="text-[#d4645a]">*</span>
                   </label>
                   <input
@@ -279,11 +260,7 @@ export function PaperVersionControlClient({ papers }: Props) {
                     value={upload.title}
                     onChange={(e) => upload.setTitle(e.target.value)}
                     disabled={isFormBusy}
-                    style={{
-                      ...inputStyle,
-                      ...(uploadErrors.title ? { border: "1px solid rgba(212,100,90,0.4)" } : {}),
-                      ...(isFormBusy ? { opacity: 0.5 } : {}),
-                    }}
+                    className={`input-field ${uploadErrors.title ? "input-error" : ""} ${isFormBusy ? "opacity-50" : ""}`}
                   />
                   {uploadErrors.title && (
                     <div className="text-[10px] text-[#d4645a] mt-1">{uploadErrors.title}</div>
@@ -292,7 +269,7 @@ export function PaperVersionControlClient({ papers }: Props) {
 
                 {/* Abstract */}
                 <div className="mb-[18px]">
-                  <label style={labelStyle}>
+                  <label className="input-label">
                     Abstract <span className="text-[#d4645a]">*</span>
                   </label>
                   <textarea
@@ -301,13 +278,7 @@ export function PaperVersionControlClient({ papers }: Props) {
                     onChange={(e) => upload.setAbstract(e.target.value)}
                     disabled={isFormBusy}
                     rows={5}
-                    style={{
-                      ...inputStyle,
-                      resize: "vertical" as const,
-                      lineHeight: 1.6,
-                      ...(uploadErrors.abstract ? { border: "1px solid rgba(212,100,90,0.4)" } : {}),
-                      ...(isFormBusy ? { opacity: 0.5 } : {}),
-                    }}
+                    className={`input-field resize-y leading-[1.6] ${uploadErrors.abstract ? "input-error" : ""} ${isFormBusy ? "opacity-50" : ""}`}
                   />
                   {uploadErrors.abstract && (
                     <div className="text-[10px] text-[#d4645a] mt-1">{uploadErrors.abstract}</div>
@@ -316,7 +287,7 @@ export function PaperVersionControlClient({ papers }: Props) {
 
                 {/* Study Type */}
                 <div className="mb-[18px]">
-                  <label style={labelStyle}>Study Type</label>
+                  <label className="input-label">Study Type</label>
                   <select
                     value={upload.studyType}
                     onChange={(e) => upload.setStudyType(e.target.value as StudyTypeDb)}
@@ -340,7 +311,7 @@ export function PaperVersionControlClient({ papers }: Props) {
 
                 {/* Keywords */}
                 <div className="mb-[18px]">
-                  <label style={labelStyle}>
+                  <label className="input-label">
                     Keywords
                     <span className="ml-2 text-[10px] text-[#6a6050]">
                       {upload.keywords.length}/{PAPER_LIMITS.keywords.max}
@@ -378,7 +349,7 @@ export function PaperVersionControlClient({ papers }: Props) {
                           if (e.key === "Enter" && upload.keywordInput.trim()) upload.addKeyword();
                         }}
                         disabled={isFormBusy}
-                        style={{ ...inputStyle, flex: 1, ...(isFormBusy ? { opacity: 0.5 } : {}) }}
+                        className={`input-field flex-1 ${isFormBusy ? "opacity-50" : ""}`}
                       />
                       <button
                         onClick={upload.addKeyword}
