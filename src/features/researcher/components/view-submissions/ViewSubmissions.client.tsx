@@ -221,6 +221,18 @@ export function ViewSubmissionsClient({ submissions }: Props) {
                 {selected.authors}
               </p>
 
+              {/* Abstract */}
+              {selected.abstract && (
+                <div className="mb-5">
+                  <h3 className="text-[11px] uppercase tracking-wider text-[#8a8070] mb-1.5">
+                    Abstract
+                  </h3>
+                  <p className="text-[13px] text-[#b0a898] leading-[1.7] font-serif">
+                    {selected.abstract}
+                  </p>
+                </div>
+              )}
+
               {/* Reviews Status */}
               <ReviewsStatusSection
                 reviewers={selected.reviewers}

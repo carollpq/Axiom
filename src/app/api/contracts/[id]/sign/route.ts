@@ -5,6 +5,8 @@ import { signContributor, updateContractHedera } from "@/src/features/contracts/
 import { verifyMessage } from "viem";
 import { requireSession, anchorToHcs, validationError } from "@/src/shared/lib/api-helpers";
 import { EVM_ADDRESS_REGEX, HEX_SIGNATURE_REGEX } from "@/src/shared/lib/validation";
+import { createNotification } from "@/src/features/notifications/actions";
+import { displayNameOrWallet } from "@/src/shared/lib/format";
 
 const signSchema = z.object({
   contributorWallet: z.string().regex(EVM_ADDRESS_REGEX, "Invalid wallet address"),
@@ -63,17 +65,17 @@ export async function POST(
     );
   }
 
-  const contract = await getContractById(id) as unknown as {
-    status: string;
-    contractHash: string | null;
-  } | null;
-  const isFullySigned = contract?.status === "fully_signed";
+  const contract = await getContractById(id);
+  if (!contract) {
+    return NextResponse.json({ error: "Contract not found" }, { status: 404 });
+  }
+  const isFullySigned = contract.status === "fully_signed";
 
   const hcsPayload = isFullySigned
     ? {
         type: "fullySigned",
         contractId: id,
-        contractHash: contractHash ?? contract?.contractHash ?? null,
+        contractHash: contractHash ?? contract.contractHash ?? null,
         timestamp: new Date().toISOString(),
       }
     : {
@@ -92,6 +94,45 @@ export async function POST(
   if (isFullySigned && txId && consensusTimestamp) {
     await updateContractHedera(id, txId, consensusTimestamp);
   }
+
+  // ── Notifications (fire-and-forget) ─────────────────────────────────────
+  const signerName = displayNameOrWallet(
+    contract.contributors.find(
+      (c) => c.contributorWallet?.toLowerCase() === contributorWallet.toLowerCase(),
+    )?.contributorName,
+    contributorWallet,
+  );
+
+  const contractLink = `/researcher/authorship-contracts?id=${id}`;
+
+  const notificationWork = isFullySigned
+    ? Promise.all(
+        contract.contributors
+          .filter((c) => c.contributorWallet)
+          .map((c) =>
+            createNotification({
+              userWallet: c.contributorWallet!,
+              type: "contract_fully_signed",
+              title: "Authorship contract fully signed",
+              body: `All authors have signed the contract for "${contract.paperTitle}".`,
+              link: contractLink,
+            }),
+          ),
+      )
+    : (() => {
+        const ownerWallet = contract.creator?.walletAddress;
+        if (ownerWallet && ownerWallet.toLowerCase() !== contributorWallet.toLowerCase()) {
+          return createNotification({
+            userWallet: ownerWallet,
+            type: "contract_signed",
+            title: "Co-author signed contract",
+            body: `${signerName} signed the authorship contract for "${contract.paperTitle}".`,
+            link: contractLink,
+          });
+        }
+      })();
+
+  notificationWork?.catch((err) => console.error("Contract notification error:", err));
 
   return NextResponse.json(result);
 }

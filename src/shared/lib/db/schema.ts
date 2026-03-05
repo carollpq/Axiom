@@ -86,7 +86,9 @@ export type NotificationTypeDb =
   | "author_response"
   | "assignment_accepted"
   | "assignment_declined"
-  | "contributor_added";
+  | "contributor_added"
+  | "contract_signed"
+  | "contract_fully_signed";
 
 // ── Tables ─────────────────────────────────────────────────────────────────
 

@@ -32,7 +32,6 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
   const [selectedVersionId, setSelectedVersionId] = useState("");
   const [selectedJournalId, setSelectedJournalId] = useState("");
   const [selectedContractId, setSelectedContractId] = useState("");
-  const [abstract, setAbstract] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,8 +51,7 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
     selectedPaperId &&
     selectedVersionId &&
     selectedJournalId &&
-    selectedContractId &&
-    abstract.trim().length > 0;
+    selectedContractId;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -61,12 +59,6 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
     setError(null);
 
     try {
-      await fetch(`/api/papers/${selectedPaperId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ abstract }),
-      });
-
       const res = await fetch(`/api/papers/${selectedPaperId}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -129,6 +121,7 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
           <select
             value={selectedPaperId}
             onChange={(e) => handlePaperChange(e.target.value)}
+            disabled={submitting}
             className="flex-1 px-3 py-2.5 rounded-md text-[13px] font-serif text-[#d4ccc0] cursor-pointer"
             style={{
               background: "rgba(35,32,28,0.8)",
@@ -152,7 +145,7 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
           <select
             value={selectedVersionId}
             onChange={(e) => setSelectedVersionId(e.target.value)}
-            disabled={!selectedPaperId}
+            disabled={!selectedPaperId || submitting}
             className="flex-1 px-3 py-2.5 rounded-md text-[13px] font-serif text-[#d4ccc0] cursor-pointer"
             style={{
               background: "rgba(35,32,28,0.8)",
@@ -177,6 +170,7 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
           <select
             value={selectedJournalId}
             onChange={(e) => setSelectedJournalId(e.target.value)}
+            disabled={submitting}
             className="flex-1 px-3 py-2.5 rounded-md text-[13px] font-serif text-[#d4ccc0] cursor-pointer"
             style={{
               background: "rgba(35,32,28,0.8)",
@@ -200,6 +194,7 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
           <select
             value={selectedContractId}
             onChange={(e) => setSelectedContractId(e.target.value)}
+            disabled={submitting}
             className="flex-1 px-3 py-2.5 rounded-md text-[13px] font-serif text-[#d4ccc0] cursor-pointer"
             style={{
               background: "rgba(35,32,28,0.8)",
@@ -213,24 +208,6 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
               </option>
             ))}
           </select>
-        </div>
-
-        {/* Abstract */}
-        <div className="flex items-start gap-6 mb-6">
-          <label className="text-[13px] text-[#b0a898] w-[200px] shrink-0 pt-2">
-            Abstract
-          </label>
-          <textarea
-            value={abstract}
-            onChange={(e) => setAbstract(e.target.value)}
-            placeholder="Enter the abstract of your paper..."
-            rows={6}
-            className="flex-1 px-3 py-2.5 rounded-md text-[13px] font-serif text-[#d4ccc0] resize-none"
-            style={{
-              background: "rgba(35,32,28,0.8)",
-              border: "1px solid rgba(120,110,95,0.2)",
-            }}
-          />
         </div>
 
         {/* Submit */}
