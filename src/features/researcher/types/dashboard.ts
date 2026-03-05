@@ -1,14 +1,4 @@
-export type SubmissionDisplayStatus =
-  | "Paper Submitted"
-  | "Viewed By Editor"
-  | "Desk Reject"
-  | "Assigned Reviewers"
-  | "Reviews In Progress"
-  | "All Reviews Completed"
-  | "Rebuttal Phase"
-  | "Reviews Sent to Editor"
-  | "Accepted"
-  | "Rejected";
+export type SubmissionDisplayStatus = string;
 
 export interface SubmissionCard {
   id: string;

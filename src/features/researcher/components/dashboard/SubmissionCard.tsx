@@ -1,22 +1,12 @@
 import type { SubmissionCard } from "@/src/features/researcher/types/dashboard";
-import { STATUS_COLORS } from "@/src/features/researcher/constants/status-colors";
-
-function statusLabel(card: SubmissionCard): string {
-  if (card.status === "Assigned Reviewers" && card.reviewerCount) {
-    return `Assigned ${card.reviewerCount} Reviewers`;
-  }
-  if (card.status === "Reviews In Progress" && card.totalReviewCount) {
-    return `${card.completedReviewCount}/${card.totalReviewCount} Reviews Completed`;
-  }
-  return card.status;
-}
+import { getStatusColors } from "@/src/features/researcher/constants/status-colors";
 
 interface Props {
   card: SubmissionCard;
 }
 
 export function SubmissionCardComponent({ card }: Props) {
-  const colors = STATUS_COLORS[card.status];
+  const colors = getStatusColors(card.status);
 
   return (
     <div
@@ -41,7 +31,7 @@ export function SubmissionCardComponent({ card }: Props) {
             border: `1px solid ${colors.border}`,
           }}
         >
-          {statusLabel(card)}
+          {card.status}
         </span>
       </div>
     </div>

@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { SubmissionDisplayStatus } from "@/src/features/researcher/types/dashboard";
-import { STATUS_COLORS } from "@/src/features/researcher/constants/status-colors";
+import { getStatusColors } from "@/src/features/researcher/constants/status-colors";
 import { ReviewsStatusSection } from "./ReviewsStatusSection";
 import { AuthorFeedbackSection } from "./AuthorFeedbackSection";
 import { ReviewerFeedbackSection } from "./ReviewerFeedbackSection";
@@ -30,7 +29,7 @@ interface SubmissionData {
   paperTitle: string;
   authors: string;
   abstract: string;
-  status: SubmissionDisplayStatus;
+  status: string;
   reviewers: ReviewerInfo[];
   reviews: AnonymizedReview[];
   allReviewsComplete: boolean;
@@ -165,7 +164,7 @@ export function ViewSubmissionsClient({ submissions }: Props) {
             </div>
           ) : (
             submissions.map((sub) => {
-              const colors = STATUS_COLORS[sub.status] ?? STATUS_COLORS["Paper Submitted"];
+              const colors = getStatusColors(sub.status);
               const isSelected = selectedId === sub.id;
               return (
                 <button

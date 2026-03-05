@@ -28,9 +28,9 @@ export function deriveSubmissionDisplayStatus(
       return hasReviews ? "Rejected" : "Desk Reject";
     case "criteria_published":
     case "reviewers_assigned":
-      return "Assigned Reviewers";
+      return `Assigned ${totalReviewCount} Reviewer${totalReviewCount !== 1 ? "s" : ""}`;
     case "under_review":
-      return "Reviews In Progress";
+      return `${completedReviewCount}/${totalReviewCount} Reviews Completed`;
     case "reviews_completed":
       if (authorResponseStatus === "accepted") return "Reviews Sent to Editor";
       return "All Reviews Completed";
@@ -105,6 +105,7 @@ export function mapPapersToSubmissionCards(
 
 /**
  * Computes the 5 dashboard stats from submission cards.
+ * Uses pattern matching since statuses are now dynamic strings.
  */
 export function computeStats(cards: SubmissionCard[]): DashboardStats {
   return {
@@ -112,8 +113,7 @@ export function computeStats(cards: SubmissionCard[]): DashboardStats {
       (c) => c.status === "Paper Submitted" || c.status === "Viewed By Editor",
     ).length,
     underReview: cards.filter(
-      (c) =>
-        c.status === "Assigned Reviewers" || c.status === "Reviews In Progress",
+      (c) => c.status.startsWith("Assigned") || (c.status.includes("Reviews Completed") && !c.status.startsWith("All")),
     ).length,
     reviewsPending: cards.filter(
       (c) => c.status === "All Reviews Completed",
