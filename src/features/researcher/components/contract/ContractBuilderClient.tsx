@@ -7,7 +7,6 @@ import { ContributorTable } from "./ContributorTable";
 import { SignatureProgress } from "./SignatureProgress";
 import { ContractPreview } from "./ContractPreview";
 import { ModificationWarning } from "./ModificationWarning";
-import { SubmissionGate } from "./SubmissionGate";
 import { InviteModal } from "./InviteModal";
 import type { ExistingDraft } from "@/src/features/researcher/types/contract";
 
@@ -18,9 +17,9 @@ interface ContractBuilderClientProps {
 export function ContractBuilderClient({ initialDrafts }: ContractBuilderClientProps) {
   const {
     selectedDraft, newTitle, contributors, showAddRow, addWallet,
-    showPreview, showInviteModal, inviteLink, selectedContractId, error,
+    showInviteModal, inviteLink, selectedContractId, error,
     totalPct, isValid, signedCount, allSigned, hasSigned, draft, drafts, currentUserWallet,
-    setSelectedDraft, setNewTitle, setShowAddRow, setAddWallet, setShowPreview,
+    setSelectedDraft, setNewTitle, setShowAddRow, setAddWallet,
     updateContributor, removeContributor, addContributor, handleSign, handleInvite, closeInviteModal,
   } = useContractBuilder(initialDrafts);
 
@@ -64,23 +63,17 @@ export function ContractBuilderClient({ initialDrafts }: ContractBuilderClientPr
         />
 
         <ContractPreview
-          showPreview={showPreview}
-          onToggle={() => setShowPreview(!showPreview)}
           title={newTitle}
           draft={draft}
           contributors={contributors}
-        />
-
-        <ModificationWarning visible={hasSigned} />
-
-        <SubmissionGate
           allSigned={allSigned}
           isValid={isValid}
           signedCount={signedCount}
-          totalContributors={contributors.length}
           paperId={draft?.dbId}
           contractId={selectedContractId}
         />
+
+        <ModificationWarning visible={hasSigned} />
       </div>
 
       <InviteModal

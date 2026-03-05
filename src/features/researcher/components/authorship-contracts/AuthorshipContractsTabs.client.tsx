@@ -88,19 +88,19 @@ export function AuthorshipContractsTabs({
         ))}
       </div>
 
-      {/* Tab content */}
-      {activeTab === "build" && (
+      {/* Tab content — all tabs stay mounted so state persists */}
+      <div className={activeTab === "build" ? "" : "hidden"}>
         <ContractBuilderClient initialDrafts={initialDrafts} />
-      )}
-      {activeTab === "sign" && (
+      </div>
+      <div className={activeTab === "sign" ? "" : "hidden"}>
         <ContractsToSign
           contracts={contractsToSign}
           currentWallet={currentWallet}
         />
-      )}
-      {activeTab === "status" && (
+      </div>
+      <div className={activeTab === "status" ? "" : "hidden"}>
         <ContractsStatus contracts={ownedContracts} />
-      )}
+      </div>
     </div>
   );
 }
