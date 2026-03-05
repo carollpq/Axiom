@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { createPaperVersion, updatePaperVersionHedera } from "@/src/features/papers/actions";
-import { requireSession, anchorToHcs } from "@/src/shared/lib/api-helpers";
+import { requireSession, anchorToHcs, validationError } from "@/src/shared/lib/api-helpers";
+import { SHA256_REGEX } from "@/src/shared/lib/validation";
 
 export const runtime = "nodejs";
+
+const createVersionSchema = z.object({
+  paperHash: z.string().regex(SHA256_REGEX, "Invalid SHA-256 hash"),
+  datasetHash: z.string().regex(SHA256_REGEX, "Invalid SHA-256 hash").nullish(),
+  codeRepoUrl: z.string().url().max(2000).nullish(),
+  codeCommitHash: z.string().max(200).nullish(),
+  envSpecHash: z.string().regex(SHA256_REGEX, "Invalid SHA-256 hash").nullish(),
+  fileStorageKey: z.string().max(500).nullish(),
+});
 
 export async function POST(
   req: NextRequest,
@@ -13,23 +24,19 @@ export async function POST(
 
   const { id } = await params;
   const body = await req.json();
-  const { paperHash } = body;
+  const parsed = createVersionSchema.safeParse(body);
+  if (!parsed.success) return validationError(parsed.error);
 
-  if (!paperHash) {
-    return NextResponse.json(
-      { error: "paperHash is required" },
-      { status: 400 },
-    );
-  }
+  const { paperHash, datasetHash, codeRepoUrl, codeCommitHash, envSpecHash, fileStorageKey } = parsed.data;
 
   const version = await createPaperVersion({
     paperId: id,
     paperHash,
-    datasetHash: body.datasetHash ?? null,
-    codeRepoUrl: body.codeRepoUrl ?? null,
-    codeCommitHash: body.codeCommitHash ?? null,
-    envSpecHash: body.envSpecHash ?? null,
-    fileStorageKey: body.fileStorageKey ?? null,
+    datasetHash: datasetHash ?? null,
+    codeRepoUrl: codeRepoUrl ?? null,
+    codeCommitHash: codeCommitHash ?? null,
+    envSpecHash: envSpecHash ?? null,
+    fileStorageKey: fileStorageKey ?? null,
   });
 
   if (!version) {
@@ -43,9 +50,9 @@ export async function POST(
     paperId: id,
     versionId: version.id,
     versionNumber: version.versionNumber,
-    ...(body.datasetHash && { datasetHash: body.datasetHash }),
-    ...(body.codeCommitHash && { codeCommitHash: body.codeCommitHash }),
-    ...(body.envSpecHash && { envSpecHash: body.envSpecHash }),
+    ...(datasetHash && { datasetHash }),
+    ...(codeCommitHash && { codeCommitHash }),
+    ...(envSpecHash && { envSpecHash }),
     timestamp: new Date().toISOString(),
   });
 

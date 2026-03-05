@@ -12,7 +12,7 @@ interface DashboardOverviewProps {
 export function DashboardOverview({ stats }: DashboardOverviewProps) {
   return (
     <div className="max-w-[1200px] mx-auto px-10 py-8">
-      <DashboardHeader role="journal" />
+      <DashboardHeader role="editor" />
 
       {/* Stats row */}
       <div className="flex gap-4 mb-8 flex-wrap">

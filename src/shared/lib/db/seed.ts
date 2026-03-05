@@ -142,7 +142,6 @@ async function seed() {
     abstract: string;
     status: schema.PaperStatusDb;
     studyType: schema.StudyTypeDb;
-    visibility: schema.VisibilityDb;
     createdAt: string;
   };
 
@@ -154,7 +153,7 @@ async function seed() {
         "We present a novel approach to quantum error correction leveraging topological codes that demonstrate improved resilience to noise in intermediate-scale quantum devices.",
       status: "submitted",
       studyType: "original",
-      visibility: "under_review",
+
       createdAt: daysAgo(9),
     },
     {
@@ -163,7 +162,7 @@ async function seed() {
         "This study introduces a federated learning framework enabling collaborative training of medical imaging models across hospital networks without sharing patient data.",
       status: "submitted",
       studyType: "original",
-      visibility: "under_review",
+
       createdAt: daysAgo(11),
     },
     {
@@ -172,7 +171,7 @@ async function seed() {
         "We propose a scalable architecture for graph neural networks that achieves state-of-the-art accuracy in molecular property prediction while reducing computational cost.",
       status: "submitted",
       studyType: "original",
-      visibility: "under_review",
+
       createdAt: daysAgo(14),
     },
     {
@@ -181,7 +180,7 @@ async function seed() {
         "This paper develops new methods for causal inference when the number of potential confounders exceeds the sample size, with applications to genomics and economics.",
       status: "submitted",
       studyType: "original",
-      visibility: "under_review",
+
       createdAt: daysAgo(17),
     },
 
@@ -192,7 +191,7 @@ async function seed() {
         "We evaluate extensions to the standard transformer architecture that improve modeling of sequences exceeding 100k tokens while maintaining linear memory complexity.",
       status: "under_review",
       studyType: "original",
-      visibility: "under_review",
+
       createdAt: daysAgo(32),
     },
     {
@@ -201,7 +200,7 @@ async function seed() {
         "This work investigates vulnerabilities of multi-modal foundation models to adversarial attacks that exploit cross-modal interactions between vision and language.",
       status: "under_review",
       studyType: "original",
-      visibility: "under_review",
+
       createdAt: daysAgo(38),
     },
     {
@@ -210,7 +209,7 @@ async function seed() {
         "We present a distributed Bayesian optimization framework that efficiently tunes hyperparameters across thousands of parallel training jobs on commodity hardware.",
       status: "under_review",
       studyType: "original",
-      visibility: "under_review",
+
       createdAt: daysAgo(44),
     },
 
@@ -221,7 +220,7 @@ async function seed() {
         "This paper presents a hardware-aware neural architecture search method that co-optimizes model accuracy and inference latency on edge devices.",
       status: "published",
       studyType: "original",
-      visibility: "public",
+
       createdAt: daysAgo(80),
     },
     {
@@ -230,7 +229,7 @@ async function seed() {
         "We introduce a self-supervised pre-training strategy for low-resource languages that leverages cross-lingual transfer from high-resource language models.",
       status: "published",
       studyType: "original",
-      visibility: "public",
+
       createdAt: daysAgo(85),
     },
 
@@ -241,7 +240,7 @@ async function seed() {
         "A systematic reproducibility study examining 12 transformer-based architectures across 8 low-resource language settings.",
       status: "published",
       studyType: "replication",
-      visibility: "public",
+
       createdAt: daysAgo(120),
     },
     {
@@ -250,7 +249,7 @@ async function seed() {
         "We apply modern causal inference techniques to long-running observational climate datasets to distinguish signal from confounding.",
       status: "under_review",
       studyType: "original",
-      visibility: "under_review",
+
       createdAt: daysAgo(43),
     },
     {
@@ -259,7 +258,7 @@ async function seed() {
         "An analysis of adversarial attack surfaces unique to federated learning settings, including model poisoning and gradient inversion.",
       status: "contract_pending",
       studyType: "original",
-      visibility: "private",
+
       createdAt: daysAgo(50),
     },
   ];

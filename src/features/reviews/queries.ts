@@ -1,5 +1,5 @@
 import { db } from "@/src/shared/lib/db";
-import { reviewAssignments, reviewCriteria, reviews, submissions } from "@/src/shared/lib/db/schema";
+import { reviewAssignments, reviewCriteria, reviews, reviewerRatings, submissions } from "@/src/shared/lib/db/schema";
 import { eq, and, inArray, lt, isNotNull } from "drizzle-orm";
 
 export async function getReviewAssignment(assignmentId: string, reviewerWallet: string) {
@@ -11,7 +11,7 @@ export async function getReviewAssignment(assignmentId: string, reviewerWallet: 
     with: {
       submission: {
         with: {
-          paper: { with: { versions: true } },
+          paper: { with: { versions: true, owner: true } },
           journal: true,
           reviewCriteria: true,
         },
@@ -122,6 +122,33 @@ export async function listPublicReviewsForPaper(paperId: string) {
   return publicReviews;
 }
 
+/**
+ * List all ratings for a reviewer's reviews (anonymized — no author reference).
+ * Returns 5-protocol breakdowns + comment.
+ */
+export async function listRatingsForReviewer(reviewerWallet: string) {
+  const reviewerReviews = await db.query.reviews.findMany({
+    where: eq(reviews.reviewerWallet, reviewerWallet.toLowerCase()),
+    with: { rating: true },
+  });
+
+  return reviewerReviews
+    .filter((r): r is typeof r & { rating: NonNullable<typeof r.rating> } => r.rating !== null)
+    .map((r) => ({
+      reviewId: r.id,
+      submissionId: r.submissionId,
+      actionableFeedback: r.rating.actionableFeedback,
+      deepEngagement: r.rating.deepEngagement,
+      fairObjective: r.rating.fairObjective,
+      justifiedRecommendation: r.rating.justifiedRecommendation,
+      appropriateExpertise: r.rating.appropriateExpertise,
+      overallRating: r.rating.overallRating,
+      comment: r.rating.comment,
+      createdAt: r.rating.createdAt,
+    }));
+}
+
 export type DbReviewAssignment = Awaited<ReturnType<typeof getReviewAssignment>>;
 export type DbSubmissionWithCriteria = Awaited<ReturnType<typeof getSubmissionWithCriteria>>;
 export type PublicReview = Awaited<ReturnType<typeof listPublicReviewsForPaper>>[number];
+export type ReviewerRating = Awaited<ReturnType<typeof listRatingsForReviewer>>[number];

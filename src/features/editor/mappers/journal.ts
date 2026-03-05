@@ -11,11 +11,13 @@ function deriveStage(
 ): SubmissionStage {
   if (status === "published") return "Published";
   if (status === "rejected") return "Rejected";
+  if (status === "reviews_completed") return "Decision Pending";
   if (status === "under_review") {
     if (criteriaMet !== null || decision !== null) return "Decision Pending";
     return "Under Review";
   }
-  // "submitted" / "revision_requested"
+  if (status === "rebuttal_open") return "Under Review";
+  // "submitted" / "viewed_by_editor" / "revision_requested"
   if (reviewerWallets.length > 0) return "Reviewers Assigned";
   if (criteriaHash) return "Criteria Published";
   return "New";
@@ -57,10 +59,12 @@ export function mapDbToPaperCardData(s: DbJournalSubmission): PaperCardData {
   const submittedDate = s.submittedAt ? formatIsoDate(String(s.submittedAt)) : "—";
   return {
     id: s.id,
+    paperId: s.paper.id,
     title: s.paper.title,
     authors: s.paper.owner?.displayName ?? s.paper.owner?.walletAddress ?? "Unknown",
     abstractSnippet: abstract.length > 180 ? abstract.slice(0, 177) + "…" : abstract,
     submittedDate,
+    hasLitData: !!(s.paper.litDataToEncryptHash && s.paper.litAccessConditionsJson),
   };
 }
 

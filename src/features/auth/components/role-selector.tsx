@@ -1,39 +1,52 @@
 "use client";
 
 import { useState } from "react";
+import type { Role } from "@/src/features/auth/types";
 
 interface RoleSelectorProps {
-  onSelect: (role: "researcher" | "editor" | "reviewer") => void;
+  onSelect: (role: Role) => void;
 }
 
-const ROLES = [
+const ROLES: { id: Role; label: string; description: string }[] = [
   {
     id: "researcher",
     label: "Researcher",
     description: "Submit papers and manage authorship",
-    icon: "📄",
   },
   {
     id: "editor",
     label: "Journal Editor",
     description: "Manage review process and criteria",
-    icon: "📋",
   },
   {
     id: "reviewer",
     label: "Peer Reviewer",
     description: "Evaluate papers and build reputation",
-    icon: "✓",
   },
 ];
 
 export function RoleSelector({ onSelect }: RoleSelectorProps) {
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Role | null>(null);
+  const [hovered, setHovered] = useState<Role | null>(null);
 
-  const handleClick = (roleId: string) => {
+  const handleClick = (roleId: Role) => {
     setSelected(roleId);
-    onSelect(roleId as "researcher" | "editor" | "reviewer");
+    onSelect(roleId);
   };
+
+  const borderColor = (id: Role) =>
+    selected === id
+      ? "#c9a44a"
+      : hovered === id
+        ? "rgba(201, 164, 74, 0.5)"
+        : "#5a4a3a";
+
+  const bgColor = (id: Role) =>
+    selected === id
+      ? "rgba(201, 164, 74, 0.1)"
+      : hovered === id
+        ? "rgba(201, 164, 74, 0.05)"
+        : "transparent";
 
   return (
     <div className="space-y-3">
@@ -45,24 +58,20 @@ export function RoleSelector({ onSelect }: RoleSelectorProps) {
         <button
           key={role.id}
           onClick={() => handleClick(role.id)}
-          className="w-full p-4 rounded border-2 transition-all text-left"
+          onMouseEnter={() => setHovered(role.id)}
+          onMouseLeave={() => setHovered(null)}
+          className="w-full p-4 rounded border-2 transition-all text-left cursor-pointer"
           style={{
-            borderColor: selected === role.id ? "#c9a44a" : "#5a4a3a",
-            backgroundColor:
-              selected === role.id ? "rgba(201, 164, 74, 0.1)" : "transparent",
+            borderColor: borderColor(role.id),
+            backgroundColor: bgColor(role.id),
           }}
         >
-          <div className="flex items-start gap-3">
-            <span className="text-2xl">{role.icon}</span>
-            <div>
-              <p className="font-semibold" style={{ color: "#d4ccc0" }}>
-                {role.label}
-              </p>
-              <p className="text-xs mt-1" style={{ color: "#8a8070" }}>
-                {role.description}
-              </p>
-            </div>
-          </div>
+          <p className="font-semibold" style={{ color: "#d4ccc0" }}>
+            {role.label}
+          </p>
+          <p className="text-xs mt-1" style={{ color: "#8a8070" }}>
+            {role.description}
+          </p>
         </button>
       ))}
     </div>

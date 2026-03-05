@@ -7,27 +7,6 @@ interface GeneralCommentsSectionProps {
   onChange: (field: keyof GeneralComments, value: string) => void;
 }
 
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "10px 14px",
-  background: "rgba(30,28,24,0.8)",
-  border: "1px solid rgba(120,110,95,0.25)",
-  borderRadius: 4,
-  color: "#d4ccc0",
-  fontFamily: "'Georgia', serif",
-  fontSize: 13,
-  outline: "none",
-  boxSizing: "border-box",
-  resize: "vertical",
-  lineHeight: 1.6,
-};
-
-const labelStyle: React.CSSProperties = {
-  fontSize: 11,
-  color: "#8a8070",
-  marginBottom: 6,
-  display: "block",
-};
 
 const FIELDS: { key: keyof GeneralComments; label: string; placeholder: string; rows: number; note?: string }[] = [
   {
@@ -70,13 +49,13 @@ export function GeneralCommentsSection({ comments, onChange }: GeneralCommentsSe
       <div className="flex flex-col gap-4">
         {FIELDS.map(f => (
           <div key={f.key}>
-            <label style={labelStyle}>{f.label}</label>
+            <label className="input-label">{f.label}</label>
             <textarea
               placeholder={f.placeholder}
               value={comments[f.key]}
               onChange={e => onChange(f.key, e.target.value)}
               rows={f.rows}
-              style={inputStyle}
+              className="input-field resize-y leading-[1.6]"
             />
             {f.note && (
               <div

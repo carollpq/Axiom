@@ -1,12 +1,11 @@
 "use client";
 
 import { useContractBuilder } from "@/src/features/researcher/hooks/useContractBuilder";
+import { AlertBanner } from "@/src/shared/components/AlertBanner";
 import { PaperSelection } from "./PaperSelection";
 import { ContributorTable } from "./ContributorTable";
-import { SignatureProgress } from "./SignatureProgress";
 import { ContractPreview } from "./ContractPreview";
 import { ModificationWarning } from "./ModificationWarning";
-import { SubmissionGate } from "./SubmissionGate";
 import { InviteModal } from "./InviteModal";
 import type { ExistingDraft } from "@/src/features/researcher/types/contract";
 
@@ -16,32 +15,27 @@ interface ContractBuilderClientProps {
 
 export function ContractBuilderClient({ initialDrafts }: ContractBuilderClientProps) {
   const {
-    selectedDraft, newTitle, contributors, showAddRow, addWallet,
-    showPreview, showInviteModal, inviteLink, selectedContractId,
+    selectedDraft, newTitle, contributors, showAddRow,
+    showInviteModal, inviteLink, selectedContractId, error,
     totalPct, isValid, signedCount, allSigned, hasSigned, draft, drafts, currentUserWallet,
-    setSelectedDraft, setNewTitle, setShowAddRow, setAddWallet, setShowPreview,
-    updateContributor, removeContributor, addContributor, handleSign, handleInvite, closeInviteModal,
+    setSelectedDraft, setNewTitle, setShowAddRow,
+    generating,
+    updateContributor, removeContributor, addContributorFromSearch, generateContract, handleSign, handleInvite, closeInviteModal,
   } = useContractBuilder(initialDrafts);
 
   return (
     <>
-      <div className="max-w-[960px] mx-auto py-8 px-10">
-        {/* Breadcrumb + Header */}
-        <div className="mb-2">
-          <div className="text-[11px] text-[#6a6050] mb-2">
-            <span className="cursor-pointer">Dashboard</span>
-            <span className="mx-2">/</span>
-            <span className="text-[#8a8070]">Authorship Contract Builder</span>
-          </div>
-          <h1 className="text-[28px] font-normal text-[#e8e0d4] m-0">Authorship Contract Builder</h1>
-          <p className="text-[13px] text-[#6a6050] mt-1.5 italic m-0">Define contributions, collect signatures, record on Hedera</p>
-        </div>
+      <div>
+        {error && (
+          <AlertBanner variant="error" className="mb-4">{error}</AlertBanner>
+        )}
 
         <PaperSelection
           selectedDraft={selectedDraft}
           newTitle={newTitle}
           drafts={drafts}
           draft={draft}
+          disabled={generating}
           onSelectDraft={setSelectedDraft}
           onNewTitle={setNewTitle}
         />
@@ -51,42 +45,31 @@ export function ContractBuilderClient({ initialDrafts }: ContractBuilderClientPr
           totalPct={totalPct}
           isValid={isValid}
           hasSigned={hasSigned}
+          signedCount={signedCount}
           currentUserWallet={currentUserWallet}
           showAddRow={showAddRow}
-          addWallet={addWallet}
+          disabled={generating}
+          onAddFromSearch={addContributorFromSearch}
           onUpdate={updateContributor}
           onRemove={removeContributor}
           onSign={handleSign}
-          onAdd={addContributor}
           onInvite={handleInvite}
           onSetShowAddRow={setShowAddRow}
-          onSetAddWallet={setAddWallet}
-        />
-
-        <SignatureProgress
-          contributors={contributors}
-          signedCount={signedCount}
-          allSigned={allSigned}
         />
 
         <ContractPreview
-          showPreview={showPreview}
-          onToggle={() => setShowPreview(!showPreview)}
           title={newTitle}
           draft={draft}
           contributors={contributors}
-        />
-
-        <ModificationWarning visible={hasSigned} />
-
-        <SubmissionGate
           allSigned={allSigned}
           isValid={isValid}
           signedCount={signedCount}
-          totalContributors={contributors.length}
           paperId={draft?.dbId}
           contractId={selectedContractId}
+          onGenerateContract={generateContract}
         />
+
+        <ModificationWarning visible={hasSigned} />
       </div>
 
       <InviteModal

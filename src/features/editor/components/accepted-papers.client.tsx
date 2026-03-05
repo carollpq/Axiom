@@ -6,6 +6,7 @@ import { PaperList } from "./PaperList.client";
 import { ReviewCommentsPanel } from "./sidebar/ReviewCommentsPanel";
 import { AddToIssuePanel } from "./sidebar/AddToIssuePanel";
 import { useAcceptedPapers } from "@/src/features/editor/hooks/useAcceptedPapers";
+import { useDecryptPaper } from "@/src/shared/hooks/useDecryptPaper";
 import type {
   PaperCardData,
   ReviewerWithStatus,
@@ -32,6 +33,11 @@ export function AcceptedPapersClient({
     setSelectedIssue,
   } = useAcceptedPapers(papers, reviewStatuses);
 
+  const { fileUrl: decryptedUrl } = useDecryptPaper(
+    selected?.hasLitData ? selected.paperId : null,
+    true,
+  );
+
   return (
     <ThreeColumnLayout
       list={
@@ -42,7 +48,7 @@ export function AcceptedPapersClient({
           sectionTitle="Accepted Papers"
         />
       }
-      viewer={<PdfViewer fileUrl={selected?.fileUrl} title={selected?.title} />}
+      viewer={<PdfViewer fileUrl={decryptedUrl ?? selected?.fileUrl} title={selected?.title} />}
       sidebar={
         selectedId ? (
           <>

@@ -1,7 +1,5 @@
-export type Visibility = "private" | "public";
-
 export interface SignedContract {
-  id: number;
+  id: string;
   title: string;
   hash: string;
   contributors: string;

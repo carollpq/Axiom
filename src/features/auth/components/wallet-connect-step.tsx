@@ -1,7 +1,9 @@
 "use client";
 
+import type { Role } from "@/src/features/auth/types";
+
 interface WalletConnectStepProps {
-  role: "researcher" | "editor" | "reviewer";
+  role: Role;
   walletAddress?: string;
   onConnect: () => void;
   onBack: () => void;

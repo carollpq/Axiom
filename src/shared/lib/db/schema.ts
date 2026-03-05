@@ -18,8 +18,6 @@ export type StudyTypeDb =
   | "replication"
   | "replication_failed";
 
-export type VisibilityDb = "private" | "under_review" | "public";
-
 export type ContractStatusDb =
   | "draft"
   | "pending_signatures"
@@ -30,14 +28,18 @@ export type ContributorStatusDb = "pending" | "signed" | "declined";
 
 export type SubmissionStatusDb =
   | "submitted"
+  | "viewed_by_editor"
   | "criteria_published"
   | "reviewers_assigned"
   | "under_review"
+  | "reviews_completed"
   | "rebuttal_open"
   | "revision_requested"
   | "accepted"
   | "rejected"
   | "published";
+
+export type AuthorResponseStatusDb = "pending" | "accepted" | "rebuttal_requested";
 
 export type ReviewAssignmentStatusDb =
   | "assigned"
@@ -78,7 +80,15 @@ export type NotificationTypeDb =
   | "rebuttal_submitted"
   | "rebuttal_resolved"
   | "review_late"
-  | "rating_received";
+  | "rating_received"
+  | "submission_viewed"
+  | "reviews_completed"
+  | "author_response"
+  | "assignment_accepted"
+  | "assignment_declined"
+  | "contributor_added"
+  | "contract_signed"
+  | "contract_fully_signed";
 
 // ── Tables ─────────────────────────────────────────────────────────────────
 
@@ -112,10 +122,6 @@ export const papers = pgTable("papers", {
     .notNull()
     .$type<StudyTypeDb>()
     .default("original"),
-  visibility: text("visibility")
-    .notNull()
-    .$type<VisibilityDb>()
-    .default("private"),
   currentVersion: integer("current_version").notNull().default(1),
   ownerId: text("owner_id")
     .notNull()
@@ -242,6 +248,9 @@ export const submissions = pgTable("submissions", {
   decisionJustification: text("decision_justification"),
   decisionTxId: text("decision_tx_id"),
   reviewDeadlineDays: integer("review_deadline_days").notNull().default(21),
+  authorResponseStatus: text("author_response_status").$type<AuthorResponseStatusDb>(),
+  authorResponseAt: text("author_response_at"),
+  authorResponseTxId: text("author_response_tx_id"),
   hederaTxId: text("hedera_tx_id"),
   hederaTimestamp: text("hedera_timestamp"),
   submittedAt: text("submitted_at")
@@ -388,7 +397,16 @@ export const reviewerRatings = pgTable("reviewer_ratings", {
     .notNull()
     .references(() => reviews.id)
     .unique(),
-  rating: integer("rating").notNull(),
+  // 5-protocol ratings (each 1-5)
+  actionableFeedback: integer("actionable_feedback").notNull(),
+  deepEngagement: integer("deep_engagement").notNull(),
+  fairObjective: integer("fair_objective").notNull(),
+  justifiedRecommendation: integer("justified_recommendation").notNull(),
+  appropriateExpertise: integer("appropriate_expertise").notNull(),
+  overallRating: integer("overall_rating").notNull(),
+  // Anonymous comment (NO author reference — anonymity by design)
+  comment: text("comment"),
+  commentHash: text("comment_hash"),
   ratingHash: text("rating_hash"),
   reputationTokenSerial: text("reputation_token_serial"),
   createdAt: text("created_at")
@@ -424,6 +442,7 @@ export const papersRelations = relations(papers, ({ one, many }) => ({
   owner: one(users, { fields: [papers.ownerId], references: [users.id] }),
   versions: many(paperVersions),
   contracts: many(authorshipContracts),
+  submissions: many(submissions),
 }));
 
 export const paperVersionsRelations = relations(paperVersions, ({ one }) => ({

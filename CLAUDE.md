@@ -14,7 +14,7 @@ The codebase is a **functional full-stack application**. The researcher and edit
 
 **What's working end-to-end:**
 - ✅ **User authentication** — Multi-step login: role selector → wallet connect → ORCID verification → DB save → role-based dashboard routing
-- ✅ **Paper registration** — Client-side SHA-256 hashing → R2 presigned upload → Lit encryption → DB storage → Hedera HCS anchoring
+- ✅ **Paper registration** — Client-side SHA-256 hashing → IPFS upload (web3.storage) → Lit encryption → DB storage → Hedera HCS anchoring
 - ✅ **Authorship contracts** — Creation + wallet signing (verified via viem `verifyMessage`) → HCS anchoring per signature. Modification → signature invalidation.
 - ✅ **Paper submission** — `POST /api/papers/[id]/submit` → `submissions` row → HCS anchor → status `submitted`
 - ✅ **Editor dashboard** — DB-backed submission pipeline (incoming → criteria published → reviewers assigned → under review → rebuttal → decision)
@@ -22,14 +22,20 @@ The codebase is a **functional full-stack application**. The researcher and edit
 - ✅ **Reviewer assignment** — `POST /api/submissions/[id]/assign-reviewer` → `reviewAssignments` row with deadline tracking
 - ✅ **Review submission** — `POST /api/reviews/[id]` → per-criterion evaluations → hash → HCS anchor → reputation token minting
 - ✅ **Editorial decision** — `POST /api/submissions/[id]/decision` → `allCriteriaMet` computation → HCS anchor → reputation events
-- ✅ **Rebuttal phase** — Editor opens → researcher responds per-review → editor resolves → HCS anchored → reputation tokens minted
+- ✅ **Rebuttal phase** — Researcher-initiated → researcher responds per-review → editor resolves → HCS anchored → reputation tokens minted
 - ✅ **Timeline enforcement** — Cron job at `/api/cron/deadlines` marks overdue assignments → `review_late` reputation tokens
 - ✅ **Notifications** — DB-backed with NotificationBell component, 30s polling, integrated across all pipeline stages
 - ✅ **`/verify` page** — Public PDF upload → client-side hash → DB lookup → verification result
 - ✅ **Review transparency** — `GET /api/papers/[id]/reviews` returns anonymized reviews after final decision (confidentialEditorComments always excluded)
-- ✅ **Anonymous reviewer ratings** — `POST /api/reviews/[id]/rate` with NO author reference stored
+- ✅ **Anonymous 5-protocol reviewer ratings** — `POST /api/reviews/[id]/rate` with 5-dimensional rating (actionable feedback, deep engagement, fair/objective, justified recommendation, appropriate expertise) + optional anonymous comment. NO author reference stored.
 - ✅ **PDF viewer** — react-pdf v10 / pdfjs-dist v5 in editor three-column views
 - ✅ **Researcher dashboard** — Real DB data + public explorer + pending actions (including rebuttal links)
+- ✅ **Co-author paper visibility** — `listUserPapers` returns both owned papers and papers where wallet is a contributor on any authorship contract
+- ✅ **Viewed by Editor status** — `POST /api/submissions/[id]/view` → transitions `submitted` → `viewed_by_editor` → HCS anchor → researcher notification
+- ✅ **Reviewer assignment acceptance** — `POST /api/submissions/[id]/accept-assignment` → reviewer accepts/declines → auto-transitions to `under_review` when 2+ accepted
+- ✅ **Author review response** — `POST /api/submissions/[id]/author-response` → researcher accepts reviews or requests rebuttal → HCS anchored
+- ✅ **Review-response page** — Researcher views anonymized reviews, rates each (5-protocol), and accepts or requests rebuttal in a single flow
+- ✅ **Backend contract validation** — `POST /api/papers/[id]/submit` validates authorship contract is fully signed before submission
 
 **What still uses mock data:**
 - Reviewer dashboard UI (`(reviewer)/`) — API routes exist but dashboard components not yet wired
@@ -39,7 +45,7 @@ The codebase is a **functional full-stack application**. The researcher and edit
 - Reviewer search by reputation score in assignment UI
 - Hedera mirror node lookups
 
-**Current stack:** Next.js 15 (App Router, Turbopack) · React 19 · Tailwind CSS v4 · Thirdweb v5 · TypeScript strict mode · Neon PostgreSQL/Drizzle ORM · Hedera SDK (HCS + HTS) · Lit Protocol SDK (encrypt only) · AWS SDK (Cloudflare R2) · react-pdf v10 (pdfjs-dist v5)
+**Current stack:** Next.js 15 (App Router, Turbopack) · React 19 · Tailwind CSS v4 · Thirdweb v5 · TypeScript strict mode · Neon PostgreSQL/Drizzle ORM · Hedera SDK (HCS + HTS) · Lit Protocol SDK (encrypt only) · web3.storage (IPFS + Filecoin) · react-pdf v10 (pdfjs-dist v5)
 
 ## Common Commands
 
@@ -50,6 +56,23 @@ npx tsc --noEmit               # Type-check without building (use for quick vali
 npm run lint                   # ESLint
 npm run format                 # Prettier formatting
 ```
+
+### Smart Contracts (Hardhat)
+
+The `contracts/` directory has its own `package.json` to isolate Hardhat dependencies from the Next.js app.
+
+```bash
+npm run contracts:install      # Install Hardhat dependencies (cd contracts && npm install)
+npm run contracts:compile      # Compile Solidity contracts
+npm run contracts:test         # Run Hardhat tests (local network)
+npm run contracts:deploy:testnet  # Deploy TimelineEnforcer to Hedera testnet
+```
+
+**Contract:** `TimelineEnforcer.sol` — On-chain deadline tracking for review assignments. Pure Solidity (no Hedera precompile dependency). HTS reputation minting remains SDK-only via `src/shared/lib/hedera/hts.ts`.
+
+**Env vars** (add to `.env.local`):
+- `HEDERA_EVM_PRIVATE_KEY` — ECDSA key for EVM transactions (if operator key is ED25519)
+- `TIMELINE_ENFORCER_ADDRESS` — Deployed TimelineEnforcer address
 
 ## Architecture
 
@@ -84,7 +107,7 @@ src/features/{domain}/mappers/{domain}.ts            # Pure mapping functions
 
 **The split:** server fetches, client interacts.
 
-**What stays client-side forever:** wallet signing (`account.signMessage`), file hashing (Web Crypto API), Lit encryption, R2 uploads, `useUser()` / `useActiveAccount()`.
+**What stays client-side forever:** wallet signing (`account.signMessage`), file hashing (Web Crypto API), Lit encryption, IPFS uploads, `useUser()` / `useActiveAccount()`.
 
 **What stays as API routes:** all mutations (`POST`, `PATCH`, `DELETE`).
 
@@ -204,7 +227,9 @@ interface ReviewCriterion {
 
 Before final rejection, authors can challenge specific reviewer comments.
 
-**Workflow:** Reviews complete → Editor triggers rebuttal (14 day deadline) → Author responds per-review (agree/disagree + justification) → Rebuttal hashed + HCS anchored → Editor resolves → Resolution HCS anchored → Reputation tokens minted based on outcome.
+**Workflow:** Reviews complete → Researcher views reviews and rates each (5-protocol) → Researcher chooses "Accept Reviews" or "Request Rebuttal" → If rebuttal: 14-day deadline → Author responds per-review (agree/disagree + justification) → Rebuttal hashed + HCS anchored → Editor resolves → Resolution HCS anchored → Reputation tokens minted based on outcome.
+
+**Key change:** Rebuttal is now researcher-initiated (not editor-initiated). The `POST /api/submissions/[id]/open-rebuttal` route returns 410 Gone. Rebuttals are triggered via `POST /api/submissions/[id]/author-response` with `action: "request_rebuttal"`.
 
 **Data model:**
 - `rebuttals` table: links to submission, has status/deadline/resolution
@@ -274,25 +299,25 @@ src/
 │   ├── verify/page.tsx            # Public hash verification page
 │   ├── invite/[token]/page.tsx    # Invite claim page
 │   ├── api/
-│   │   ├── auth/                  # me/ + register-user/
+│   │   ├── auth/                  # me/ (GET + PATCH)
 │   │   ├── activity/route.ts      # GET: activity feed
 │   │   ├── contracts/             # CRUD + signing + invite + reset-signatures
 │   │   ├── papers/                # CRUD + versions + submit + content + reviews
 │   │   ├── journals/route.ts      # GET: list journals
-│   │   ├── submissions/[id]/      # criteria/ + assign-reviewer/ + decision/ + open-rebuttal/
+│   │   ├── submissions/[id]/      # criteria/ + assign-reviewer/ + decision/ + view/ + accept-assignment/ + author-response/ + open-rebuttal/ (deprecated)
 │   │   ├── reviews/[id]/          # GET/POST review + rate/
 │   │   ├── rebuttals/[rebuttalId]/ # respond/ + resolve/
 │   │   ├── notifications/route.ts # GET: list + PATCH: mark read
 │   │   ├── verify/route.ts        # POST: hash verification (no auth)
 │   │   ├── cron/deadlines/route.ts # GET: deadline enforcement cron
-│   │   └── upload/presigned/      # R2 presigned URLs
+│   │   └── upload/ipfs/            # IPFS upload via web3.storage
 │   ├── (protected)/
-│   │   ├── researcher/            # Dashboard, paper_registration, contract_builder, public_explorer, rebuttal/[submissionId]
+│   │   ├── researcher/            # Dashboard, authorship-contracts, create-submission, view-submissions, paper-version-control (includes paper registration), rebuttal/[submissionId], review-response/[submissionId]
 │   │   ├── editor/                # Dashboard, incoming, under-review, accepted, management
 │   │   └── reviewer/              # Dashboard, review_workspace/[id]
 ├── features/
 │   ├── auth/                      # Login flow components
-│   ├── researcher/                # Components, hooks, reducers, config, mappers, types
+│   ├── researcher/                # Components, hooks, reducers, config, constants, mappers, queries, types, nav
 │   ├── editor/                    # Components, hooks, queries, mappers, types (DB-backed)
 │   ├── reviewer/                  # Components, hooks, reducers (mock data still)
 │   ├── contracts/                 # DB queries + actions
@@ -312,7 +337,7 @@ src/
     │   ├── hedera/client.ts + hcs.ts + hts.ts  # HCS + HTS
     │   ├── lit/                   # Encrypt (decrypt not wired)
     │   ├── hashing.ts             # SHA-256 + canonical JSON
-    │   └── storage.ts             # R2
+    │   └── storage.ts             # IPFS (web3.storage)
     └── types/                     # Shared types
 ```
 
@@ -325,7 +350,7 @@ src/
 - **Dynamic routes:** `[id]` not `[paperId]`.
 - **No localStorage/sessionStorage.** React context + httpOnly cookies.
 - **API routes using Hedera SDK:** `export const runtime = 'nodejs'`.
-- **Graceful degradation:** Hedera, Lit, R2 all fall back if env vars missing.
+- **Graceful degradation:** Hedera, Lit, IPFS all fall back if env vars missing.
 - **Auth:** `getSession()` from `@/src/shared/lib/auth/auth`. Never trust wallet from request body.
 - **Validation:** `createInsertSchema(table)` from `drizzle-zod`. Don't duplicate DB schema.
 - **Canonical JSON:** Always `canonicalJson()` from `lib/hashing.ts` for anything hashed. Never raw `JSON.stringify()`.
@@ -353,15 +378,17 @@ Drizzle ORM. Dev: SQLite. Prod: Neon PostgreSQL. Schema in `src/shared/lib/db/sc
 - `notifications` — user notifications (type, title, body, link, read status)
 
 **Key status types:**
-- `SubmissionStatusDb`: submitted → criteria_published → reviewers_assigned → under_review → rebuttal_open → revision_requested/accepted/rejected/published
+- `SubmissionStatusDb`: submitted → viewed_by_editor → criteria_published → reviewers_assigned → under_review → reviews_completed → rebuttal_open → revision_requested/accepted/rejected/published
+- `AuthorResponseStatusDb`: pending | accepted | rebuttal_requested
 - `ReviewAssignmentStatusDb`: assigned → accepted/declined → submitted/late
 - `RebuttalStatusDb`: open → submitted → under_review → resolved
 - `RebuttalResolutionDb`: upheld | rejected | partial
 
 **Key conventions:**
 - `reputationEvents` is append-only — never update or delete.
-- `reviewerRatings` has NO author reference (anonymity by design). Never add one.
-- Paper status includes `rebuttal_open` between `under_review` and decision states.
+- `reviewerRatings` has 5-protocol columns (actionableFeedback, deepEngagement, fairObjective, justifiedRecommendation, appropriateExpertise) + overallRating + optional comment/commentHash. NO author reference (anonymity by design). Never add one.
+- `submissions` has `authorResponseStatus` / `authorResponseAt` / `authorResponseTxId` for researcher's response to completed reviews.
+- Paper status includes `viewed_by_editor` after `submitted`, `reviews_completed` after `under_review`, and `rebuttal_open` before decision states.
 - `studyType` on papers: `original`, `negative_result`, `replication`, `replication_failed`, `meta_analysis`.
 
 ## Environment Variables
@@ -384,8 +411,8 @@ HTS_REPUTATION_TOKEN_ID
 # Cron (optional — for deadline enforcement)
 CRON_SECRET
 
-# Cloudflare R2 (optional — graceful fallback)
-S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_ENDPOINT
+# IPFS / web3.storage (optional — graceful fallback)
+W3_PRINCIPAL_KEY, W3_DELEGATION_PROOF
 
 # Lit Protocol (optional — graceful fallback)
 NEXT_PUBLIC_LIT_NETWORK

@@ -61,7 +61,7 @@ export function InviteClaimClient({ contributorWallet, contractId, contract }: I
       });
 
       setSigned(true);
-      setTimeout(() => router.push("/researcher/contract_builder"), 2500);
+      setTimeout(() => router.push("/researcher/authorship-contracts"), 2500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Signing failed. Please try again.");
     } finally {

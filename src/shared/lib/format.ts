@@ -1,3 +1,6 @@
+import type { Role } from "@/src/features/auth/types";
+import type { UserProfile } from "@/src/shared/types/shared";
+
 export function truncateHash(hash: string, prefixLen = 6): string {
   return hash.length > 12 ? `${hash.slice(0, prefixLen)}...${hash.slice(-4)}` : hash;
 }
@@ -35,12 +38,32 @@ export function formatIsoDate(iso: string): string {
   return iso.slice(0, 10);
 }
 
+/** Capitalize the first letter of a string. */
+export function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 /** Display name with wallet fallback. */
 export function displayNameOrWallet(
   name: string | null | undefined,
   wallet: string,
 ): string {
   return name ?? truncateWallet(wallet);
+}
+
+/** Build a UserProfile from a DB user (or raw wallet) and the current role. */
+export function buildUserProfile(
+  wallet: string,
+  user: { displayName: string | null; walletAddress: string; roles: string[] } | null,
+  role: Role,
+): UserProfile {
+  return {
+    displayName: user?.displayName ?? null,
+    initials: getInitials(user?.displayName ?? wallet),
+    wallet: truncateWallet(user?.walletAddress ?? wallet),
+    role,
+    roles: (user?.roles ?? [role]) as Role[],
+  };
 }
 
 /** Generate a mock transaction hash for demo/dev mode. */

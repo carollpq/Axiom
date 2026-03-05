@@ -1,7 +1,10 @@
 import { listUserPapers } from "@/src/features/papers/queries";
-import { mapDbPaperToFrontend, computeStats } from "@/src/features/researcher/mappers/dashboard";
+import {
+  mapPapersToSubmissionCards,
+  computeStats,
+  statsToCards,
+} from "@/src/features/researcher/mappers/dashboard";
 import { StatCard } from "@/src/shared/components";
-import type { ApiPaper } from "@/src/shared/types/api";
 
 interface Props {
   papersPromise: ReturnType<typeof listUserPapers>;
@@ -9,12 +12,13 @@ interface Props {
 
 export async function StatsSection({ papersPromise }: Props) {
   const rawPapers = await papersPromise;
-  const papers = (rawPapers as unknown as ApiPaper[]).map(mapDbPaperToFrontend);
-  const stats = computeStats(papers);
+  const submissionCards = mapPapersToSubmissionCards(rawPapers);
+  const stats = computeStats(submissionCards);
+  const cards = statsToCards(stats);
 
   return (
     <div className="flex gap-4 mb-8 flex-wrap">
-      {stats.map((s) => (
+      {cards.map((s) => (
         <StatCard key={s.label} {...s} />
       ))}
     </div>

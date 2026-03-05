@@ -1,46 +1,78 @@
 "use client";
 
-import type { PaperRow, PaperStatus } from "@/src/features/researcher/types/dashboard";
+import { useMemo, useState } from "react";
 import { SearchInput } from "@/src/shared/components/SearchInput";
-import { FilterPills } from "@/src/shared/components/FilterPills";
 import { StatusBadge } from "./StatusBadge";
+import type { PaperStatus } from "@/src/shared/lib/status-map";
 
-export function PapersTable({
-  papers,
-  statuses,
-  statusFilter,
-  onStatusFilter,
-  searchQuery,
-  onSearchChange,
-  hoveredRow,
-  onHoverRow,
-}: {
-  papers: PaperRow[];
-  statuses: PaperStatus[];
-  statusFilter: "All" | PaperStatus;
-  onStatusFilter: (s: "All" | PaperStatus) => void;
-  searchQuery: string;
-  onSearchChange: (q: string) => void;
-  hoveredRow: string | null;
-  onHoverRow: (id: string | null) => void;
-}) {
-  const allStatuses: ("All" | PaperStatus)[] = ["All", ...statuses];
+const PAPER_STATUSES: PaperStatus[] = [
+  "Draft",
+  "Contract Pending",
+  "Submitted",
+  "Viewed by Editor",
+  "Under Review",
+  "Reviews Complete",
+  "Revision Requested",
+  "Published",
+];
+
+interface PaperRow {
+  id: string;
+  title: string;
+  status: PaperStatus;
+  coauthors: string;
+  date: string;
+  hash: string;
+}
+
+interface Props {
+  initialPapers: PaperRow[];
+}
+
+export function PapersTable({ initialPapers }: Props) {
+  const [statusFilter, setStatusFilter] = useState<"All" | PaperStatus>("All");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredPapers = useMemo(() => {
+    return initialPapers.filter((p) => {
+      const matchesStatus = statusFilter === "All" || p.status === statusFilter;
+      const query = searchQuery.toLowerCase();
+      const matchesSearch =
+        !query ||
+        p.title.toLowerCase().includes(query) ||
+        p.coauthors.toLowerCase().includes(query);
+      return matchesStatus && matchesSearch;
+    });
+  }, [initialPapers, statusFilter, searchQuery]);
 
   return (
     <div>
-      <SearchInput
-        value={searchQuery}
-        onChange={onSearchChange}
-        placeholder="Search papers by title or co-author..."
-        className="mb-4"
-      />
-
-      <div className="flex gap-1.5 mb-5 flex-wrap">
-        <FilterPills
-          options={allStatuses}
-          value={statusFilter}
-          onChange={onStatusFilter}
+      <div className="flex gap-3 items-center mb-5">
+        <SearchInput
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Search papers by title or co-author..."
+          className="flex-1"
         />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as "All" | PaperStatus)}
+          className="appearance-none rounded-[3px] py-[5px] pl-3 pr-7 text-[11px] font-serif cursor-pointer transition-all duration-300 outline-none"
+          style={{
+            background: statusFilter !== "All" ? "rgba(180,160,120,0.15)" : "rgba(45,42,38,0.5)",
+            border: `1px solid ${statusFilter !== "All" ? "rgba(180,160,120,0.3)" : "rgba(120,110,95,0.15)"}`,
+            color: statusFilter !== "All" ? "#c9b89e" : "#6a6050",
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236a6050' stroke-width='1.2' fill='none'/%3E%3C/svg%3E")`,
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "right 8px center",
+          }}
+          aria-label="Status"
+        >
+          <option value="All">Status</option>
+          {PAPER_STATUSES.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
       </div>
 
       {/* Table */}
@@ -58,16 +90,13 @@ export function PapersTable({
         </div>
 
         {/* Rows */}
-        {papers.map((p, i) => (
+        {filteredPapers.map((p, i) => (
           <div
             key={p.id}
-            onMouseEnter={() => onHoverRow(p.id)}
-            onMouseLeave={() => onHoverRow(null)}
-            className="grid px-5 py-3.5 items-center cursor-pointer transition-colors duration-200"
+            className="grid px-5 py-3.5 items-center cursor-pointer transition-colors duration-200 hover:bg-[rgba(120,110,95,0.08)]"
             style={{
               gridTemplateColumns: "2.5fr 1fr 1fr 0.8fr 0.8fr",
-              background: hoveredRow === p.id ? "rgba(120,110,95,0.08)" : "transparent",
-              borderBottom: i < papers.length - 1 ? "1px solid rgba(120,110,95,0.08)" : "none",
+              borderBottom: i < filteredPapers.length - 1 ? "1px solid rgba(120,110,95,0.08)" : "none",
             }}
           >
             <span className="text-[13px] text-[#d4ccc0] leading-[1.4] pr-4">{p.title}</span>
@@ -79,7 +108,7 @@ export function PapersTable({
         ))}
 
         {/* Empty State */}
-        {papers.length === 0 && (
+        {filteredPapers.length === 0 && (
           <div className="p-10 text-center text-[#6a6050] italic">
             No papers match this filter
           </div>

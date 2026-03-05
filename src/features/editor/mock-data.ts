@@ -19,7 +19,7 @@ export const mockEditorProfile: EditorProfile = {
 
 export const mockIncomingPapers: PaperCardData[] = [
   {
-    id: "p1",
+    id: "p1", paperId: "p1", hasLitData: false,
     title: "Quantum Error Correction Using Topological Codes in Noisy Environments",
     authors: "A. Rodriguez, B. Kim, C. Patel",
     abstractSnippet:
@@ -27,7 +27,7 @@ export const mockIncomingPapers: PaperCardData[] = [
     submittedDate: "2026-02-20",
   },
   {
-    id: "p2",
+    id: "p2", paperId: "p2", hasLitData: false,
     title: "Federated Learning for Privacy-Preserving Medical Image Analysis",
     authors: "M. Zhang, L. Thompson",
     abstractSnippet:
@@ -35,7 +35,7 @@ export const mockIncomingPapers: PaperCardData[] = [
     submittedDate: "2026-02-18",
   },
   {
-    id: "p3",
+    id: "p3", paperId: "p3", hasLitData: false,
     title: "Scalable Graph Neural Networks for Molecular Property Prediction",
     authors: "J. Park, S. Müller, R. Gupta",
     abstractSnippet:
@@ -43,7 +43,7 @@ export const mockIncomingPapers: PaperCardData[] = [
     submittedDate: "2026-02-15",
   },
   {
-    id: "p4",
+    id: "p4", paperId: "p4", hasLitData: false,
     title: "Causal Inference in High-Dimensional Observational Studies",
     authors: "D. Williams, E. Nakamura",
     abstractSnippet:
@@ -54,7 +54,7 @@ export const mockIncomingPapers: PaperCardData[] = [
 
 export const mockUnderReviewPapers: PaperCardData[] = [
   {
-    id: "p5",
+    id: "p5", paperId: "p5", hasLitData: false,
     title: "Transformer Architectures for Long-Range Sequence Modeling",
     authors: "H. Li, F. Okonkwo, A. Sharma",
     abstractSnippet:
@@ -62,7 +62,7 @@ export const mockUnderReviewPapers: PaperCardData[] = [
     submittedDate: "2026-01-28",
   },
   {
-    id: "p6",
+    id: "p6", paperId: "p6", hasLitData: false,
     title: "Adversarial Robustness in Multi-Modal Foundation Models",
     authors: "K. Tanaka, P. Costa",
     abstractSnippet:
@@ -70,7 +70,7 @@ export const mockUnderReviewPapers: PaperCardData[] = [
     submittedDate: "2026-01-22",
   },
   {
-    id: "p7",
+    id: "p7", paperId: "p7", hasLitData: false,
     title: "Bayesian Optimization for Automated Hyperparameter Tuning at Scale",
     authors: "R. Singh, M. Dubois, C. Lee",
     abstractSnippet:
@@ -81,7 +81,7 @@ export const mockUnderReviewPapers: PaperCardData[] = [
 
 export const mockAcceptedPapers: PaperCardData[] = [
   {
-    id: "p8",
+    id: "p8", paperId: "p8", hasLitData: false,
     title: "Neural Architecture Search with Hardware-Aware Constraints",
     authors: "T. Brown, Y. Suzuki",
     abstractSnippet:
@@ -89,7 +89,7 @@ export const mockAcceptedPapers: PaperCardData[] = [
     submittedDate: "2025-12-10",
   },
   {
-    id: "p9",
+    id: "p9", paperId: "p9", hasLitData: false,
     title: "Self-Supervised Learning for Low-Resource Language Understanding",
     authors: "N. Osei, B. Petrov, A. Mahmoud",
     abstractSnippet:

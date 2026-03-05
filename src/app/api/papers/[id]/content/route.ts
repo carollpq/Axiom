@@ -2,7 +2,7 @@ export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
 import { getPaperById } from "@/src/features/papers/queries";
-import { getFileFromR2, isStorageConfigured } from "@/src/shared/lib/storage";
+import { getFileFromIPFS, isStorageConfigured } from "@/src/shared/lib/storage";
 import { requireSession } from "@/src/shared/lib/api-helpers";
 
 export async function GET(
@@ -33,7 +33,7 @@ export async function GET(
     );
   }
 
-  const buffer = await getFileFromR2(latestVersion.fileStorageKey);
+  const buffer = await getFileFromIPFS(latestVersion.fileStorageKey);
 
   return NextResponse.json({
     ciphertext: buffer.toString("base64"),

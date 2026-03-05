@@ -8,6 +8,7 @@ import { FinalDecisionPanel } from "./sidebar/FinalDecisionPanel";
 import { ResolveRebuttalPanel } from "./sidebar/ResolveRebuttalPanel";
 import { AssignReviewersPanel } from "./sidebar/AssignReviewersPanel";
 import { useUnderReview } from "@/src/features/editor/hooks/useUnderReview";
+import { useDecryptPaper } from "@/src/shared/hooks/useDecryptPaper";
 import type {
   PaperCardData,
   PoolReviewer,
@@ -52,6 +53,11 @@ export function UnderReviewClient({
     isResolvingRebuttal,
   } = useUnderReview(papers, reviewerPool, reviewStatuses, rebuttalsBySubmission);
 
+  const { fileUrl: decryptedUrl } = useDecryptPaper(
+    selected?.hasLitData ? selected.paperId : null,
+    true,
+  );
+
   return (
     <ThreeColumnLayout
       list={
@@ -62,7 +68,7 @@ export function UnderReviewClient({
           sectionTitle="Under Review"
         />
       }
-      viewer={<PdfViewer fileUrl={selected?.fileUrl} title={selected?.title} />}
+      viewer={<PdfViewer fileUrl={decryptedUrl ?? selected?.fileUrl} title={selected?.title} />}
       sidebar={
         selectedId ? (
           <>

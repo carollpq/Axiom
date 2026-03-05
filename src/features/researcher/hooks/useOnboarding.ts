@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { useActiveAccount } from "thirdweb/react";
 import { validateOrcidFormat } from "@/src/shared/lib/validation";
+import type { Role } from "@/src/features/auth/types";
 
-export type UserRole = "researcher" | "reviewer" | "editor" | null;
+export type UserRole = Role | null;
 export type OnboardingStep = "connect" | "orcid" | "role_selection" | "complete";
 
 export function useOnboarding() {

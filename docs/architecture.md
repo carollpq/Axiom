@@ -140,7 +140,7 @@ Journals join (free, no revenue impact)
 | **Frontend** | Next.js 15 (App Router, Turbopack) | Pages, wallet integration, client-side hashing, Lit encrypt/decrypt |
 | **API Layer** | Next.js Route Handlers (Vercel) | Business logic, off-chain CRUD, Hedera submission orchestration |
 | **Database** | PostgreSQL (Neon) / SQLite (dev) | Users, papers, contracts, reviews, reputation, submissions |
-| **File Storage** | Cloudflare R2 | Lit-encrypted paper PDFs, datasets, environment specs |
+| **File Storage** | IPFS via web3.storage (Filecoin archival) | Lit-encrypted paper PDFs, datasets, environment specs |
 | **Blockchain (Consensus)** | Hedera HCS | Immutable audit logs: papers, contracts, reviews, criteria, decisions |
 | **Blockchain (Tokens)** | Hedera HTS | Soulbound reputation NFTs for reviewers |
 | **Blockchain (Contracts)** | Hedera Smart Contracts (EVM) | Timeline enforcement, deadline penalties |
@@ -171,7 +171,7 @@ Journals join (free, no revenue impact)
          ▼
 ┌──────────────────────────────────────────────────────────────┐
 │                   OFF-CHAIN DATA LAYER                         │
-│  PostgreSQL/SQLite (structured) · Cloudflare R2 (encrypted)   │
+│  PostgreSQL/SQLite (structured) · IPFS/Filecoin (encrypted)   │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -195,7 +195,7 @@ Authors formally define contribution percentages, all co-authors cryptographical
 
 Authors register paper drafts by submitting a cryptographic hash. Each registration includes timestamp, author DID/wallet, and is immutably stored on HCS.
 
-**Current state:** Functional. Client-side SHA-256 hashing → Lit encryption → R2 presigned upload → DB storage → HCS anchoring. Study type selection (original / negative result / replication / replication failed / meta-analysis) implemented in registration wizard.
+**Current state:** Functional. Client-side SHA-256 hashing → Lit encryption → IPFS upload (web3.storage) → DB storage → HCS anchoring. Study type selection (original / negative result / replication / replication failed / meta-analysis) implemented in registration wizard.
 
 ### 4.3 Immutable Paper Versioning & Provenance (FR-3) ✅ Partially Implemented
 
@@ -294,11 +294,21 @@ Domain-scoped topics. Each is an ordered, immutable append-only log.
 |---|---|---|---|
 | `papers` | Draft registrations, version anchoring | `{type, paperHash, authorWallet, studyType, provenanceHashes, visibility, timestamp}` | ✅ Implemented |
 | `contracts` | Authorship contract creation, signatures | `{type, contractHash, signerWallet, paperHash, signatures[], contributionSplits[], timestamp}` | ✅ Implemented |
-| `submissions` | Paper submission events | `{type, paperHash, contractHash, journalId, timestamp}` | ✅ Implemented |
-| `criteria` | Journal review criteria publication | `{type, journalId, submissionId, criteriaHash, criteria[], timestamp}` | 🔲 Not yet |
-| `reviews` | Review hash anchoring | `{type, reviewHash, reviewerWallet, paperHash, criteriaHash, criteriaEvaluations, timestamp}` | 🔲 Not yet |
-| `decisions` | Accept/reject with justification | `{type, journalId, paperHash, decision, justification?, criteriaHash, allCriteriaMet, timestamp}` | 🔲 Not yet |
+| `submissions` | Paper submission events, status transitions | `{type, paperHash, contractHash, journalId, timestamp}` | ✅ Implemented |
+| `criteria` | Journal review criteria publication | `{type, journalId, submissionId, criteriaHash, criteria[], timestamp}` | ✅ Implemented |
+| `reviews` | Review hash anchoring + author comments | `{type, reviewHash, reviewerWallet, paperHash, criteriaHash, criteriaEvaluations, timestamp}` | ✅ Implemented |
+| `decisions` | Accept/reject with justification, rebuttal requests | `{type, journalId, paperHash, decision, justification?, criteriaHash, allCriteriaMet, timestamp}` | ✅ Implemented |
 | `retractions` | Retraction records | `{type, paperHash, requestingParty, reason, failedComponent, timestamp}` | 🔲 Not yet |
+
+#### Additional HCS Events (anchored to existing topics)
+
+| Event | Topic | Payload | Status |
+|---|---|---|---|
+| `viewed_by_editor` | `submissions` | `{type, submissionId, editorWallet, timestamp}` | ✅ Implemented |
+| `assignment_accepted` | `submissions` | `{type, submissionId, reviewerWallet, acceptedCount, timestamp}` | ✅ Implemented |
+| `author_response` | `submissions` | `{type, submissionId, action, authorWallet, timestamp}` | ✅ Implemented |
+| `rebuttal_requested` | `decisions` | `{type, submissionId, authorWallet, deadline, timestamp}` | ✅ Implemented |
+| `author_comment` | `reviews` | `{type, reviewId, commentHash, timestamp}` | ✅ Implemented |
 
 ### 5.3 HCS Message Flow
 
@@ -353,6 +363,20 @@ Each NFT metadata:
     "timestamp": "ISO8601",
     "score": number,
     "details": { ... }
+}
+
+For `author_rating` events, metadata now includes 5-dimensional quality data:
+{
+    "type": "author_rating",
+    "protocols": {
+        "actionable_feedback": 4,
+        "deep_engagement": 5,
+        "fair_objective": 3,
+        "justified_recommendation": 4,
+        "appropriate_expertise": 5
+    },
+    "overall": 4,
+    "reviewId": "uuid"
 }
 ```
 
@@ -440,7 +464,7 @@ During review, paper content must be accessible to specific people (authors, ass
 ### 7.3 Encryption Flow
 
 ```
-Author                          Lit Network                    R2 Storage
+Author                          Lit Network                    IPFS
     │                                │                              │
     │  1. Upload PDF                 │                              │
     │  2. hashFile(pdf) → paperHash  │                              │
@@ -451,7 +475,7 @@ Author                          Lit Network                    R2 Storage
     │  ◄── key shares ──────────────│                              │
     │                                │                              │
     │  5. Encrypt PDF client-side    │                              │
-    │  6. Upload encrypted blob ─────┼──────────────────────────────►│
+    │  6. POST to /api/upload/ipfs → pin encrypted blob ───────────►│
     │                                │                              │
     │  ✅ On-chain hash = hash of ORIGINAL (unencrypted) file      │
 ```
@@ -491,26 +515,24 @@ This addresses the P5 problem identified by our research contacts: "Authors are 
 
 ### 8.2 Workflow
 
+**Key design decision:** Rebuttals are researcher-initiated, not editor-initiated. After all reviews are submitted, the submission transitions to `reviews_completed` and the researcher decides whether to accept the reviews or request a rebuttal.
+
 ```
-Reviews submitted
+All reviews submitted → status: reviews_completed
     │
     ▼
-Editor reviews all evaluations
+Researcher views anonymized reviews + rates each (5-protocol)
     │
-    ├── All criteria met → Publish (journal bound)
+    ├── "Accept Reviews" → authorResponseStatus: accepted
+    │       → Editor makes final decision
     │
-    ├── Some criteria not met → Two options:
+    ├── "Request Rebuttal" → authorResponseStatus: rebuttal_requested
+    │       → status: rebuttal_open (14-day deadline)
     │       │
-    │       ├── Rejection likely → Trigger rebuttal phase
-    │       │       │
-    │       │       ▼
-    │       │   Author receives reviews + notification
-    │       │   "Rebuttal phase open — 14 days to respond"
-    │       │       │
-    │       │       ▼
-    │       │   Author submits rebuttal:
-    │       │   - Per-comment responses (agree / disagree + justification)
-    │       │   - Additional evidence or clarification
+    │       ▼
+    │   Author submits rebuttal:
+    │   - Per-comment responses (agree / disagree + justification)
+    │   - Additional evidence or clarification
     │       │   - Rebuttal hashed and recorded on HCS
     │       │       │
     │       │       ▼
@@ -676,23 +698,25 @@ This is a stretch goal for the hackathon. The MVP uses off-chain deadline tracki
 
 ### 10.1 Strategy
 
-Cloudflare R2 (S3-compatible) with content-addressed naming. Non-public files are Lit-encrypted.
+IPFS via web3.storage (pinning + Filecoin archival) with content-addressed storage. Non-public files are Lit-encrypted. Files are referenced by CID (Content Identifier) in the database.
 
 ```
-Bucket structure:
-papers/{sha256hash}.enc           # Lit-encrypted (draft + under review)
-papers/{sha256hash}               # Plaintext (published, if journal allows)
-datasets/{sha256hash}.enc         # Lit-encrypted datasets
+IPFS naming convention:
+papers/{sha256hash}               # Lit-encrypted (draft + under review) or plaintext
+datasets/{sha256hash}             # Lit-encrypted datasets
 environments/{sha256hash}         # Environment specs
+
+Each file is pinned on IPFS and archived to Filecoin via web3.storage.
+Retrieval via w3s.link gateway: https://w3s.link/ipfs/{cid}
 ```
 
 ### 10.2 Upload Flow
 
 1. Client computes SHA-256 of original file
 2. Client encrypts via Lit SDK with access conditions
-3. Client requests presigned PUT URL from API
-4. Client uploads encrypted blob directly to R2 (bypasses Vercel 4.5MB limit)
-5. API stores: original hash, Lit metadata, R2 key
+3. Client POSTs encrypted file as FormData to `/api/upload/ipfs`
+4. API pins file to IPFS via web3.storage w3up client, returns CID
+5. API stores: original hash, Lit metadata, CID (as `fileStorageKey`)
 6. On-chain: hash of ORIGINAL file is recorded on HCS
 
 ---
@@ -759,7 +783,7 @@ CREATE TABLE paper_versions (
     code_commit_hash    TEXT,
     code_repo_url       TEXT,
     environment_hash    TEXT,
-    file_storage_key    TEXT,                         -- R2 key
+    file_storage_key    TEXT,                         -- IPFS CID
     hedera_tx_id        TEXT,
     hedera_timestamp    TIMESTAMPTZ,
     created_at          TIMESTAMPTZ DEFAULT now(),
@@ -823,9 +847,12 @@ CREATE TABLE submissions (
     version_id      UUID NOT NULL REFERENCES paper_versions(id),
     contract_id     UUID NOT NULL REFERENCES authorship_contracts(id),
     status          TEXT NOT NULL DEFAULT 'submitted',
-    -- 'submitted' | 'criteria_published' | 'reviewers_assigned' |
-    -- 'under_review' | 'reviews_complete' | 'rebuttal_open' |
+    -- 'submitted' | 'viewed_by_editor' | 'criteria_published' | 'reviewers_assigned' |
+    -- 'under_review' | 'reviews_completed' | 'rebuttal_open' |
     -- 'decision_pending' | 'published' | 'rejected' | 'revision_requested'
+    author_response_status TEXT,      -- 'pending' | 'accepted' | 'rebuttal_requested'
+    author_response_at     TIMESTAMPTZ,
+    author_response_tx_id  TEXT,
     criteria_hash   TEXT,
     criteria_tx_id  TEXT,
     decision        TEXT,                             -- 'accept' | 'reject' | 'revise'
@@ -910,10 +937,19 @@ CREATE TABLE rebuttal_responses (
 CREATE TABLE reviewer_ratings (
     id              UUID PRIMARY KEY,
     review_id       UUID NOT NULL REFERENCES reviews(id) UNIQUE,
-    rating          INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    -- 5-protocol ratings (each 1-5)
+    actionable_feedback     INT NOT NULL CHECK (actionable_feedback BETWEEN 1 AND 5),
+    deep_engagement         INT NOT NULL CHECK (deep_engagement BETWEEN 1 AND 5),
+    fair_objective          INT NOT NULL CHECK (fair_objective BETWEEN 1 AND 5),
+    justified_recommendation INT NOT NULL CHECK (justified_recommendation BETWEEN 1 AND 5),
+    appropriate_expertise   INT NOT NULL CHECK (appropriate_expertise BETWEEN 1 AND 5),
+    overall_rating          INT NOT NULL CHECK (overall_rating BETWEEN 1 AND 5),
+    -- Optional anonymous comment
+    comment         TEXT,
+    comment_hash    TEXT,
     -- NO author reference — anonymity by design (FR-6.3)
-    rating_hash     TEXT NOT NULL,
-    reputation_token_serial INT,
+    rating_hash     TEXT,
+    reputation_token_serial TEXT,
     created_at      TIMESTAMPTZ DEFAULT now()
 );
 
@@ -1011,31 +1047,29 @@ app/api/
 │       └── reset-signatures/route.ts  # PATCH ✅
 ├── submissions/
 │   └── [id]/
-│       ├── criteria/route.ts          # POST: publish criteria → HCS 🔲
-│       ├── assign-reviewer/route.ts   # POST 🔲
-│       └── decision/route.ts          # POST: accept/reject → HCS 🔲
+│       ├── criteria/route.ts          # POST: publish criteria → HCS ✅
+│       ├── assign-reviewer/route.ts   # POST ✅
+│       ├── accept-assignment/route.ts # POST: reviewer accepts/declines → auto under_review ✅
+│       ├── view/route.ts             # POST: editor views → viewed_by_editor → HCS ✅
+│       ├── author-response/route.ts   # POST: researcher accepts/requests rebuttal → HCS ✅
+│       ├── open-rebuttal/route.ts     # POST: DEPRECATED (returns 410 Gone) ✅
+│       └── decision/route.ts          # POST: accept/reject → HCS ✅
 ├── reviews/
-│   ├── route.ts                       # GET: reviewer's assigned reviews 🔲
-│   ├── [id]/route.ts                  # GET/POST: review detail / submit → HCS 🔲
-│   └── [id]/rate/route.ts             # POST: author rates reviewer 🔲
+│   ├── route.ts                       # GET: reviewer's assigned reviews ✅
+│   ├── [id]/route.ts                  # GET/POST: review detail / submit → HCS ✅
+│   └── [id]/rate/route.ts             # POST: 5-protocol rating + comment → HCS ✅
 ├── rebuttals/
-│   ├── [submissionId]/route.ts        # GET/POST: view/submit rebuttal 🔲
-│   └── [submissionId]/resolve/route.ts # POST: editor resolves 🔲
+│   ├── [rebuttalId]/respond/route.ts  # POST: author responds per-review ✅
+│   └── [rebuttalId]/resolve/route.ts  # POST: editor resolves ✅
 ├── journals/
-│   ├── route.ts                       # GET: list journals 🔲
-│   └── [id]/
-│       ├── submissions/route.ts       # GET: journal's submission pipeline 🔲
-│       └── reviewers/route.ts         # GET: search reviewers by reputation 🔲
-├── reputation/
-│   └── [wallet]/route.ts             # GET: public reputation profile 🔲
-├── hedera/
-│   └── verify/route.ts               # GET: verify hash on-chain 🔲
+│   └── route.ts                       # GET: list journals ✅
+├── notifications/route.ts             # GET/PATCH: list + mark read ✅
+├── verify/route.ts                    # POST: hash verification (no auth) ✅
 ├── upload/
-│   └── presigned/route.ts            # POST ✅
+│   └── ipfs/route.ts                 # POST ✅
 ├── activity/route.ts                  # GET ✅
 └── cron/
-    ├── reputation/route.ts            # Recompute scores + mint HTS tokens 🔲
-    └── deadlines/route.ts             # Check review deadlines 🔲
+    └── deadlines/route.ts             # Check review deadlines ✅
 ```
 
 ### 12.2 Key New API Contracts
@@ -1159,8 +1193,8 @@ src/app/
 ├── verify/page.tsx                # Public paper verification tool 🔲
 ├── author/
 │   ├── page.tsx                   # Author dashboard ✅
-│   ├── contract_builder/page.tsx  # Authorship contracts ✅
-│   ├── paper_registration/page.tsx # Paper registration ✅
+│   ├── authorship-contracts/page.tsx # Authorship contracts (build + sign + manage) ✅
+│   ├── paper-version-control/page.tsx # Paper registration + version management ✅
 │   └── public_explorer/page.tsx   # Paper explorer ✅
 ├── journal/
 │   ├── page.tsx                   # Journal dashboard (submissions pipeline) 🔲 mock
@@ -1248,7 +1282,7 @@ Author                  Journal Editor           Reviewer              Hedera
 ### 15.2 Paper Registration (Current Implementation)
 
 ```
-Author                     Lit Network       API           Hedera      R2
+Author                     Lit Network       API           Hedera      IPFS
   │                            │               │              │          │
   │ Fill details, upload PDF   │               │              │          │
   │ hashFile(pdf) → paperHash  │               │              │          │
@@ -1258,9 +1292,9 @@ Author                     Lit Network       API           Hedera      R2
   │ ◄── encryption key ────────│               │              │          │
   │ Encrypt PDF client-side    │               │              │          │
   │                            │               │              │          │
-  │ GET presigned URL ────────────────────────►│              │          │
-  │ ◄── presigned PUT URL ─────────────────────│              │          │
-  │ Upload encrypted blob ─────────────────────┼──────────────┼─────────►│
+  │ POST /api/upload/ipfs (FormData) ─────────►│              │          │
+  │                            │               │── pin file ──┼─────────►│
+  │ ◄── { cid } ──────────────────────────────│              │          │
   │                            │               │              │          │
   │ POST /api/papers ─────────────────────────►│              │          │
   │  { paperHash, litMeta,     │               │── HCS msg ──►│          │
@@ -1284,7 +1318,7 @@ Vercel Project
 │   ├── HEDERA_NETWORK, HEDERA_OPERATOR_ID, HEDERA_OPERATOR_KEY
 │   ├── HCS_TOPIC_* (7 topics)
 │   ├── HTS_REPUTATION_TOKEN_ID
-│   ├── S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_ENDPOINT
+│   ├── W3_PRINCIPAL_KEY, W3_DELEGATION_PROOF
 │   ├── NEXT_PUBLIC_LIT_NETWORK
 │   └── UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
 ├── Cron Jobs:
@@ -1298,7 +1332,7 @@ Vercel Project
 
 | Threat | Mitigation |
 |---|---|
-| **Paper content leak during review** | Lit-encrypted on R2. Only authorized wallets can decrypt. |
+| **Paper content leak during review** | Lit-encrypted on IPFS. Only authorized wallets can decrypt. |
 | **Wallet impersonation** | Thirdweb signature verification. JWT derived from verified wallet. |
 | **Hash tampering** | Client-side hashing. On-chain hash is source of truth. |
 | **Contract modification after signing** | Signature invalidation + re-signing required. Previous versions on-chain. |

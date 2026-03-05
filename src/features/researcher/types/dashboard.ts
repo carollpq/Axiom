@@ -1,33 +1,24 @@
-export type PaperStatus =
-  | "Published"
-  | "Under Review"
-  | "Contract Pending"
-  | "Revision Requested"
-  | "Draft"
-  | "Submitted";
+export type SubmissionDisplayStatus = string;
 
-export type DashboardTab = "papers" | "pending";
-
-export interface PaperRow {
+export interface SubmissionCard {
   id: string;
-  title: string;
-  status: PaperStatus;
-  coauthors: string;
-  date: string;
-  hash: string;
+  paperId: string;
+  paperTitle: string;
+  journalName: string;
+  authors: string;
+  submittedAt: string;
+  status: SubmissionDisplayStatus;
+  reviewerCount?: number;
+  completedReviewCount?: number;
+  totalReviewCount?: number;
 }
 
-export interface PendingAction {
-  type: "sign" | "revision" | "review" | "rebuttal";
-  text: string;
-  time: string;
-  urgent: boolean;
-  link?: string;
-}
-
-export interface ActivityItem {
-  text: string;
-  time: string;
+export interface DashboardStats {
+  newSubmissions: number;
+  underReview: number;
+  reviewsPending: number;
+  accepted: number;
+  rejected: number;
 }
 
 import type { LucideIcon } from "lucide-react";
@@ -39,12 +30,3 @@ export interface StatCardData {
 }
 
 export type { NavItemData, UserProfile } from "@/src/shared/types/shared";
-
-export const PAPER_STATUSES: PaperStatus[] = [
-  "Draft",
-  "Contract Pending",
-  "Submitted",
-  "Under Review",
-  "Revision Requested",
-  "Published",
-];

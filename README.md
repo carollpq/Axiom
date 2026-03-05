@@ -48,7 +48,7 @@ Axiom moves the critical trust infrastructure of academic publishing onto Hedera
 | Wallets | Thirdweb v5 (MetaMask, HashPack) |
 | Access Control | Lit Protocol (threshold encryption) |
 | Database | Neon PostgreSQL (prod) / Drizzle ORM |
-| File Storage | Cloudflare R2 (S3-compatible) |
+| File Storage | IPFS via web3.storage (Filecoin archival) |
 | PDF Viewing | react-pdf v10 / pdfjs-dist v5 |
 | Deployment | Vercel |
 | Identity | ORCID verification |
@@ -78,11 +78,11 @@ Axiom moves the critical trust infrastructure of academic publishing onto Hedera
          ▼
 ┌──────────────────────────────────────────────────────────────┐
 │                   OFF-CHAIN DATA LAYER                         │
-│  Neon PostgreSQL (structured) · Cloudflare R2 (encrypted files)│
+│  Neon PostgreSQL (structured) · IPFS/Filecoin (encrypted files)│
 └──────────────────────────────────────────────────────────────┘
 ```
 
-**Core principle:** No paper content or PII is stored on-chain — only cryptographic hashes and metadata. Content lives off-chain (Lit-encrypted on R2); Hedera provides the immutable proof layer.
+**Core principle:** No paper content or PII is stored on-chain — only cryptographic hashes and metadata. Content lives off-chain (Lit-encrypted on IPFS); Hedera provides the immutable proof layer.
 
 For the full architecture document, see [`docs/architecture.md`](docs/architecture.md).
 
@@ -91,24 +91,30 @@ For the full architecture document, see [`docs/architecture.md`](docs/architectu
 ## Features
 
 ### Researcher
-- **Dashboard** — Paper management, pending actions (rebuttals, unsigned contracts), activity feed
-- **Paper registration** — 6-step wizard: metadata → authorship → provenance → journal selection → file upload → confirmation. Client-side SHA-256 hash → R2 upload → Lit encryption → HCS anchor.
-- **Authorship contracts** — Define contribution splits, collect cryptographic signatures, invite collaborators
-- **Public explorer** — Search/browse papers, verify on-chain proof, view version history
-- **Rebuttal workspace** — Challenge specific reviewer comments (agree/disagree + justification per review)
-- **Notifications** — Real-time updates at every pipeline stage
+- **Dashboard** — Stats overview (new submissions, under review, pending, accepted, rejected) + submission carousel + papers table + pending actions list + quick action buttons
+- **Paper registration** — 4-step wizard: paper details (title, abstract, file, visibility, study type, keywords) → provenance (dataset hash, code repo, commit, env spec) → contract linking → register/submit confirmation. Client-side SHA-256 hash → IPFS upload → Lit encryption → HCS anchor.
+- **Authorship contracts** — Three-tab interface: build new contracts (define contribution splits, invite collaborators), sign pending contracts, view contract status. Backend validates all signatures before submission.
+- **Paper version control** — View version history per paper, upload new versions, download existing versions
+- **Create submission** — Select paper version, journal, and authorship contract to submit for review
+- **View submissions** — Track submissions through the review pipeline with reviewer assignment status, anonymized review feedback, and editor decisions
+- **Co-author visibility** — Co-authors on authorship contracts see papers on their dashboard automatically
+- **Review response** — View anonymized reviews, rate each reviewer on 5 quality protocols (actionable feedback, deep engagement, fair/objective, justified recommendation, appropriate expertise), and accept reviews or request rebuttal
+- **Rebuttal workspace** — Challenge specific reviewer comments (agree/disagree + justification per review). Researcher-initiated — authors decide when to invoke rebuttal.
+- **Public explorer** — Search/filter/sort public papers in grid view, detail view with tabs (overview, provenance, versions, reviews), Lit decrypt for private papers
+- **Notifications** — Real-time updates at every pipeline stage (including "Viewed by Editor" status)
 
 ### Editor
-- **Submission pipeline** — Kanban view: submitted → criteria published → reviewers assigned → under review → rebuttal → decision
+- **Submission pipeline** — Kanban view: submitted → viewed by editor → criteria published → reviewers assigned → under review → reviews completed → rebuttal → decision
 - **Criteria builder** — Publish structured review criteria (immutable on HCS)
-- **Reviewer assignment** — Assign from reviewer pool with reputation scores
-- **Decision flow** — Accept/reject with `allCriteriaMet` computation. Rejection with criteria met requires public justification.
-- **Rebuttal management** — Open rebuttal phase, review author responses, resolve with reputation impact
+- **Reviewer assignment** — Assign from reviewer pool with reputation scores. Minimum 2 reviewers must accept before submission transitions to "under review".
+- **Decision flow** — Accept/reject with `allCriteriaMet` computation. Rejection with criteria met requires public justification. Shows author response status (accepted / rebuttal requested).
+- **Rebuttal management** — Review author responses, resolve with reputation impact
 
 ### Reviewer
-- **Dashboard** — Assigned reviews, deadlines, reputation score breakdown
+- **Dashboard** — Assigned reviews, deadlines, reputation score breakdown with 5-protocol feedback display
+- **Assignment acceptance** — Accept or decline review assignments via API
 - **Review workspace** — Evaluate paper against published criteria with structured feedback
-- **Reputation** — Soulbound HTS tokens tracking review quality across journals
+- **Reputation** — Soulbound HTS tokens tracking review quality across journals with 5-dimensional quality data
 
 ### Public
 - **`/verify`** — Upload any PDF, client-side hash, verify against on-chain registration
@@ -157,11 +163,9 @@ HTS_REPUTATION_TOKEN_ID=0.0.xxxxx
 # Cron (optional)
 CRON_SECRET=your-cron-secret
 
-# Cloudflare R2 (optional — graceful fallback)
-S3_BUCKET=axiom-files
-S3_ACCESS_KEY_ID=your_access_key
-S3_SECRET_ACCESS_KEY=your_secret_key
-S3_ENDPOINT=https://your-account.r2.cloudflarestorage.com
+# IPFS / web3.storage (optional — graceful fallback)
+W3_PRINCIPAL_KEY=your_ed25519_principal_key
+W3_DELEGATION_PROOF=base64_encoded_delegation_proof
 
 # Lit Protocol (optional — graceful fallback)
 NEXT_PUBLIC_LIT_NETWORK=cayenne
@@ -215,18 +219,18 @@ src/
 │   │   ├── auth/                   # Authentication endpoints
 │   │   ├── papers/                 # Paper CRUD + submit + reviews
 │   │   ├── contracts/              # Authorship contract CRUD + signing
-│   │   ├── submissions/[id]/       # criteria + assign-reviewer + decision + open-rebuttal
+│   │   ├── submissions/[id]/       # criteria + assign-reviewer + accept-assignment + view + author-response + decision
 │   │   ├── reviews/[id]/           # Review submission + rating
 │   │   ├── rebuttals/[rebuttalId]/ # Respond + resolve
 │   │   ├── notifications/          # List + mark read
 │   │   ├── cron/deadlines/         # Deadline enforcement
 │   │   └── verify/                 # Hash verification
 │   └── (protected)/
-│       ├── researcher/             # Researcher dashboard + tools
+│       ├── researcher/             # Dashboard, authorship-contracts, create-submission, view-submissions, paper-version-control (includes paper registration), rebuttal/[submissionId], review-response/[submissionId]
 │       ├── editor/                 # Editor dashboard + pipeline
 │       └── reviewer/               # Reviewer dashboard + workspace
 ├── features/
-│   ├── researcher/                 # Researcher UI (components, hooks, reducers)
+│   ├── researcher/                 # Researcher UI (components, hooks, reducers, config, constants, mappers, queries, types, nav)
 │   ├── editor/                     # Editor UI (components, hooks, queries)
 │   ├── reviewer/                   # Reviewer UI (components, hooks, reducers)
 │   ├── reviews/                    # Review DB queries + actions
@@ -245,7 +249,7 @@ src/
         ├── hedera/                 # HCS + HTS integration
         ├── lit/                    # Lit Protocol encryption
         ├── hashing.ts              # SHA-256 + canonical JSON
-        └── storage.ts              # R2 presigned URLs
+        └── storage.ts              # IPFS upload/fetch (web3.storage)
 ```
 
 ---

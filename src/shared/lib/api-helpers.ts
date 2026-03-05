@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { ZodError } from "zod";
 import { getSession } from "@/src/shared/lib/auth/auth";
 import { db } from "@/src/shared/lib/db";
 import { submissions, reviews, rebuttals } from "@/src/shared/lib/db/schema";
@@ -10,6 +11,14 @@ import { mintReputationToken } from "@/src/shared/lib/hedera/hts";
 import { createReputationEvent } from "@/src/features/reviews/actions";
 import { createNotification } from "@/src/features/notifications/actions";
 import { getRebuttalById } from "@/src/features/rebuttals/queries";
+
+/** Return a 400 response with structured Zod field errors. */
+export function validationError(err: ZodError): NextResponse {
+  return NextResponse.json(
+    { error: "Validation failed", fieldErrors: err.flatten().fieldErrors },
+    { status: 400 },
+  );
+}
 
 /**
  * Auth guard — returns the lowercase wallet address or a 401 response.

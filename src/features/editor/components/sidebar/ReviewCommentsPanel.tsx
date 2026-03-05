@@ -9,6 +9,9 @@ interface ReviewCommentsPanelProps {
 export function ReviewCommentsPanel({ reviewers }: ReviewCommentsPanelProps) {
   return (
     <SidebarSection title="Reviews">
+      {reviewers.length === 0 ? (
+        <p className="text-[13px] text-[#6a6050] italic px-1 py-2">No reviews submitted yet.</p>
+      ) : (
       <div className="space-y-2">
         {reviewers.map((r) => (
           <ListRow key={r.id} variant="gold">
@@ -28,6 +31,7 @@ export function ReviewCommentsPanel({ reviewers }: ReviewCommentsPanelProps) {
           </ListRow>
         ))}
       </div>
+      )}
     </SidebarSection>
   );
 }

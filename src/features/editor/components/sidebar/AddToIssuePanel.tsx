@@ -18,19 +18,23 @@ export function AddToIssuePanel({
   return (
     <div className="p-4">
       <SectionLabel className="mb-3">Add to Issue</SectionLabel>
-      <FormSelect
-        value={selectedIssue}
-        onChange={(e) => onIssueChange(e.target.value)}
-        className="w-full"
-        style={{ padding: "8px 12px" }}
-      >
-        <option value="">Select issue...</option>
-        {issues.map((issue) => (
-          <option key={issue.id} value={issue.id}>
-            {issue.label}
-          </option>
-        ))}
-      </FormSelect>
+      {issues.length === 0 ? (
+        <p className="text-[13px] text-[#6a6050] italic">No issues available.</p>
+      ) : (
+        <FormSelect
+          value={selectedIssue}
+          onChange={(e) => onIssueChange(e.target.value)}
+          className="w-full"
+          style={{ padding: "8px 12px" }}
+        >
+          <option value="">Select issue...</option>
+          {issues.map((issue) => (
+            <option key={issue.id} value={issue.id}>
+              {issue.label}
+            </option>
+          ))}
+        </FormSelect>
+      )}
     </div>
   );
 }

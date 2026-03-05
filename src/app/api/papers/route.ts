@@ -1,9 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { listUserPapers } from "@/src/features/papers/queries";
 import { createPaper } from "@/src/features/papers/actions";
-import { requireSession } from "@/src/shared/lib/api-helpers";
+import { requireSession, validationError } from "@/src/shared/lib/api-helpers";
+import { STUDY_TYPE_VALUES, PAPER_LIMITS } from "@/src/features/researcher/config/upload";
 
 export const runtime = "nodejs";
+
+const createPaperSchema = z.object({
+  title: z.string().trim()
+    .min(PAPER_LIMITS.title.min, `Title must be at least ${PAPER_LIMITS.title.min} characters`)
+    .max(PAPER_LIMITS.title.max, `Title must be at most ${PAPER_LIMITS.title.max} characters`),
+  abstract: z.string().trim()
+    .min(PAPER_LIMITS.abstract.min, `Abstract must be at least ${PAPER_LIMITS.abstract.min} characters`)
+    .max(PAPER_LIMITS.abstract.max, `Abstract must be at most ${PAPER_LIMITS.abstract.max} characters`),
+  studyType: z.enum(STUDY_TYPE_VALUES).optional(),
+  litDataToEncryptHash: z.string().nullish(),
+  litAccessConditionsJson: z.string().nullish(),
+});
 
 export async function GET() {
   const wallet = await requireSession();
@@ -18,13 +32,11 @@ export async function POST(req: NextRequest) {
   if (wallet instanceof NextResponse) return wallet;
 
   const body = await req.json();
-  const { title } = body;
+  const parsed = createPaperSchema.safeParse(body);
 
-  if (!title) {
-    return NextResponse.json({ error: "title is required" }, { status: 400 });
-  }
+  if (!parsed.success) return validationError(parsed.error);
 
-  const paper = await createPaper({ ...body, wallet });
+  const paper = await createPaper({ ...parsed.data, wallet });
   if (!paper) {
     return NextResponse.json({ error: "user not found" }, { status: 404 });
   }
