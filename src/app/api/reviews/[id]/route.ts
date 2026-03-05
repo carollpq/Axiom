@@ -125,7 +125,7 @@ export async function POST(
       type: "reviews_completed",
       title: "All reviews complete",
       body: `All reviews are complete for "${assignment.submission.paper.title}". Please review and respond.`,
-      link: `/researcher/review-response/${assignment.submissionId}`,
+      link: `/researcher/view-submissions`,
     });
   }
 

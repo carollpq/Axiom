@@ -1,6 +1,17 @@
 import type { listUserPapers } from "@/src/features/papers/queries";
 import type { listUserContracts } from "@/src/features/contracts/queries";
-import type { PendingAction, ActivityItem } from "@/src/features/researcher/types/dashboard";
+interface PendingAction {
+  type: "sign" | "revision" | "review" | "rebuttal";
+  text: string;
+  time: string;
+  urgent: boolean;
+  link?: string;
+}
+
+interface ActivityItem {
+  text: string;
+  time: string;
+}
 import { formatRelativeTime } from "@/src/shared/lib/format";
 
 type PaperRow = {

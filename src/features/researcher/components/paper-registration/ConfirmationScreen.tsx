@@ -59,7 +59,7 @@ export function ConfirmationScreen({
 
       <div className="flex gap-3 justify-center mt-6">
         <button
-          onClick={() => router.push("/researcher/public_explorer")}
+          onClick={() => router.push("/researcher/paper-version-control")}
           className="py-2.5 px-6 rounded text-[#d4c8a8] font-serif text-[13px] cursor-pointer"
           style={{
             background: "linear-gradient(135deg, rgba(180,160,120,0.2), rgba(160,140,100,0.1))",

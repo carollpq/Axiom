@@ -72,7 +72,7 @@ export function ContractLinkingStep({ selectedContract, contracts, contract, onS
           <div className="text-xs text-[#6a6050] mb-2">No contract selected</div>
           <div className="text-[11px] text-[#4a4238] mb-3.5">You can still register your draft for timestamped proof of disclosure</div>
           <Link
-            href="/researcher/contract_builder"
+            href="/researcher/authorship-contracts"
             className="inline-block rounded py-2 px-[18px] text-[#7a9fc7] text-xs cursor-pointer font-serif no-underline"
             style={{ background: "none", border: "1px solid rgba(130,160,200,0.25)" }}
           >Create New Contract {"\u2192"}</Link>

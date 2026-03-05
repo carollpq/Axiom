@@ -10,11 +10,11 @@ function PulseBlock({ className }: { className: string }) {
   );
 }
 
-/** 4 stat cards matching StatCard dimensions */
+/** 5 stat cards matching StatCard dimensions */
 export function StatsSkeleton() {
   return (
     <div className="flex gap-4 mb-8 flex-wrap">
-      {[0, 1, 2, 3].map((i) => (
+      {[0, 1, 2, 3, 4].map((i) => (
         <div
           key={i}
           className="flex-1 min-w-[160px] rounded-lg p-5"
@@ -198,6 +198,123 @@ export function ContractBuilderSkeleton() {
             <PulseBlock className="h-3 w-20" />
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/** Submission carousel: 3 card placeholders */
+export function CarouselSkeleton() {
+  return (
+    <div>
+      <PulseBlock className="h-4 w-36 mb-3" />
+      <div className="flex gap-4 overflow-hidden">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="min-w-[280px] rounded-md p-5"
+            style={{
+              background: "rgba(45,42,38,0.5)",
+              border: "1px solid rgba(120,110,95,0.15)",
+            }}
+          >
+            <PulseBlock className="h-4 w-3/4 mb-3" />
+            <PulseBlock className="h-3 w-1/2 mb-2" />
+            <PulseBlock className="h-3 w-2/3 mb-2" />
+            <PulseBlock className="h-3 w-1/3 mb-3" />
+            <PulseBlock className="h-6 w-28 rounded" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Paper version control: heading + 4 accordion rows */
+export function PaperVersionControlSkeleton() {
+  return (
+    <div className="max-w-[1200px] mx-auto py-8 px-10">
+      <PulseBlock className="h-8 w-64 mb-6" />
+      {[0, 1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="rounded-md p-4 mb-3"
+          style={{
+            background: "rgba(45,42,38,0.5)",
+            border: "1px solid rgba(120,110,95,0.15)",
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <PulseBlock className="h-4 w-4" />
+            <PulseBlock className="h-4 flex-1" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Create submission: heading + 5 form fields */
+export function CreateSubmissionSkeleton() {
+  return (
+    <div className="max-w-[1200px] mx-auto py-8 px-10">
+      <PulseBlock className="h-8 w-56 mb-6" />
+      <div
+        className="rounded-lg p-6"
+        style={{
+          background: "rgba(45,42,38,0.5)",
+          border: "1px solid rgba(120,110,95,0.15)",
+        }}
+      >
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="flex items-center gap-6 mb-5">
+            <PulseBlock className="h-3 w-40 shrink-0" />
+            <PulseBlock className="h-10 flex-1 rounded" />
+          </div>
+        ))}
+        <div className="flex items-start gap-6 mb-5">
+          <PulseBlock className="h-3 w-40 shrink-0" />
+          <PulseBlock className="h-24 flex-1 rounded" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** View submissions: two-panel layout */
+export function ViewSubmissionsSkeleton() {
+  return (
+    <div className="max-w-[1200px] mx-auto py-8 px-10">
+      <PulseBlock className="h-8 w-56 mb-6" />
+      <div className="flex gap-6">
+        <div className="w-[320px] flex flex-col gap-3 shrink-0">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="rounded-md p-4"
+              style={{
+                background: "rgba(45,42,38,0.5)",
+                border: "1px solid rgba(120,110,95,0.15)",
+              }}
+            >
+              <PulseBlock className="h-4 w-3/4 mb-2" />
+              <PulseBlock className="h-3 w-1/2 mb-2" />
+              <PulseBlock className="h-6 w-24 rounded" />
+            </div>
+          ))}
+        </div>
+        <div
+          className="flex-1 rounded-lg p-6"
+          style={{
+            background: "rgba(45,42,38,0.5)",
+            border: "1px solid rgba(120,110,95,0.15)",
+          }}
+        >
+          <PulseBlock className="h-5 w-40 mb-4" />
+          <PulseBlock className="h-3 w-full mb-2" />
+          <PulseBlock className="h-3 w-5/6 mb-2" />
+          <PulseBlock className="h-3 w-4/6" />
+        </div>
       </div>
     </div>
   );

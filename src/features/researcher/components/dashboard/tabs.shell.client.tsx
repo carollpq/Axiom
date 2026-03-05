@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { TabBar } from "@/src/shared/components";
-import type { DashboardTab } from "@/src/features/researcher/types/dashboard";
+type DashboardTab = "papers" | "pending";
 
 const TABS = [
   { key: "papers" as const, label: "Papers", count: null },

@@ -1,6 +1,14 @@
-import type { PaperStatus } from "@/src/features/researcher/types/dashboard";
+export type PaperStatus =
+  | "Published"
+  | "Under Review"
+  | "Reviews Complete"
+  | "Viewed by Editor"
+  | "Contract Pending"
+  | "Revision Requested"
+  | "Draft"
+  | "Submitted";
 
-/** Maps DB paper_status enum → frontend display string (author dashboard context) */
+/** Maps DB paper_status enum -> frontend display string (author dashboard context) */
 const statusMap: Record<string, PaperStatus> = {
   draft: "Draft",
   registered: "Draft",
@@ -11,7 +19,7 @@ const statusMap: Record<string, PaperStatus> = {
   reviews_completed: "Reviews Complete",
   revision_requested: "Revision Requested",
   published: "Published",
-  retracted: "Draft", // author dashboard doesn't surface retracted as a distinct tab
+  retracted: "Draft",
 };
 
 export function toDisplayStatus(dbStatus: string): PaperStatus {
@@ -19,7 +27,7 @@ export function toDisplayStatus(dbStatus: string): PaperStatus {
 }
 
 /**
- * Maps DB paper_status enum → display string for public-facing contexts
+ * Maps DB paper_status enum -> display string for public-facing contexts
  * (explorer, verify page) where "Retracted" must be shown explicitly.
  */
 export function toPublicDisplayStatus(dbStatus: string): string {
@@ -38,7 +46,7 @@ export function toPublicDisplayStatus(dbStatus: string): string {
   return map[dbStatus] ?? "Draft";
 }
 
-/** Maps frontend display string → DB enum for filtering */
+/** Maps frontend display string -> DB enum for filtering */
 const reverseMap: Record<PaperStatus, string[]> = {
   Draft: ["draft", "registered"],
   "Contract Pending": ["contract_pending"],

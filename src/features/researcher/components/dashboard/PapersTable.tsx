@@ -3,8 +3,27 @@
 import { useMemo, useState } from "react";
 import { SearchInput } from "@/src/shared/components/SearchInput";
 import { StatusBadge } from "./StatusBadge";
-import { PAPER_STATUSES } from "@/src/features/researcher/types/dashboard";
-import type { PaperRow, PaperStatus } from "@/src/features/researcher/types/dashboard";
+import type { PaperStatus } from "@/src/shared/lib/status-map";
+
+const PAPER_STATUSES: PaperStatus[] = [
+  "Draft",
+  "Contract Pending",
+  "Submitted",
+  "Viewed by Editor",
+  "Under Review",
+  "Reviews Complete",
+  "Revision Requested",
+  "Published",
+];
+
+interface PaperRow {
+  id: string;
+  title: string;
+  status: PaperStatus;
+  coauthors: string;
+  date: string;
+  hash: string;
+}
 
 interface Props {
   initialPapers: PaperRow[];

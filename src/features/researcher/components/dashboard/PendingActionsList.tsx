@@ -1,5 +1,11 @@
 import Link from "next/link";
-import type { PendingAction } from "@/src/features/researcher/types/dashboard";
+interface PendingAction {
+  type: "sign" | "revision" | "review" | "rebuttal";
+  text: string;
+  time: string;
+  urgent: boolean;
+  link?: string;
+}
 
 const typeStyles: Record<PendingAction["type"], { bg: string; color: string; icon: string }> = {
   sign: { bg: "rgba(180,140,100,0.15)", color: "#c4956a", icon: "\u270D" },

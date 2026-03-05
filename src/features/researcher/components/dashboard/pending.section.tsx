@@ -27,7 +27,7 @@ export async function PendingSection({ wallet, papersPromise, contractsPromise }
       text: `Review and respond to reviews for "${sub.paperTitle}"`,
       time: formatRelativeTime(sub.submittedAt),
       urgent: true,
-      link: `/researcher/review-response/${sub.submissionId}`,
+      link: `/researcher/view-submissions`,
     });
   }
 

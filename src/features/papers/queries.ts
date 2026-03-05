@@ -39,7 +39,12 @@ export async function listUserPapers(walletAddress: string) {
       contracts: {
         with: { contributors: true },
       },
-      submissions: true,
+      submissions: {
+        with: {
+          journal: { columns: { id: true, name: true } },
+          reviewAssignments: { columns: { id: true, status: true } },
+        },
+      },
     },
     orderBy: (papers, { desc }) => [desc(papers.updatedAt)],
   });
