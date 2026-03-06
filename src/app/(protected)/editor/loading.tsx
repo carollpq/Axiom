@@ -24,13 +24,6 @@ export default function EditorDashboardLoading() {
 
       <StatsSkeleton />
       <CarouselSkeleton />
-
-      {/* Quick actions */}
-      <div className="flex gap-3">
-        <PulseBlock className="h-9 w-[150px]" />
-        <PulseBlock className="h-9 w-[170px]" />
-        <PulseBlock className="h-9 w-[140px]" />
-      </div>
     </div>
   );
 }

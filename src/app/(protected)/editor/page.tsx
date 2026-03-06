@@ -6,7 +6,6 @@ import { getInitials } from "@/src/shared/lib/format";
 import { DashboardHeader } from "@/src/shared/components";
 import { StatsSection } from "@/src/features/editor/components/dashboard/stats.section";
 import { CarouselSection } from "@/src/features/editor/components/dashboard/carousel.section";
-import { QuickActions } from "@/src/features/editor/components/dashboard-overview.client";
 import type { EditorProfile } from "@/src/features/editor/types";
 import type { DbJournalSubmission } from "@/src/features/editor/queries";
 
@@ -60,8 +59,6 @@ export default async function JournalDashboard() {
 
       <StatsSection subs={subs} />
       <CarouselSection subs={subs} />
-
-      <QuickActions />
     </div>
   );
 }
