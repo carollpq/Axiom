@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useActiveAccount } from "thirdweb/react";
 import { fetchApi } from "@/src/shared/lib/api";
 import { doLogout } from "@/src/shared/lib/auth/actions";
@@ -16,6 +17,7 @@ interface UserContextValue {
 const UserContext = createContext<UserContextValue | null>(null);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const account = useActiveAccount();
   const [user, setUser] = useState<DbUser | null>(null);
   const [loading, setLoading] = useState(false);
@@ -37,7 +39,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (!account?.address) {
       // Still waiting for Thirdweb to rehydrate the wallet — don't log out yet.
       if (!walletReady.current) return;
-      doLogout().then(() => setUser(null));
+      doLogout().then(() => {
+        setUser(null);
+        router.push("/login");
+      });
       return;
     }
 
