@@ -1,4 +1,10 @@
 import type { TabConfig } from "@/src/shared/types/shared";
+import type {
+  AuthorResponseStatusDb,
+  RebuttalStatusDb,
+  RebuttalResolutionDb,
+  RebuttalPositionDb,
+} from "@/src/shared/lib/db/schema";
 
 // ── Reviewer Dashboard Types ──
 
@@ -34,6 +40,38 @@ export interface CompletedReview {
   editorRating: number;
   authorRating: number;
   hash: string;
+}
+
+export interface CompletedReviewExtended extends CompletedReview {
+  assignmentId?: string;
+  submissionId?: string;
+  abstract?: string;
+  authors?: string[];
+  pdfUrl?: string;
+  editorName?: string;
+  reviewContent?: {
+    strengths?: string;
+    weaknesses?: string;
+    questionsForAuthors?: string;
+    recommendation?: string;
+  };
+  authorResponseStatus?: AuthorResponseStatusDb;
+  rebuttal?: {
+    status: RebuttalStatusDb;
+    resolution?: RebuttalResolutionDb;
+    editorNotes?: string;
+    responseForThisReview?: {
+      position: RebuttalPositionDb;
+      justification: string;
+    };
+  };
+}
+
+export interface ResearcherInsight {
+  reviewId: string;
+  comment: string;
+  overallRating: number;
+  createdAt: string;
 }
 
 export interface FeedbackItem {

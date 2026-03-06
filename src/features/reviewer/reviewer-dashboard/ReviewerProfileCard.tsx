@@ -1,9 +1,29 @@
+"use client";
+
+import { useState, useEffect } from "react";
+
 interface ReviewerProfileCardProps {
   name: string;
   affiliation: string;
+  walletAddress?: string;
 }
 
-export function ReviewerProfileCard({ name, affiliation }: ReviewerProfileCardProps) {
+export function ReviewerProfileCard({ name, affiliation, walletAddress }: ReviewerProfileCardProps) {
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
+  const handleCopyLink = async () => {
+    if (!walletAddress) return;
+    const url = `${window.location.origin}/verify?reviewer=${walletAddress}`;
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+  };
+
   return (
     <div
       className="rounded-lg p-8 text-center space-y-6"
@@ -29,14 +49,15 @@ export function ReviewerProfileCard({ name, affiliation }: ReviewerProfileCardPr
 
       {/* Link to Copy and Share Button */}
       <button
+        onClick={handleCopyLink}
         className="w-full rounded border px-4 py-2 text-sm font-medium transition-colors hover:opacity-80"
         style={{
-          backgroundColor: "rgba(100,90,75,0.2)",
-          borderColor: "rgba(180,160,130,0.4)",
-          color: "#b0a898",
+          backgroundColor: copied ? "rgba(143,188,143,0.2)" : "rgba(100,90,75,0.2)",
+          borderColor: copied ? "rgba(143,188,143,0.6)" : "rgba(180,160,130,0.4)",
+          color: copied ? "#8fbc8f" : "#b0a898",
         }}
       >
-        Link to copy and share
+        {copied ? "Copied!" : "Copy profile link"}
       </button>
 
       {/* Social Icons */}

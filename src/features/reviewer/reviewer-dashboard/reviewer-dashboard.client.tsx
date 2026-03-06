@@ -1,21 +1,29 @@
 "use client";
 
+import { useState } from "react";
 import { useReviewerDashboard } from "@/src/features/reviewer/hooks/useReviewerDashboard";
 import { DashboardHeader } from "@/src/shared/components";
+import { ThreeColumnLayout } from "@/src/shared/components/ThreeColumnLayout";
+import { DynamicPdfViewer } from "@/src/shared/components/DynamicPdfViewer";
+import { useCollapseSidebar } from "@/src/shared/hooks/useCollapseSidebar";
 import type {
   AssignedReview,
   AssignedReviewExtended,
   CompletedReview,
+  CompletedReviewExtended,
   ReputationScores,
   ReputationBreakdownItem,
   UserProfile,
+  ResearcherInsight,
 } from "@/src/features/reviewer/types";
 import { PerformanceMetrics } from "./PerformanceMetrics";
 import { ResearchersInsights } from "./ResearchersInsights";
 import { ReviewerProfileCard } from "./ReviewerProfileCard";
-import { AssignedReviewsTable } from "./AssignedReviewsTable";
-import { CompletedReviewsTable } from "./CompletedReviewsTable";
 import { InviteCardList } from "../components/invite-card-list.client";
+import { ReviewerPaperList } from "../components/reviewer-paper-list";
+import { AssignedReviewSidebar } from "../components/assigned-review-sidebar";
+import { CompletedReviewSidebar } from "../components/completed-review-sidebar";
+import { CoursesCarousel } from "../components/courses-carousel";
 
 interface Props {
   initialAssigned: AssignedReview[];
@@ -26,6 +34,7 @@ interface Props {
   journalsReviewed?: string[];
   averageDaysToDeadline?: number;
   extendedInvites?: AssignedReviewExtended[];
+  researcherInsights?: ResearcherInsight[];
 }
 
 export function ReviewerDashboardClient({
@@ -36,12 +45,9 @@ export function ReviewerDashboardClient({
   userProfile,
   journalsReviewed = [],
   averageDaysToDeadline = 0,
+  researcherInsights = [],
 }: Props) {
   const {
-    hoveredRow,
-    setHoveredRow,
-    getUrgencyStyle,
-    assignedReviews,
     completedReviews,
     reputationScores,
   } = useReviewerDashboard(initialAssigned, initialCompleted, initialReputation, initialBreakdown);
@@ -66,10 +72,7 @@ export function ReviewerDashboardClient({
             {/* Reviewed For and Researchers Insights */}
             <ResearchersInsights
               journalsReviewed={journalsReviewed}
-              insights={[
-                "I found X's reviews very constructive. He is truly enthusiastic about his field.",
-                "I found X's reviews very constructive. He is truly enthusiastic about his field.",
-              ]}
+              insights={researcherInsights.map((i) => i.comment)}
             />
           </div>
 
@@ -78,6 +81,7 @@ export function ReviewerDashboardClient({
             <ReviewerProfileCard
               name={userProfile?.displayName || "Reviewer Name"}
               affiliation={userProfile?.institution || "Affiliation"}
+              walletAddress={userProfile?.walletAddress}
             />
           </div>
         </div>
@@ -87,10 +91,9 @@ export function ReviewerDashboardClient({
 }
 
 export function IncomingInvitesClient({
-  initialAssigned,
   extendedInvites = [],
 }: {
-  initialAssigned: AssignedReview[];
+  initialAssigned?: AssignedReview[];
   extendedInvites?: AssignedReviewExtended[];
 }) {
   const pendingInvites = extendedInvites.filter((a) => a.status === "Pending");
@@ -114,32 +117,47 @@ export function IncomingInvitesClient({
 export function PapersUnderReviewClient({
   initialAssigned,
 }: {
-  initialAssigned: AssignedReview[];
+  initialAssigned: AssignedReviewExtended[];
 }) {
-  const { hoveredRow, setHoveredRow, getUrgencyStyle } = useReviewerDashboard(
-    initialAssigned,
-    [],
-    null,
-    null
+  useCollapseSidebar();
+  const [selectedId, setSelectedId] = useState<number | null>(
+    initialAssigned.length > 0 ? initialAssigned[0].id : null,
   );
+
+  const selected = initialAssigned.find((p) => p.id === selectedId) ?? null;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#1a1816" }}>
-      <div className="max-w-full mx-auto px-12 py-8">
-        <DashboardHeader role="reviewer" />
-
-        <div className="mt-8">
-          <h2 className="text-xl font-bold mb-4" style={{ color: "#d4ccc0" }}>
-            Papers Under Review ({initialAssigned.length})
-          </h2>
-          <AssignedReviewsTable
-            reviews={initialAssigned}
-            hoveredRow={hoveredRow}
-            onHoverRow={setHoveredRow}
-            getUrgencyStyle={getUrgencyStyle}
+      <ThreeColumnLayout
+        title="Papers Under Review"
+        countLabel={`${initialAssigned.length} paper${initialAssigned.length !== 1 ? "s" : ""}`}
+        list={
+          <ReviewerPaperList
+            papers={initialAssigned}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
           />
-        </div>
-      </div>
+        }
+        viewer={
+          selected?.pdfUrl ? (
+            <DynamicPdfViewer fileUrl={selected.pdfUrl} />
+          ) : (
+            <div className="flex items-center justify-center h-full text-[12px] text-[#6a6050] font-serif">
+              {selected ? "No PDF available" : "Select a paper to view"}
+            </div>
+          )
+        }
+        sidebar={
+          selected ? (
+            <AssignedReviewSidebar paper={selected} />
+          ) : (
+            <div className="p-4 text-[12px] text-[#6a6050]">
+              Select a paper to see details
+            </div>
+          )
+        }
+        sidebarTitle="Review Details"
+      />
     </div>
   );
 }
@@ -147,26 +165,52 @@ export function PapersUnderReviewClient({
 export function CompletedPapersClient({
   initialCompleted,
 }: {
-  initialCompleted: CompletedReview[];
+  initialCompleted: CompletedReviewExtended[];
 }) {
-  const { hoveredRow, setHoveredRow } = useReviewerDashboard([], initialCompleted, null, null);
+  useCollapseSidebar();
+  const [selectedId, setSelectedId] = useState<number | null>(
+    initialCompleted.length > 0 ? initialCompleted[0].id : null,
+  );
+
+  const selected = initialCompleted.find((p) => p.id === selectedId) ?? null;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#1a1816" }}>
-      <div className="max-w-full mx-auto px-12 py-8">
-        <DashboardHeader role="reviewer" />
-
-        <div className="mt-8">
-          <h2 className="text-xl font-bold mb-4" style={{ color: "#d4ccc0" }}>
-            Completed Papers ({initialCompleted.length})
-          </h2>
-          <CompletedReviewsTable
-            reviews={initialCompleted}
-            hoveredRow={hoveredRow}
-            onHoverRow={setHoveredRow}
-          />
-        </div>
+      {/* Courses Carousel */}
+      <div className="px-5 pt-4">
+        <CoursesCarousel />
       </div>
+
+      <ThreeColumnLayout
+        title="Completed Reviews"
+        countLabel={`${initialCompleted.length} review${initialCompleted.length !== 1 ? "s" : ""}`}
+        list={
+          <ReviewerPaperList
+            papers={initialCompleted}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+          />
+        }
+        viewer={
+          selected?.pdfUrl ? (
+            <DynamicPdfViewer fileUrl={selected.pdfUrl} />
+          ) : (
+            <div className="flex items-center justify-center h-full text-[12px] text-[#6a6050] font-serif">
+              {selected ? "No PDF available" : "Select a paper to view"}
+            </div>
+          )
+        }
+        sidebar={
+          selected ? (
+            <CompletedReviewSidebar paper={selected} />
+          ) : (
+            <div className="p-4 text-[12px] text-[#6a6050]">
+              Select a paper to see your review
+            </div>
+          )
+        }
+        sidebarTitle="Review Summary"
+      />
     </div>
   );
 }

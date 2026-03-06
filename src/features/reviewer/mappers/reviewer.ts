@@ -2,17 +2,40 @@ import type {
   AssignedReview,
   AssignedReviewExtended,
   CompletedReview,
+  CompletedReviewExtended,
   ReviewerDisplayStatus,
   ReputationScores,
   ReputationBreakdownItem,
 } from "@/src/features/reviewer/types";
-import type { DbAssignedReview, DbCompletedReview, DbReputationRow } from "../queries";
+import type { DbAssignedReview, DbCompletedReview, DbCompletedReviewExtended, DbReputationRow } from "../queries";
 import { formatIsoDate, truncateHash, toFivePointScale } from "@/src/shared/lib/format";
 
 function daysUntil(deadline: string | null): number {
   if (!deadline) return 0;
   const diff = new Date(deadline).getTime() - Date.now();
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+function extractAuthors(
+  contracts?: Array<{ contributors?: Array<{ contributorName?: string | null }> }>,
+): string[] {
+  const authors: string[] = [];
+  contracts?.forEach((contract) => {
+    contract.contributors?.forEach((c) => {
+      if (c.contributorName) authors.push(c.contributorName);
+    });
+  });
+  return authors;
+}
+
+function buildPdfUrl(
+  paperId: string,
+  versions?: Array<{ fileStorageKey?: string | null }>,
+): string | undefined {
+  const latest = (versions ?? []).at(-1);
+  return latest?.fileStorageKey
+    ? `/api/papers/${paperId}/content/${latest.fileStorageKey}`
+    : undefined;
 }
 
 function reviewStatus(assignmentStatus: string, daysLeft: number): ReviewerDisplayStatus {
@@ -72,35 +95,69 @@ export function mapDbToReputationBreakdown(row: DbReputationRow): ReputationBrea
   ];
 }
 
-export function mapDbToAssignedReviewExtended(a: DbAssignedReview, index: number): AssignedReviewExtended {
-  const daysLeft = daysUntil(a.deadline);
-  const baseReview = mapDbToAssignedReview(a, index);
+export function mapDbToCompletedReviewExtended(a: DbCompletedReviewExtended, index: number): CompletedReviewExtended {
+  const base = mapDbToCompletedReview(a, index);
+  const { paper } = a.submission;
+  const authors = extractAuthors(paper.contracts);
+  const pdfUrl = buildPdfUrl(paper.id, paper.versions);
+  const editorName = a.submission.journal?.editorWallet ?? "Editor";
 
-  // Extract authors from authorship contracts
-  const authors: string[] = [];
-  if (a.submission.paper.contracts && Array.isArray(a.submission.paper.contracts)) {
-    a.submission.paper.contracts.forEach((contract) => {
-      if (contract.contributors && Array.isArray(contract.contributors)) {
-        contract.contributors.forEach((contributor) => {
-          if (contributor.contributorName) {
-            authors.push(contributor.contributorName);
-          }
-        });
+  // Find this reviewer's review from the assignment's reviews
+  const myReview = a.reviews?.find((r) => r.reviewerWallet === a.reviewerWallet);
+  const reviewContent = myReview
+    ? {
+        strengths: myReview.strengths ?? undefined,
+        weaknesses: myReview.weaknesses ?? undefined,
+        questionsForAuthors: myReview.questionsForAuthors ?? undefined,
+        recommendation: myReview.recommendation ?? undefined,
       }
-    });
-  }
+    : undefined;
 
-  // Get PDF URL from the latest version
-  const versions = (a.submission.paper as { versions?: Array<{ fileStorageKey?: string }> }).versions ?? [];
-  const latestVersion = versions.at(-1);
-  const pdfUrl = latestVersion?.fileStorageKey ? `/api/papers/${a.submission.paper.id}/content/${latestVersion.fileStorageKey}` : undefined;
+  // Author response status
+  const authorResponseStatus = a.submission.authorResponseStatus ?? undefined;
 
-  // Get editor name from journal
+  // Rebuttal info
+  const rebuttalRow = a.submission.rebuttals?.[0];
+  const rebuttal = rebuttalRow
+    ? {
+        status: rebuttalRow.status,
+        resolution: rebuttalRow.resolution ?? undefined,
+        editorNotes: rebuttalRow.editorNotes ?? undefined,
+        responseForThisReview: myReview
+          ? (() => {
+              const resp = rebuttalRow.responses?.find((r) => r.reviewId === myReview.id);
+              return resp
+                ? { position: resp.position, justification: resp.justification }
+                : undefined;
+            })()
+          : undefined,
+      }
+    : undefined;
+
+  return {
+    ...base,
+    assignmentId: a.id,
+    submissionId: a.submissionId,
+    abstract: paper.abstract ?? undefined,
+    authors: authors.length > 0 ? authors : undefined,
+    pdfUrl,
+    editorName,
+    reviewContent,
+    authorResponseStatus,
+    rebuttal,
+  };
+}
+
+export function mapDbToAssignedReviewExtended(a: DbAssignedReview, index: number): AssignedReviewExtended {
+  const baseReview = mapDbToAssignedReview(a, index);
+  const { paper } = a.submission;
+  const authors = extractAuthors(paper.contracts);
+  const pdfUrl = buildPdfUrl(paper.id, paper.versions);
   const editorName = a.submission.journal?.editorWallet ?? "Editor";
 
   return {
     ...baseReview,
-    abstract: a.submission.paper.abstract,
+    abstract: paper.abstract,
     authors: authors.length > 0 ? authors : undefined,
     pdfUrl,
     editorName,

@@ -12,16 +12,19 @@ import {
 } from "@/src/features/reviewer/mappers/reviewer";
 import { ReviewerDashboardClient } from "@/src/features/reviewer/reviewer-dashboard/reviewer-dashboard.client";
 import { getUserByWallet } from "@/src/features/users/queries";
+import { listRatingsForReviewer } from "@/src/features/reviews/queries";
+import type { ResearcherInsight } from "@/src/features/reviewer/types";
 
 export default async function ReviewerDashboard() {
   // wallet is guaranteed non-null by (protected)/layout.tsx
   const wallet = (await getSession())!;
 
-  const [rawAssigned, rawCompleted, repRow, userProfile] = await Promise.all([
+  const [rawAssigned, rawCompleted, repRow, userProfile, ratings] = await Promise.all([
     listAssignedReviews(wallet),
     listCompletedReviews(wallet),
     getReviewerReputation(wallet),
     getUserByWallet(wallet),
+    listRatingsForReviewer(wallet),
   ]);
 
   // Extract unique journals from assigned and completed reviews
@@ -44,6 +47,16 @@ export default async function ReviewerDashboard() {
     averageDaysToDeadline = Math.round((totalDays / assignedWithDeadlines.length) * 10) / 10;
   }
 
+  // Extract researcher insights (comments from ratings)
+  const researcherInsights: ResearcherInsight[] = ratings
+    .filter((r) => r.comment)
+    .map((r) => ({
+      reviewId: r.reviewId,
+      comment: r.comment!,
+      overallRating: r.overallRating,
+      createdAt: r.createdAt,
+    }));
+
   return (
     <ReviewerDashboardClient
       initialAssigned={rawAssigned.map(mapDbToAssignedReview)}
@@ -53,6 +66,7 @@ export default async function ReviewerDashboard() {
       userProfile={userProfile}
       journalsReviewed={Array.from(journalsReviewed)}
       averageDaysToDeadline={averageDaysToDeadline}
+      researcherInsights={researcherInsights}
     />
   );
 }

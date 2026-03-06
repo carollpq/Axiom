@@ -30,6 +30,7 @@ export async function listAssignedReviews(reviewerWallet: string) {
   });
 }
 
+/** Lightweight query for dashboard counts — no contracts/reviews/rebuttals. */
 export async function listCompletedReviews(reviewerWallet: string) {
   return db.query.reviewAssignments.findMany({
     where: and(
@@ -48,6 +49,36 @@ export async function listCompletedReviews(reviewerWallet: string) {
   });
 }
 
+/** Full query for completed page — includes contracts, reviews, rebuttals. */
+export async function listCompletedReviewsExtended(reviewerWallet: string) {
+  return db.query.reviewAssignments.findMany({
+    where: and(
+      eq(reviewAssignments.reviewerWallet, reviewerWallet.toLowerCase()),
+      eq(reviewAssignments.status, "submitted"),
+    ),
+    with: {
+      submission: {
+        with: {
+          paper: {
+            with: {
+              versions: true,
+              contracts: {
+                with: { contributors: true },
+              },
+            },
+          },
+          journal: true,
+          rebuttals: {
+            with: { responses: true },
+          },
+        },
+      },
+      reviews: true,
+    },
+    orderBy: (a, { desc }) => [desc(a.submittedAt)],
+  });
+}
+
 export async function getReviewerReputation(reviewerWallet: string) {
   return db.query.reputationScores.findFirst({
     where: eq(reputationScores.userWallet, reviewerWallet.toLowerCase()),
@@ -56,4 +87,5 @@ export async function getReviewerReputation(reviewerWallet: string) {
 
 export type DbAssignedReview = Awaited<ReturnType<typeof listAssignedReviews>>[number];
 export type DbCompletedReview = Awaited<ReturnType<typeof listCompletedReviews>>[number];
+export type DbCompletedReviewExtended = Awaited<ReturnType<typeof listCompletedReviewsExtended>>[number];
 export type DbReputationRow = NonNullable<Awaited<ReturnType<typeof getReviewerReputation>>>;
