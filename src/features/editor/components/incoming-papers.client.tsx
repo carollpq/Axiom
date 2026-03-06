@@ -5,6 +5,7 @@ import { ThreeColumnLayout } from "@/src/shared/components/ThreeColumnLayout";
 import { DynamicPdfViewer as PdfViewer } from "@/src/shared/components/DynamicPdfViewer";
 import { PaperList } from "./PaperList.client";
 import { useIncomingPapers } from "@/src/features/editor/hooks/useIncomingPapers";
+import { useCollapseSidebar } from "@/src/shared/hooks/useCollapseSidebar";
 import { useDecryptPaper } from "@/src/shared/hooks/useDecryptPaper";
 import { SelectionPlaceholder } from "@/src/shared/components/SelectionPlaceholder";
 import type { PaperCardData, PoolReviewer } from "@/src/features/editor/types";
@@ -28,6 +29,7 @@ interface IncomingPapersProps {
 }
 
 export function IncomingPapersClient({ papers, reviewerPool }: IncomingPapersProps) {
+  useCollapseSidebar();
   const {
     selectedId,
     setSelectedId,
@@ -52,6 +54,7 @@ export function IncomingPapersClient({ papers, reviewerPool }: IncomingPapersPro
   return (
     <ThreeColumnLayout
       title="Incoming Papers"
+      subtitle="Review new submissions and set criteria"
       countLabel={`${papers.length} ${papers.length === 1 ? "paper" : "papers"}`}
       sidebarTitle="Actions"
       list={

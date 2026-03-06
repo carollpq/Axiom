@@ -5,6 +5,7 @@ import { ThreeColumnLayout } from "@/src/shared/components/ThreeColumnLayout";
 import { DynamicPdfViewer as PdfViewer } from "@/src/shared/components/DynamicPdfViewer";
 import { PaperList } from "./PaperList.client";
 import { useAcceptedPapers } from "@/src/features/editor/hooks/useAcceptedPapers";
+import { useCollapseSidebar } from "@/src/shared/hooks/useCollapseSidebar";
 import { useDecryptPaper } from "@/src/shared/hooks/useDecryptPaper";
 import { SelectionPlaceholder } from "@/src/shared/components/SelectionPlaceholder";
 import type {
@@ -33,6 +34,7 @@ export function AcceptedPapersClient({
   reviewStatuses,
   issues,
 }: AcceptedPapersProps) {
+  useCollapseSidebar();
   const {
     selectedId,
     setSelectedId,
@@ -50,6 +52,7 @@ export function AcceptedPapersClient({
   return (
     <ThreeColumnLayout
       title="Accepted Papers"
+      subtitle="Manage accepted papers and publications"
       countLabel={`${papers.length} ${papers.length === 1 ? "paper" : "papers"}`}
       sidebarTitle="Details"
       list={

@@ -8,6 +8,7 @@ export const SIDEBAR_WIDTH_COLLAPSED = 64;
 interface SidebarContextValue {
   collapsed: boolean;
   toggle: () => void;
+  setCollapsed: (collapsed: boolean) => void;
 }
 
 const SidebarContext = createContext<SidebarContextValue | null>(null);
@@ -15,7 +16,7 @@ const SidebarContext = createContext<SidebarContextValue | null>(null);
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const toggle = useCallback(() => setCollapsed((prev) => !prev), []);
-  const value = useMemo(() => ({ collapsed, toggle }), [collapsed, toggle]);
+  const value = useMemo(() => ({ collapsed, toggle, setCollapsed }), [collapsed, toggle]);
 
   return (
     <SidebarContext.Provider value={value}>

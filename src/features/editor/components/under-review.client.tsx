@@ -6,6 +6,7 @@ import { DynamicPdfViewer as PdfViewer } from "@/src/shared/components/DynamicPd
 import { PaperList } from "./PaperList.client";
 import { ReviewStatusPanel } from "./sidebar/ReviewStatusPanel";
 import { useUnderReview } from "@/src/features/editor/hooks/useUnderReview";
+import { useCollapseSidebar } from "@/src/shared/hooks/useCollapseSidebar";
 import { useDecryptPaper } from "@/src/shared/hooks/useDecryptPaper";
 import { SelectionPlaceholder } from "@/src/shared/components/SelectionPlaceholder";
 import type {
@@ -44,6 +45,7 @@ export function UnderReviewClient({
   authorResponseStatuses,
   rebuttalsBySubmission,
 }: UnderReviewProps) {
+  useCollapseSidebar();
   const {
     selectedId,
     setSelectedId,
@@ -82,6 +84,7 @@ export function UnderReviewClient({
   return (
     <ThreeColumnLayout
       title="Under Review"
+      subtitle="Track review progress and make decisions"
       countLabel={`${papers.length} ${papers.length === 1 ? "paper" : "papers"}`}
       sidebarTitle="Review Status"
       list={
