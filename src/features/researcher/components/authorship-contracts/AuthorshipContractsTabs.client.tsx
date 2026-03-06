@@ -1,10 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import type { ExistingDraft } from "@/src/features/researcher/types/contract";
-import { ContractBuilderClient } from "@/src/features/researcher/components/contract/ContractBuilderClient";
-import { ContractsToSign } from "./ContractsToSign";
 import { ContractsStatus } from "./ContractsStatus";
+
+const DynamicContractBuilder = dynamic(
+  () => import("@/src/features/researcher/components/contract/ContractBuilderClient"),
+  { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading contract builder...</div> }
+);
+const DynamicContractsToSign = dynamic(
+  () => import("./ContractsToSign"),
+  { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading contracts...</div> }
+);
 
 type Tab = "build" | "sign" | "status";
 
@@ -53,6 +61,12 @@ export function AuthorshipContractsTabs({
   currentWallet,
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("build");
+  const [visited, setVisited] = useState<Set<Tab>>(new Set<Tab>(["build"]));
+
+  const switchTab = (tab: Tab) => {
+    setActiveTab(tab);
+    setVisited((prev) => (prev.has(tab) ? prev : new Set(prev).add(tab)));
+  };
 
   return (
     <div className="max-w-[1200px] mx-auto py-8 px-10">
@@ -72,7 +86,7 @@ export function AuthorshipContractsTabs({
           <button
             key={tab.key}
             type="button"
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => switchTab(tab.key)}
             className="px-5 py-3 text-[13px] font-serif cursor-pointer transition-colors"
             style={{
               color: activeTab === tab.key ? "#e8e0d4" : "#6a6050",
@@ -88,19 +102,22 @@ export function AuthorshipContractsTabs({
         ))}
       </div>
 
-      {/* Tab content — all tabs stay mounted so state persists */}
-      <div className={activeTab === "build" ? "" : "hidden"}>
-        <ContractBuilderClient initialDrafts={initialDrafts} />
-      </div>
-      <div className={activeTab === "sign" ? "" : "hidden"}>
-        <ContractsToSign
-          contracts={contractsToSign}
-          currentWallet={currentWallet}
-        />
-      </div>
-      <div className={activeTab === "status" ? "" : "hidden"}>
-        <ContractsStatus contracts={ownedContracts} />
-      </div>
+      {/* Tab content — lazy-loaded, stays mounted once visited to preserve state */}
+      {visited.has("build") && (
+        <div style={{ display: activeTab === "build" ? undefined : "none" }}>
+          <DynamicContractBuilder initialDrafts={initialDrafts} />
+        </div>
+      )}
+      {visited.has("sign") && (
+        <div style={{ display: activeTab === "sign" ? undefined : "none" }}>
+          <DynamicContractsToSign contracts={contractsToSign} currentWallet={currentWallet} />
+        </div>
+      )}
+      {visited.has("status") && (
+        <div style={{ display: activeTab === "status" ? undefined : "none" }}>
+          <ContractsStatus contracts={ownedContracts} />
+        </div>
+      )}
     </div>
   );
 }

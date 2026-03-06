@@ -1,14 +1,19 @@
 "use client";
 
 import { useState, useCallback, useMemo, useRef } from "react";
+import dynamic from "next/dynamic";
 import { Plus, X } from "lucide-react";
 import { hashFile } from "@/src/shared/lib/hashing";
 import { uploadToIPFS } from "@/src/shared/lib/upload";
 import { useUpload } from "@/src/features/researcher/hooks/useUpload";
 import { validateUpload } from "@/src/features/researcher/reducers/upload";
-import { RegisterPaperForm } from "./RegisterPaperForm";
 import { PaperRow } from "./PaperRow";
 import type { PaperWithVersions } from "./types";
+
+const DynamicRegisterPaperForm = dynamic(
+  () => import("./RegisterPaperForm"),
+  { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading form...</div> }
+);
 
 interface Props {
   papers: PaperWithVersions[];
@@ -190,7 +195,7 @@ export function PaperVersionControlClient({ papers }: Props) {
               borderTop: "none",
             }}
           >
-            <RegisterPaperForm
+            <DynamicRegisterPaperForm
               upload={upload}
               uploadErrors={uploadErrors}
               onRegister={handleRegister}

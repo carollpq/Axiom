@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ReviewContent, type ReviewCriterion } from "./ReviewContent";
 
 interface AnonymizedReview {
   id: string;
@@ -12,12 +13,6 @@ interface AnonymizedReview {
   questionsForAuthors: string | null;
   recommendation: string | null;
   submittedAt: string;
-}
-
-interface ReviewCriterion {
-  id: string;
-  label: string;
-  description?: string;
 }
 
 interface ProtocolRatings {
@@ -142,17 +137,7 @@ export function ReviewResponseClient({
         All reviews are complete. Please rate each reviewer and then accept the reviews or request a rebuttal.
       </p>
 
-      {reviews.map((review) => {
-        let evaluations: Record<string, { rating: string; comment?: string }> = {};
-        try {
-          evaluations = review.criteriaEvaluations
-            ? JSON.parse(review.criteriaEvaluations)
-            : {};
-        } catch {
-          // ignore parse errors
-        }
-
-        return (
+      {reviews.map((review) => (
           <div
             key={review.id}
             className="rounded-md p-6 mb-5"
@@ -161,73 +146,15 @@ export function ReviewResponseClient({
               border: "1px solid rgba(120,110,95,0.15)",
             }}
           >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[16px] font-serif text-[#c9a44a]">{review.label}</h2>
-              <span className="text-[11px] text-[#6a6050]">
-                Recommendation: {review.recommendation ?? "—"}
-              </span>
-            </div>
-
-            {/* Criteria evaluations */}
-            {criteria.length > 0 && Object.keys(evaluations).length > 0 && (
-              <div className="mb-4">
-                <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-2">
-                  Criteria Evaluations
-                </div>
-                {criteria.map((c) => {
-                  const ev = evaluations[c.id];
-                  return (
-                    <div key={c.id} className="flex gap-3 items-start mb-2 text-[12px]">
-                      <span
-                        className="shrink-0 px-2 py-0.5 rounded text-[10px] font-medium"
-                        style={{
-                          background:
-                            ev?.rating === "Yes"
-                              ? "rgba(143,188,143,0.2)"
-                              : ev?.rating === "No"
-                                ? "rgba(212,100,90,0.2)"
-                                : "rgba(201,164,74,0.2)",
-                          color:
-                            ev?.rating === "Yes"
-                              ? "#8fbc8f"
-                              : ev?.rating === "No"
-                                ? "#d4645a"
-                                : "#c9a44a",
-                        }}
-                      >
-                        {ev?.rating ?? "—"}
-                      </span>
-                      <div>
-                        <span className="text-[#b0a898]">{c.label}</span>
-                        {ev?.comment && (
-                          <p className="text-[#6a6050] mt-0.5">{ev.comment}</p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Strengths / Weaknesses / Questions */}
-            {review.strengths && (
-              <div className="mb-3">
-                <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-1">Strengths</div>
-                <p className="text-[12px] text-[#b0a898]">{review.strengths}</p>
-              </div>
-            )}
-            {review.weaknesses && (
-              <div className="mb-3">
-                <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-1">Weaknesses</div>
-                <p className="text-[12px] text-[#b0a898]">{review.weaknesses}</p>
-              </div>
-            )}
-            {review.questionsForAuthors && (
-              <div className="mb-4">
-                <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-1">Questions for Authors</div>
-                <p className="text-[12px] text-[#b0a898]">{review.questionsForAuthors}</p>
-              </div>
-            )}
+            <ReviewContent
+              criteriaEvaluations={review.criteriaEvaluations}
+              strengths={review.strengths}
+              weaknesses={review.weaknesses}
+              questionsForAuthors={review.questionsForAuthors}
+              recommendation={review.recommendation}
+              criteria={criteria}
+              label={review.label}
+            />
 
             {/* 5-Protocol Rating */}
             <div
@@ -289,8 +216,7 @@ export function ReviewResponseClient({
               </div>
             </div>
           </div>
-        );
-      })}
+      ))}
 
       {/* Action Bar */}
       <div

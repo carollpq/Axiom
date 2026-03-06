@@ -203,3 +203,5 @@ export function RegisterPaperForm({
     </>
   );
 }
+
+export default RegisterPaperForm;

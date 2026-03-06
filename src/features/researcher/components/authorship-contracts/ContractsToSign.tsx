@@ -164,3 +164,5 @@ export function ContractsToSign({ contracts, currentWallet }: Props) {
     </div>
   );
 }
+
+export default ContractsToSign;

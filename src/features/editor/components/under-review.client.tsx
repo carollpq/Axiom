@@ -1,7 +1,7 @@
 "use client";
 
 import { ThreeColumnLayout } from "@/src/shared/components/ThreeColumnLayout";
-import { PdfViewer } from "@/src/shared/components/PdfViewer";
+import { DynamicPdfViewer as PdfViewer } from "@/src/shared/components/DynamicPdfViewer";
 import { PaperList } from "./PaperList.client";
 import { ReviewStatusPanel } from "./sidebar/ReviewStatusPanel";
 import { FinalDecisionPanel } from "./sidebar/FinalDecisionPanel";

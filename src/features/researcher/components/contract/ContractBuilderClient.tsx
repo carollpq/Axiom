@@ -80,3 +80,5 @@ export function ContractBuilderClient({ initialDrafts }: ContractBuilderClientPr
     </>
   );
 }
+
+export default ContractBuilderClient;
