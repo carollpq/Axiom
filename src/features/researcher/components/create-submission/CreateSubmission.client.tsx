@@ -210,6 +210,25 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
           </select>
         </div>
 
+        {/* Validation hint */}
+        {!canSubmit && (
+          <p className="text-[12px] text-[#8a8070] mb-3 text-right italic">
+            {!selectedPaperId
+              ? "Please select a paper"
+              : !selectedVersionId
+                ? "Please select a paper version"
+                : !selectedJournalId
+                  ? "Please select a journal"
+                  : "Please select an authorship contract"}
+          </p>
+        )}
+
+        {papers.length === 0 && (
+          <p className="text-[12px] text-[#d4645a] mb-3 text-right">
+            No registered papers found. Please register a paper first via Paper Version Control.
+          </p>
+        )}
+
         {/* Submit */}
         <div className="flex justify-end">
           <button

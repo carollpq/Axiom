@@ -13,9 +13,9 @@ export default async function CreateSubmission() {
     listJournals(),
   ]);
 
-  // Papers that have at least one version
+  // Only registered papers with at least one version can be submitted
   const paperOptions = papers
-    .filter((p) => p.versions && p.versions.length > 0)
+    .filter((p) => p.status === "registered" && p.versions && p.versions.length > 0)
     .map((p) => ({
       id: p.id,
       title: p.title,
