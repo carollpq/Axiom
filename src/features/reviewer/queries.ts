@@ -13,7 +13,17 @@ export async function listAssignedReviews(reviewerWallet: string) {
     ),
     with: {
       submission: {
-        with: { paper: true, journal: true },
+        with: {
+          paper: {
+            with: {
+              versions: true,
+              contracts: {
+                with: { contributors: true },
+              },
+            },
+          },
+          journal: true,
+        },
       },
     },
     orderBy: (a, { asc }) => [asc(a.deadline)],

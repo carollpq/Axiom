@@ -1,5 +1,6 @@
 import type {
   AssignedReview,
+  AssignedReviewExtended,
   CompletedReview,
   ReviewerDisplayStatus,
   ReputationScores,
@@ -26,6 +27,7 @@ export function mapDbToAssignedReview(a: DbAssignedReview, index: number): Assig
   return {
     id: index + 1,
     assignmentId: a.id,
+    submissionId: a.submissionId,
     title: a.submission.paper.title,
     journal: a.submission.journal?.name ?? "—",
     assigned: formatIsoDate(a.assignedAt),
@@ -69,3 +71,39 @@ export function mapDbToReputationBreakdown(row: DbReputationRow): ReputationBrea
     { label: "Post-Publication", value: toFivePointScale(row.publicationScore), desc: "Publication outcome" },
   ];
 }
+
+export function mapDbToAssignedReviewExtended(a: DbAssignedReview, index: number): AssignedReviewExtended {
+  const daysLeft = daysUntil(a.deadline);
+  const baseReview = mapDbToAssignedReview(a, index);
+
+  // Extract authors from authorship contracts
+  const authors: string[] = [];
+  if (a.submission.paper.contracts && Array.isArray(a.submission.paper.contracts)) {
+    a.submission.paper.contracts.forEach((contract) => {
+      if (contract.contributors && Array.isArray(contract.contributors)) {
+        contract.contributors.forEach((contributor) => {
+          if (contributor.contributorName) {
+            authors.push(contributor.contributorName);
+          }
+        });
+      }
+    });
+  }
+
+  // Get PDF URL from the latest version
+  const versions = (a.submission.paper as { versions?: Array<{ fileStorageKey?: string }> }).versions ?? [];
+  const latestVersion = versions.at(-1);
+  const pdfUrl = latestVersion?.fileStorageKey ? `/api/papers/${a.submission.paper.id}/content/${latestVersion.fileStorageKey}` : undefined;
+
+  // Get editor name from journal
+  const editorName = a.submission.journal?.editorWallet ?? "Editor";
+
+  return {
+    ...baseReview,
+    abstract: a.submission.paper.abstract,
+    authors: authors.length > 0 ? authors : undefined,
+    pdfUrl,
+    editorName,
+  };
+}
+

@@ -1,7 +1,11 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { ThreeColumnLayout } from "@/src/shared/components/ThreeColumnLayout";
-import { PdfViewer } from "@/src/shared/components/PdfViewer";
+const PdfViewer = dynamic(
+  () => import("@/src/shared/components/PdfViewer").then((mod) => ({ default: mod.PdfViewer })),
+  { ssr: false, loading: () => <div>Loading PDF...</div> }
+);
 import { PaperList } from "./PaperList.client";
 import { AssignReviewersPanel } from "./sidebar/AssignReviewersPanel";
 import { DeskRejectPanel } from "./sidebar/DeskRejectPanel";

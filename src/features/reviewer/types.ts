@@ -9,6 +9,7 @@ export type ReviewerTab = "dashboard" | "invites" | "assigned" | "completed";
 export interface AssignedReview {
   id: number;
   assignmentId?: string;
+  submissionId?: string;
   title: string;
   journal: string;
   assigned: string;
@@ -16,6 +17,14 @@ export interface AssignedReview {
   status: ReviewerDisplayStatus;
   daysLeft: number;
 }
+
+export interface AssignedReviewExtended extends AssignedReview {
+  abstract?: string;
+  authors?: string[];
+  pdfUrl?: string;
+  editorName?: string;
+}
+
 
 export interface CompletedReview {
   id: number;
