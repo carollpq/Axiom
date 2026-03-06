@@ -21,6 +21,7 @@ interface FinalDecisionPanelProps {
   allReviewsComplete?: boolean;
   authorResponseStatus: AuthorResponseStatusDb | null;
   canMakeDecision: boolean;
+  isLoading?: boolean;
 }
 
 export function FinalDecisionPanel({
@@ -32,6 +33,7 @@ export function FinalDecisionPanel({
   allReviewsComplete,
   authorResponseStatus,
   canMakeDecision,
+  isLoading = false,
 }: FinalDecisionPanelProps) {
   const statusInfo = authorStatusLabels[authorResponseStatus ?? "pending"];
 
@@ -67,6 +69,7 @@ export function FinalDecisionPanel({
         placeholder="Add your comment..."
         rows={3}
         className="mb-3"
+        disabled={isLoading}
       />
 
       <div className="flex items-center gap-2 min-w-0">
@@ -74,7 +77,7 @@ export function FinalDecisionPanel({
           value={decision}
           onChange={(e) => onDecisionChange(e.target.value)}
           className="flex-1 min-w-0"
-          disabled={!canMakeDecision}
+          disabled={!canMakeDecision || isLoading}
         >
           <option value="">Final Decision</option>
           <option value="accept">Accept</option>
@@ -86,9 +89,9 @@ export function FinalDecisionPanel({
           variant="gold"
           onClick={onRelease}
           className="shrink-0"
-          disabled={!canMakeDecision || !decision}
+          disabled={!canMakeDecision || !decision || isLoading}
         >
-          Release
+          {isLoading ? "Releasing..." : "Release"}
         </Button>
       </div>
     </SidebarSection>

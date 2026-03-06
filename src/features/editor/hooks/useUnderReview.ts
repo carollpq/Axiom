@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useSelection } from "@/src/shared/hooks/useSelection";
 import type {
   PaperCardData,
@@ -25,7 +26,11 @@ export function useUnderReview({
   authorResponseStatuses,
   rebuttalsBySubmission,
 }: UseUnderReviewOptions) {
-  const { selectedId, setSelectedId, selected } = useSelection(initialPapers);
+  const router = useRouter();
+  const [papers, setPapers] = useState(initialPapers);
+  useEffect(() => { setPapers(initialPapers); }, [initialPapers]);
+
+  const { selectedId, setSelectedId, selected } = useSelection(papers);
   const [editorComment, setEditorComment] = useState("");
   const [decision, setDecision] = useState("");
   const [additionalAssigned, setAdditionalAssigned] = useState<string[]>([]);
@@ -33,6 +38,7 @@ export function useUnderReview({
   const [timelineDays] = useState(21);
   const [isReleasingDecision, setIsReleasingDecision] = useState(false);
   const [isResolvingRebuttal, setIsResolvingRebuttal] = useState(false);
+  const [showDecisionConfirm, setShowDecisionConfirm] = useState(false);
 
   const currentReviewers = useMemo(
     () => (selectedId ? (reviewStatuses[selectedId] ?? []) : []),
@@ -46,8 +52,13 @@ export function useUnderReview({
   const currentAuthorResponseStatus = selectedId ? (authorResponseStatuses[selectedId] ?? null) : null;
   const canMakeDecision = currentAuthorResponseStatus === "accepted" || currentAuthorResponseStatus === "rebuttal_requested";
 
-  async function releaseToAuthor() {
+  function releaseToAuthor() {
     if (!selectedId || !decision || !canMakeDecision) return;
+    setShowDecisionConfirm(true);
+  }
+
+  async function confirmRelease(): Promise<boolean> {
+    if (!selectedId || !decision) return false;
     setIsReleasingDecision(true);
 
     try {
@@ -64,12 +75,21 @@ export function useUnderReview({
       if (!response.ok) {
         const err = await response.json().catch(() => ({ error: "Unknown error" }));
         console.error("[releaseToAuthor] API error:", err);
-      } else {
-        setEditorComment("");
-        setDecision("");
+        return false;
       }
+
+      // Success: remove paper from list, clear selection
+      const releasedId = selectedId;
+      setPapers((prev) => prev.filter((p) => p.id !== releasedId));
+      setSelectedId(null);
+      setEditorComment("");
+      setDecision("");
+      setShowDecisionConfirm(false);
+      router.refresh();
+      return true;
     } catch (err) {
       console.error("[releaseToAuthor] Unexpected error:", err);
+      return false;
     } finally {
       setIsReleasingDecision(false);
     }
@@ -109,7 +129,7 @@ export function useUnderReview({
   }
 
   return {
-    papers: initialPapers,
+    papers,
     reviewerPool: initialReviewerPool,
     selectedId,
     setSelectedId,
@@ -123,6 +143,7 @@ export function useUnderReview({
     decision,
     setDecision,
     releaseToAuthor,
+    confirmRelease,
     additionalAssigned,
     assignReviewer,
     removeReviewer,
@@ -130,6 +151,8 @@ export function useUnderReview({
     setReviewerSearch,
     timelineDays,
     isReleasingDecision,
+    showDecisionConfirm,
+    setShowDecisionConfirm,
     currentRebuttal,
     resolveRebuttal,
     isResolvingRebuttal,
