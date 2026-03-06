@@ -1,15 +1,26 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { ThreeColumnLayout } from "@/src/shared/components/ThreeColumnLayout";
 import { DynamicPdfViewer as PdfViewer } from "@/src/shared/components/DynamicPdfViewer";
 import { PaperList } from "./PaperList.client";
-import { AssignReviewersPanel } from "./sidebar/AssignReviewersPanel";
-import { DeskRejectPanel } from "./sidebar/DeskRejectPanel";
-import { CriteriaBuilder } from "./CriteriaBuilder";
 import { useIncomingPapers } from "@/src/features/editor/hooks/useIncomingPapers";
 import { useDecryptPaper } from "@/src/shared/hooks/useDecryptPaper";
 import { SelectionPlaceholder } from "@/src/shared/components/SelectionPlaceholder";
 import type { PaperCardData, PoolReviewer } from "@/src/features/editor/types";
+
+const CriteriaBuilder = dynamic(
+  () => import("./CriteriaBuilder").then((m) => ({ default: m.CriteriaBuilder })),
+  { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading criteria builder...</div> }
+);
+const AssignReviewersPanel = dynamic(
+  () => import("./sidebar/AssignReviewersPanel").then((m) => ({ default: m.AssignReviewersPanel })),
+  { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading reviewer panel...</div> }
+);
+const DeskRejectPanel = dynamic(
+  () => import("./sidebar/DeskRejectPanel").then((m) => ({ default: m.DeskRejectPanel })),
+  { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading...</div> }
+);
 
 interface IncomingPapersProps {
   papers: PaperCardData[];

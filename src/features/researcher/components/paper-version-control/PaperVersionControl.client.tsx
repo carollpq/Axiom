@@ -10,7 +10,7 @@ import { validateUpload } from "@/src/features/researcher/reducers/upload";
 import { PaperRow } from "./PaperRow";
 import type { PaperWithVersions } from "./types";
 
-const DynamicRegisterPaperForm = dynamic(
+const RegisterPaperForm = dynamic(
   () => import("./RegisterPaperForm"),
   { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading form...</div> }
 );
@@ -195,7 +195,7 @@ export function PaperVersionControlClient({ papers }: Props) {
               borderTop: "none",
             }}
           >
-            <DynamicRegisterPaperForm
+            <RegisterPaperForm
               upload={upload}
               uploadErrors={uploadErrors}
               onRegister={handleRegister}

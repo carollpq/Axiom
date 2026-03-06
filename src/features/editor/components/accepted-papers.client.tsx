@@ -1,10 +1,9 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { ThreeColumnLayout } from "@/src/shared/components/ThreeColumnLayout";
 import { DynamicPdfViewer as PdfViewer } from "@/src/shared/components/DynamicPdfViewer";
 import { PaperList } from "./PaperList.client";
-import { ReviewCommentsPanel } from "./sidebar/ReviewCommentsPanel";
-import { AddToIssuePanel } from "./sidebar/AddToIssuePanel";
 import { useAcceptedPapers } from "@/src/features/editor/hooks/useAcceptedPapers";
 import { useDecryptPaper } from "@/src/shared/hooks/useDecryptPaper";
 import { SelectionPlaceholder } from "@/src/shared/components/SelectionPlaceholder";
@@ -13,6 +12,15 @@ import type {
   ReviewerWithStatus,
   JournalIssue,
 } from "@/src/features/editor/types";
+
+const ReviewCommentsPanel = dynamic(
+  () => import("./sidebar/ReviewCommentsPanel").then((m) => ({ default: m.ReviewCommentsPanel })),
+  { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading reviews...</div> }
+);
+const AddToIssuePanel = dynamic(
+  () => import("./sidebar/AddToIssuePanel").then((m) => ({ default: m.AddToIssuePanel })),
+  { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading...</div> }
+);
 
 interface AcceptedPapersProps {
   papers: PaperCardData[];

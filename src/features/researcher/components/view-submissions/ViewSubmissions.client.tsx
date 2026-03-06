@@ -6,8 +6,8 @@ import dynamic from "next/dynamic";
 import { getStatusColors } from "@/src/features/researcher/constants/status-colors";
 import { ReviewsStatusSection } from "./ReviewsStatusSection";
 
-const DynamicAuthorFeedback = dynamic(() => import("./AuthorFeedbackSection"));
-const DynamicReviewerFeedback = dynamic(() => import("./ReviewerFeedbackSection"));
+const AuthorFeedback = dynamic(() => import("./AuthorFeedbackSection"));
+const ReviewerFeedback = dynamic(() => import("./ReviewerFeedbackSection"));
 
 interface ReviewerInfo {
   assignmentId: string;
@@ -248,7 +248,7 @@ export function ViewSubmissionsClient({ submissions }: Props) {
               {/* Author Feedback (conditional) */}
               {selected.allReviewsComplete &&
                 !selected.authorResponseStatus && (
-                  <DynamicAuthorFeedback
+                  <AuthorFeedback
                     onInvokeRebuttal={handleInvokeRebuttal}
                     submitting={submitting}
                   />
@@ -256,7 +256,7 @@ export function ViewSubmissionsClient({ submissions }: Props) {
 
               {/* Feedback to Reviewers (conditional) */}
               {selected.allReviewsComplete && (
-                <DynamicReviewerFeedback
+                <ReviewerFeedback
                   reviews={selected.reviews}
                   onRate={handleRateReviewer}
                 />

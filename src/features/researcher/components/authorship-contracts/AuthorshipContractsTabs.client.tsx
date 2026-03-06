@@ -5,11 +5,11 @@ import dynamic from "next/dynamic";
 import type { ExistingDraft } from "@/src/features/researcher/types/contract";
 import { ContractsStatus } from "./ContractsStatus";
 
-const DynamicContractBuilder = dynamic(
+const ContractBuilder = dynamic(
   () => import("@/src/features/researcher/components/contract/ContractBuilderClient"),
   { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading contract builder...</div> }
 );
-const DynamicContractsToSign = dynamic(
+const ContractsToSign = dynamic(
   () => import("./ContractsToSign"),
   { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading contracts...</div> }
 );
@@ -105,12 +105,12 @@ export function AuthorshipContractsTabs({
       {/* Tab content — lazy-loaded, stays mounted once visited to preserve state */}
       {visited.has("build") && (
         <div style={{ display: activeTab === "build" ? undefined : "none" }}>
-          <DynamicContractBuilder initialDrafts={initialDrafts} />
+          <ContractBuilder initialDrafts={initialDrafts} />
         </div>
       )}
       {visited.has("sign") && (
         <div style={{ display: activeTab === "sign" ? undefined : "none" }}>
-          <DynamicContractsToSign contracts={contractsToSign} currentWallet={currentWallet} />
+          <ContractsToSign contracts={contractsToSign} currentWallet={currentWallet} />
         </div>
       )}
       {visited.has("status") && (
