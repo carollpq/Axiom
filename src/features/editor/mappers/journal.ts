@@ -59,6 +59,9 @@ export function mapDbToPoolReviewer(u: DbReviewer, scoreRow?: DbReputationScore 
 export function mapDbToPaperCardData(s: DbJournalSubmission): PaperCardData {
   const abstract = s.paper.abstract ?? "";
   const submittedDate = s.submittedAt ? formatIsoDate(String(s.submittedAt)) : "—";
+  const hasLitData = !!(s.paper.litDataToEncryptHash && s.paper.litAccessConditionsJson);
+  const latestVersion = s.paper.versions?.at(-1);
+  const hasFile = !!latestVersion?.fileStorageKey;
   return {
     id: s.id,
     paperId: s.paper.id,
@@ -66,7 +69,8 @@ export function mapDbToPaperCardData(s: DbJournalSubmission): PaperCardData {
     authors: s.paper.owner?.displayName ?? s.paper.owner?.walletAddress ?? "Unknown",
     abstractSnippet: abstract.length > 180 ? abstract.slice(0, 177) + "…" : abstract,
     submittedDate,
-    hasLitData: !!(s.paper.litDataToEncryptHash && s.paper.litAccessConditionsJson),
+    hasLitData,
+    fileUrl: !hasLitData && hasFile ? `/api/papers/${s.paper.id}/content?format=raw` : undefined,
   };
 }
 
