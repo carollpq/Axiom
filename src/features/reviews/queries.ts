@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { db } from "@/src/shared/lib/db";
 import { reviewAssignments, reviewCriteria, reviews, reviewerRatings, submissions } from "@/src/shared/lib/db/schema";
 import { eq, and, inArray, lt, isNotNull } from "drizzle-orm";
@@ -59,18 +60,18 @@ export async function getReviewByAssignmentId(assignmentId: string) {
   });
 }
 
-export async function listReviewsForSubmission(submissionId: string) {
+export const listReviewsForSubmission = cache(async (submissionId: string) => {
   return db.query.reviews.findMany({
     where: eq(reviews.submissionId, submissionId),
   });
-}
+});
 
-export async function getPublishedCriteria(submissionId: string) {
+export const getPublishedCriteria = cache(async (submissionId: string) => {
   return db.query.reviewCriteria.findFirst({
     where: eq(reviewCriteria.submissionId, submissionId),
     orderBy: (c, { desc }) => [desc(c.publishedAt)],
   });
-}
+});
 
 export async function listOverdueAssignments() {
   const now = new Date().toISOString();

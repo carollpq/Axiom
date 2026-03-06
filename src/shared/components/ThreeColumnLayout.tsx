@@ -3,6 +3,7 @@ interface ThreeColumnLayoutProps {
   viewer: React.ReactNode;
   sidebar: React.ReactNode;
   title?: string;
+  subtitle?: string;
   countLabel?: string;
   sidebarTitle?: string;
 }
@@ -12,11 +13,12 @@ export function ThreeColumnLayout({
   viewer,
   sidebar,
   title,
+  subtitle,
   countLabel,
   sidebarTitle,
 }: ThreeColumnLayoutProps) {
   const hasHeader = !!title;
-  const contentHeight = hasHeader ? "calc(100vh - 56px - 44px)" : "calc(100vh - 56px)";
+  const contentHeight = hasHeader ? "calc(100vh - 56px - 56px)" : "calc(100vh - 56px)";
 
   return (
     <div>
@@ -24,13 +26,20 @@ export function ThreeColumnLayout({
         <div
           className="flex items-center justify-between px-5"
           style={{
-            height: 44,
+            height: 56,
             borderBottom: "1px solid rgba(120,110,95,0.15)",
           }}
         >
-          <span className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px]">
-            {title}
-          </span>
+          <div className="flex flex-col justify-center">
+            <h2 className="text-[20px] font-serif text-[#e8e0d4] tracking-[0.5px] leading-tight">
+              {title}
+            </h2>
+            {subtitle && (
+              <span className="text-[13px] text-[#6a6050] italic">
+                {subtitle}
+              </span>
+            )}
+          </div>
           {countLabel && (
             <span className="font-serif text-[12px] text-[#8a8070]">
               {countLabel}

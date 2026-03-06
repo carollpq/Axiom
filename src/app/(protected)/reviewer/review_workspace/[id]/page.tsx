@@ -8,13 +8,10 @@ export default async function ReviewWorkspacePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const sessionWallet = await getSession();
-  if (!sessionWallet) {
-    redirect("/login");
-  }
+  const wallet = (await getSession())!;
 
   const { id: assignmentId } = await params;
-  const assignment = await getReviewAssignment(assignmentId, sessionWallet);
+  const assignment = await getReviewAssignment(assignmentId, wallet);
 
   if (!assignment) {
     redirect("/reviewer");

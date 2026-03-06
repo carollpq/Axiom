@@ -1,15 +1,13 @@
 "use client";
 
+import { useCallback } from "react";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { ThreeColumnLayout } from "@/src/shared/components/ThreeColumnLayout";
-const PdfViewer = dynamic(
-  () => import("@/src/shared/components/PdfViewer").then((mod) => ({ default: mod.PdfViewer })),
-  { ssr: false, loading: () => <div>Loading PDF...</div> }
-);
+import { DynamicPdfViewer as PdfViewer } from "@/src/shared/components/DynamicPdfViewer";
 import { PaperList } from "./PaperList.client";
-import { ReviewCommentsPanel } from "./sidebar/ReviewCommentsPanel";
-import { AddToIssuePanel } from "./sidebar/AddToIssuePanel";
 import { useAcceptedPapers } from "@/src/features/editor/hooks/useAcceptedPapers";
+import { useCollapseSidebar } from "@/src/shared/hooks/useCollapseSidebar";
 import { useDecryptPaper } from "@/src/shared/hooks/useDecryptPaper";
 import { SelectionPlaceholder } from "@/src/shared/components/SelectionPlaceholder";
 import type {
@@ -18,17 +16,30 @@ import type {
   JournalIssue,
 } from "@/src/features/editor/types";
 
+const ReviewCommentsPanel = dynamic(
+  () => import("./sidebar/ReviewCommentsPanel").then((m) => ({ default: m.ReviewCommentsPanel })),
+  { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading reviews...</div> }
+);
+const AddToIssuePanel = dynamic(
+  () => import("./sidebar/AddToIssuePanel").then((m) => ({ default: m.AddToIssuePanel })),
+  { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading...</div> }
+);
+
 interface AcceptedPapersProps {
   papers: PaperCardData[];
   reviewStatuses: Record<string, ReviewerWithStatus[]>;
   issues: JournalIssue[];
+  journalId: string;
 }
 
 export function AcceptedPapersClient({
   papers,
   reviewStatuses,
   issues,
+  journalId,
 }: AcceptedPapersProps) {
+  useCollapseSidebar();
+  const router = useRouter();
   const {
     selectedId,
     setSelectedId,
@@ -43,9 +54,20 @@ export function AcceptedPapersClient({
     true,
   );
 
+  const handleAssignToIssue = useCallback(async (issueId: string) => {
+    if (!selectedId) return;
+    await fetch(`/api/journals/${journalId}/issues/${issueId}/papers`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ submissionId: selectedId }),
+    });
+    router.refresh();
+  }, [journalId, selectedId, router]);
+
   return (
     <ThreeColumnLayout
       title="Accepted Papers"
+      subtitle="Manage accepted papers and publications"
       countLabel={`${papers.length} ${papers.length === 1 ? "paper" : "papers"}`}
       sidebarTitle="Details"
       list={
@@ -64,6 +86,7 @@ export function AcceptedPapersClient({
               issues={issues}
               selectedIssue={selectedIssue}
               onIssueChange={setSelectedIssue}
+              onAssign={handleAssignToIssue}
             />
           </>
         ) : (

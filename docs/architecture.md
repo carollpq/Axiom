@@ -203,15 +203,17 @@ Each paper version links to dataset hash, code commit hash, and environment hash
 
 **Current state:** Version creation with provenance hashes works. Version graph UI not yet built.
 
-### 4.4 Pre-Registered Review Criteria (FR-4) 🔲 Not Yet Implemented
+### 4.4 Pre-Registered Review Criteria (FR-4) ✅ Implemented
 
 **This is the cornerstone feature for review quality and accountability.**
 
 Journals publish review criteria on-chain BEFORE review begins. This is **not** a contractual obligation to publish — journals keep full editorial discretion. The value is that criteria become immutable and public, forcing structured reviewer feedback and creating accountability for rejection decisions.
 
+**Current state:** Fully functional. CriteriaBuilder component in editor incoming-papers view → `POST /api/submissions/[id]/criteria` → canonical JSON hash → HCS anchor → immutable. Editor three-column layout provides sidebar panel for criteria definition.
+
 **How it works:**
 
-1. Editor creates submission-specific review criteria (structured form)
+1. Editor creates submission-specific review criteria (structured form via CriteriaBuilder sidebar panel)
 2. Criteria are hashed and recorded on HCS (`criteria` topic)
 3. Criteria become immutable — cannot be changed after publication
 4. Reviewers evaluate each criterion individually (yes / no / partially + required comment if not 'yes')
@@ -233,25 +235,31 @@ interface ReviewCriterion {
 }
 ```
 
-### 4.5 Reviewer Reputation System (FR-5) 🔲 Not Yet Implemented
+### 4.5 Reviewer Reputation System (FR-5) ✅ Implemented
 
 **The star feature for hackathon differentiation.**
 
 Non-transferable, cross-journal reputation represented as HTS soulbound tokens. Detailed in §6.
 
-### 4.6 Reviewer Feedback Transparency (FR-6) 🔲 Not Yet Implemented
+**Current state:** Fully functional. HTS tokens minted on review completion, late reviews, editorial decisions, author ratings, and rebuttal resolutions. Reputation scores computed and stored in `reputationScores` table. Editor can view reviewer reputation scores when assigning reviewers.
+
+### 4.6 Reviewer Feedback Transparency (FR-6) ✅ Implemented
 
 After a paper is accepted or rejected, reviewer comments become publicly visible (anonymized). This creates accountability without compromising review-phase anonymity.
 
+**Current state:** Fully functional. `GET /api/papers/[id]/reviews` returns anonymized reviews after final decision. Confidential editor comments always excluded. Editor can view full review comments via ReviewCommentsPanel sidebar.
+
 **Timing:** Comments are NOT public during review. They become public only after the editorial decision is final. This preserves the integrity of the review process while ensuring post-decision transparency.
 
-**Author ratings:** Authors can anonymously rate reviewer usefulness (1–5) after seeing the review. Reviewers never know which author rated them (FR-6.3). Ratings feed into reputation scores.
+**Author ratings:** Authors can anonymously rate reviewer usefulness via 5-protocol system (actionable feedback, deep engagement, fair/objective, justified recommendation, appropriate expertise) after seeing the review. Reviewers never know which author rated them (FR-6.3). Ratings feed into reputation scores via HTS token minting.
 
-### 4.7 Rebuttal Phase (NEW) 🔲 Not Yet Implemented
+### 4.7 Rebuttal Phase (NEW) ✅ Implemented
 
 Detailed in §8.
 
-### 4.8 Real-Time Author Status Updates 🔲 Not Yet Implemented
+**Current state:** Fully functional. Researcher-initiated via `POST /api/submissions/[id]/author-response`. Editor resolves via ResolveRebuttalPanel sidebar in under-review view. HCS anchoring + HTS reputation tokens on resolution.
+
+### 4.8 Real-Time Author Status Updates ✅ Implemented
 
 Authors receive notifications at every stage:
 - "Your paper has been submitted to [Journal]"
@@ -262,15 +270,17 @@ Authors receive notifications at every stage:
 - "Rebuttal phase open — you have 14 days to respond"
 - "Paper accepted / rejected — [view justification]"
 
-**Implementation:** Polling-based in MVP (check `notifications` table). Status derived from submission pipeline state.
+**Current state:** Fully functional. DB-backed notifications with NotificationBell component (30s polling). Notifications created at every pipeline stage including "Viewed by Editor" status. Integrated across all editor actions (criteria publish, reviewer assignment, decision, rebuttal resolution).
 
 ### 4.9 Negative Result & Replication Tagging ✅ Implemented
 
 Papers can be tagged as `original`, `negative_result`, `replication`, `replication_failed`, or `meta_analysis` at registration time. Study type is recorded on-chain and is immutable.
 
-### 4.10 External Paper Verification Tool 🔲 Not Yet Implemented
+### 4.10 External Paper Verification Tool ✅ Implemented
 
 Public page (`/verify`) where anyone uploads a PDF and the system checks the hash against all on-chain registrations. No auth required. Great demo moment.
+
+**Current state:** Fully functional. Client-side SHA-256 hash → `POST /api/verify` (no auth) → DB lookup → verification result.
 
 ---
 
@@ -1190,39 +1200,54 @@ src/app/
 ├── page.tsx                       # Landing page
 ├── login/page.tsx                 # Wallet connect
 ├── onboarding/page.tsx            # Role selection + ORCID (placeholder)
-├── verify/page.tsx                # Public paper verification tool 🔲
-├── author/
-│   ├── page.tsx                   # Author dashboard ✅
-│   ├── authorship-contracts/page.tsx # Authorship contracts (build + sign + manage) ✅
-│   ├── paper-version-control/page.tsx # Paper registration + version management ✅
-│   └── public_explorer/page.tsx   # Paper explorer ✅
-├── journal/
-│   ├── page.tsx                   # Journal dashboard (submissions pipeline) 🔲 mock
-│   ├── criteria/[id]/page.tsx     # Publish review criteria 🔲
-│   └── reviewers/page.tsx         # Reviewer search by reputation 🔲
-├── reviewer/
-│   ├── page.tsx                   # Reviewer dashboard (assigned reviews + reputation) 🔲 mock
-│   └── review_workspace/page.tsx  # Review workspace 🔲 mock
+├── verify/page.tsx                # Public paper verification tool ✅
+├── (protected)/
+│   ├── researcher/
+│   │   ├── page.tsx                   # Researcher dashboard ✅
+│   │   ├── authorship-contracts/page.tsx # Authorship contracts (build + sign + manage) ✅
+│   │   ├── paper-version-control/page.tsx # Paper registration + version management ✅
+│   │   ├── create-submission/page.tsx # Create submission ✅
+│   │   ├── view-submissions/page.tsx  # View submissions ✅
+│   │   ├── review-response/[submissionId]/page.tsx # Review response + rating ✅
+│   │   └── rebuttal/[submissionId]/page.tsx # Rebuttal workspace ✅
+│   ├── editor/
+│   │   ├── page.tsx                   # Editor dashboard (stats + carousel) ✅ DB-backed
+│   │   ├── incoming/page.tsx          # Incoming papers (three-column: list → PDF → criteria/assign/reject) ✅ DB-backed
+│   │   ├── under-review/page.tsx      # Under review (three-column: list → PDF → status/decision/rebuttal) ✅ DB-backed
+│   │   ├── accepted/page.tsx          # Accepted papers (three-column: list → PDF → comments/issues) ✅ DB-backed
+│   │   └── management/page.tsx        # Journal management (aims/scope, issues, reviewer pool) ✅ DB-backed
+│   └── reviewer/
+│       ├── page.tsx                   # Reviewer dashboard (assigned reviews + reputation) 🔲 mock
+│       └── review_workspace/[id]/page.tsx # Review workspace ✅
 ```
 
-### 14.2 Key New Components Needed
+### 14.2 Key Components (Implemented)
 
 ```
-components/
-├── review/
-│   ├── CriteriaBuilder.tsx        # Editor defines review criteria
-│   ├── CriteriaDisplay.tsx        # Read-only criteria view
-│   ├── CriteriaEvaluation.tsx     # Reviewer rates each criterion
-│   ├── ReviewForm.tsx             # Full review submission form
-│   └── MethodologyReminder.tsx    # "Evaluate methodology, not results"
-├── rebuttal/
-│   ├── RebuttalForm.tsx           # Author's per-comment responses
-│   ├── RebuttalTimeline.tsx       # Rebuttal deadline countdown
-│   └── RebuttalResolution.tsx     # Editor's resolution interface
-├── reputation/
-│   ├── ReputationScoreCard.tsx    # Overall score + breakdown
-│   ├── ReputationTokenList.tsx    # HTS token history
-│   └── ReviewerSearch.tsx         # Search by score, field, timeliness
+features/editor/
+├── CriteriaBuilder.tsx            # Editor defines review criteria (sidebar panel) ✅
+├── incoming-papers.client.tsx     # Three-column: paper list → PDF → criteria/assign/reject ✅
+├── under-review.client.tsx        # Three-column: paper list → PDF → status/decision/rebuttal ✅
+├── accepted-papers.client.tsx     # Three-column: paper list → PDF → comments/issues ✅
+├── journal-management.client.tsx  # Journal settings, issues, reviewer pool ✅
+├── components/sidebar/
+│   ├── AssignReviewersPanel.tsx    # Search + assign reviewers with reputation scores ✅
+│   ├── ReviewStatusPanel.tsx      # Reviewer assignment + review status ✅
+│   ├── ReviewCommentsPanel.tsx    # Anonymized review comments display ✅
+│   ├── FinalDecisionPanel.tsx     # Accept/reject/revise with justification ✅
+│   ├── DeskRejectPanel.tsx        # Quick reject from incoming ✅
+│   ├── ResolveRebuttalPanel.tsx   # Resolve rebuttal with reputation impact ✅
+│   └── AddToIssuePanel.tsx        # Add paper to journal issue ✅
+├── components/management/
+│   ├── EditableSection.tsx        # Editable aims/scope + submission criteria ✅
+│   ├── IssuesGrid.tsx             # Grid of journal issues ✅
+│   └── ReviewerGrid.tsx           # Grid of assigned reviewers with search/filter ✅
+
+features/rebuttals/
+├── components/                    # Rebuttal response form + resolution UI ✅
+
+features/reviews/
+├── queries.ts + actions.ts        # Review DB operations ✅
 ├── timeline/
 │   ├── SubmissionTimeline.tsx     # Visual timeline of review process
 │   ├── DeadlineIndicator.tsx      # Urgency badges
@@ -1418,14 +1443,14 @@ Vercel Project
 - ✅ Authorship contribution contracts (FR-1)
 - ✅ Paper registration & timestamped ownership (FR-2)
 - ✅ Paper versioning & provenance (FR-3)
-- 🔲 Structured per-criterion reviewer feedback + pre-registered criteria (FR-4) — **top priority**
-- 🔲 Reviewer reputation via HTS (FR-5) — **top priority**
-- 🔲 Reviewer feedback transparency (FR-6)
-- 🔲 Rebuttal phase (NEW)
-- 🔲 Timeline enforcement
-- 🔲 Real-time author status updates
+- ✅ Structured per-criterion reviewer feedback + pre-registered criteria (FR-4)
+- ✅ Reviewer reputation via HTS (FR-5)
+- ✅ Reviewer feedback transparency (FR-6)
+- ✅ Rebuttal phase
+- ✅ Timeline enforcement (cron-based)
+- ✅ Real-time author status updates (DB-backed notifications)
 - ✅ Negative result / replication tagging
-- 🔲 External paper verification tool
+- ✅ External paper verification tool
 
 **Stretch Goals:**
 - Timeline enforcement via smart contract

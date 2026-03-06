@@ -1,5 +1,5 @@
-import type { JournalSubmission, SubmissionStage, PoolReviewer, PaperCardData, ReviewerWithStatus, EditorProfile } from "@/src/features/editor/types";
-import type { DbJournalSubmission, DbReviewer, DbReputationScore } from "../queries";
+import type { JournalSubmission, SubmissionStage, PoolReviewer, PaperCardData, ReviewerWithStatus, EditorProfile, JournalIssue } from "@/src/features/editor/types";
+import type { DbJournalSubmission, DbReviewer, DbReputationScore, DbJournalIssue } from "../queries";
 import { formatIsoDate, truncateHash, displayNameOrWallet, toFivePointScale } from "@/src/shared/lib/format";
 
 export function deriveStage(
@@ -59,6 +59,9 @@ export function mapDbToPoolReviewer(u: DbReviewer, scoreRow?: DbReputationScore 
 export function mapDbToPaperCardData(s: DbJournalSubmission): PaperCardData {
   const abstract = s.paper.abstract ?? "";
   const submittedDate = s.submittedAt ? formatIsoDate(String(s.submittedAt)) : "—";
+  const hasLitData = !!(s.paper.litDataToEncryptHash && s.paper.litAccessConditionsJson);
+  const latestVersion = s.paper.versions?.at(-1);
+  const hasFile = !!latestVersion?.fileStorageKey;
   return {
     id: s.id,
     paperId: s.paper.id,
@@ -66,7 +69,8 @@ export function mapDbToPaperCardData(s: DbJournalSubmission): PaperCardData {
     authors: s.paper.owner?.displayName ?? s.paper.owner?.walletAddress ?? "Unknown",
     abstractSnippet: abstract.length > 180 ? abstract.slice(0, 177) + "…" : abstract,
     submittedDate,
-    hasLitData: !!(s.paper.litDataToEncryptHash && s.paper.litAccessConditionsJson),
+    hasLitData,
+    fileUrl: !hasLitData && hasFile ? `/api/papers/${s.paper.id}/content?format=raw` : undefined,
   };
 }
 
@@ -115,4 +119,28 @@ export function mapDbToReviewerWithStatus(
     status: statusMap[assignment.status] ?? "pending",
     hasComment: assignment.status === "submitted",
   };
+}
+
+export function mapDbToJournalIssue(dbIssue: DbJournalIssue): JournalIssue {
+  const papers = (dbIssue.papers ?? []).map((ip) => ({
+    submissionId: ip.submissionId,
+    title: ip.submission?.paper?.title ?? "Untitled",
+  }));
+  return { id: dbIssue.id, label: dbIssue.label, paperCount: papers.length, papers };
+}
+
+export function filterPoolByJournal(
+  allReviewers: PoolReviewer[],
+  poolWalletSet: Set<string>,
+): { poolReviewers: PoolReviewer[]; nonPoolReviewers: PoolReviewer[] } {
+  const poolReviewers: PoolReviewer[] = [];
+  const nonPoolReviewers: PoolReviewer[] = [];
+  for (const r of allReviewers) {
+    if (poolWalletSet.has(r.wallet.toLowerCase())) {
+      poolReviewers.push(r);
+    } else {
+      nonPoolReviewers.push(r);
+    }
+  }
+  return { poolReviewers, nonPoolReviewers };
 }

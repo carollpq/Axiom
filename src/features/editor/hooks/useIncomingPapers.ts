@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useSelection } from "@/src/shared/hooks/useSelection";
 import type { PaperCardData, PoolReviewer } from "@/src/features/editor/types";
 
@@ -8,13 +9,18 @@ export function useIncomingPapers(
   initialPapers: PaperCardData[],
   initialReviewerPool: PoolReviewer[],
 ) {
-  const { selectedId, setSelectedId, selected } = useSelection(initialPapers);
+  const router = useRouter();
+  const [papers, setPapers] = useState(initialPapers);
+  useEffect(() => { setPapers(initialPapers); }, [initialPapers]);
+
+  const { selectedId, setSelectedId, selected } = useSelection(papers);
   const [assignedIds, setAssignedIds] = useState<string[]>([]);
   const [reviewerSearch, setReviewerSearch] = useState("");
   const [deskRejectComment, setDeskRejectComment] = useState("");
   const [timelineDays] = useState(21);
   const [isSendingInvites, setIsSendingInvites] = useState(false);
   const [isDeskRejecting, setIsDeskRejecting] = useState(false);
+  const [showDeskRejectConfirm, setShowDeskRejectConfirm] = useState(false);
 
   // Auto-trigger "viewed by editor" when a paper is selected
   const viewedRef = useRef<Set<string>>(new Set());
@@ -61,8 +67,13 @@ export function useIncomingPapers(
     }
   }
 
-  async function submitDeskReject() {
+  function submitDeskReject() {
     if (!selectedId) return;
+    setShowDeskRejectConfirm(true);
+  }
+
+  async function confirmDeskReject(): Promise<boolean> {
+    if (!selectedId) return false;
     setIsDeskRejecting(true);
 
     try {
@@ -79,18 +90,27 @@ export function useIncomingPapers(
       if (!response.ok) {
         const err = await response.json().catch(() => ({ error: "Unknown error" }));
         console.error("[deskReject] API error:", err);
-      } else {
-        setDeskRejectComment("");
+        return false;
       }
+
+      // Success: remove paper from list, clear selection
+      const rejectedId = selectedId;
+      setPapers((prev) => prev.filter((p) => p.id !== rejectedId));
+      setSelectedId(null);
+      setDeskRejectComment("");
+      setShowDeskRejectConfirm(false);
+      router.refresh();
+      return true;
     } catch (err) {
       console.error("[deskReject] Unexpected error:", err);
+      return false;
     } finally {
       setIsDeskRejecting(false);
     }
   }
 
   return {
-    papers: initialPapers,
+    papers,
     reviewerPool: initialReviewerPool,
     selectedId,
     setSelectedId,
@@ -105,7 +125,10 @@ export function useIncomingPapers(
     timelineDays,
     sendInvites,
     submitDeskReject,
+    confirmDeskReject,
     isSendingInvites,
     isDeskRejecting,
+    showDeskRejectConfirm,
+    setShowDeskRejectConfirm,
   };
 }

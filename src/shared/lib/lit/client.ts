@@ -3,9 +3,8 @@
 import { LitNodeClient } from "@lit-protocol/lit-node-client";
 import { LIT_NETWORK } from "@lit-protocol/constants";
 
-export function isLitConfigured(): boolean {
-  return !!process.env.NEXT_PUBLIC_LIT_NETWORK;
-}
+// Re-export from config.ts so existing imports keep working
+export { isLitConfigured } from "./config";
 
 /**
  * Maps the NEXT_PUBLIC_LIT_NETWORK env value to the LIT_NETWORK enum.

@@ -104,11 +104,15 @@ For the full architecture document, see [`docs/architecture.md`](docs/architectu
 - **Notifications** — Real-time updates at every pipeline stage (including "Viewed by Editor" status)
 
 ### Editor
-- **Submission pipeline** — Kanban view: submitted → viewed by editor → criteria published → reviewers assigned → under review → reviews completed → rebuttal → decision
-- **Criteria builder** — Publish structured review criteria (immutable on HCS)
+- **Dashboard** — Stats overview (submissions by status) + recent submission carousel. Fully DB-backed.
+- **Incoming papers** — Three-column layout (paper list → PDF viewer → contextual sidebar). Sidebar panels: criteria builder, reviewer assignment with reputation scores, desk reject. Auto-triggers "viewed by editor" status on selection.
+- **Under review** — Three-column layout. Sidebar panels: review status tracking, final decision (accept/reject/revise with `allCriteriaMet` computation), rebuttal resolution, additional reviewer assignment. Shows author response status (accepted / rebuttal requested).
+- **Accepted papers** — Three-column layout. Sidebar panels: review comments display, add-to-issue for journal issue management.
+- **Journal management** — Update aims/scope and submission criteria, create/delete journal issues, assign papers to issues, manage reviewer pool (add/remove reviewers with search/filter).
+- **Criteria builder** — Publish structured review criteria (immutable on HCS). Integrated as sidebar panel in incoming papers view.
 - **Reviewer assignment** — Assign from reviewer pool with reputation scores. Minimum 2 reviewers must accept before submission transitions to "under review".
-- **Decision flow** — Accept/reject with `allCriteriaMet` computation. Rejection with criteria met requires public justification. Shows author response status (accepted / rebuttal requested).
-- **Rebuttal management** — Review author responses, resolve with reputation impact
+- **Decision flow** — Accept/reject with `allCriteriaMet` computation. Rejection with criteria met requires public justification.
+- **Rebuttal management** — Review author responses per-review, resolve with reputation impact (upheld/rejected/partial → HTS tokens minted)
 
 ### Reviewer
 - **Dashboard** — Assigned reviews, deadlines, reputation score breakdown with 5-protocol feedback display
@@ -227,11 +231,11 @@ src/
 │   │   └── verify/                 # Hash verification
 │   └── (protected)/
 │       ├── researcher/             # Dashboard, authorship-contracts, create-submission, view-submissions, paper-version-control (includes paper registration), rebuttal/[submissionId], review-response/[submissionId]
-│       ├── editor/                 # Editor dashboard + pipeline
+│       ├── editor/                 # Dashboard, incoming, under-review, accepted, management (all DB-backed, three-column layouts)
 │       └── reviewer/               # Reviewer dashboard + workspace
 ├── features/
 │   ├── researcher/                 # Researcher UI (components, hooks, reducers, config, constants, mappers, queries, types, nav)
-│   ├── editor/                     # Editor UI (components, hooks, queries)
+│   ├── editor/                     # Editor UI (components, hooks, queries, actions, mappers, sidebar panels)
 │   ├── reviewer/                   # Reviewer UI (components, hooks, reducers)
 │   ├── reviews/                    # Review DB queries + actions
 │   ├── rebuttals/                  # Rebuttal DB + hooks + components

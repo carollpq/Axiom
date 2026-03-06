@@ -6,27 +6,22 @@ import { getInitials } from "@/src/shared/lib/format";
 import { DashboardHeader } from "@/src/shared/components";
 import { StatsSection } from "@/src/features/editor/components/dashboard/stats.section";
 import { CarouselSection } from "@/src/features/editor/components/dashboard/carousel.section";
-import { QuickActions } from "@/src/features/editor/components/dashboard-overview.client";
 import type { EditorProfile } from "@/src/features/editor/types";
 import type { DbJournalSubmission } from "@/src/features/editor/queries";
 
 export default async function JournalDashboard() {
-  const sessionWallet = await getSession();
+  const wallet = (await getSession())!;
 
-  let editorProfile: EditorProfile | null = null;
+  const [user, journal] = await Promise.all([
+    getUserByWallet(wallet),
+    getJournalByEditorWallet(wallet),
+  ]);
+
+  const editorProfile: EditorProfile | null = mapDbToEditorProfile(user, journal, getInitials);
   let subs: DbJournalSubmission[] = [];
 
-  if (sessionWallet) {
-    const [user, journal] = await Promise.all([
-      getUserByWallet(sessionWallet),
-      getJournalByEditorWallet(sessionWallet),
-    ]);
-
-    editorProfile = mapDbToEditorProfile(user, journal, getInitials);
-
-    if (journal) {
-      subs = await listJournalSubmissions(journal.id);
-    }
+  if (journal) {
+    subs = await listJournalSubmissions(journal.id);
   }
 
   return (
@@ -60,8 +55,6 @@ export default async function JournalDashboard() {
 
       <StatsSection subs={subs} />
       <CarouselSection subs={subs} />
-
-      <QuickActions />
     </div>
   );
 }

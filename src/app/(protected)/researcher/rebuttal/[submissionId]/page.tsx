@@ -2,15 +2,13 @@ import { getSession } from "@/src/shared/lib/auth/auth";
 import { getRebuttalBySubmission } from "@/src/features/rebuttals/queries";
 import { listReviewsForSubmission } from "@/src/features/reviews/queries";
 import { RebuttalWorkspace } from "@/src/features/rebuttals/components/RebuttalWorkspace.client";
-import { redirect } from "next/navigation";
 
 export default async function RebuttalPage({
   params,
 }: {
   params: Promise<{ submissionId: string }>;
 }) {
-  const wallet = await getSession();
-  if (!wallet) redirect("/login");
+  const wallet = (await getSession())!;
 
   const { submissionId } = await params;
 

@@ -17,7 +17,8 @@ The codebase is a **functional full-stack application**. The researcher and edit
 - ✅ **Paper registration** — Client-side SHA-256 hashing → IPFS upload (web3.storage) → Lit encryption → DB storage → Hedera HCS anchoring
 - ✅ **Authorship contracts** — Creation + wallet signing (verified via viem `verifyMessage`) → HCS anchoring per signature. Modification → signature invalidation.
 - ✅ **Paper submission** — `POST /api/papers/[id]/submit` → `submissions` row → HCS anchor → status `submitted`
-- ✅ **Editor dashboard** — DB-backed submission pipeline (incoming → criteria published → reviewers assigned → under review → rebuttal → decision)
+- ✅ **Editor dashboard** — DB-backed submission pipeline (incoming → criteria published → reviewers assigned → under review → rebuttal → decision). Five pages: dashboard (stats + carousel), incoming papers, under review, accepted papers, journal management. All use three-column layout (paper list → PDF viewer → contextual sidebar panels). Sidebar panels: criteria builder, reviewer assignment, review status, review comments, final decision, desk reject, rebuttal resolution, add-to-issue.
+- ✅ **Journal management** — Editor can update journal aims/scope and submission criteria, create/delete issues, assign papers to issues, and manage a reviewer pool (add/remove reviewers)
 - ✅ **Review criteria publishing** — `POST /api/submissions/[id]/criteria` → canonical JSON hash → HCS anchor → immutable criteria
 - ✅ **Reviewer assignment** — `POST /api/submissions/[id]/assign-reviewer` → `reviewAssignments` row with deadline tracking
 - ✅ **Review submission** — `POST /api/reviews/[id]` → per-criterion evaluations → hash → HCS anchor → reputation token minting
@@ -36,11 +37,9 @@ The codebase is a **functional full-stack application**. The researcher and edit
 - ✅ **Author review response** — `POST /api/submissions/[id]/author-response` → researcher accepts reviews or requests rebuttal → HCS anchored
 - ✅ **Review-response page** — Researcher views anonymized reviews, rates each (5-protocol), and accepts or requests rebuttal in a single flow
 - ✅ **Backend contract validation** — `POST /api/papers/[id]/submit` validates authorship contract is fully signed before submission
-- ✅ **Reviewer dashboard** — New layout with performance metrics, researchers insights, profile card, real DB-backed data + API integration
-- ✅ **Reviewer invites page** — 3-column layout: left (paper info + abstract preview with pagination), center (PDF viewer), right (journal name, editor, deadline, Accept/Reject buttons)
 
 **What still uses mock data:**
-- None — All main features now have DB-backed data integration
+- Reviewer dashboard UI (`(reviewer)/`) — API routes exist but dashboard components not yet wired
 
 **What is not yet implemented:**
 - Lit Protocol decryption (encrypt works; decrypt not wired into UI)
@@ -190,11 +189,9 @@ Each role group has its own layout using `RoleShell` from `src/shared/components
 - ✅ `/verify` page (public PDF hash verification)
 - ✅ Review transparency (anonymized reviews public after decision)
 - ✅ Anonymous reviewer ratings (no author reference stored)
-- ✅ Reviewer dashboard: new layout (performance metrics, profile card, researchers insights) with DB-backed data integration
-- ✅ Reviewer invites page: 3-column layout (paper info + abstract preview, PDF viewer, invite info with Accept/Reject)
 
 ### Still To Do
-1. **Researchers insights population** — `GET /api/reviews/[id]/rate` returns author ratings; need aggregation logic to populate insights feed on reviewer dashboard
+1. **Reviewer dashboard: wire to real data** — Dashboard components exist but still use mock data. API routes are complete.
 2. **Wire Lit decrypt into explorer** — Researchers reading their own private papers.
 3. **Reviewer search by reputation** — Editor searches reviewers filtered by score, field, timeliness.
 4. **Hedera mirror node lookups** — Verify on-chain data from mirror node.
@@ -322,8 +319,8 @@ src/
 ├── features/
 │   ├── auth/                      # Login flow components
 │   ├── researcher/                # Components, hooks, reducers, config, constants, mappers, queries, types, nav
-│   ├── editor/                    # Components, hooks, queries, mappers, types (DB-backed)
-│   ├── reviewer/                  # Components, hooks, reducers, real DB-backed data
+│   ├── editor/                    # Components, hooks, queries, actions, mappers, types (fully DB-backed, three-column layouts, sidebar panels)
+│   ├── reviewer/                  # Components, hooks, reducers (mock data still)
 │   ├── contracts/                 # DB queries + actions
 │   ├── papers/                    # DB queries + actions
 │   ├── users/                     # DB queries
@@ -459,55 +456,3 @@ NEXT_PUBLIC_LIT_NETWORK
 ### Timeline
 - **Deadline computation:** `review_assignments.deadline` = `assigned_at + review_deadline_days` from submission config.
 - **Overdue check:** Cron job at `/api/cron/deadlines`. Overdue + not submitted = mint `review_late` HTS token.
-
-## Reviewer Invites Page (`/reviewer/invites`)
-
-### 3-Column Layout
-
-The invite page displays pending assignments in a card-based 3-column layout:
-- **Left (3 cols):** Paper info with title, authors (from authorship contracts), abstract preview (paginated), and prev/next buttons
-- **Center (6 cols):** PDF viewer (react-pdf v10, powered by pdfjs-dist v5)
-- **Right (3 cols):** Invite metadata (journal name, editor wallet, days-to-deadline) + Accept/Reject buttons
-
-### Components
-
-**`invite-card.client.tsx`** - Single invite card component
-- Props: `review`, `paperAbstract`, `authors`, `pdfUrl`, `editorName`, `onAccept`, `onReject`, `isLoading`
-- Abstract pagination: breaks into ~400-char chunks, navigate with Prev/Next buttons
-- Styling: Preserves dark color scheme (#1a1816 bg, #d4ccc0 text, #c9a44a gold accents, #8fbc8f green Accept button)
-
-**`invite-card-list.client.tsx`** - List wrapper with state management
-- Accepts array of `AssignedReviewExtended` items
-- Manages loading state across all cards + filters out accepted/rejected items
-- Shows empty state if no pending invites
-
-### Data Flow
-
-1. **Server side** (`invites/page.tsx`):
-   - `listAssignedReviews(wallet)` queries DB with full paper + contributors + versions + journal
-   - Maps to base `AssignedReview` + extended version `AssignedReviewExtended`
-
-2. **Mapper** (`mapDbToAssignedReviewExtended`):
-   - Extracts authors from authorship contracts (via contributors)
-   - Generates PDF URL from latest paperVersion's `fileStorageKey`
-   - Pulls journal editor wallet as editor name
-   - Includes paper abstract + paper ID + submission ID
-
-3. **Client side** (`IncomingInvitesClient` + `InviteCardList`):
-   - Renders list of cards (filters by "Pending" status)
-   - On accept/reject: POSTs to `POST /api/submissions/[submissionId]/accept-assignment` with `{ action: "accept" | "decline" }`
-   - API response triggers auto-transition to `under_review` if 2+ reviewers accepted
-   - Card is removed from DOM on success
-
-### Key Data Additions
-
-**`AssignedReviewExtended` type:**
-- Extends base `AssignedReview` with: `abstract`, `authors` (array), `pdfUrl`, `editorName`
-
-**`reviewAssignments` query enhancement:**
-- Now fetches `with: { paper: { with: { versions: true, contracts: { with: { contributors: true } } } } }`
-- Enables populating all card fields from single query
-
-**`mapDbToAssignedReviewExtended` mapper:**
-- New function dedicated to extended data extraction
-- Safely handles missing authors or PDF versions (fallbacks to undefined)
