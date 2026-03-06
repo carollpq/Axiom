@@ -1,12 +1,13 @@
+import { cache } from "react";
 import { db } from "@/src/shared/lib/db";
 import { journals, submissions, reputationScores } from "@/src/shared/lib/db/schema";
 import { eq } from "drizzle-orm";
 
-export async function listJournals() {
+export const listJournals = cache(async () => {
   return db
     .select({ id: journals.id, name: journals.name, reputationScore: journals.reputationScore })
     .from(journals);
-}
+});
 
 export async function getJournalByEditorWallet(editorWallet: string) {
   return db.query.journals.findFirst({

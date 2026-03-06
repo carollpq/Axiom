@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createAuth } from "thirdweb/auth";
 import { privateKeyToAccount } from "thirdweb/wallets";
 import { client } from "@/src/shared/lib/thirdweb";
@@ -15,7 +16,7 @@ export const auth = createAuth({
 });
 
 // Reads JWT cookie → verifies → returns lowercase wallet address, or null
-export async function getSession(): Promise<string | null> {
+export const getSession = cache(async (): Promise<string | null> => {
   const cookieStore = await cookies();
   const jwt = cookieStore.get(AUTH_COOKIE)?.value;
   if (!jwt) return null;
@@ -28,5 +29,5 @@ export async function getSession(): Promise<string | null> {
   } catch {
     return null;
   }
-}
+});
 
