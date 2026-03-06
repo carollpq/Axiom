@@ -27,7 +27,6 @@
     "@tailwindcss/postcss": "^4.1.18",
     "better-sqlite3": "^12.6.2",
     "drizzle-orm": "^0.45.1",
-    "drizzle-zod": "^0.8.3",
     "lucide-react": "^0.575.0",
     "next": "^15.5.12",
     "react": "19.1.1",
@@ -37,11 +36,11 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.1.6",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
     "@types/react": "19.1.10",
     "@types/react-dom": "19.1.7",
-    "autoprefixer": "^10.0.1",
     "dotenv": "^17.3.1",
     "drizzle-kit": "^0.31.9",
     "eslint": "^4.1.1",
