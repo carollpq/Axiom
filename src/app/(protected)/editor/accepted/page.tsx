@@ -10,10 +10,8 @@ import { mapDbToPaperCardData, mapDbToReviewerWithStatus, buildNameByWallet, map
 import type { ReviewerWithStatus } from "@/src/features/editor/types";
 
 export default async function AcceptedPapersPage() {
-  const sessionWallet = await getSession();
-  const journal = sessionWallet
-    ? await getJournalByEditorWallet(sessionWallet)
-    : null;
+  const wallet = (await getSession())!;
+  const journal = await getJournalByEditorWallet(wallet);
 
   if (!journal) {
     return (

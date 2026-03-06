@@ -16,10 +16,8 @@ const DEFAULT_SUBMISSION_CRITERIA =
   "Submissions must include reproducible methodology, accessible datasets, appropriate statistical analysis, and evidence-supported claims. All papers undergo double-blind peer review against pre-registered criteria published on-chain before review begins.";
 
 export default async function JournalManagementPage() {
-  const sessionWallet = await getSession();
-  const journal = sessionWallet
-    ? await getJournalByEditorWallet(sessionWallet)
-    : null;
+  const wallet = (await getSession())!;
+  const journal = await getJournalByEditorWallet(wallet);
 
   if (!journal) {
     return (
