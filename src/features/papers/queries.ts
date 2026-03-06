@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { db } from "@/src/shared/lib/db";
 import { papers, users, authorshipContracts, contractContributors } from "@/src/shared/lib/db/schema";
 import { eq, inArray } from "drizzle-orm";
@@ -8,7 +9,7 @@ export type DbPaperWithRelations = Awaited<ReturnType<typeof listUserPapers>>[nu
 /** Drizzle return type for papers with versions + contracts + owner. */
 export type DbPaperWithOwner = NonNullable<Awaited<ReturnType<typeof getPaperById>>>;
 
-export async function listUserPapers(walletAddress: string) {
+export const listUserPapers = cache(async (walletAddress: string) => {
   const wallet = walletAddress.toLowerCase();
 
   // Run both lookups in parallel — they're independent
@@ -48,7 +49,7 @@ export async function listUserPapers(walletAddress: string) {
     },
     orderBy: (papers, { desc }) => [desc(papers.updatedAt)],
   });
-}
+});
 
 export async function getPaperById(id: string) {
   return (

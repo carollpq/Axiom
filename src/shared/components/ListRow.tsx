@@ -16,7 +16,7 @@ export function ListRow({
 
   return (
     <div
-      className={`flex items-center justify-between px-3 py-2.5 rounded ${className}`}
+      className={`flex items-center justify-between px-3 py-2.5 rounded min-w-0 ${className}`}
       style={{
         background: "rgba(45,42,38,0.5)",
         border: `1px solid ${borderColor}`,

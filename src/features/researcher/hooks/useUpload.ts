@@ -4,9 +4,7 @@ import { useReducer, useCallback, useRef } from "react";
 import { useCurrentUser } from "@/src/shared/hooks/useCurrentUser";
 import { fetchApi } from "@/src/shared/lib/api";
 import { hashFile } from "@/src/shared/lib/hashing";
-import { isLitConfigured, getLitClient } from "@/src/shared/lib/lit/client";
-import { buildWalletListConditions } from "@/src/shared/lib/lit/access-control";
-import { encryptFileWithLit } from "@/src/shared/lib/lit/encrypt";
+import { isLitConfigured } from "@/src/shared/lib/lit/config";
 import { uploadToIPFS } from "@/src/shared/lib/upload";
 import type { ApiPaperVersion } from "@/src/shared/types/api";
 import {
@@ -31,6 +29,12 @@ async function encryptFileIfConfigured(
   }
 
   try {
+    const [{ getLitClient }, { buildWalletListConditions }, { encryptFileWithLit }] =
+      await Promise.all([
+        import("@/src/shared/lib/lit/client"),
+        import("@/src/shared/lib/lit/access-control"),
+        import("@/src/shared/lib/lit/encrypt"),
+      ]);
     await getLitClient();
     const conditions = buildWalletListConditions([walletAddress]);
     const encrypted = await encryptFileWithLit(file, conditions);

@@ -1,11 +1,4 @@
-function PulseBlock({ className }: { className?: string }) {
-  return (
-    <div
-      className={`animate-pulse rounded-[6px] ${className ?? ""}`}
-      style={{ background: "rgba(45,42,38,0.5)" }}
-    />
-  );
-}
+import { PulseBlock } from "@/src/shared/components/PulseBlock";
 
 export default function ManagementLoading() {
   return (

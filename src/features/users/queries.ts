@@ -1,9 +1,10 @@
+import { cache } from "react";
 import { db } from "@/src/shared/lib/db";
 import { users } from "@/src/shared/lib/db/schema";
 import { eq, or, ilike } from "drizzle-orm";
 import type { UserSearchResult } from "@/src/shared/types/api";
 
-export async function getUserByWallet(walletAddress: string) {
+export const getUserByWallet = cache(async (walletAddress: string) => {
   return (
     (
       await db
@@ -13,7 +14,7 @@ export async function getUserByWallet(walletAddress: string) {
         .limit(1)
     )[0] ?? null
   );
-}
+});
 
 export async function getUserRoles(walletAddress: string): Promise<string[]> {
   const result = await db

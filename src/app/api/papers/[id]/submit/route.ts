@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPaperById } from "@/src/features/papers/queries";
+import { getContractById } from "@/src/features/contracts/queries";
 import { createSubmission, updatePaper, updateSubmissionHedera } from "@/src/features/papers/actions";
 import { db } from "@/src/shared/lib/db";
 import { paperVersions, users } from "@/src/shared/lib/db/schema";
@@ -17,7 +18,11 @@ export async function POST(
 
   const { id } = await params;
   const body = await req.json();
-  const { journalId } = body as { journalId?: string };
+  const { journalId, contractId, versionId } = body as {
+    journalId?: string;
+    contractId?: string;
+    versionId?: string;
+  };
 
   if (!journalId) {
     return NextResponse.json({ error: "journalId is required" }, { status: 400 });
@@ -40,9 +45,19 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Check if authorship contract exists and is fully signed
-  const contract = paper.contracts?.[0];
-  if (contract && contract.status !== "fully_signed") {
+  // Validate authorship contract: look up by explicit contractId, or fall back to paper relation
+  const contract = contractId
+    ? await getContractById(contractId)
+    : paper.contracts?.[0] ?? null;
+
+  if (!contract) {
+    return NextResponse.json(
+      { error: "No authorship contract found. Please create and sign one first." },
+      { status: 400 },
+    );
+  }
+
+  if (contract.status !== "fully_signed") {
     const unsigned = contract.contributors?.filter(c => c.status !== "signed") ?? [];
     return NextResponse.json({
       error: "All co-authors must sign the authorship contract before submission",
@@ -60,23 +75,27 @@ export async function POST(
     );
   }
 
-  // Find the latest version
-  const latestVersion = await db
-    .select()
-    .from(paperVersions)
-    .where(eq(paperVersions.paperId, id))
-    .orderBy(desc(paperVersions.versionNumber))
-    .limit(1)
-    .then(rows => rows[0] ?? null);
+  // Use explicit versionId from body, or fall back to latest version
+  let resolvedVersionId = versionId;
+  if (!resolvedVersionId) {
+    const latestVersion = await db
+      .select()
+      .from(paperVersions)
+      .where(eq(paperVersions.paperId, id))
+      .orderBy(desc(paperVersions.versionNumber))
+      .limit(1)
+      .then(rows => rows[0] ?? null);
 
-  if (!latestVersion) {
-    return NextResponse.json({ error: "No paper version found" }, { status: 400 });
+    if (!latestVersion) {
+      return NextResponse.json({ error: "No paper version found" }, { status: 400 });
+    }
+    resolvedVersionId = latestVersion.id;
   }
 
   const submission = await createSubmission({
     paperId: id,
     journalId,
-    versionId: latestVersion.id,
+    versionId: resolvedVersionId,
   });
 
   if (!submission) {
@@ -89,7 +108,7 @@ export async function POST(
       type: "submitted",
       paperId: id,
       journalId,
-      versionId: latestVersion.id,
+      versionId: resolvedVersionId,
       submissionId: submission.id,
       submittedAt: new Date().toISOString(),
     },

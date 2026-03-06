@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { ZodError } from "zod";
 import { getSession } from "@/src/shared/lib/auth/auth";
 import { db } from "@/src/shared/lib/db";
-import { submissions, reviews, rebuttals } from "@/src/shared/lib/db/schema";
+import { submissions, reviews, rebuttals, journals } from "@/src/shared/lib/db/schema";
 import type { NotificationTypeDb, ReputationEventTypeDb } from "@/src/shared/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { isHederaConfigured } from "@/src/shared/lib/hedera/client";
@@ -34,6 +34,29 @@ export async function requireSession(): Promise<string | NextResponse> {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   return wallet;
+}
+
+/**
+ * Journal editor guard — verifies the journal exists and the session wallet
+ * matches the editor. Returns the journal row or a 404/403 response.
+ */
+export async function requireJournalEditor(
+  journalId: string,
+  wallet: string,
+) {
+  const journal = await db.query.journals.findFirst({
+    where: eq(journals.id, journalId),
+  });
+
+  if (!journal) {
+    return NextResponse.json({ error: "Journal not found" }, { status: 404 });
+  }
+
+  if (journal.editorWallet.toLowerCase() !== wallet.toLowerCase()) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  return journal;
 }
 
 /**

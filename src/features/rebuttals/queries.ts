@@ -1,8 +1,9 @@
+import { cache } from "react";
 import { db } from "@/src/shared/lib/db";
 import { rebuttals } from "@/src/shared/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 
-export async function getRebuttalBySubmission(submissionId: string) {
+export const getRebuttalBySubmission = cache(async (submissionId: string) => {
   return db.query.rebuttals.findFirst({
     where: eq(rebuttals.submissionId, submissionId),
     with: {
@@ -12,7 +13,7 @@ export async function getRebuttalBySubmission(submissionId: string) {
     },
     orderBy: (r, { desc }) => [desc(r.createdAt)],
   });
-}
+});
 
 export async function getRebuttalById(rebuttalId: string) {
   return db.query.rebuttals.findFirst({

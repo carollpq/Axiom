@@ -7,7 +7,7 @@ import "react-pdf/dist/Page/TextLayer.css";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-interface PdfViewerProps {
+export interface PdfViewerProps {
   fileUrl?: string;
   title?: string;
 }
@@ -183,3 +183,5 @@ function PdfErrorState() {
     </div>
   );
 }
+
+export default PdfViewer;

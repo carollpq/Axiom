@@ -1,22 +1,40 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { ThreeColumnLayout } from "@/src/shared/components/ThreeColumnLayout";
-import { PdfViewer } from "@/src/shared/components/PdfViewer";
+import { DynamicPdfViewer as PdfViewer } from "@/src/shared/components/DynamicPdfViewer";
 import { PaperList } from "./PaperList.client";
-import { AssignReviewersPanel } from "./sidebar/AssignReviewersPanel";
-import { DeskRejectPanel } from "./sidebar/DeskRejectPanel";
-import { CriteriaBuilder } from "./CriteriaBuilder";
 import { useIncomingPapers } from "@/src/features/editor/hooks/useIncomingPapers";
+import { useCollapseSidebar } from "@/src/shared/hooks/useCollapseSidebar";
 import { useDecryptPaper } from "@/src/shared/hooks/useDecryptPaper";
+import { SelectionPlaceholder } from "@/src/shared/components/SelectionPlaceholder";
+import { ConfirmDialog } from "@/src/shared/components/ConfirmDialog";
+import { useToast } from "@/src/shared/components/Toast";
 import type { PaperCardData, PoolReviewer } from "@/src/features/editor/types";
+
+const CriteriaBuilder = dynamic(
+  () => import("./CriteriaBuilder").then((m) => ({ default: m.CriteriaBuilder })),
+  { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading criteria builder...</div> }
+);
+const AssignReviewersPanel = dynamic(
+  () => import("./sidebar/AssignReviewersPanel").then((m) => ({ default: m.AssignReviewersPanel })),
+  { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading reviewer panel...</div> }
+);
+const DeskRejectPanel = dynamic(
+  () => import("./sidebar/DeskRejectPanel").then((m) => ({ default: m.DeskRejectPanel })),
+  { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading...</div> }
+);
 
 interface IncomingPapersProps {
   papers: PaperCardData[];
   reviewerPool: PoolReviewer[];
 }
 
-export function IncomingPapersClient({ papers, reviewerPool }: IncomingPapersProps) {
+export function IncomingPapersClient({ papers: initialPapers, reviewerPool }: IncomingPapersProps) {
+  useCollapseSidebar();
+  const { showToast } = useToast();
   const {
+    papers,
     selectedId,
     setSelectedId,
     selected,
@@ -30,53 +48,81 @@ export function IncomingPapersClient({ papers, reviewerPool }: IncomingPapersPro
     timelineDays,
     sendInvites,
     submitDeskReject,
-  } = useIncomingPapers(papers, reviewerPool);
+    confirmDeskReject,
+    isDeskRejecting,
+    showDeskRejectConfirm,
+    setShowDeskRejectConfirm,
+  } = useIncomingPapers(initialPapers, reviewerPool);
 
   const { fileUrl: decryptedUrl } = useDecryptPaper(
     selected?.hasLitData ? selected.paperId : null,
     true,
   );
 
+  async function handleConfirmDeskReject() {
+    const success = await confirmDeskReject();
+    if (success) {
+      showToast("Paper rejected successfully", "success");
+    } else {
+      showToast("Failed to reject paper. Please try again.", "error");
+    }
+  }
+
   return (
-    <ThreeColumnLayout
-      list={
-        <PaperList
-          papers={papers}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-          sectionTitle="Incoming Papers"
-        />
-      }
-      viewer={
-        <PdfViewer fileUrl={decryptedUrl ?? selected?.fileUrl} title={selected?.title} />
-      }
-      sidebar={
-        selectedId ? (
-          <>
-            <CriteriaBuilder submissionId={selectedId} />
-            <AssignReviewersPanel
-              reviewerPool={reviewerPool}
-              assignedIds={assignedIds}
-              search={reviewerSearch}
-              onSearchChange={setReviewerSearch}
-              onAssign={assignReviewer}
-              onRemove={removeReviewer}
-              timelineDays={timelineDays}
-              actionLabel="Send Invites"
-              onAction={sendInvites}
-            />
-            <DeskRejectPanel
-              comment={deskRejectComment}
-              onCommentChange={setDeskRejectComment}
-              onSend={submitDeskReject}
-            />
-          </>
-        ) : (
-          <div className="p-6 text-center text-[#6a6050] font-serif text-sm">
-            Select a paper to view actions
-          </div>
-        )
-      }
-    />
+    <>
+      <ThreeColumnLayout
+        title="Incoming Papers"
+        subtitle="Review new submissions and set criteria"
+        countLabel={`${papers.length} ${papers.length === 1 ? "paper" : "papers"}`}
+        sidebarTitle="Actions"
+        list={
+          <PaperList
+            papers={papers}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+          />
+        }
+        viewer={
+          <PdfViewer fileUrl={decryptedUrl ?? selected?.fileUrl} title={selected?.title} />
+        }
+        sidebar={
+          selectedId ? (
+            <>
+              <CriteriaBuilder submissionId={selectedId} />
+              <AssignReviewersPanel
+                reviewerPool={reviewerPool}
+                assignedIds={assignedIds}
+                search={reviewerSearch}
+                onSearchChange={setReviewerSearch}
+                onAssign={assignReviewer}
+                onRemove={removeReviewer}
+                timelineDays={timelineDays}
+                actionLabel="Send Invites"
+                onAction={sendInvites}
+              />
+              <DeskRejectPanel
+                comment={deskRejectComment}
+                onCommentChange={setDeskRejectComment}
+                onSend={submitDeskReject}
+                isLoading={isDeskRejecting}
+              />
+            </>
+          ) : (
+            <SelectionPlaceholder message="Select a paper to view actions" />
+          )
+        }
+      />
+      <ConfirmDialog
+        isOpen={showDeskRejectConfirm}
+        onClose={() => setShowDeskRejectConfirm(false)}
+        onConfirm={handleConfirmDeskReject}
+        title="Desk Reject"
+        message="Reject this paper? This action cannot be undone."
+        confirmLabel="Reject"
+        confirmVariant="red"
+        isLoading={isDeskRejecting}
+        loadingLabel="Rejecting..."
+      />
+    </>
   );
 }

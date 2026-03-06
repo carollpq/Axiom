@@ -1,20 +1,27 @@
 "use client";
 
 import { useState, useCallback, useMemo, useRef } from "react";
+import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { Plus, X } from "lucide-react";
 import { hashFile } from "@/src/shared/lib/hashing";
 import { uploadToIPFS } from "@/src/shared/lib/upload";
 import { useUpload } from "@/src/features/researcher/hooks/useUpload";
 import { validateUpload } from "@/src/features/researcher/reducers/upload";
-import { RegisterPaperForm } from "./RegisterPaperForm";
 import { PaperRow } from "./PaperRow";
 import type { PaperWithVersions } from "./types";
+
+const RegisterPaperForm = dynamic(
+  () => import("./RegisterPaperForm"),
+  { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading form...</div> }
+);
 
 interface Props {
   papers: PaperWithVersions[];
 }
 
 export function PaperVersionControlClient({ papers }: Props) {
+  const router = useRouter();
   const [expandedPaper, setExpandedPaper] = useState<string | null>(null);
   const [uploading, setUploading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +40,8 @@ export function PaperVersionControlClient({ papers }: Props) {
     setLocalPapers((prev) => [newPaper, ...prev]);
     setShowRegisterForm(false);
     setShowUploadErrors(false);
-  }, []);
+    router.refresh();
+  }, [router]);
 
   const upload = useUpload(handlePaperRegistered);
 
@@ -79,6 +87,7 @@ export function PaperVersionControlClient({ papers }: Props) {
               : p,
           ),
         );
+        router.refresh();
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Upload failed",

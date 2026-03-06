@@ -3,6 +3,7 @@ import { getSession } from "@/src/shared/lib/auth/auth";
 import { getUserByWallet } from "@/src/features/users/queries";
 import { journalNavItems } from "@/src/features/editor/nav";
 import { buildUserProfile } from "@/src/shared/lib/format";
+import { ToastProvider } from "@/src/shared/components/Toast";
 
 export default async function JournalLayout({ children }: { children: React.ReactNode }) {
   const wallet = (await getSession())!;
@@ -11,7 +12,7 @@ export default async function JournalLayout({ children }: { children: React.Reac
 
   return (
     <RoleShell navItems={journalNavItems} user={profile}>
-      {children}
+      <ToastProvider>{children}</ToastProvider>
     </RoleShell>
   );
 }

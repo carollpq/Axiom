@@ -17,7 +17,8 @@ The codebase is a **functional full-stack application**. The researcher and edit
 - ✅ **Paper registration** — Client-side SHA-256 hashing → IPFS upload (web3.storage) → Lit encryption → DB storage → Hedera HCS anchoring
 - ✅ **Authorship contracts** — Creation + wallet signing (verified via viem `verifyMessage`) → HCS anchoring per signature. Modification → signature invalidation.
 - ✅ **Paper submission** — `POST /api/papers/[id]/submit` → `submissions` row → HCS anchor → status `submitted`
-- ✅ **Editor dashboard** — DB-backed submission pipeline (incoming → criteria published → reviewers assigned → under review → rebuttal → decision)
+- ✅ **Editor dashboard** — DB-backed submission pipeline (incoming → criteria published → reviewers assigned → under review → rebuttal → decision). Five pages: dashboard (stats + carousel), incoming papers, under review, accepted papers, journal management. All use three-column layout (paper list → PDF viewer → contextual sidebar panels). Sidebar panels: criteria builder, reviewer assignment, review status, review comments, final decision, desk reject, rebuttal resolution, add-to-issue.
+- ✅ **Journal management** — Editor can update journal aims/scope and submission criteria, create/delete issues, assign papers to issues, and manage a reviewer pool (add/remove reviewers)
 - ✅ **Review criteria publishing** — `POST /api/submissions/[id]/criteria` → canonical JSON hash → HCS anchor → immutable criteria
 - ✅ **Reviewer assignment** — `POST /api/submissions/[id]/assign-reviewer` → `reviewAssignments` row with deadline tracking
 - ✅ **Review submission** — `POST /api/reviews/[id]` → per-criterion evaluations → hash → HCS anchor → reputation token minting
@@ -318,7 +319,7 @@ src/
 ├── features/
 │   ├── auth/                      # Login flow components
 │   ├── researcher/                # Components, hooks, reducers, config, constants, mappers, queries, types, nav
-│   ├── editor/                    # Components, hooks, queries, mappers, types (DB-backed)
+│   ├── editor/                    # Components, hooks, queries, actions, mappers, types (fully DB-backed, three-column layouts, sidebar panels)
 │   ├── reviewer/                  # Components, hooks, reducers (mock data still)
 │   ├── contracts/                 # DB queries + actions
 │   ├── papers/                    # DB queries + actions

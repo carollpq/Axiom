@@ -28,10 +28,10 @@ export function ReviewStatusPanel({ reviewers }: ReviewStatusPanelProps) {
           const c = statusColors[r.status];
           return (
             <ListRow key={r.id}>
-              <span className="text-[12px] text-[#d4ccc0] font-serif">
+              <span className="text-[12px] text-[#d4ccc0] font-serif truncate min-w-0">
                 {r.name}
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <span
                   className="text-[10px] px-2 py-0.5 rounded-sm"
                   style={{

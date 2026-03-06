@@ -57,3 +57,5 @@ export function AuthorFeedbackSection({ onInvokeRebuttal, submitting }: Props) {
     </div>
   );
 }
+
+export default AuthorFeedbackSection;

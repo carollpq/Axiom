@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useActiveAccount, ConnectButton } from "thirdweb/react";
+import { useActiveAccount, useActiveWallet, useDisconnect, ConnectButton } from "thirdweb/react";
 import {
   LayoutDashboard,
   FileSignature,
@@ -17,6 +17,7 @@ import {
   ClipboardList,
   Award,
   ChevronUp,
+  LogOut,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { client } from "@/src/shared/lib/thirdweb";
@@ -104,6 +105,8 @@ const CONNECT_AUTH = { isLoggedIn, getLoginPayload, doLogin, doLogout } as const
 function WalletSection({ user, collapsed }: { user: UserProfile; collapsed: boolean }) {
   const router = useRouter();
   const account = useActiveAccount();
+  const wallet = useActiveWallet();
+  const { disconnect } = useDisconnect();
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -219,25 +222,26 @@ function WalletSection({ user, collapsed }: { user: UserProfile; collapsed: bool
             className="px-3 pt-1.5 pb-2"
             style={{ borderTop: "1px solid rgba(120,110,95,0.15)" }}
           >
-            <ConnectButton
-              client={client}
-              auth={CONNECT_AUTH}
-              theme="dark"
-              connectButton={{
-                label: "Disconnect",
-                style: {
-                  backgroundColor: "transparent",
-                  color: "#d4645a",
-                  border: "1px solid rgba(212,100,90,0.3)",
-                  borderRadius: "6px",
-                  fontSize: "11px",
-                  fontFamily: "Georgia, serif",
-                  padding: "4px 12px",
-                  height: "28px",
-                  width: "100%",
-                },
+            <button
+              onClick={async () => {
+                if (wallet) disconnect(wallet);
+                await doLogout();
+                window.location.href = "/login";
               }}
-            />
+              className="flex w-full items-center justify-center gap-1.5 rounded-md cursor-pointer"
+              style={{
+                backgroundColor: "transparent",
+                color: "#d4645a",
+                border: "1px solid rgba(212,100,90,0.3)",
+                fontSize: "11px",
+                fontFamily: "Georgia, serif",
+                padding: "4px 12px",
+                height: "28px",
+              }}
+            >
+              <LogOut size={12} />
+              Log Out
+            </button>
           </div>
         </div>
       )}
@@ -251,7 +255,7 @@ export function Sidebar({ navItems, user }: { navItems: NavItemData[]; user: Use
 
   return (
     <aside
-      className="fixed left-0 top-0 z-[90] flex h-screen flex-col border-r"
+      className="fixed left-0 top-0 z-[90] flex h-screen flex-col overflow-x-hidden border-r"
       style={{
         width: collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED,
         background: "rgba(25,23,20,0.95)",
@@ -269,7 +273,7 @@ export function Sidebar({ navItems, user }: { navItems: NavItemData[]; user: Use
         </span>
       </div>
 
-      <nav className="mt-4 flex flex-1 flex-col gap-0.5 overflow-y-auto">
+      <nav className="mt-4 flex flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-hidden">
         {navItems.map((item) => (
           <NavItem
             key={item.href}

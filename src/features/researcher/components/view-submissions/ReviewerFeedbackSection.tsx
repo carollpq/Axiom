@@ -162,3 +162,5 @@ export function ReviewerFeedbackSection({ reviews, onRate }: Props) {
     </div>
   );
 }
+
+export default ReviewerFeedbackSection;

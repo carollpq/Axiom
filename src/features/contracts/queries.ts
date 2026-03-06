@@ -1,8 +1,9 @@
+import { cache } from "react";
 import { db } from "@/src/shared/lib/db";
 import { authorshipContracts, contractContributors, users } from "@/src/shared/lib/db/schema";
 import { and, eq, gt, inArray } from "drizzle-orm";
 
-export async function listUserContracts(walletAddress: string) {
+export const listUserContracts = cache(async (walletAddress: string) => {
   const user = (
     await db
       .select()
@@ -18,7 +19,7 @@ export async function listUserContracts(walletAddress: string) {
     with: { contributors: true },
     orderBy: (c, { desc }) => [desc(c.updatedAt)],
   });
-}
+});
 
 export async function getContributorByInviteToken(token: string) {
   const now = new Date().toISOString();
@@ -48,7 +49,7 @@ export async function getContributorByInviteToken(token: string) {
   return { contributor, contract };
 }
 
-export async function listContractsToSign(walletAddress: string) {
+export const listContractsToSign = cache(async (walletAddress: string) => {
   const pendingIds = db
     .selectDistinct({ id: contractContributors.contractId })
     .from(contractContributors)
@@ -63,7 +64,7 @@ export async function listContractsToSign(walletAddress: string) {
     where: inArray(authorshipContracts.id, pendingIds),
     with: { contributors: true, creator: true },
   });
-}
+});
 
 export async function getContractById(id: string) {
   return (

@@ -1,8 +1,8 @@
-import type { JournalSubmission, SubmissionStage, PoolReviewer, PaperCardData, ReviewerWithStatus } from "@/src/features/editor/types";
-import type { DbJournalSubmission, DbReviewer, DbReputationScore } from "../queries";
+import type { JournalSubmission, SubmissionStage, PoolReviewer, PaperCardData, ReviewerWithStatus, EditorProfile, JournalIssue } from "@/src/features/editor/types";
+import type { DbJournalSubmission, DbReviewer, DbReputationScore, DbJournalIssue } from "../queries";
 import { formatIsoDate, truncateHash, displayNameOrWallet, toFivePointScale } from "@/src/shared/lib/format";
 
-function deriveStage(
+export function deriveStage(
   status: string,
   criteriaHash: string | null,
   reviewerWallets: string[],
@@ -51,12 +51,17 @@ export function mapDbToPoolReviewer(u: DbReviewer, scoreRow?: DbReputationScore 
     score: scoreRow ? toFivePointScale(scoreRow.overallScore) : 0,
     orcid: String(u.orcidId ?? "—"),
     reviews: scoreRow?.reviewCount ?? 0,
+    wallet: String(u.walletAddress),
+    institution: String(u.institution ?? "—"),
   };
 }
 
 export function mapDbToPaperCardData(s: DbJournalSubmission): PaperCardData {
   const abstract = s.paper.abstract ?? "";
   const submittedDate = s.submittedAt ? formatIsoDate(String(s.submittedAt)) : "—";
+  const hasLitData = !!(s.paper.litDataToEncryptHash && s.paper.litAccessConditionsJson);
+  const latestVersion = s.paper.versions?.at(-1);
+  const hasFile = !!latestVersion?.fileStorageKey;
   return {
     id: s.id,
     paperId: s.paper.id,
@@ -64,7 +69,33 @@ export function mapDbToPaperCardData(s: DbJournalSubmission): PaperCardData {
     authors: s.paper.owner?.displayName ?? s.paper.owner?.walletAddress ?? "Unknown",
     abstractSnippet: abstract.length > 180 ? abstract.slice(0, 177) + "…" : abstract,
     submittedDate,
-    hasLitData: !!(s.paper.litDataToEncryptHash && s.paper.litAccessConditionsJson),
+    hasLitData,
+    fileUrl: !hasLitData && hasFile ? `/api/papers/${s.paper.id}/content?format=raw` : undefined,
+  };
+}
+
+export function buildReviewerPool(reviewers: DbReviewer[], scores: DbReputationScore[]): PoolReviewer[] {
+  const scoreByWallet = Object.fromEntries(scores.map(s => [s.userWallet, s]));
+  return reviewers.map(u => mapDbToPoolReviewer(u, scoreByWallet[u.walletAddress as string]));
+}
+
+export function buildNameByWallet(reviewers: DbReviewer[]): Record<string, string> {
+  return Object.fromEntries(
+    reviewers.map(u => [u.walletAddress as string, (u.displayName ?? u.walletAddress) as string]),
+  );
+}
+
+export function mapDbToEditorProfile(
+  user: { displayName: string | null; institution: string | null } | null,
+  journal: { name: string } | null,
+  getInitialsFn: (name: string) => string,
+): EditorProfile {
+  const name = user?.displayName ?? "Editor";
+  return {
+    name,
+    initials: getInitialsFn(name),
+    affiliation: user?.institution ?? "—",
+    journalName: journal?.name ?? "—",
   };
 }
 
@@ -88,4 +119,28 @@ export function mapDbToReviewerWithStatus(
     status: statusMap[assignment.status] ?? "pending",
     hasComment: assignment.status === "submitted",
   };
+}
+
+export function mapDbToJournalIssue(dbIssue: DbJournalIssue): JournalIssue {
+  const papers = (dbIssue.papers ?? []).map((ip) => ({
+    submissionId: ip.submissionId,
+    title: ip.submission?.paper?.title ?? "Untitled",
+  }));
+  return { id: dbIssue.id, label: dbIssue.label, paperCount: papers.length, papers };
+}
+
+export function filterPoolByJournal(
+  allReviewers: PoolReviewer[],
+  poolWalletSet: Set<string>,
+): { poolReviewers: PoolReviewer[]; nonPoolReviewers: PoolReviewer[] } {
+  const poolReviewers: PoolReviewer[] = [];
+  const nonPoolReviewers: PoolReviewer[] = [];
+  for (const r of allReviewers) {
+    if (poolWalletSet.has(r.wallet.toLowerCase())) {
+      poolReviewers.push(r);
+    } else {
+      nonPoolReviewers.push(r);
+    }
+  }
+  return { poolReviewers, nonPoolReviewers };
 }

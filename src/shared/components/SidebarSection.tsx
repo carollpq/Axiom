@@ -13,7 +13,7 @@ export function SidebarSection({
 }: SidebarSectionProps) {
   return (
     <div
-      className="p-4"
+      className="p-4 min-w-0"
       style={bordered ? { borderBottom: "1px solid rgba(120,110,95,0.1)" } : undefined}
     >
       <SectionLabel className="mb-3">{title}</SectionLabel>
