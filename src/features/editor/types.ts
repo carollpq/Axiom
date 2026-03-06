@@ -89,6 +89,7 @@ export interface JournalIssue {
   id: string;
   label: string;
   paperCount: number;
+  papers?: Array<{ submissionId: string; title: string }>;
 }
 
 export type RebuttalResponseInfo = Pick<RebuttalResponse, "reviewId" | "position" | "justification">;

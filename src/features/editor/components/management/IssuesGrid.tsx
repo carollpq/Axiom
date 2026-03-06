@@ -6,12 +6,26 @@ import { ModalOverlay } from "@/src/shared/components/ModalOverlay";
 
 interface IssuesGridProps {
   issues: JournalIssue[];
+  onCreateIssue?: (label: string) => Promise<void>;
 }
 
-export function IssuesGrid({ issues }: IssuesGridProps) {
+export function IssuesGrid({ issues, onCreateIssue }: IssuesGridProps) {
   const [selectedIssue, setSelectedIssue] = useState<JournalIssue | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newIssueLabel, setNewIssueLabel] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  const handleCreate = async () => {
+    if (!newIssueLabel.trim() || !onCreateIssue) return;
+    setCreating(true);
+    try {
+      await onCreateIssue(newIssueLabel.trim());
+    } finally {
+      setCreating(false);
+      setShowAddForm(false);
+      setNewIssueLabel("");
+    }
+  };
 
   return (
     <div className="mb-8">
@@ -42,7 +56,6 @@ export function IssuesGrid({ issues }: IssuesGridProps) {
           </div>
         ))}
 
-        {/* Add new issue card */}
         <div
           onClick={() => setShowAddForm(true)}
           className="rounded-[6px] p-5 flex items-center justify-center cursor-pointer transition-colors"
@@ -57,7 +70,6 @@ export function IssuesGrid({ issues }: IssuesGridProps) {
         </div>
       </div>
 
-      {/* Issue detail popup */}
       <ModalOverlay isOpen={!!selectedIssue} onClose={() => setSelectedIssue(null)} maxWidth="480px">
         {selectedIssue && (
           <>
@@ -73,14 +85,27 @@ export function IssuesGrid({ issues }: IssuesGridProps) {
             <p className="text-[13px] text-[#8a8070] mb-4">
               {selectedIssue.paperCount} papers in this issue
             </p>
-            <p className="text-[12px] text-[#6a6050] italic">
-              Paper listing will be available once issues are backed by the database.
-            </p>
+            {selectedIssue.papers && selectedIssue.papers.length > 0 ? (
+              <ul className="space-y-2">
+                {selectedIssue.papers.map((p) => (
+                  <li
+                    key={p.submissionId}
+                    className="text-[12px] text-[#d4ccc0] font-serif py-1.5 px-3 rounded"
+                    style={{ background: "rgba(30,28,24,0.5)" }}
+                  >
+                    {p.title}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-[12px] text-[#6a6050] italic">
+                No papers assigned yet.
+              </p>
+            )}
           </>
         )}
       </ModalOverlay>
 
-      {/* Add new issue form popup */}
       <ModalOverlay isOpen={showAddForm} onClose={() => setShowAddForm(false)} maxWidth="384px">
         <h3 className="font-serif text-[16px] text-[#e8e0d4] mb-4">New Issue</h3>
         <input
@@ -103,7 +128,8 @@ export function IssuesGrid({ issues }: IssuesGridProps) {
             Cancel
           </button>
           <button
-            onClick={() => { setShowAddForm(false); setNewIssueLabel(""); }}
+            onClick={handleCreate}
+            disabled={creating || !newIssueLabel.trim()}
             className="px-4 py-1.5 rounded text-[12px] font-serif cursor-pointer"
             style={{
               background: "linear-gradient(135deg, rgba(180,160,120,0.2), rgba(160,140,100,0.1))",
@@ -111,12 +137,9 @@ export function IssuesGrid({ issues }: IssuesGridProps) {
               color: "#d4c8a8",
             }}
           >
-            Create
+            {creating ? "Creating..." : "Create"}
           </button>
         </div>
-        <p className="text-[10px] text-[#4a4238] mt-2 italic">
-          Issue creation will persist once backed by the database.
-        </p>
       </ModalOverlay>
     </div>
   );

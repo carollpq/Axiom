@@ -6,15 +6,27 @@ import type { PoolReviewer } from "@/src/features/editor/types";
 interface ReviewerGridProps {
   reviewers: PoolReviewer[];
   allReviewers?: PoolReviewer[];
+  onAddReviewer?: (wallet: string) => Promise<void>;
 }
 
-export function ReviewerGrid({ reviewers, allReviewers }: ReviewerGridProps) {
+export function ReviewerGrid({ reviewers, allReviewers, onAddReviewer }: ReviewerGridProps) {
   const [showAddDropdown, setShowAddDropdown] = useState(false);
+  const [adding, setAdding] = useState(false);
 
-  // Reviewers not yet in the pool (for the "Add new reviewer" dropdown)
   const availableToAdd = (allReviewers ?? []).filter(
     r => !reviewers.some(existing => existing.id === r.id),
   );
+
+  const handleAdd = async (wallet: string) => {
+    if (!onAddReviewer) return;
+    setAdding(true);
+    try {
+      await onAddReviewer(wallet);
+    } finally {
+      setAdding(false);
+      setShowAddDropdown(false);
+    }
+  };
 
   return (
     <div className="mb-8">
@@ -34,7 +46,6 @@ export function ReviewerGrid({ reviewers, allReviewers }: ReviewerGridProps) {
               border: "1px solid rgba(120,110,95,0.2)",
             }}
           >
-            {/* Avatar */}
             <div
               className="rounded-full flex items-center justify-center font-serif text-sm mb-3"
               style={{
@@ -57,7 +68,6 @@ export function ReviewerGrid({ reviewers, allReviewers }: ReviewerGridProps) {
           </div>
         ))}
 
-        {/* Add new reviewer card */}
         <div
           className="rounded-[6px] p-5 flex flex-col items-center justify-center cursor-pointer transition-colors relative"
           style={{
@@ -67,7 +77,7 @@ export function ReviewerGrid({ reviewers, allReviewers }: ReviewerGridProps) {
           onClick={() => setShowAddDropdown(!showAddDropdown)}
         >
           <div className="text-[12px] text-[#6a6050] font-serif text-center">
-            Add new reviewer...
+            {adding ? "Adding..." : "Add new reviewer..."}
           </div>
 
           {showAddDropdown && availableToAdd.length > 0 && (
@@ -85,7 +95,7 @@ export function ReviewerGrid({ reviewers, allReviewers }: ReviewerGridProps) {
                   style={{ color: "#d4ccc0", borderBottom: "1px solid rgba(120,110,95,0.1)" }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    setShowAddDropdown(false);
+                    handleAdd(r.wallet);
                   }}
                 >
                   {r.name}

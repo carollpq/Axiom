@@ -1,5 +1,7 @@
 "use client";
 
+import { useCallback } from "react";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { ThreeColumnLayout } from "@/src/shared/components/ThreeColumnLayout";
 import { DynamicPdfViewer as PdfViewer } from "@/src/shared/components/DynamicPdfViewer";
@@ -27,14 +29,17 @@ interface AcceptedPapersProps {
   papers: PaperCardData[];
   reviewStatuses: Record<string, ReviewerWithStatus[]>;
   issues: JournalIssue[];
+  journalId: string;
 }
 
 export function AcceptedPapersClient({
   papers,
   reviewStatuses,
   issues,
+  journalId,
 }: AcceptedPapersProps) {
   useCollapseSidebar();
+  const router = useRouter();
   const {
     selectedId,
     setSelectedId,
@@ -48,6 +53,16 @@ export function AcceptedPapersClient({
     selected?.hasLitData ? selected.paperId : null,
     true,
   );
+
+  const handleAssignToIssue = useCallback(async (issueId: string) => {
+    if (!selectedId) return;
+    await fetch(`/api/journals/${journalId}/issues/${issueId}/papers`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ submissionId: selectedId }),
+    });
+    router.refresh();
+  }, [journalId, selectedId, router]);
 
   return (
     <ThreeColumnLayout
@@ -71,6 +86,7 @@ export function AcceptedPapersClient({
               issues={issues}
               selectedIssue={selectedIssue}
               onIssueChange={setSelectedIssue}
+              onAssign={handleAssignToIssue}
             />
           </>
         ) : (

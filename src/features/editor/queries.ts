@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { db } from "@/src/shared/lib/db";
-import { journals, submissions, reputationScores } from "@/src/shared/lib/db/schema";
+import { journals, submissions, reputationScores, journalIssues, journalReviewers } from "@/src/shared/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 export const listJournals = cache(async () => {
@@ -43,6 +43,28 @@ export const listReputationScores = cache(async () => {
   return db.select().from(reputationScores);
 });
 
+export const listJournalIssues = cache(async (journalId: string) => {
+  return db.query.journalIssues.findMany({
+    where: eq(journalIssues.journalId, journalId),
+    with: {
+      papers: {
+        with: {
+          submission: {
+            with: { paper: true },
+          },
+        },
+      },
+    },
+  });
+});
+
+export const listJournalReviewerWallets = cache(async (journalId: string) => {
+  return db.query.journalReviewers.findMany({
+    where: eq(journalReviewers.journalId, journalId),
+  });
+});
+
 export type DbJournalSubmission = Awaited<ReturnType<typeof listJournalSubmissions>>[number];
 export type DbReviewer = Awaited<ReturnType<typeof listReviewerPool>>[number];
 export type DbReputationScore = Awaited<ReturnType<typeof listReputationScores>>[number];
+export type DbJournalIssue = Awaited<ReturnType<typeof listJournalIssues>>[number];

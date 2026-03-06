@@ -1,5 +1,5 @@
-import type { JournalSubmission, SubmissionStage, PoolReviewer, PaperCardData, ReviewerWithStatus, EditorProfile } from "@/src/features/editor/types";
-import type { DbJournalSubmission, DbReviewer, DbReputationScore } from "../queries";
+import type { JournalSubmission, SubmissionStage, PoolReviewer, PaperCardData, ReviewerWithStatus, EditorProfile, JournalIssue } from "@/src/features/editor/types";
+import type { DbJournalSubmission, DbReviewer, DbReputationScore, DbJournalIssue } from "../queries";
 import { formatIsoDate, truncateHash, displayNameOrWallet, toFivePointScale } from "@/src/shared/lib/format";
 
 export function deriveStage(
@@ -115,4 +115,28 @@ export function mapDbToReviewerWithStatus(
     status: statusMap[assignment.status] ?? "pending",
     hasComment: assignment.status === "submitted",
   };
+}
+
+export function mapDbToJournalIssue(dbIssue: DbJournalIssue): JournalIssue {
+  const papers = (dbIssue.papers ?? []).map((ip) => ({
+    submissionId: ip.submissionId,
+    title: ip.submission?.paper?.title ?? "Untitled",
+  }));
+  return { id: dbIssue.id, label: dbIssue.label, paperCount: papers.length, papers };
+}
+
+export function filterPoolByJournal(
+  allReviewers: PoolReviewer[],
+  poolWalletSet: Set<string>,
+): { poolReviewers: PoolReviewer[]; nonPoolReviewers: PoolReviewer[] } {
+  const poolReviewers: PoolReviewer[] = [];
+  const nonPoolReviewers: PoolReviewer[] = [];
+  for (const r of allReviewers) {
+    if (poolWalletSet.has(r.wallet.toLowerCase())) {
+      poolReviewers.push(r);
+    } else {
+      nonPoolReviewers.push(r);
+    }
+  }
+  return { poolReviewers, nonPoolReviewers };
 }

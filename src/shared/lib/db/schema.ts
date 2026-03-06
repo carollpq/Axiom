@@ -216,10 +216,53 @@ export const journals = pgTable("journals", {
   name: text("name").notNull(),
   editorWallet: text("editor_wallet").notNull(),
   reputationScore: text("reputation_score").default("4.3"),
+  aimsAndScope: text("aims_and_scope"),
+  submissionCriteria: text("submission_criteria"),
   createdAt: text("created_at")
     .notNull()
     .default(sql`now()`),
   updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`now()`),
+});
+
+export const journalIssues = pgTable("journal_issues", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  journalId: text("journal_id")
+    .notNull()
+    .references(() => journals.id),
+  label: text("label").notNull(),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`now()`),
+});
+
+export const issuePapers = pgTable("issue_papers", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  issueId: text("issue_id")
+    .notNull()
+    .references(() => journalIssues.id),
+  submissionId: text("submission_id")
+    .notNull()
+    .references(() => submissions.id),
+  addedAt: text("added_at")
+    .notNull()
+    .default(sql`now()`),
+});
+
+export const journalReviewers = pgTable("journal_reviewers", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  journalId: text("journal_id")
+    .notNull()
+    .references(() => journals.id),
+  reviewerWallet: text("reviewer_wallet").notNull(),
+  addedAt: text("added_at")
     .notNull()
     .default(sql`now()`),
 });
@@ -479,6 +522,34 @@ export const contractContributorsRelations = relations(
 
 export const journalsRelations = relations(journals, ({ many }) => ({
   submissions: many(submissions),
+  issues: many(journalIssues),
+  reviewerPool: many(journalReviewers),
+}));
+
+export const journalIssuesRelations = relations(journalIssues, ({ one, many }) => ({
+  journal: one(journals, {
+    fields: [journalIssues.journalId],
+    references: [journals.id],
+  }),
+  papers: many(issuePapers),
+}));
+
+export const issuePapersRelations = relations(issuePapers, ({ one }) => ({
+  issue: one(journalIssues, {
+    fields: [issuePapers.issueId],
+    references: [journalIssues.id],
+  }),
+  submission: one(submissions, {
+    fields: [issuePapers.submissionId],
+    references: [submissions.id],
+  }),
+}));
+
+export const journalReviewersRelations = relations(journalReviewers, ({ one }) => ({
+  journal: one(journals, {
+    fields: [journalReviewers.journalId],
+    references: [journals.id],
+  }),
 }));
 
 export const submissionsRelations = relations(submissions, ({ one, many }) => ({

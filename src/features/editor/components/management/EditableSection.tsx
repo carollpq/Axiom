@@ -5,11 +5,25 @@ import { useState } from "react";
 interface EditableSectionProps {
   title: string;
   initialValue: string;
+  onSave?: (value: string) => Promise<void>;
 }
 
-export function EditableSection({ title, initialValue }: EditableSectionProps) {
+export function EditableSection({ title, initialValue, onSave }: EditableSectionProps) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(initialValue);
+  const [saving, setSaving] = useState(false);
+
+  const handleClick = async () => {
+    if (editing && onSave) {
+      setSaving(true);
+      try {
+        await onSave(value);
+      } finally {
+        setSaving(false);
+      }
+    }
+    setEditing(!editing);
+  };
 
   return (
     <div
@@ -34,7 +48,8 @@ export function EditableSection({ title, initialValue }: EditableSectionProps) {
       />
       <div className="flex justify-end mt-3">
         <button
-          onClick={() => setEditing(!editing)}
+          onClick={handleClick}
+          disabled={saving}
           className="px-5 py-2 rounded-[5px] text-[13px] font-serif cursor-pointer"
           style={{
             background: editing
@@ -44,7 +59,7 @@ export function EditableSection({ title, initialValue }: EditableSectionProps) {
             color: editing ? "#8fbc8f" : "#d4c8a8",
           }}
         >
-          {editing ? "Save" : "Edit"}
+          {saving ? "Saving..." : editing ? "Save" : "Edit"}
         </button>
       </div>
     </div>
