@@ -9,13 +9,13 @@ export const listJournals = cache(async () => {
     .from(journals);
 });
 
-export async function getJournalByEditorWallet(editorWallet: string) {
+export const getJournalByEditorWallet = cache(async (editorWallet: string) => {
   return db.query.journals.findFirst({
     where: eq(journals.editorWallet, editorWallet.toLowerCase()),
   });
-}
+});
 
-export async function listJournalSubmissions(journalId?: string) {
+export const listJournalSubmissions = cache(async (journalId?: string) => {
   return db.query.submissions.findMany({
     where: journalId ? eq(submissions.journalId, journalId) : undefined,
     with: {
@@ -32,16 +32,16 @@ export async function listJournalSubmissions(journalId?: string) {
     },
     orderBy: (s, { desc }) => [desc(s.submittedAt)],
   });
-}
+});
 
-export async function listReviewerPool() {
+export const listReviewerPool = cache(async () => {
   const reviewers = await db.query.users.findMany();
   return reviewers.filter((u) => (u.roles as string[]).includes("reviewer"));
-}
+});
 
-export async function listReputationScores() {
+export const listReputationScores = cache(async () => {
   return db.select().from(reputationScores);
-}
+});
 
 export type DbJournalSubmission = Awaited<ReturnType<typeof listJournalSubmissions>>[number];
 export type DbReviewer = Awaited<ReturnType<typeof listReviewerPool>>[number];
