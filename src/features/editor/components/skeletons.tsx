@@ -1,13 +1,6 @@
 // Loading skeleton components for editor dashboard.
 
-function PulseBlock({ className }: { className: string }) {
-  return (
-    <div
-      className={`animate-pulse rounded ${className}`}
-      style={{ background: "rgba(45,42,38,0.8)" }}
-    />
-  );
-}
+import { PulseBlock } from "@/src/shared/components/PulseBlock";
 
 /** 5 stat cards matching StatCard dimensions */
 export function StatsSkeleton() {

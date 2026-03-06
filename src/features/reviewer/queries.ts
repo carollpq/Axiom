@@ -1,8 +1,9 @@
+import { cache } from "react";
 import { db } from "@/src/shared/lib/db";
 import { reviewAssignments, reputationScores } from "@/src/shared/lib/db/schema";
 import { eq, and, or } from "drizzle-orm";
 
-export async function listAssignedReviews(reviewerWallet: string) {
+export const listAssignedReviews = cache(async (reviewerWallet: string) => {
   return db.query.reviewAssignments.findMany({
     where: and(
       eq(reviewAssignments.reviewerWallet, reviewerWallet.toLowerCase()),
@@ -28,10 +29,10 @@ export async function listAssignedReviews(reviewerWallet: string) {
     },
     orderBy: (a, { asc }) => [asc(a.deadline)],
   });
-}
+});
 
 /** Lightweight query for dashboard counts — no contracts/reviews/rebuttals. */
-export async function listCompletedReviews(reviewerWallet: string) {
+export const listCompletedReviews = cache(async (reviewerWallet: string) => {
   return db.query.reviewAssignments.findMany({
     where: and(
       eq(reviewAssignments.reviewerWallet, reviewerWallet.toLowerCase()),
@@ -47,10 +48,10 @@ export async function listCompletedReviews(reviewerWallet: string) {
     },
     orderBy: (a, { desc }) => [desc(a.submittedAt)],
   });
-}
+});
 
 /** Full query for completed page — includes contracts, reviews, rebuttals. */
-export async function listCompletedReviewsExtended(reviewerWallet: string) {
+export const listCompletedReviewsExtended = cache(async (reviewerWallet: string) => {
   return db.query.reviewAssignments.findMany({
     where: and(
       eq(reviewAssignments.reviewerWallet, reviewerWallet.toLowerCase()),
@@ -77,13 +78,13 @@ export async function listCompletedReviewsExtended(reviewerWallet: string) {
     },
     orderBy: (a, { desc }) => [desc(a.submittedAt)],
   });
-}
+});
 
-export async function getReviewerReputation(reviewerWallet: string) {
+export const getReviewerReputation = cache(async (reviewerWallet: string) => {
   return db.query.reputationScores.findFirst({
     where: eq(reputationScores.userWallet, reviewerWallet.toLowerCase()),
   });
-}
+});
 
 export type DbAssignedReview = Awaited<ReturnType<typeof listAssignedReviews>>[number];
 export type DbCompletedReview = Awaited<ReturnType<typeof listCompletedReviews>>[number];

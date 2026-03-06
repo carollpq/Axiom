@@ -9,8 +9,8 @@ import {
   mapDbToCompletedReview,
   mapDbToReputationScores,
   mapDbToReputationBreakdown,
-} from "@/src/features/reviewer/mappers/reviewer";
-import { ReviewerDashboardClient } from "@/src/features/reviewer/reviewer-dashboard/reviewer-dashboard.client";
+} from "@/src/features/reviewer/mappers/dashboard";
+import { ReviewerDashboardClient } from "@/src/features/reviewer/components/dashboard/reviewer-dashboard.client";
 import { getUserByWallet } from "@/src/features/users/queries";
 import { listRatingsForReviewer } from "@/src/features/reviews/queries";
 import type { ResearcherInsight } from "@/src/features/reviewer/types";

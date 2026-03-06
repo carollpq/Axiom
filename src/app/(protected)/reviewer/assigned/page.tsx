@@ -1,7 +1,7 @@
 import { getSession } from "@/src/shared/lib/auth/auth";
 import { listAssignedReviews } from "@/src/features/reviewer/queries";
-import { mapDbToAssignedReviewExtended } from "@/src/features/reviewer/mappers/reviewer";
-import { PapersUnderReviewClient } from "@/src/features/reviewer/reviewer-dashboard/reviewer-dashboard.client";
+import { mapDbToAssignedReviewExtended } from "@/src/features/reviewer/mappers/dashboard";
+import { PapersUnderReviewClient } from "@/src/features/reviewer/components/assigned/papers-under-review.client";
 
 export default async function PapersUnderReviewPage() {
   const wallet = (await getSession())!;

@@ -1,3 +1,4 @@
+import type { PaperListItemData } from "@/src/shared/components/PaperListItem";
 import type {
   AssignedReview,
   AssignedReviewExtended,
@@ -16,7 +17,7 @@ function daysUntil(deadline: string | null): number {
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
-function extractAuthors(
+export function extractAuthors(
   contracts?: Array<{ contributors?: Array<{ contributorName?: string | null }> }>,
 ): string[] {
   const authors: string[] = [];
@@ -28,7 +29,7 @@ function extractAuthors(
   return authors;
 }
 
-function buildPdfUrl(
+export function buildPdfUrl(
   paperId: string,
   versions?: Array<{ fileStorageKey?: string | null }>,
 ): string | undefined {
@@ -148,6 +149,16 @@ export function mapDbToCompletedReviewExtended(a: DbCompletedReviewExtended, ind
   };
 }
 
+/** Convert reviewer display items to shared PaperListItemData for the shared PaperList. */
+export function toReviewerPaperListItems(papers: Array<{ id: number; title: string; authors?: string[]; abstract?: string }>): PaperListItemData[] {
+  return papers.map((p) => ({
+    id: String(p.id),
+    title: p.title,
+    authors: p.authors?.join(", "),
+    abstractSnippet: p.abstract,
+  }));
+}
+
 export function mapDbToAssignedReviewExtended(a: DbAssignedReview, index: number): AssignedReviewExtended {
   const baseReview = mapDbToAssignedReview(a, index);
   const { paper } = a.submission;
@@ -163,4 +174,3 @@ export function mapDbToAssignedReviewExtended(a: DbAssignedReview, index: number
     editorName,
   };
 }
-
