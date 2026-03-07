@@ -1,5 +1,5 @@
-import type { SubmissionStage } from "@/src/features/editor/types";
-import { stageColors } from "@/src/features/editor/constants";
+import type { SubmissionStage } from '@/src/features/editor/types';
+import { stageColors } from '@/src/features/editor/constants';
 
 interface Props {
   title: string;
@@ -8,15 +8,20 @@ interface Props {
   stage: SubmissionStage;
 }
 
-export function SubmissionCard({ title, authors, submittedDate, stage }: Props) {
+export function SubmissionCard({
+  title,
+  authors,
+  submittedDate,
+  stage,
+}: Props) {
   const colors = stageColors[stage];
 
   return (
     <div
       className="min-w-[280px] max-w-[320px] flex-shrink-0 rounded-md p-5 flex flex-col gap-2"
       style={{
-        background: "rgba(45,42,38,0.6)",
-        border: "1px solid rgba(120,110,95,0.2)",
+        backgroundColor: 'rgba(100,90,75,0.2)',
+        border: '1px solid rgba(180,160,130,0.4)',
       }}
     >
       <h3 className="text-[14px] font-serif text-[#e8e0d4] leading-tight line-clamp-2">
