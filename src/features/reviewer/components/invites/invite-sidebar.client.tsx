@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/src/shared/components/ConfirmDialog';
 import type { AssignedReviewExtended } from '@/src/features/reviewer/types';
@@ -17,6 +18,7 @@ interface InviteSidebarProps {
 }
 
 export function InviteSidebar({ paper, onRemove }: InviteSidebarProps) {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showDeclineDialog, setShowDeclineDialog] = useState(false);
 
@@ -42,6 +44,7 @@ export function InviteSidebar({ paper, onRemove }: InviteSidebarProps) {
           throw new Error(error.error || `Failed to ${action} assignment`);
         }
         onRemove(paper.submissionId);
+        router.refresh();
         toast.success(
           action === 'accept' ? 'Invitation accepted' : 'Invitation declined',
         );

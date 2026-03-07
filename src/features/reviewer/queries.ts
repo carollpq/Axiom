@@ -38,6 +38,33 @@ export const listAssignedReviews = cache(async (reviewerWallet: string) => {
   });
 });
 
+/** Pending invites only — assignments not yet accepted/declined. */
+export const listPendingInvites = cache(async (reviewerWallet: string) => {
+  return db.query.reviewAssignments.findMany({
+    where: and(
+      eq(reviewAssignments.reviewerWallet, reviewerWallet.toLowerCase()),
+      eq(reviewAssignments.status, 'assigned'),
+    ),
+    with: {
+      submission: {
+        with: {
+          paper: {
+            with: {
+              versions: true,
+              contracts: {
+                with: { contributors: true },
+              },
+            },
+          },
+          journal: true,
+          reviewCriteria: true,
+        },
+      },
+    },
+    orderBy: (a, { asc }) => [asc(a.deadline)],
+  });
+});
+
 /** Lightweight query for dashboard counts — no contracts/reviews/rebuttals. */
 export const listCompletedReviews = cache(async (reviewerWallet: string) => {
   return db.query.reviewAssignments.findMany({
