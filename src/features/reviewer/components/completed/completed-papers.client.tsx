@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useState, useMemo } from "react";
-import { ThreeColumnLayout } from "@/src/shared/components/ThreeColumnLayout";
-import { SelectionPlaceholder } from "@/src/shared/components/SelectionPlaceholder";
-import { PaperList } from "@/src/shared/components/PaperList";
-import { DynamicPdfViewer } from "@/src/shared/components/DynamicPdfViewer";
-import { useCollapseSidebar } from "@/src/shared/hooks/useCollapseSidebar";
-import type { CompletedReviewExtended } from "@/src/features/reviewer/types";
-import { toReviewerPaperListItems } from "@/src/features/reviewer/mappers/dashboard";
-import { CompletedReviewSidebar } from "./completed-review-sidebar";
-import { CoursesCarousel } from "./courses-carousel";
+import { useState, useMemo } from 'react';
+import { ThreeColumnLayout } from '@/src/shared/components/ThreeColumnLayout';
+import { SelectionPlaceholder } from '@/src/shared/components/SelectionPlaceholder';
+import { PaperList } from '@/src/shared/components/PaperList';
+import { DynamicPdfViewer } from '@/src/shared/components/DynamicPdfViewer';
+import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
+import type { CompletedReviewExtended } from '@/src/features/reviewer/types';
+import { toReviewerPaperListItems } from '@/src/features/reviewer/mappers/dashboard';
+import { CompletedReviewSidebar } from './completed-review-sidebar';
+import { CoursesCarousel } from './courses-carousel';
 
 interface Props {
   initialCompleted: CompletedReviewExtended[];
@@ -21,19 +21,22 @@ export function CompletedPapersClient({ initialCompleted }: Props) {
     initialCompleted.length > 0 ? String(initialCompleted[0].id) : null,
   );
 
-  const paperItems = useMemo(() => toReviewerPaperListItems(initialCompleted), [initialCompleted]);
-  const selected = initialCompleted.find((p) => String(p.id) === selectedId) ?? null;
+  const paperItems = useMemo(
+    () => toReviewerPaperListItems(initialCompleted),
+    [initialCompleted],
+  );
+  const selected =
+    initialCompleted.find((p) => String(p.id) === selectedId) ?? null;
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#1a1816" }}>
-      {/* Courses Carousel */}
+    <>
       <div className="px-5 pt-4">
         <CoursesCarousel />
       </div>
 
       <ThreeColumnLayout
         title="Completed Reviews"
-        countLabel={`${initialCompleted.length} review${initialCompleted.length !== 1 ? "s" : ""}`}
+        countLabel={`${initialCompleted.length} review${initialCompleted.length !== 1 ? 's' : ''}`}
         list={
           <PaperList
             papers={paperItems}
@@ -46,7 +49,9 @@ export function CompletedPapersClient({ initialCompleted }: Props) {
           selected?.pdfUrl ? (
             <DynamicPdfViewer fileUrl={selected.pdfUrl} />
           ) : (
-            <SelectionPlaceholder message={selected ? "No PDF available" : "Select a paper to view"} />
+            <SelectionPlaceholder
+              message={selected ? 'No PDF available' : 'Select a paper to view'}
+            />
           )
         }
         sidebar={
@@ -60,6 +65,6 @@ export function CompletedPapersClient({ initialCompleted }: Props) {
         }
         sidebarTitle="Review Summary"
       />
-    </div>
+    </>
   );
 }

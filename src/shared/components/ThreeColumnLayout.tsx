@@ -10,6 +10,8 @@ interface ThreeColumnLayoutProps {
   sidebarWidth?: number;
 }
 
+const TOPBAR_HEIGHT = 48;
+
 export function ThreeColumnLayout({
   list,
   viewer,
@@ -22,12 +24,16 @@ export function ThreeColumnLayout({
   sidebarWidth = 420,
 }: ThreeColumnLayoutProps) {
   const hasHeader = !!title;
-  const contentHeight = hasHeader
-    ? 'calc(100vh - 56px - 56px)'
-    : 'calc(100vh - 56px)';
+  const headerHeight = hasHeader ? 56 : 0;
+  const columnsHeight = `calc(100vh - ${TOPBAR_HEIGHT + headerHeight}px)`;
 
   return (
-    <div>
+    <div
+      style={{
+        height: `calc(100vh - ${TOPBAR_HEIGHT}px)`,
+        overflow: 'hidden',
+      }}
+    >
       {hasHeader && (
         <div
           className="flex items-center justify-between px-5"
@@ -54,7 +60,7 @@ export function ThreeColumnLayout({
         </div>
       )}
 
-      <div className="flex" style={{ height: contentHeight }}>
+      <div className="flex" style={{ height: columnsHeight }}>
         {/* Left – paper list */}
         <div
           className="overflow-y-auto"

@@ -36,41 +36,36 @@ export function PapersUnderReviewClient({ initialRaw }: Props) {
   const selectedRaw = selectedIndex >= 0 ? initialRaw[selectedIndex] : null;
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#1a1816' }}>
-      <ThreeColumnLayout
-        title="Papers Under Review"
-        countLabel={`${mapped.length} paper${mapped.length !== 1 ? 's' : ''}`}
-        list={
-          <PaperList
-            papers={paperItems}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            emptyMessage="No papers under review."
+    <ThreeColumnLayout
+      title="Papers Under Review"
+      countLabel={`${mapped.length} paper${mapped.length !== 1 ? 's' : ''}`}
+      list={
+        <PaperList
+          papers={paperItems}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          emptyMessage="No papers under review."
+        />
+      }
+      viewer={
+        selected?.pdfUrl ? (
+          <DynamicPdfViewer fileUrl={selected.pdfUrl} />
+        ) : (
+          <SelectionPlaceholder
+            message={selected ? 'No PDF available' : 'Select a paper to view'}
           />
-        }
-        viewer={
-          selected?.pdfUrl ? (
-            <DynamicPdfViewer fileUrl={selected.pdfUrl} />
-          ) : (
-            <SelectionPlaceholder
-              message={selected ? 'No PDF available' : 'Select a paper to view'}
-            />
-          )
-        }
-        sidebar={
-          selected && selectedRaw ? (
-            <AssignedReviewSidebar
-              paper={selected}
-              rawAssignment={selectedRaw}
-            />
-          ) : (
-            <div className="p-4 text-[12px] text-[#6a6050]">
-              Select a paper to see details
-            </div>
-          )
-        }
-        sidebarTitle="Review Details"
-      />
-    </div>
+        )
+      }
+      sidebar={
+        selected && selectedRaw ? (
+          <AssignedReviewSidebar paper={selected} rawAssignment={selectedRaw} />
+        ) : (
+          <div className="p-4 text-[12px] text-[#6a6050]">
+            Select a paper to see details
+          </div>
+        )
+      }
+      sidebarTitle="Review Details"
+    />
   );
 }
