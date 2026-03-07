@@ -1,5 +1,5 @@
-import { InvitesSkeleton } from "@/src/features/reviewer/components/skeletons";
+import { ThreeColumnSkeleton } from '@/src/features/reviewer/components/skeletons';
 
 export default function InvitesLoading() {
-  return <InvitesSkeleton />;
+  return <ThreeColumnSkeleton />;
 }

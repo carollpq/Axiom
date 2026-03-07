@@ -17,8 +17,20 @@ import type {
 import {
   formatIsoDate,
   truncateHash,
+  truncateWallet,
   toFivePointScale,
 } from '@/src/shared/lib/format';
+
+/** Wallet address → display name lookup, built at the server page level. */
+export type EditorNameMap = Record<string, string>;
+
+function resolveEditorName(
+  wallet: string | undefined,
+  editorNames?: EditorNameMap,
+): string {
+  if (!wallet) return 'Editor';
+  return editorNames?.[wallet.toLowerCase()] ?? truncateWallet(wallet);
+}
 
 function daysUntil(deadline: string | null): number {
   if (!deadline) return 0;
@@ -141,12 +153,16 @@ export function mapDbToReputationBreakdown(
 export function mapDbToCompletedReviewExtended(
   a: DbCompletedReviewExtended,
   index: number,
+  editorNames?: EditorNameMap,
 ): CompletedReviewExtended {
   const base = mapDbToCompletedReview(a, index);
   const { paper } = a.submission;
   const authors = extractAuthors(paper.contracts);
   const pdfUrl = buildPdfUrl(paper.id, paper.versions);
-  const editorName = a.submission.journal?.editorWallet ?? 'Editor';
+  const editorName = resolveEditorName(
+    a.submission.journal?.editorWallet,
+    editorNames,
+  );
 
   // Find this reviewer's review from the assignment's reviews
   const myReview = a.reviews?.find(
@@ -218,12 +234,16 @@ export function toReviewerPaperListItems(
 export function mapDbToAssignedReviewExtended(
   a: DbAssignedReview,
   index: number,
+  editorNames?: EditorNameMap,
 ): AssignedReviewExtended {
   const baseReview = mapDbToAssignedReview(a, index);
   const { paper } = a.submission;
   const authors = extractAuthors(paper.contracts);
   const pdfUrl = buildPdfUrl(paper.id, paper.versions);
-  const editorName = a.submission.journal?.editorWallet ?? 'Editor';
+  const editorName = resolveEditorName(
+    a.submission.journal?.editorWallet,
+    editorNames,
+  );
 
   return {
     ...baseReview,

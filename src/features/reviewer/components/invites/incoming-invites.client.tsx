@@ -1,38 +1,99 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { DashboardHeader } from '@/src/shared/components';
-import type { AssignedReviewExtended } from '@/src/features/reviewer/types';
-import { InviteCardList } from './invite-card-list.client';
+import { useState, useMemo, useCallback } from 'react';
+import { ThreeColumnLayout } from '@/src/shared/components/ThreeColumnLayout';
+import { SelectionPlaceholder } from '@/src/shared/components/SelectionPlaceholder';
+import { PaperList } from '@/src/shared/components/PaperList';
+import { DynamicPdfViewer } from '@/src/shared/components/DynamicPdfViewer';
+import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
+import type { DbAssignedReview } from '@/src/features/reviewer/queries';
+import {
+  mapDbToAssignedReviewExtended,
+  toReviewerPaperListItems,
+  type EditorNameMap,
+} from '@/src/features/reviewer/mappers/dashboard';
+import { InviteSidebar } from './invite-sidebar.client';
 
 interface Props {
-  extendedInvites?: AssignedReviewExtended[];
+  initialRaw: DbAssignedReview[];
+  editorNames?: EditorNameMap;
 }
 
-export function IncomingInvitesClient({ extendedInvites = [] }: Props) {
-  // Include all actionable invites (Pending, In Progress, Late) — not just "Pending"
-  const [invites, setInvites] = useState(() =>
-    extendedInvites.filter((a) => a.status !== 'Submitted'),
+export function IncomingInvitesClient({ initialRaw, editorNames }: Props) {
+  useCollapseSidebar();
+
+  const [removedSubmissionIds, setRemovedSubmissionIds] = useState<Set<string>>(
+    new Set(),
   );
 
-  const handleRemove = useCallback((submissionId: string) => {
-    setInvites((prev) =>
-      prev.filter((inv) => inv.submissionId !== submissionId),
-    );
-  }, []);
+  const allMapped = useMemo(
+    () =>
+      initialRaw.map((a, i) =>
+        mapDbToAssignedReviewExtended(a, i, editorNames),
+      ),
+    [initialRaw, editorNames],
+  );
+
+  const mapped = useMemo(
+    () =>
+      allMapped.filter(
+        (a) =>
+          a.status !== 'Submitted' &&
+          !removedSubmissionIds.has(a.submissionId ?? ''),
+      ),
+    [allMapped, removedSubmissionIds],
+  );
+
+  const [selectedId, setSelectedId] = useState<string | null>(() =>
+    mapped[0] ? String(mapped[0].id) : null,
+  );
+
+  const paperItems = useMemo(() => toReviewerPaperListItems(mapped), [mapped]);
+
+  const selectedIndex = mapped.findIndex((p) => String(p.id) === selectedId);
+  const selected = selectedIndex >= 0 ? mapped[selectedIndex] : null;
+
+  const handleRemove = useCallback(
+    (submissionId: string) => {
+      setRemovedSubmissionIds((prev) => new Set(prev).add(submissionId));
+      // Auto-select next paper
+      const remaining = mapped.filter((p) => p.submissionId !== submissionId);
+      setSelectedId(remaining[0] ? String(remaining[0].id) : null);
+    },
+    [mapped],
+  );
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#1a1816' }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-8">
-        <DashboardHeader role="reviewer" />
-
-        <div className="mt-8">
-          <h2 className="text-xl font-bold mb-6" style={{ color: '#d4ccc0' }}>
-            Incoming Invites ({invites.length})
-          </h2>
-          <InviteCardList invites={invites} onRemove={handleRemove} />
-        </div>
-      </div>
-    </div>
+    <ThreeColumnLayout
+      title="Incoming Invites"
+      countLabel={`${mapped.length} invite${mapped.length !== 1 ? 's' : ''}`}
+      list={
+        <PaperList
+          papers={paperItems}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          emptyMessage="No pending invitations at this time."
+        />
+      }
+      viewer={
+        selected?.pdfUrl ? (
+          <DynamicPdfViewer fileUrl={selected.pdfUrl} />
+        ) : (
+          <SelectionPlaceholder
+            message={selected ? 'No PDF available' : 'Select an invite to view'}
+          />
+        )
+      }
+      sidebar={
+        selected ? (
+          <InviteSidebar paper={selected} onRemove={handleRemove} />
+        ) : (
+          <div className="p-4 text-[12px] text-[var(--text-faint)]">
+            Select an invite to see details
+          </div>
+        )
+      }
+      sidebarTitle="Invite Details"
+    />
   );
 }

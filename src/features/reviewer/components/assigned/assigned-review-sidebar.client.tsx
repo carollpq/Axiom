@@ -8,56 +8,16 @@ import { GeneralCommentsSection } from '@/src/features/reviewer/review-workspace
 import { RecommendationSection } from '@/src/features/reviewer/review-workspace/RecommendationSection';
 import { SubmissionActions } from '@/src/features/reviewer/review-workspace/SubmissionActions';
 import { SubmissionConfirmation } from '@/src/features/reviewer/review-workspace/SubmissionConfirmation';
+import {
+  getUrgencyColor,
+  formatDaysLeft,
+  SidebarField,
+  TimelineRow,
+} from '@/src/features/reviewer/components/shared/sidebar-primitives';
 
 interface AssignedReviewSidebarProps {
   paper: AssignedReviewExtended;
   rawAssignment: DbAssignedReview;
-}
-
-const labelStyle: React.CSSProperties = { color: '#6a6050' };
-const valueStyle: React.CSSProperties = { color: '#b0a898' };
-
-function getUrgencyColor(daysLeft: number): string {
-  if (daysLeft < 0) return '#d4645a';
-  if (daysLeft <= 3) return '#c9a44a';
-  return '#8fbc8f';
-}
-
-function SidebarField({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <div
-        className="text-[10px] uppercase tracking-[1.5px] mb-2"
-        style={labelStyle}
-      >
-        {label}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function TimelineRow({
-  label,
-  value,
-  style,
-}: {
-  label: string;
-  value: string;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <div className="flex justify-between text-[12px]">
-      <span style={{ color: '#8a8070' }}>{label}</span>
-      <span style={style ?? valueStyle}>{value}</span>
-    </div>
-  );
 }
 
 export function AssignedReviewSidebar({
@@ -93,23 +53,18 @@ export function AssignedReviewSidebar({
     );
   }
 
-  const daysLeftText =
-    paper.daysLeft < 0
-      ? `${Math.abs(paper.daysLeft)} days overdue`
-      : `${paper.daysLeft} days`;
+  const daysLeftText = formatDaysLeft(paper.daysLeft);
 
   return (
     <div className="p-4 space-y-6">
       <SidebarField label="Journal">
-        <div className="text-sm font-serif" style={{ color: '#d4ccc0' }}>
+        <div className="sidebar-field-value--primary text-sm">
           {paper.journal}
         </div>
       </SidebarField>
 
       <SidebarField label="Editor">
-        <div className="text-sm" style={valueStyle}>
-          {paper.editorName}
-        </div>
+        <div className="sidebar-field-value text-sm">{paper.editorName}</div>
       </SidebarField>
 
       <SidebarField label="Timeline">
@@ -133,7 +88,7 @@ export function AssignedReviewSidebar({
         </span>
       </SidebarField>
 
-      <div style={{ borderTop: '1px solid rgba(120,110,95,0.2)' }} />
+      <div className="sidebar-divider" />
 
       <div>
         <h3

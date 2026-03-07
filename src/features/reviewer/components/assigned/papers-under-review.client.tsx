@@ -10,19 +10,24 @@ import type { DbAssignedReview } from '@/src/features/reviewer/queries';
 import {
   mapDbToAssignedReviewExtended,
   toReviewerPaperListItems,
+  type EditorNameMap,
 } from '@/src/features/reviewer/mappers/dashboard';
 import { AssignedReviewSidebar } from './assigned-review-sidebar.client';
 
 interface Props {
   initialRaw: DbAssignedReview[];
+  editorNames?: EditorNameMap;
 }
 
-export function PapersUnderReviewClient({ initialRaw }: Props) {
+export function PapersUnderReviewClient({ initialRaw, editorNames }: Props) {
   useCollapseSidebar();
 
   const mapped = useMemo(
-    () => initialRaw.map(mapDbToAssignedReviewExtended),
-    [initialRaw],
+    () =>
+      initialRaw.map((a, i) =>
+        mapDbToAssignedReviewExtended(a, i, editorNames),
+      ),
+    [initialRaw, editorNames],
   );
 
   const [selectedId, setSelectedId] = useState<string | null>(
