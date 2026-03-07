@@ -1,6 +1,7 @@
 'use client';
 
 import { useReducer, useMemo, useCallback } from 'react';
+import { toast } from 'sonner';
 import type {
   CriterionRating,
   GeneralComments,
@@ -59,6 +60,7 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
 
   const saveDraft = useCallback(() => {
     dispatch({ type: 'SAVE_DRAFT' });
+    toast.success('Draft saved');
   }, []);
 
   const submitReview = useCallback(async () => {
@@ -105,6 +107,7 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
           .json()
           .catch(() => ({ error: 'Unknown error' }));
         console.error('[Review submit] API error:', err);
+        toast.error(err.error ?? 'Failed to submit review');
         dispatch({ type: 'SUBMIT_ERROR' });
         return;
       }
@@ -114,6 +117,8 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
         hederaTxId?: string;
         hederaTimestamp?: string;
       };
+
+      toast.success('Review submitted successfully');
 
       dispatch({
         type: 'SUBMIT_SUCCESS',
@@ -129,6 +134,7 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
       });
     } catch (err) {
       console.error('[Review submit] Unexpected error:', err);
+      toast.error('Failed to submit review');
       dispatch({ type: 'SUBMIT_ERROR' });
     }
   }, [
