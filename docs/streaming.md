@@ -9,9 +9,9 @@ Streaming lets your page load in pieces instead of all at once. Users see conten
 3. When data loads, the real content replaces the skeleton
 4. Each section does this independently
 
-**Reference code**: `app/(author)/page.tsx`, `components/author-dashboard/`, `docs/data-fetching.md`
+**Reference code**: `app/(protected)/researcher/page.tsx`, `src/features/researcher/components/`, `docs/data-fetching.md`
 
-> **Note on current state:** Axiom has no skeleton components or `loading.tsx` / `error.tsx` files yet. These need to be created alongside the server-first refactor. See [data-fetching.md](./data-fetching.md) for the overall pattern.
+> **Note:** Skeletons, `loading.tsx`, and `error.tsx` boundaries are fully implemented across all role routes. Skeleton components live in `src/features/{role}/components/skeletons.tsx` and use a shared `PulseBlock` component from `src/shared/components/PulseBlock.tsx`.
 
 ---
 
@@ -36,19 +36,19 @@ Users feel the page is faster even if total data load time is the same.
 ## Basic Pattern
 
 ```tsx
-// app/(author)/page.tsx — static shell, no 'use client'
+// app/(protected)/researcher/page.tsx — static shell, no 'use client'
 import { Suspense } from 'react';
-import { StatsSkeleton } from '@/components/author-dashboard/StatsSkeleton';
-import { PapersTableSkeleton } from '@/components/author-dashboard/PapersTableSkeleton';
-import { StatsSection } from '@/components/author-dashboard/StatsSection';
-import { PapersSection } from '@/components/author-dashboard/PapersSection';
+import { StatsSkeleton } from '@/src/features/researcher/components/skeletons';
+import { PapersTableSkeleton } from '@/src/features/researcher/components/skeletons';
+import { StatsSection } from '@/src/features/researcher/components/StatsSection';
+import { PapersSection } from '@/src/features/researcher/components/PapersSection';
 
-export default function AuthorDashboard() {
+export default function ResearcherDashboard() {
   return (
     <div className="max-w-[1200px] mx-auto px-10 py-8">
       {/* Shows immediately — no data needed */}
       <div className="mb-8">
-        <h1 className="text-[28px] font-normal italic text-[#e8e0d4]">Author Dashboard</h1>
+        <h1 className="text-[28px] font-normal italic text-[#e8e0d4]">Researcher Dashboard</h1>
         <p className="text-[13px] text-[#6a6050] mt-1.5 italic">
           Manage your research, contracts, and submissions
         </p>
@@ -72,74 +72,40 @@ export default function AuthorDashboard() {
 
 ## Writing Skeletons
 
-Skeletons don't exist in the codebase yet. Create them alongside each async Server Component. They live in the same `components/{domain}/` directory as the component they stand in for.
+Skeleton components are fully implemented across all role routes. The codebase uses a shared `PulseBlock` component from `src/shared/components/PulseBlock.tsx` for animated loading blocks. Skeleton components live in `src/features/{role}/components/skeletons.tsx` and are imported by each route's `loading.tsx` file.
 
 **Rules:**
 - Match the layout of the real content (same grid, approximate card heights)
 - Use the same background/border values as the real component
-- Animate with a pulsing opacity to signal loading
+- Use `PulseBlock` for individual animated placeholder elements
 
-### Skeleton base style
+### PulseBlock
 
-The dark theme pulse uses a low-opacity background cycling between two values:
+`PulseBlock` is a shared component that renders an animated placeholder block. Pass `className` to control dimensions:
 
 ```tsx
-// Reusable pulse class — add to globals.css if used broadly,
-// or inline as a keyframe style on the element.
-// Tailwind v4: use animate-pulse (maps to opacity 1 → 0.5 → 1)
+import { PulseBlock } from "@/src/shared/components/PulseBlock";
+
+<PulseBlock className="h-4 w-20" />
 ```
 
 ### Example: stats row skeleton
 
 ```tsx
-// components/author-dashboard/StatsSkeleton.tsx
+// src/features/researcher/components/skeletons.tsx
+import { PulseBlock } from "@/src/shared/components/PulseBlock";
+
 export function StatsSkeleton() {
   return (
     <div className="flex gap-4 mb-8 flex-wrap">
-      {Array.from({ length: 4 }).map((_, i) => (
+      {[0, 1, 2, 3, 4].map((i) => (
         <div
           key={i}
-          className="flex-1 min-w-[160px] rounded-lg p-5 animate-pulse"
-          style={{
-            background: 'rgba(45,42,38,0.5)',
-            border: '1px solid rgba(120,110,95,0.15)',
-            minHeight: 88,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-```
-
-### Example: table skeleton
-
-```tsx
-// components/author-dashboard/PapersTableSkeleton.tsx
-export function PapersTableSkeleton() {
-  return (
-    <div
-      className="rounded-lg overflow-hidden animate-pulse"
-      style={{ border: '1px solid rgba(120,110,95,0.15)' }}
-    >
-      {/* Header row */}
-      <div
-        className="px-5 py-3"
-        style={{ background: 'rgba(30,28,24,0.6)', borderBottom: '1px solid rgba(120,110,95,0.1)' }}
-      >
-        <div className="h-3 w-32 rounded" style={{ background: 'rgba(120,110,95,0.2)' }} />
-      </div>
-
-      {/* Data rows */}
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div
-          key={i}
-          className="flex items-center gap-4 px-5 py-4"
-          style={{ borderBottom: '1px solid rgba(120,110,95,0.08)' }}
+          className="flex-1 min-w-[160px] rounded-lg p-5"
+          style={{ border: "1px solid rgba(120,110,95,0.15)", background: "rgba(45,42,38,0.5)" }}
         >
-          <div className="h-3 flex-1 rounded" style={{ background: 'rgba(120,110,95,0.12)' }} />
-          <div className="h-3 w-20 rounded" style={{ background: 'rgba(120,110,95,0.08)' }} />
-          <div className="h-3 w-16 rounded" style={{ background: 'rgba(120,110,95,0.08)' }} />
+          <PulseBlock className="h-4 w-20 mb-3" />
+          <PulseBlock className="h-7 w-12" />
         </div>
       ))}
     </div>
@@ -173,11 +139,13 @@ Add a `<Suspense>` around any async Server Component that:
 Next.js supports `loading.tsx` files which create an automatic Suspense boundary for the whole route segment:
 
 ```
-app/
-├── (author)/
+app/(protected)/
+├── researcher/
 │   ├── page.tsx
 │   └── loading.tsx    # Shows while page.tsx's async work resolves
 ```
+
+Every role route (`researcher/`, `editor/`, `reviewer/`) has a `loading.tsx` that imports skeleton components from `src/features/{role}/components/skeletons.tsx`.
 
 | | `loading.tsx` | `<Suspense>` |
 |---|---|---|
@@ -193,15 +161,15 @@ Use both: `loading.tsx` for the navigation transition, `<Suspense>` for granular
 If an async Server Component throws (DB error, network failure), Next.js shows the nearest `error.tsx`:
 
 ```
-app/
-├── (author)/
+app/(protected)/
+├── researcher/
 │   ├── page.tsx
 │   ├── loading.tsx
 │   └── error.tsx      # Catches errors from page.tsx and its children
 ```
 
 ```tsx
-// app/(author)/error.tsx
+// app/(protected)/researcher/error.tsx
 'use client'; // error boundaries must be client components
 
 export default function AuthorError({

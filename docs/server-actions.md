@@ -13,7 +13,7 @@ Axiom uses two distinct layers — don't confuse them:
 
 Currently `app/actions/` contains only auth (`doLogin`, `doLogout`). All other mutations go through API routes which call feature actions. As the server-first refactor progresses, form-driven mutations (e.g. profile update, ORCID linking) will move to `app/actions/`.
 
-**Reference code**: `features/papers/actions.ts`, `features/contracts/actions.ts`, `app/actions/auth.ts`
+**Reference code**: `src/features/papers/actions.ts`, `src/features/contracts/actions.ts`, `app/actions/auth.ts`
 
 ---
 
@@ -24,13 +24,19 @@ These are pure Drizzle write functions — no HTTP, no `'use server'`, no form h
 ### File structure
 
 ```
-features/
+src/features/
 ├── papers/
-│   ├── index.ts        # Barrel export
+│   ├── index.ts        # Re-exports (server contexts only)
 │   ├── queries.ts      # Reads
 │   └── actions.ts      # Writes
 ├── contracts/
 │   ├── index.ts
+│   ├── queries.ts
+│   └── actions.ts
+├── reviews/
+│   ├── queries.ts
+│   └── actions.ts
+├── rebuttals/
 │   ├── queries.ts
 │   └── actions.ts
 └── users/
@@ -46,11 +52,11 @@ features/
 ### Basic structure
 
 ```ts
-// features/papers/actions.ts
-import { db } from '@/lib/db';
-import { papers, users } from '@/lib/db/schema';
+// src/features/papers/actions.ts
+import { db } from '@/src/shared/lib/db';
+import { papers, users } from '@/src/shared/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import type { StudyTypeDb } from '@/lib/db/schema';
+import type { StudyTypeDb } from '@/src/shared/lib/db/schema';
 
 export interface CreatePaperInput {
   title: string;
@@ -121,7 +127,7 @@ Every mutating route must verify the session first:
 
 ```ts
 // app/api/papers/route.ts
-import { getSession } from '@/lib/auth';
+import { getSession } from '@/src/shared/lib/auth/auth';
 
 export async function POST(req: NextRequest) {
   const wallet = await getSession();
@@ -148,16 +154,13 @@ if (!title) {
 const paper = createPaper({ ...body, wallet });
 ```
 
-For more complex validation, use Zod directly (no `drizzle-zod` — keep it simple):
+For validation, use `createInsertSchema` from `drizzle-zod` to derive schemas from the DB schema (single source of truth):
 
 ```ts
-import { z } from 'zod';
+import { createInsertSchema } from 'drizzle-zod';
+import { papers } from '@/src/shared/lib/db/schema';
 
-const schema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  abstract: z.string().optional(),
-  studyType: z.enum(['original', 'meta_analysis', 'negative_result', 'replication', 'replication_failed']).optional(),
-});
+const schema = createInsertSchema(papers).pick({ title: true, studyType: true });
 
 const result = schema.safeParse(body);
 if (!result.success) {
@@ -166,6 +169,14 @@ if (!result.success) {
     { status: 400 },
   );
 }
+```
+
+For fields not in the DB schema, extend with `.extend()`:
+
+```ts
+const schema = createInsertSchema(papers).pick({ title: true }).extend({
+  journalId: z.string().uuid(),
+});
 ```
 
 ### Hedera SDK routes
@@ -189,8 +200,8 @@ For form-driven mutations that don't need a separate API route, use `'use server
 'use server';
 
 import { z } from 'zod';
-import { getSession } from '@/lib/auth';
-import { updateUser } from '@/features/users/actions';
+import { getSession } from '@/src/shared/lib/auth/auth';
+import { updateUser } from '@/src/features/users/actions';
 
 export type State = {
   errors?: { displayName?: string[] };
@@ -235,6 +246,35 @@ export async function updateProfile(prevState: State, formData: FormData): Promi
 
 ---
 
+## Non-Blocking Side Effects with `after()`
+
+API routes that perform secondary work (HCS anchoring, HTS minting, notification creation) after the critical DB write should use `after()` from `next/server` to defer those operations:
+
+```ts
+import { after } from "next/server";
+
+export async function POST(req: NextRequest) {
+  // ... auth, validation, critical DB write ...
+  const result = await createReview(input);
+
+  // Return response immediately
+  const response = NextResponse.json(result, { status: 201 });
+
+  // Defer non-critical work
+  after(async () => {
+    await submitHcsMessage(topicId, payload);
+    await mintReputationToken(reviewerWallet, "review_completed");
+    await createNotification({ userId, type: "review_submitted", ... });
+  });
+
+  return response;
+}
+```
+
+**Routes using this pattern:** `cron/deadlines`, `reviews/[id]`, `submissions/[id]/decision`, `submissions/[id]/author-response`, `rebuttals/[rebuttalId]/resolve`
+
+---
+
 ## Important Rules
 
 1. **Feature actions are pure DB functions** — no `'use server'`, no HTTP, no auth checks
@@ -243,6 +283,7 @@ export async function updateProfile(prevState: State, formData: FormData): Promi
 4. **`redirect()` must be outside try/catch** — it throws `NEXT_REDIRECT` internally, which would be caught as an error
 5. **Hedera SDK routes need `export const runtime = 'nodejs'`**
 6. **Never put `authorDid` or any reviewer identity in `reviewerRatings`** — reviewer anonymity is by design
+7. **Use `after()` for non-critical side effects** — return the response immediately after the DB write; defer HCS, HTS, and notifications
 
 ---
 
