@@ -1,20 +1,22 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useMemo, useRef } from "react";
-import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
-import { Plus, X } from "lucide-react";
-import { hashFile } from "@/src/shared/lib/hashing";
-import { uploadToIPFS } from "@/src/shared/lib/upload";
-import { useUpload } from "@/src/features/researcher/hooks/useUpload";
-import { validateUpload } from "@/src/features/researcher/reducers/upload";
-import { PaperRow } from "./PaperRow";
-import type { PaperWithVersions } from "./types";
+import { useState, useCallback, useMemo, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import { toast } from 'sonner';
+import { Plus, X } from 'lucide-react';
+import { hashFile } from '@/src/shared/lib/hashing';
+import { uploadToIPFS } from '@/src/shared/lib/upload';
+import { useUpload } from '@/src/features/researcher/hooks/useUpload';
+import { validateUpload } from '@/src/features/researcher/reducers/upload';
+import { PaperRow } from './PaperRow';
+import type { PaperWithVersions } from './types';
 
-const RegisterPaperForm = dynamic(
-  () => import("./RegisterPaperForm"),
-  { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading form...</div> }
-);
+const RegisterPaperForm = dynamic(() => import('./RegisterPaperForm'), {
+  loading: () => (
+    <div className="p-6 text-[13px] text-[#6a6050]">Loading form...</div>
+  ),
+});
 
 interface Props {
   papers: PaperWithVersions[];
@@ -31,17 +33,28 @@ export function PaperVersionControlClient({ papers }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadPaperIdRef = useRef<string | null>(null);
 
-  const handlePaperRegistered = useCallback((paperId: string, title: string) => {
-    const newPaper: PaperWithVersions = {
-      id: paperId,
-      title,
-      versions: [{ id: "v1", versionNumber: 1, paperHash: "", fileStorageKey: null, createdAt: new Date().toISOString() }],
-    };
-    setLocalPapers((prev) => [newPaper, ...prev]);
-    setShowRegisterForm(false);
-    setShowUploadErrors(false);
-    router.refresh();
-  }, [router]);
+  const handlePaperRegistered = useCallback(
+    (paperId: string, title: string) => {
+      const newPaper: PaperWithVersions = {
+        id: paperId,
+        title,
+        versions: [
+          {
+            id: 'v1',
+            versionNumber: 1,
+            paperHash: '',
+            fileStorageKey: null,
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      };
+      setLocalPapers((prev) => [newPaper, ...prev]);
+      setShowRegisterForm(false);
+      setShowUploadErrors(false);
+      router.refresh();
+    },
+    [router],
+  );
 
   const upload = useUpload(handlePaperRegistered);
 
@@ -65,17 +78,17 @@ export function PaperVersionControlClient({ papers }: Props) {
 
       try {
         const hash = await hashFile(file);
-        const fileStorageKey = await uploadToIPFS(file, hash, "papers");
+        const fileStorageKey = await uploadToIPFS(file, hash, 'papers');
 
         const res = await fetch(`/api/papers/${paperId}/versions`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ paperHash: hash, fileStorageKey }),
         });
 
         if (!res.ok) {
           const data = await res.json();
-          throw new Error(data.error || "Failed to upload version");
+          throw new Error(data.error || 'Failed to upload version');
         }
 
         const newVersion = await res.json();
@@ -87,14 +100,15 @@ export function PaperVersionControlClient({ papers }: Props) {
               : p,
           ),
         );
+        toast.success('New version uploaded');
         router.refresh();
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Upload failed",
-        );
+        const message = err instanceof Error ? err.message : 'Upload failed';
+        setError(message);
+        toast.error(message);
       } finally {
         setUploading(null);
-        if (fileInputRef.current) fileInputRef.current.value = "";
+        if (fileInputRef.current) fileInputRef.current.value = '';
       }
     },
     [],
@@ -105,35 +119,51 @@ export function PaperVersionControlClient({ papers }: Props) {
       const res = await fetch(
         `/api/papers/${paperId}/content?versionId=${versionId}`,
       );
-      if (!res.ok) throw new Error("Download failed");
+      if (!res.ok) throw new Error('Download failed');
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
       a.download = `paper-v${versionId}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      setError("Download failed");
+      setError('Download failed');
+      toast.error('Download failed');
     }
   };
 
-  const validationErrors = useMemo(() => validateUpload({
-    title: upload.title,
-    abstract: upload.abstract,
-    fileName: upload.fileName,
-    fileHash: upload.fileHash,
-    isHashing: upload.isHashing,
-    studyType: upload.studyType,
-    keywords: upload.keywords,
-    keywordInput: upload.keywordInput,
-    registering: upload.isRegistering,
-    registered: upload.registered,
-    paperId: upload.registeredPaperId,
-    error: upload.error,
-  }), [upload.title, upload.abstract, upload.fileName, upload.fileHash,
-    upload.isHashing, upload.studyType, upload.keywords, upload.keywordInput,
-    upload.isRegistering, upload.registered, upload.registeredPaperId, upload.error]);
+  const validationErrors = useMemo(
+    () =>
+      validateUpload({
+        title: upload.title,
+        abstract: upload.abstract,
+        fileName: upload.fileName,
+        fileHash: upload.fileHash,
+        isHashing: upload.isHashing,
+        studyType: upload.studyType,
+        keywords: upload.keywords,
+        keywordInput: upload.keywordInput,
+        registering: upload.isRegistering,
+        registered: upload.registered,
+        paperId: upload.registeredPaperId,
+        error: upload.error,
+      }),
+    [
+      upload.title,
+      upload.abstract,
+      upload.fileName,
+      upload.fileHash,
+      upload.isHashing,
+      upload.studyType,
+      upload.keywords,
+      upload.keywordInput,
+      upload.isRegistering,
+      upload.registered,
+      upload.registeredPaperId,
+      upload.error,
+    ],
+  );
 
   const uploadErrors = showUploadErrors ? validationErrors : {};
 
@@ -159,9 +189,9 @@ export function PaperVersionControlClient({ papers }: Props) {
         <div
           className="rounded-md px-4 py-3 mb-4 text-[13px]"
           style={{
-            background: "rgba(212,100,90,0.15)",
-            color: "#d4645a",
-            border: "1px solid rgba(212,100,90,0.3)",
+            background: 'rgba(212,100,90,0.15)',
+            color: '#d4645a',
+            border: '1px solid rgba(212,100,90,0.3)',
           }}
         >
           {error || upload.error}
@@ -181,29 +211,34 @@ export function PaperVersionControlClient({ papers }: Props) {
           }}
           className="flex items-center gap-2 px-5 py-3 rounded-md text-[13px] font-serif cursor-pointer transition-colors w-full"
           style={{
-            background: showRegisterForm ? "rgba(201,164,74,0.12)" : "rgba(45,42,38,0.4)",
-            color: showRegisterForm ? "#c9a44a" : "#b0a898",
-            border: `1px solid ${showRegisterForm ? "rgba(201,164,74,0.3)" : "rgba(120,110,95,0.15)"}`,
+            background: showRegisterForm
+              ? 'rgba(201,164,74,0.12)'
+              : 'rgba(45,42,38,0.4)',
+            color: showRegisterForm ? '#c9a44a' : '#b0a898',
+            border: `1px solid ${showRegisterForm ? 'rgba(201,164,74,0.3)' : 'rgba(120,110,95,0.15)'}`,
           }}
         >
           {showRegisterForm ? <X size={16} /> : <Plus size={16} />}
-          {showRegisterForm ? "Cancel Registration" : "Register New Paper"}
+          {showRegisterForm ? 'Cancel Registration' : 'Register New Paper'}
         </button>
 
         {showRegisterForm && (
           <div
             className="rounded-b-md p-6"
             style={{
-              background: "rgba(45,42,38,0.4)",
-              border: "1px solid rgba(120,110,95,0.15)",
-              borderTop: "none",
+              background: 'rgba(45,42,38,0.4)',
+              border: '1px solid rgba(120,110,95,0.15)',
+              borderTop: 'none',
             }}
           >
             <RegisterPaperForm
               upload={upload}
               uploadErrors={uploadErrors}
               onRegister={handleRegister}
-              onReset={() => { upload.reset(); setShowUploadErrors(false); }}
+              onReset={() => {
+                upload.reset();
+                setShowUploadErrors(false);
+              }}
             />
           </div>
         )}
@@ -221,8 +256,8 @@ export function PaperVersionControlClient({ papers }: Props) {
         <div
           className="rounded-md px-6 py-10 text-center text-[13px] text-[#6a6050]"
           style={{
-            background: "rgba(45,42,38,0.4)",
-            border: "1px solid rgba(120,110,95,0.15)",
+            background: 'rgba(45,42,38,0.4)',
+            border: '1px solid rgba(120,110,95,0.15)',
           }}
         >
           No papers yet. Register a paper above to get started.

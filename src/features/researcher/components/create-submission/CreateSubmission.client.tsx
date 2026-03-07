@@ -1,13 +1,14 @@
-"use client";
+'use client';
 
-import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { ErrorAlert } from "@/src/shared/components/ErrorAlert";
-import { FormSelectRow } from "./FormSelectRow";
+import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { ErrorAlert } from '@/src/shared/components/ErrorAlert';
+import { FormSelectRow } from './FormSelectRow';
 
 const FORM_CONTAINER_STYLE = {
-  background: "rgba(45,42,38,0.4)",
-  border: "1px solid rgba(120,110,95,0.15)",
+  background: 'rgba(45,42,38,0.4)',
+  border: '1px solid rgba(120,110,95,0.15)',
 } as const;
 
 interface PaperOption {
@@ -38,18 +39,18 @@ function getMissingFieldHint(
   selectedVersionId: string,
   selectedJournalId: string,
 ): string {
-  if (!selectedPaperId) return "Please select a paper";
-  if (!selectedVersionId) return "Please select a paper version";
-  if (!selectedJournalId) return "Please select a journal";
-  return "Please select an authorship contract";
+  if (!selectedPaperId) return 'Please select a paper';
+  if (!selectedVersionId) return 'Please select a paper version';
+  if (!selectedJournalId) return 'Please select a journal';
+  return 'Please select an authorship contract';
 }
 
 export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
   const router = useRouter();
-  const [selectedPaperId, setSelectedPaperId] = useState("");
-  const [selectedVersionId, setSelectedVersionId] = useState("");
-  const [selectedJournalId, setSelectedJournalId] = useState("");
-  const [selectedContractId, setSelectedContractId] = useState("");
+  const [selectedPaperId, setSelectedPaperId] = useState('');
+  const [selectedVersionId, setSelectedVersionId] = useState('');
+  const [selectedJournalId, setSelectedJournalId] = useState('');
+  const [selectedContractId, setSelectedContractId] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,7 +63,7 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
 
   const handlePaperChange = (paperId: string) => {
     setSelectedPaperId(paperId);
-    setSelectedVersionId("");
+    setSelectedVersionId('');
   };
 
   const canSubmit =
@@ -78,8 +79,8 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
 
     try {
       const res = await fetch(`/api/papers/${selectedPaperId}/submit`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           journalId: selectedJournalId,
           versionId: selectedVersionId,
@@ -89,13 +90,17 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Submission failed");
+        throw new Error(data.error || 'Submission failed');
       }
 
-      router.push("/researcher");
+      toast.success('Paper submitted successfully');
+      router.push('/researcher');
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const message =
+        err instanceof Error ? err.message : 'Something went wrong';
+      setError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -117,10 +122,7 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
       )}
 
       {/* Submission Form */}
-      <div
-        className="rounded-md p-6"
-        style={FORM_CONTAINER_STYLE}
-      >
+      <div className="rounded-md p-6" style={FORM_CONTAINER_STYLE}>
         <FormSelectRow
           label="Paper Title"
           value={selectedPaperId}
@@ -181,13 +183,18 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
         {/* Validation hint */}
         {!canSubmit && (
           <p className="text-[12px] text-[#8a8070] mb-3 text-right italic">
-            {getMissingFieldHint(selectedPaperId, selectedVersionId, selectedJournalId)}
+            {getMissingFieldHint(
+              selectedPaperId,
+              selectedVersionId,
+              selectedJournalId,
+            )}
           </p>
         )}
 
         {papers.length === 0 && (
           <p className="text-[12px] text-[#d4645a] mb-3 text-right">
-            No registered papers found. Please register a paper first via Paper Version Control.
+            No registered papers found. Please register a paper first via Paper
+            Version Control.
           </p>
         )}
 
@@ -200,14 +207,14 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
             className="px-6 py-2.5 rounded-md text-[13px] font-medium cursor-pointer transition-colors"
             style={{
               background: canSubmit
-                ? "rgba(143,188,143,0.2)"
-                : "rgba(120,110,95,0.1)",
-              color: canSubmit ? "#8fbc8f" : "#6a6050",
-              border: `1px solid ${canSubmit ? "rgba(143,188,143,0.3)" : "rgba(120,110,95,0.15)"}`,
+                ? 'rgba(143,188,143,0.2)'
+                : 'rgba(120,110,95,0.1)',
+              color: canSubmit ? '#8fbc8f' : '#6a6050',
+              border: `1px solid ${canSubmit ? 'rgba(143,188,143,0.3)' : 'rgba(120,110,95,0.15)'}`,
               opacity: submitting ? 0.5 : 1,
             }}
           >
-            {submitting ? "Submitting..." : "Submit"}
+            {submitting ? 'Submitting...' : 'Submit'}
           </button>
         </div>
       </div>
