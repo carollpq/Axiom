@@ -72,6 +72,7 @@ export function IncomingPapersClient({
     setDeskRejectComment,
     timelineDays,
     sendInvites,
+    isSendingInvites,
     submitDeskReject,
     confirmDeskReject,
     isDeskRejecting,
@@ -128,6 +129,7 @@ export function IncomingPapersClient({
                 timelineDays={timelineDays}
                 actionLabel="Send Invites"
                 onAction={sendInvites}
+                isLoading={isSendingInvites}
               />
               <DeskRejectPanel
                 comment={deskRejectComment}

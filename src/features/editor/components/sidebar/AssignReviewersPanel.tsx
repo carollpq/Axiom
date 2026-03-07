@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { CompactSearchInput } from "@/src/shared/components/CompactSearchInput";
-import { Button } from "@/src/shared/components/Button";
-import { SidebarSection } from "@/src/shared/components/SidebarSection";
-import { ListRow } from "@/src/shared/components/ListRow";
-import type { PoolReviewer } from "@/src/features/editor/types";
+import { CompactSearchInput } from '@/src/shared/components/CompactSearchInput';
+import { Button } from '@/src/shared/components/Button';
+import { SidebarSection } from '@/src/shared/components/SidebarSection';
+import { ListRow } from '@/src/shared/components/ListRow';
+import type { PoolReviewer } from '@/src/features/editor/types';
 
 interface AssignReviewersPanelProps {
   reviewerPool: PoolReviewer[];
@@ -16,6 +16,7 @@ interface AssignReviewersPanelProps {
   timelineDays: number;
   actionLabel?: string;
   onAction?: () => void;
+  isLoading?: boolean;
 }
 
 export function AssignReviewersPanel({
@@ -26,8 +27,9 @@ export function AssignReviewersPanel({
   onAssign,
   onRemove,
   timelineDays,
-  actionLabel = "Send Invites",
+  actionLabel = 'Send Invites',
   onAction,
+  isLoading = false,
 }: AssignReviewersPanelProps) {
   const assigned = reviewerPool.filter((r) => assignedIds.includes(r.id));
   const filtered = reviewerPool
@@ -41,64 +43,74 @@ export function AssignReviewersPanel({
 
   return (
     <SidebarSection title="Assign Reviewers">
-      <CompactSearchInput
-        value={search}
-        onChange={onSearchChange}
-        placeholder="Search reviewers..."
-      />
+      <div
+        style={{
+          opacity: isLoading ? 0.45 : 1,
+          pointerEvents: isLoading ? 'none' : 'auto',
+          transition: 'opacity 0.2s',
+        }}
+      >
+        <CompactSearchInput
+          value={search}
+          onChange={onSearchChange}
+          placeholder="Search reviewers..."
+        />
 
-      {/* Assigned list */}
-      {assigned.length > 0 && (
-        <div className="mt-3 space-y-1.5">
-          {assigned.map((r) => (
-            <div
-              key={r.id}
-              className="flex items-center justify-between px-3 py-2 rounded"
-              style={{
-                background: "rgba(45,42,38,0.6)",
-                border: "1px solid rgba(120,110,95,0.15)",
-              }}
-            >
-              <span className="text-[12px] text-[#d4ccc0] font-serif truncate">
-                {r.name}
-              </span>
-              <button
-                onClick={() => onRemove(r.id)}
-                className="text-[#6a6050] hover:text-[#d4645a] text-sm cursor-pointer"
+        {/* Assigned list */}
+        {assigned.length > 0 && (
+          <div className="mt-3 space-y-1.5">
+            {assigned.map((r) => (
+              <div
+                key={r.id}
+                className="flex items-center justify-between px-3 py-2 rounded"
+                style={{
+                  background: 'rgba(45,42,38,0.6)',
+                  border: '1px solid rgba(120,110,95,0.15)',
+                }}
               >
-                &times;
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Unassigned pool */}
-      {search && filtered.length > 0 && (
-        <div className="mt-2 space-y-1">
-          {filtered.slice(0, 4).map((r) => (
-            <button
-              key={r.id}
-              onClick={() => onAssign(r.id)}
-              className="w-full flex items-center justify-between px-3 py-2 rounded text-left cursor-pointer transition-colors"
-              style={{
-                background: "rgba(30,28,24,0.5)",
-                border: "1px solid rgba(120,110,95,0.1)",
-              }}
-            >
-              <div className="min-w-0 truncate">
-                <span className="text-[12px] text-[#c9b89e] font-serif">
+                <span className="text-[12px] text-[#d4ccc0] font-serif truncate">
                   {r.name}
                 </span>
-                <span className="text-[10px] text-[#6a6050] ml-2">
-                  {r.field} &middot; {r.score}
-                </span>
+                <button
+                  onClick={() => onRemove(r.id)}
+                  className="text-[#6a6050] hover:text-[#d4645a] text-sm cursor-pointer"
+                >
+                  &times;
+                </button>
               </div>
-              <span className="text-[10px] text-[#8a8070] shrink-0">+ Assign</span>
-            </button>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+
+        {/* Unassigned pool */}
+        {search && filtered.length > 0 && (
+          <div className="mt-2 space-y-1">
+            {filtered.slice(0, 4).map((r) => (
+              <button
+                key={r.id}
+                onClick={() => onAssign(r.id)}
+                className="w-full flex items-center justify-between px-3 py-2 rounded text-left cursor-pointer transition-colors"
+                style={{
+                  background: 'rgba(30,28,24,0.5)',
+                  border: '1px solid rgba(120,110,95,0.1)',
+                }}
+              >
+                <div className="min-w-0 truncate">
+                  <span className="text-[12px] text-[#c9b89e] font-serif">
+                    {r.name}
+                  </span>
+                  <span className="text-[10px] text-[#6a6050] ml-2">
+                    {r.field} &middot; {r.score}
+                  </span>
+                </div>
+                <span className="text-[10px] text-[#8a8070] shrink-0">
+                  + Assign
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Timeline + action */}
       <div className="mt-3 flex items-center gap-2">
@@ -106,8 +118,13 @@ export function AssignReviewersPanel({
           Assigned Timeline: {timelineDays} days
         </ListRow>
         {onAction && (
-          <Button variant="gold" onClick={onAction} className="text-[11px]">
-            {actionLabel}
+          <Button
+            variant="gold"
+            onClick={onAction}
+            disabled={isLoading}
+            className="text-[11px]"
+          >
+            {isLoading ? 'Sending...' : actionLabel}
           </Button>
         )}
       </div>
