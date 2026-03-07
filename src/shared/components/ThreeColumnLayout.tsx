@@ -6,6 +6,8 @@ interface ThreeColumnLayoutProps {
   subtitle?: string;
   countLabel?: string;
   sidebarTitle?: string;
+  listWidth?: number;
+  sidebarWidth?: number;
 }
 
 export function ThreeColumnLayout({
@@ -16,9 +18,13 @@ export function ThreeColumnLayout({
   subtitle,
   countLabel,
   sidebarTitle,
+  listWidth = 280,
+  sidebarWidth = 420,
 }: ThreeColumnLayoutProps) {
   const hasHeader = !!title;
-  const contentHeight = hasHeader ? "calc(100vh - 56px - 56px)" : "calc(100vh - 56px)";
+  const contentHeight = hasHeader
+    ? 'calc(100vh - 56px - 56px)'
+    : 'calc(100vh - 56px)';
 
   return (
     <div>
@@ -27,7 +33,7 @@ export function ThreeColumnLayout({
           className="flex items-center justify-between px-5"
           style={{
             height: 56,
-            borderBottom: "1px solid rgba(120,110,95,0.15)",
+            borderBottom: '1px solid rgba(120,110,95,0.15)',
           }}
         >
           <div className="flex flex-col justify-center">
@@ -53,9 +59,9 @@ export function ThreeColumnLayout({
         <div
           className="overflow-y-auto"
           style={{
-            width: 360,
-            minWidth: 300,
-            borderRight: "1px solid rgba(120,110,95,0.15)",
+            width: listWidth,
+            minWidth: 240,
+            borderRight: '1px solid rgba(120,110,95,0.15)',
           }}
         >
           {list}
@@ -68,16 +74,16 @@ export function ThreeColumnLayout({
         <div
           className="shrink-0"
           style={{
-            width: 320,
-            overflowY: "auto",
-            overflowX: "clip",
-            borderLeft: "1px solid rgba(120,110,95,0.15)",
+            width: sidebarWidth,
+            overflowY: 'auto',
+            overflowX: 'clip',
+            borderLeft: '1px solid rgba(120,110,95,0.15)',
           }}
         >
           {sidebarTitle && (
             <div
               className="px-4 py-3"
-              style={{ borderBottom: "1px solid rgba(120,110,95,0.12)" }}
+              style={{ borderBottom: '1px solid rgba(120,110,95,0.12)' }}
             >
               <span className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px]">
                 {sidebarTitle}
