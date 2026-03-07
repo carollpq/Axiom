@@ -8,12 +8,10 @@ import type { AssignedReviewExtended } from '@/src/features/reviewer/types';
 
 interface InviteCardListProps {
   invites: AssignedReviewExtended[];
+  onRemove: (submissionId: string) => void;
 }
 
-export function InviteCardList({
-  invites: initialInvites,
-}: InviteCardListProps) {
-  const [invites, setInvites] = useState(initialInvites);
+export function InviteCardList({ invites, onRemove }: InviteCardListProps) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [declineTarget, setDeclineTarget] =
     useState<AssignedReviewExtended | null>(null);
@@ -37,9 +35,7 @@ export function InviteCardList({
         throw new Error(error.error || 'Failed to accept assignment');
       }
 
-      setInvites((prev) =>
-        prev.filter((inv) => inv.submissionId !== submissionId),
-      );
+      onRemove(submissionId);
       toast.success('Invitation accepted');
     } catch (error) {
       const message =
@@ -77,9 +73,7 @@ export function InviteCardList({
         throw new Error(error.error || 'Failed to decline assignment');
       }
 
-      setInvites((prev) =>
-        prev.filter((inv) => inv.submissionId !== submissionId),
-      );
+      onRemove(submissionId);
       toast.success('Invitation declined');
     } catch (error) {
       const message =
