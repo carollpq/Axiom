@@ -1,20 +1,13 @@
 // Loading skeleton components — pure markup, no client directives needed.
 // Used by loading.tsx files for each author route.
 
-function PulseBlock({ className }: { className: string }) {
-  return (
-    <div
-      className={`animate-pulse rounded ${className}`}
-      style={{ background: "rgba(45,42,38,0.8)" }}
-    />
-  );
-}
+import { PulseBlock } from "@/src/shared/components/PulseBlock";
 
-/** 4 stat cards matching StatCard dimensions */
+/** 5 stat cards matching StatCard dimensions */
 export function StatsSkeleton() {
   return (
     <div className="flex gap-4 mb-8 flex-wrap">
-      {[0, 1, 2, 3].map((i) => (
+      {[0, 1, 2, 3, 4].map((i) => (
         <div
           key={i}
           className="flex-1 min-w-[160px] rounded-lg p-5"
@@ -107,13 +100,13 @@ export function ActivitySkeleton() {
 /** Explorer: search bar + filter chips + 5 paper cards */
 export function ExplorerListSkeleton() {
   return (
-    <div className="max-w-[1100px] mx-auto px-8 py-8">
+    <div className="max-w-[1200px] mx-auto px-10 py-8">
       <div className="mb-6">
         <PulseBlock className="h-8 w-48 mb-4" />
         <PulseBlock className="h-10 w-full rounded-lg mb-4" />
         <div className="flex gap-2">
-          {["w-20", "w-24", "w-20", "w-16", "w-28"].map((w, i) => (
-            <PulseBlock key={i} className={`h-7 rounded-full ${w}`} />
+          {["w-24", "w-24", "w-28"].map((w, i) => (
+            <PulseBlock key={i} className={`h-[30px] rounded-[3px] ${w}`} />
           ))}
         </div>
       </div>
@@ -137,7 +130,7 @@ export function ExplorerListSkeleton() {
 /** Paper detail: back-button stub + title + three content sections */
 export function PaperDetailSkeleton() {
   return (
-    <div className="max-w-[900px] mx-auto py-8 px-10">
+    <div className="max-w-[1200px] mx-auto py-8 px-10">
       <PulseBlock className="h-3 w-28 mb-5" />
       <PulseBlock className="h-6 w-3/4 mb-2" />
       <PulseBlock className="h-3 w-48 mb-6" />
@@ -175,7 +168,7 @@ export function PaperDetailSkeleton() {
 /** Contract builder: heading + two content blocks */
 export function ContractBuilderSkeleton() {
   return (
-    <div className="max-w-[960px] mx-auto py-8 px-10">
+    <div className="max-w-[1200px] mx-auto py-8 px-10">
       <PulseBlock className="h-4 w-32 mb-2" />
       <PulseBlock className="h-8 w-72 mb-1" />
       <PulseBlock className="h-3 w-56 mb-8" />
@@ -203,10 +196,127 @@ export function ContractBuilderSkeleton() {
   );
 }
 
+/** Submission carousel: 3 card placeholders */
+export function CarouselSkeleton() {
+  return (
+    <div>
+      <PulseBlock className="h-4 w-36 mb-3" />
+      <div className="flex gap-4 overflow-hidden">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="min-w-[280px] rounded-md p-5"
+            style={{
+              background: "rgba(45,42,38,0.5)",
+              border: "1px solid rgba(120,110,95,0.15)",
+            }}
+          >
+            <PulseBlock className="h-4 w-3/4 mb-3" />
+            <PulseBlock className="h-3 w-1/2 mb-2" />
+            <PulseBlock className="h-3 w-2/3 mb-2" />
+            <PulseBlock className="h-3 w-1/3 mb-3" />
+            <PulseBlock className="h-6 w-28 rounded" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Paper version control: heading + 4 accordion rows */
+export function PaperVersionControlSkeleton() {
+  return (
+    <div className="max-w-[1200px] mx-auto py-8 px-10">
+      <PulseBlock className="h-8 w-64 mb-6" />
+      {[0, 1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="rounded-md p-4 mb-3"
+          style={{
+            background: "rgba(45,42,38,0.5)",
+            border: "1px solid rgba(120,110,95,0.15)",
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <PulseBlock className="h-4 w-4" />
+            <PulseBlock className="h-4 flex-1" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Create submission: heading + 5 form fields */
+export function CreateSubmissionSkeleton() {
+  return (
+    <div className="max-w-[1200px] mx-auto py-8 px-10">
+      <PulseBlock className="h-8 w-56 mb-6" />
+      <div
+        className="rounded-lg p-6"
+        style={{
+          background: "rgba(45,42,38,0.5)",
+          border: "1px solid rgba(120,110,95,0.15)",
+        }}
+      >
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="flex items-center gap-6 mb-5">
+            <PulseBlock className="h-3 w-40 shrink-0" />
+            <PulseBlock className="h-10 flex-1 rounded" />
+          </div>
+        ))}
+        <div className="flex items-start gap-6 mb-5">
+          <PulseBlock className="h-3 w-40 shrink-0" />
+          <PulseBlock className="h-24 flex-1 rounded" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** View submissions: two-panel layout */
+export function ViewSubmissionsSkeleton() {
+  return (
+    <div className="max-w-[1200px] mx-auto py-8 px-10">
+      <PulseBlock className="h-8 w-56 mb-6" />
+      <div className="flex gap-6">
+        <div className="w-[320px] flex flex-col gap-3 shrink-0">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="rounded-md p-4"
+              style={{
+                background: "rgba(45,42,38,0.5)",
+                border: "1px solid rgba(120,110,95,0.15)",
+              }}
+            >
+              <PulseBlock className="h-4 w-3/4 mb-2" />
+              <PulseBlock className="h-3 w-1/2 mb-2" />
+              <PulseBlock className="h-6 w-24 rounded" />
+            </div>
+          ))}
+        </div>
+        <div
+          className="flex-1 rounded-lg p-6"
+          style={{
+            background: "rgba(45,42,38,0.5)",
+            border: "1px solid rgba(120,110,95,0.15)",
+          }}
+        >
+          <PulseBlock className="h-5 w-40 mb-4" />
+          <PulseBlock className="h-3 w-full mb-2" />
+          <PulseBlock className="h-3 w-5/6 mb-2" />
+          <PulseBlock className="h-3 w-4/6" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** Paper registration: heading + 4-step indicator + content block */
 export function PaperRegistrationSkeleton() {
   return (
-    <div className="max-w-[800px] mx-auto py-8 px-10">
+    <div className="max-w-[1200px] mx-auto py-8 px-10">
       <PulseBlock className="h-4 w-32 mb-2" />
       <PulseBlock className="h-8 w-80 mb-1" />
       <PulseBlock className="h-3 w-64 mb-8" />

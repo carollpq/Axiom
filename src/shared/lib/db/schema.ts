@@ -18,8 +18,6 @@ export type StudyTypeDb =
   | "replication"
   | "replication_failed";
 
-export type VisibilityDb = "private" | "under_review" | "public";
-
 export type ContractStatusDb =
   | "draft"
   | "pending_signatures"
@@ -30,14 +28,18 @@ export type ContributorStatusDb = "pending" | "signed" | "declined";
 
 export type SubmissionStatusDb =
   | "submitted"
+  | "viewed_by_editor"
   | "criteria_published"
   | "reviewers_assigned"
   | "under_review"
+  | "reviews_completed"
   | "rebuttal_open"
   | "revision_requested"
   | "accepted"
   | "rejected"
   | "published";
+
+export type AuthorResponseStatusDb = "pending" | "accepted" | "rebuttal_requested";
 
 export type ReviewAssignmentStatusDb =
   | "assigned"
@@ -55,6 +57,38 @@ export type ReputationEventTypeDb =
   | "paper_retracted"
   | "rebuttal_upheld"
   | "rebuttal_overturned";
+
+export type RebuttalStatusDb =
+  | "open"
+  | "submitted"
+  | "under_review"
+  | "resolved";
+
+export type RebuttalResolutionDb =
+  | "upheld"
+  | "rejected"
+  | "partial";
+
+export type RebuttalPositionDb = "agree" | "disagree";
+
+export type NotificationTypeDb =
+  | "reviewers_assigned"
+  | "criteria_published"
+  | "review_submitted"
+  | "decision_made"
+  | "rebuttal_opened"
+  | "rebuttal_submitted"
+  | "rebuttal_resolved"
+  | "review_late"
+  | "rating_received"
+  | "submission_viewed"
+  | "reviews_completed"
+  | "author_response"
+  | "assignment_accepted"
+  | "assignment_declined"
+  | "contributor_added"
+  | "contract_signed"
+  | "contract_fully_signed";
 
 // ── Tables ─────────────────────────────────────────────────────────────────
 
@@ -88,10 +122,6 @@ export const papers = pgTable("papers", {
     .notNull()
     .$type<StudyTypeDb>()
     .default("original"),
-  visibility: text("visibility")
-    .notNull()
-    .$type<VisibilityDb>()
-    .default("private"),
   currentVersion: integer("current_version").notNull().default(1),
   ownerId: text("owner_id")
     .notNull()
@@ -186,10 +216,53 @@ export const journals = pgTable("journals", {
   name: text("name").notNull(),
   editorWallet: text("editor_wallet").notNull(),
   reputationScore: text("reputation_score").default("4.3"),
+  aimsAndScope: text("aims_and_scope"),
+  submissionCriteria: text("submission_criteria"),
   createdAt: text("created_at")
     .notNull()
     .default(sql`now()`),
   updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`now()`),
+});
+
+export const journalIssues = pgTable("journal_issues", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  journalId: text("journal_id")
+    .notNull()
+    .references(() => journals.id),
+  label: text("label").notNull(),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`now()`),
+});
+
+export const issuePapers = pgTable("issue_papers", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  issueId: text("issue_id")
+    .notNull()
+    .references(() => journalIssues.id),
+  submissionId: text("submission_id")
+    .notNull()
+    .references(() => submissions.id),
+  addedAt: text("added_at")
+    .notNull()
+    .default(sql`now()`),
+});
+
+export const journalReviewers = pgTable("journal_reviewers", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  journalId: text("journal_id")
+    .notNull()
+    .references(() => journals.id),
+  reviewerWallet: text("reviewer_wallet").notNull(),
+  addedAt: text("added_at")
     .notNull()
     .default(sql`now()`),
 });
@@ -218,6 +291,9 @@ export const submissions = pgTable("submissions", {
   decisionJustification: text("decision_justification"),
   decisionTxId: text("decision_tx_id"),
   reviewDeadlineDays: integer("review_deadline_days").notNull().default(21),
+  authorResponseStatus: text("author_response_status").$type<AuthorResponseStatusDb>(),
+  authorResponseAt: text("author_response_at"),
+  authorResponseTxId: text("author_response_tx_id"),
   hederaTxId: text("hedera_tx_id"),
   hederaTimestamp: text("hedera_timestamp"),
   submittedAt: text("submitted_at")
@@ -315,6 +391,89 @@ export const reputationScores = pgTable("reputation_scores", {
     .default(sql`now()`),
 });
 
+export const rebuttals = pgTable("rebuttals", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  submissionId: text("submission_id")
+    .notNull()
+    .references(() => submissions.id),
+  authorWallet: text("author_wallet").notNull(),
+  status: text("status")
+    .notNull()
+    .$type<RebuttalStatusDb>()
+    .default("open"),
+  deadline: text("deadline").notNull(),
+  rebuttalHash: text("rebuttal_hash"),
+  hederaTxId: text("hedera_tx_id"),
+  resolution: text("resolution").$type<RebuttalResolutionDb>(),
+  editorNotes: text("editor_notes"),
+  resolvedAt: text("resolved_at"),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`now()`),
+});
+
+export const rebuttalResponses = pgTable("rebuttal_responses", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  rebuttalId: text("rebuttal_id")
+    .notNull()
+    .references(() => rebuttals.id),
+  reviewId: text("review_id")
+    .notNull()
+    .references(() => reviews.id),
+  criterionId: text("criterion_id"),
+  position: text("position")
+    .notNull()
+    .$type<RebuttalPositionDb>(),
+  justification: text("justification").notNull(),
+  evidence: text("evidence"),
+});
+
+export const reviewerRatings = pgTable("reviewer_ratings", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  reviewId: text("review_id")
+    .notNull()
+    .references(() => reviews.id)
+    .unique(),
+  // 5-protocol ratings (each 1-5)
+  actionableFeedback: integer("actionable_feedback").notNull(),
+  deepEngagement: integer("deep_engagement").notNull(),
+  fairObjective: integer("fair_objective").notNull(),
+  justifiedRecommendation: integer("justified_recommendation").notNull(),
+  appropriateExpertise: integer("appropriate_expertise").notNull(),
+  overallRating: integer("overall_rating").notNull(),
+  // Anonymous comment (NO author reference — anonymity by design)
+  comment: text("comment"),
+  commentHash: text("comment_hash"),
+  ratingHash: text("rating_hash"),
+  reputationTokenSerial: text("reputation_token_serial"),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`now()`),
+});
+
+export const notifications = pgTable("notifications", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userWallet: text("user_wallet").notNull(),
+  type: text("type")
+    .notNull()
+    .$type<NotificationTypeDb>(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  link: text("link"),
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`now()`),
+});
+
 // ── Relations ──────────────────────────────────────────────────────────────
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -326,6 +485,7 @@ export const papersRelations = relations(papers, ({ one, many }) => ({
   owner: one(users, { fields: [papers.ownerId], references: [users.id] }),
   versions: many(paperVersions),
   contracts: many(authorshipContracts),
+  submissions: many(submissions),
 }));
 
 export const paperVersionsRelations = relations(paperVersions, ({ one }) => ({
@@ -362,6 +522,34 @@ export const contractContributorsRelations = relations(
 
 export const journalsRelations = relations(journals, ({ many }) => ({
   submissions: many(submissions),
+  issues: many(journalIssues),
+  reviewerPool: many(journalReviewers),
+}));
+
+export const journalIssuesRelations = relations(journalIssues, ({ one, many }) => ({
+  journal: one(journals, {
+    fields: [journalIssues.journalId],
+    references: [journals.id],
+  }),
+  papers: many(issuePapers),
+}));
+
+export const issuePapersRelations = relations(issuePapers, ({ one }) => ({
+  issue: one(journalIssues, {
+    fields: [issuePapers.issueId],
+    references: [journalIssues.id],
+  }),
+  submission: one(submissions, {
+    fields: [issuePapers.submissionId],
+    references: [submissions.id],
+  }),
+}));
+
+export const journalReviewersRelations = relations(journalReviewers, ({ one }) => ({
+  journal: one(journals, {
+    fields: [journalReviewers.journalId],
+    references: [journals.id],
+  }),
 }));
 
 export const submissionsRelations = relations(submissions, ({ one, many }) => ({
@@ -380,6 +568,7 @@ export const submissionsRelations = relations(submissions, ({ one, many }) => ({
   reviewCriteria: many(reviewCriteria),
   reviewAssignments: many(reviewAssignments),
   reviews: many(reviews),
+  rebuttals: many(rebuttals),
 }));
 
 export const reviewCriteriaRelations = relations(reviewCriteria, ({ one }) => ({
@@ -397,7 +586,7 @@ export const reviewAssignmentsRelations = relations(reviewAssignments, ({ one, m
   reviews: many(reviews),
 }));
 
-export const reviewsRelations = relations(reviews, ({ one }) => ({
+export const reviewsRelations = relations(reviews, ({ one, many }) => ({
   submission: one(submissions, {
     fields: [reviews.submissionId],
     references: [submissions.id],
@@ -405,5 +594,36 @@ export const reviewsRelations = relations(reviews, ({ one }) => ({
   assignment: one(reviewAssignments, {
     fields: [reviews.assignmentId],
     references: [reviewAssignments.id],
+  }),
+  rating: one(reviewerRatings, {
+    fields: [reviews.id],
+    references: [reviewerRatings.reviewId],
+  }),
+  rebuttalResponses: many(rebuttalResponses),
+}));
+
+export const rebuttalsRelations = relations(rebuttals, ({ one, many }) => ({
+  submission: one(submissions, {
+    fields: [rebuttals.submissionId],
+    references: [submissions.id],
+  }),
+  responses: many(rebuttalResponses),
+}));
+
+export const rebuttalResponsesRelations = relations(rebuttalResponses, ({ one }) => ({
+  rebuttal: one(rebuttals, {
+    fields: [rebuttalResponses.rebuttalId],
+    references: [rebuttals.id],
+  }),
+  review: one(reviews, {
+    fields: [rebuttalResponses.reviewId],
+    references: [reviews.id],
+  }),
+}));
+
+export const reviewerRatingsRelations = relations(reviewerRatings, ({ one }) => ({
+  review: one(reviews, {
+    fields: [reviewerRatings.reviewId],
+    references: [reviews.id],
   }),
 }));

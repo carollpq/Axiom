@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThirdwebProvider } from "thirdweb/react";
-import { UserProvider } from "@/src/shared/context/UserContext";
+import { Providers } from "./providers.client";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,9 +19,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ThirdwebProvider>
-          <UserProvider>{children}</UserProvider>
-        </ThirdwebProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

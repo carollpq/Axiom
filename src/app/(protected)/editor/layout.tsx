@@ -1,18 +1,20 @@
-import { RoleShell } from "@/src/shared/components";
-import { journalNavItems } from "@/src/features/editor/nav";
-import type { UserProfile } from "@/src/shared/types/shared";
+import { RoleShell } from '@/src/shared/components';
+import { getSession } from '@/src/shared/lib/auth/auth';
+import { getUserByWallet } from '@/src/features/users/queries';
+import { journalNavItems } from '@/src/features/editor/nav';
+import { buildUserProfile } from '@/src/shared/lib/format';
 
-const journalUser: UserProfile = {
-  name: "Journal of Computational Research",
-  initials: "JC",
-  wallet: "—",
-  role: "Editor",
-  notificationCount: 0,
-};
+export default async function JournalLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const wallet = (await getSession())!;
+  const user = await getUserByWallet(wallet);
+  const profile = buildUserProfile(wallet, user, 'editor');
 
-export default function JournalLayout({ children }: { children: React.ReactNode }) {
   return (
-    <RoleShell navItems={journalNavItems} user={journalUser}>
+    <RoleShell navItems={journalNavItems} user={profile}>
       {children}
     </RoleShell>
   );

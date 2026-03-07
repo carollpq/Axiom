@@ -1,13 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/src/shared/lib/auth/auth";
-import { getReviewAssignment } from "@/src/features/reviews/queries";
-import { createReview, updateReviewHedera, createReputationEvent } from "@/src/features/reviews/actions";
-import { isHederaConfigured } from "@/src/shared/lib/hedera/client";
-import { submitHcsMessage } from "@/src/shared/lib/hedera/hcs";
+import { NextRequest, NextResponse, after } from "next/server";
+import { getReviewAssignment, listReviewAssignmentsForSubmission } from "@/src/features/reviews/queries";
+import { createReview, updateReviewHedera, updateSubmissionStatus } from "@/src/features/reviews/actions";
+import { createNotification } from "@/src/features/notifications/actions";
 import { db } from "@/src/shared/lib/db";
 import { paperVersions } from "@/src/shared/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { mintReputationToken } from "@/src/shared/lib/hedera/hts";
+import {
+  requireSession,
+  anchorAndNotify,
+  recordReputation,
+} from "@/src/shared/lib/api-helpers";
 
 export const runtime = "nodejs";
 
@@ -15,14 +17,12 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const sessionWallet = await getSession();
-  if (!sessionWallet) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const session = await requireSession();
+  if (session instanceof NextResponse) return session;
 
   const { id: assignmentId } = await params;
 
-  const assignment = await getReviewAssignment(assignmentId, sessionWallet);
+  const assignment = await getReviewAssignment(assignmentId, session);
   if (!assignment) {
     return NextResponse.json({ error: "Assignment not found or access denied" }, { status: 403 });
   }
@@ -61,7 +61,7 @@ export async function POST(
   const review = await createReview({
     submissionId: assignment.submissionId,
     assignmentId,
-    reviewerWallet: sessionWallet,
+    reviewerWallet: session,
     reviewHash: body.reviewHash,
     criteriaEvaluations: JSON.stringify(body.criteriaEvaluations),
     strengths: body.strengths ?? "",
@@ -75,55 +75,64 @@ export async function POST(
     return NextResponse.json({ error: "Failed to create review" }, { status: 500 });
   }
 
-  let hederaTxId: string | undefined;
-  let hederaTimestamp: string | undefined;
+  const editorWallet = assignment.submission.journal?.editorWallet;
 
-  if (isHederaConfigured() && process.env.HCS_TOPIC_REVIEWS) {
-    try {
-      const { txId, consensusTimestamp } = await submitHcsMessage(
-        process.env.HCS_TOPIC_REVIEWS,
-        {
-          type: "review_submitted",
-          reviewHash: body.reviewHash,
-          reviewerWallet: sessionWallet,
-          submissionId: assignment.submissionId,
-          paperHash: latestVersion?.paperHash ?? null,
-          timestamp: new Date().toISOString(),
-        },
-      );
-      hederaTxId = txId;
-      hederaTimestamp = consensusTimestamp;
-      await updateReviewHedera(review.id, txId);
-    } catch (err) {
-      console.error("[HCS] Review anchor failed:", err);
-    }
-  }
-
-  // Create reputation event (append-only — never update or delete)
-  let htsTokenSerial: string | undefined;
-  try {
-    const tokenResult = await mintReputationToken(sessionWallet, {
-      type: "review_completed",
-      reviewId: review.id,
-      submissionId: assignment.submissionId,
+  // Non-blocking: HCS anchoring, reputation, and status transition run after response
+  after(async () => {
+    const { txId: hederaTxId } = await anchorAndNotify({
+      topic: "HCS_TOPIC_REVIEWS",
+      payload: {
+        type: "review_submitted",
+        reviewHash: body.reviewHash,
+        reviewerWallet: session,
+        submissionId: assignment.submissionId,
+        paperHash: latestVersion?.paperHash ?? null,
+        timestamp: new Date().toISOString(),
+      },
+      notifications: editorWallet
+        ? [
+            {
+              userWallet: editorWallet,
+              type: "review_submitted",
+              title: "Review submitted",
+              body: `A reviewer has submitted their review for "${assignment.submission.paper.title}".`,
+              link: `/editor/under-review`,
+            },
+          ]
+        : [],
     });
-    htsTokenSerial = tokenResult?.serial;
-  } catch (err) {
-    console.error("[HTS] Reputation token mint failed:", err);
-  }
 
-  await createReputationEvent({
-    userWallet: sessionWallet,
-    eventType: "review_completed",
-    scoreDelta: 1,
-    details: JSON.stringify({ reviewId: review.id, submissionId: assignment.submissionId }),
-    htsTokenSerial,
-    hederaTxId,
+    if (hederaTxId) {
+      await updateReviewHedera(review.id, hederaTxId);
+    }
+
+    await recordReputation(
+      session,
+      "review_completed",
+      1,
+      JSON.stringify({ reviewId: review.id, submissionId: assignment.submissionId }),
+      { type: "review_completed", reviewId: review.id, submissionId: assignment.submissionId },
+    );
+
+    // Check if all non-declined assignments are now submitted → transition to reviews_completed
+    const allAssignments = await listReviewAssignmentsForSubmission(assignment.submissionId);
+    const activeAssignments = allAssignments.filter(a => a.status !== "declined");
+    const allSubmitted = activeAssignments.length > 0 && activeAssignments.every(a => a.status === "submitted");
+
+    if (allSubmitted && assignment.submission.paper.owner?.walletAddress) {
+      await updateSubmissionStatus(assignment.submissionId, "reviews_completed");
+
+      await createNotification({
+        userWallet: assignment.submission.paper.owner.walletAddress,
+        type: "reviews_completed",
+        title: "All reviews complete",
+        body: `All reviews are complete for "${assignment.submission.paper.title}". Please review and respond.`,
+        link: `/researcher/view-submissions`,
+      });
+    }
   });
 
   return NextResponse.json({
     reviewId: review.id,
-    hederaTxId,
-    hederaTimestamp,
   });
 }

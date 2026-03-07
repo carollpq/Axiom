@@ -1,4 +1,4 @@
-import type { ReputationDataPoint } from "@/src/shared/types/reviewer-dashboard";
+import type { ReputationDataPoint } from "@/src/features/reviewer/types";
 import { Sparkline } from "./Sparkline";
 
 interface ReputationCardProps {

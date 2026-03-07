@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/src/shared/lib/auth/auth";
+import { z } from "zod";
 import { getContractById } from "@/src/features/contracts/queries";
 import { signContributor, updateContractHedera } from "@/src/features/contracts/actions";
-import { isHederaConfigured } from "@/src/shared/lib/hedera/client";
-import { submitHcsMessage } from "@/src/shared/lib/hedera/hcs";
 import { verifyMessage } from "viem";
+import { requireSession, anchorToHcs, validationError } from "@/src/shared/lib/api-helpers";
+import { EVM_ADDRESS_REGEX, HEX_SIGNATURE_REGEX } from "@/src/shared/lib/validation";
+import { createNotification } from "@/src/features/notifications/actions";
+import { displayNameOrWallet } from "@/src/shared/lib/format";
+
+const signSchema = z.object({
+  contributorWallet: z.string().regex(EVM_ADDRESS_REGEX, "Invalid wallet address"),
+  signature: z.string().regex(HEX_SIGNATURE_REGEX, "Invalid signature format"),
+  contractHash: z.string().optional(),
+});
 
 export const runtime = "nodejs";
 
@@ -12,27 +20,16 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const sessionWallet = await getSession();
-  if (!sessionWallet) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const session = await requireSession();
+  if (session instanceof NextResponse) return session;
 
   const { id } = await params;
   const body = await req.json();
-  const { contributorWallet, signature, contractHash } = body as {
-    contributorWallet?: string;
-    signature?: string;
-    contractHash?: string;
-  };
+  const parsed = signSchema.safeParse(body);
+  if (!parsed.success) return validationError(parsed.error);
+  const { contributorWallet, signature, contractHash } = parsed.data;
 
-  if (!contributorWallet || !signature) {
-    return NextResponse.json(
-      { error: "contributorWallet and signature are required" },
-      { status: 400 },
-    );
-  }
-
-  if (contributorWallet.toLowerCase() !== sessionWallet) {
+  if (contributorWallet.toLowerCase() !== session) {
     return NextResponse.json(
       { error: "Session wallet does not match contributor wallet" },
       { status: 403 },
@@ -68,41 +65,74 @@ export async function POST(
     );
   }
 
-  if (isHederaConfigured() && process.env.HCS_TOPIC_CONTRACTS) {
-    try {
-      const contract = await getContractById(id) as unknown as {
-        status: string;
-        contractHash: string | null;
-      } | null;
-      const isFullySigned = contract?.status === "fully_signed";
-
-      const hcsPayload = isFullySigned
-        ? {
-            type: "fullySigned",
-            contractId: id,
-            contractHash: contractHash ?? contract?.contractHash,
-            timestamp: new Date().toISOString(),
-          }
-        : {
-            type: "signed",
-            contractId: id,
-            contractHash: contractHash ?? null,
-            signerWallet: contributorWallet,
-            timestamp: new Date().toISOString(),
-          };
-
-      const { txId, consensusTimestamp } = await submitHcsMessage(
-        process.env.HCS_TOPIC_CONTRACTS,
-        hcsPayload,
-      );
-
-      if (isFullySigned) {
-        await updateContractHedera(id, txId, consensusTimestamp);
-      }
-    } catch (err) {
-      console.error("[HCS] Contract sign failed:", err);
-    }
+  const contract = await getContractById(id);
+  if (!contract) {
+    return NextResponse.json({ error: "Contract not found" }, { status: 404 });
   }
+  const isFullySigned = contract.status === "fully_signed";
+
+  const hcsPayload = isFullySigned
+    ? {
+        type: "fullySigned",
+        contractId: id,
+        contractHash: contractHash ?? contract.contractHash ?? null,
+        timestamp: new Date().toISOString(),
+      }
+    : {
+        type: "signed",
+        contractId: id,
+        contractHash: contractHash ?? null,
+        signerWallet: contributorWallet,
+        timestamp: new Date().toISOString(),
+      };
+
+  const { txId, consensusTimestamp } = await anchorToHcs(
+    "HCS_TOPIC_CONTRACTS",
+    hcsPayload,
+  );
+
+  if (isFullySigned && txId && consensusTimestamp) {
+    await updateContractHedera(id, txId, consensusTimestamp);
+  }
+
+  // ── Notifications (fire-and-forget) ─────────────────────────────────────
+  const signerName = displayNameOrWallet(
+    contract.contributors.find(
+      (c) => c.contributorWallet?.toLowerCase() === contributorWallet.toLowerCase(),
+    )?.contributorName,
+    contributorWallet,
+  );
+
+  const contractLink = `/researcher/authorship-contracts?id=${id}`;
+
+  const notificationWork = isFullySigned
+    ? Promise.all(
+        contract.contributors
+          .filter((c) => c.contributorWallet)
+          .map((c) =>
+            createNotification({
+              userWallet: c.contributorWallet!,
+              type: "contract_fully_signed",
+              title: "Authorship contract fully signed",
+              body: `All authors have signed the contract for "${contract.paperTitle}".`,
+              link: contractLink,
+            }),
+          ),
+      )
+    : (() => {
+        const ownerWallet = contract.creator?.walletAddress;
+        if (ownerWallet && ownerWallet.toLowerCase() !== contributorWallet.toLowerCase()) {
+          return createNotification({
+            userWallet: ownerWallet,
+            type: "contract_signed",
+            title: "Co-author signed contract",
+            body: `${signerName} signed the authorship contract for "${contract.paperTitle}".`,
+            link: contractLink,
+          });
+        }
+      })();
+
+  notificationWork?.catch((err) => console.error("Contract notification error:", err));
 
   return NextResponse.json(result);
 }

@@ -1,9 +1,9 @@
-interface PercentageBarProps {
-  totalPct: number;
-  isValid: boolean;
-}
+import { useContractContext } from "@/src/features/researcher/context/ContractContext";
 
-export function PercentageBar({ totalPct, isValid }: PercentageBarProps) {
+export function PercentageBar() {
+  const { state } = useContractContext();
+  const { totalPct, isValid } = state;
+
   const barColor = isValid
     ? "linear-gradient(90deg, #8fbc8f, #a0d0a0)"
     : totalPct > 100

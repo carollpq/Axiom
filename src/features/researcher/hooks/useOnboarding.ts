@@ -1,18 +1,24 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useActiveAccount } from "thirdweb/react";
-import { validateOrcidFormat } from "@/src/shared/lib/validation";
+import { useState, useEffect } from 'react';
+import { useActiveAccount } from 'thirdweb/react';
+import { toast } from 'sonner';
+import { validateOrcidFormat } from '@/src/shared/lib/validation';
+import type { Role } from '@/src/features/auth/types';
 
-export type UserRole = "researcher" | "reviewer" | "editor" | null;
-export type OnboardingStep = "connect" | "orcid" | "role_selection" | "complete";
+export type UserRole = Role | null;
+export type OnboardingStep =
+  | 'connect'
+  | 'orcid'
+  | 'role_selection'
+  | 'complete';
 
 export function useOnboarding() {
   const account = useActiveAccount();
   const [onboardingStep, setOnboardingStep] =
-    useState<OnboardingStep>("connect");
-  const [orcidId, setOrcidId] = useState("");
-  const [orcidError, setOrcidError] = useState("");
+    useState<OnboardingStep>('connect');
+  const [orcidId, setOrcidId] = useState('');
+  const [orcidError, setOrcidError] = useState('');
   const [isValidatingOrcid, setIsValidatingOrcid] = useState(false);
   const [selectedRole, setSelectedRole] = useState<UserRole>(null);
   const [isExistingUser, setIsExistingUser] = useState<boolean | null>(null);
@@ -22,8 +28,8 @@ export function useOnboarding() {
     if (account?.address) {
       checkExistingUser(account.address);
     } else {
-      setOnboardingStep("connect");
-      setOrcidId("");
+      setOnboardingStep('connect');
+      setOrcidId('');
       setSelectedRole(null);
       setIsExistingUser(null);
     }
@@ -32,28 +38,28 @@ export function useOnboarding() {
   // Check if user is already registered via existing auth session
   const checkExistingUser = async (_walletAddress: string) => {
     try {
-      const res = await fetch("/api/auth/me");
+      const res = await fetch('/api/auth/me');
       if (res.ok) {
-        setOnboardingStep("complete");
+        setOnboardingStep('complete');
         setIsExistingUser(true);
       } else {
-        setOnboardingStep("orcid");
+        setOnboardingStep('orcid');
         setIsExistingUser(false);
       }
     } catch (error) {
-      console.error("Error checking existing user:", error);
-      setOnboardingStep("orcid");
+      console.error('Error checking existing user:', error);
+      setOnboardingStep('orcid');
     }
   };
 
   // Handle ORCID submission
   const handleOrcidSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setOrcidError("");
+    setOrcidError('');
 
     if (!validateOrcidFormat(orcidId)) {
       setOrcidError(
-        "Invalid ORCID format. Please use format: XXXX-XXXX-XXXX-XXXX"
+        'Invalid ORCID format. Please use format: XXXX-XXXX-XXXX-XXXX',
       );
       return;
     }
@@ -68,13 +74,13 @@ export function useOnboarding() {
       if (isValid) {
         // TODO: Check if ORCID is already registered
         const orcidExists = true;
-        if (orcidExists) setOnboardingStep("role_selection");
+        if (orcidExists) setOnboardingStep('role_selection');
       } else {
-        setOrcidError("ORCID not found. Please check and try again.");
+        setOrcidError('ORCID not found. Please check and try again.');
       }
     } catch (error) {
-      console.error("Error validating ORCID:", error);
-      setOrcidError("Failed to validate ORCID. Please try again.");
+      console.error('Error validating ORCID:', error);
+      setOrcidError('Failed to validate ORCID. Please try again.');
     } finally {
       setIsValidatingOrcid(false);
     }
@@ -88,7 +94,7 @@ export function useOnboarding() {
 
     try {
       // TODO: Register user in smart contract
-      console.log("Registering new user:", {
+      console.log('Registering new user:', {
         walletAddress: account.address,
         orcidId,
         role,
@@ -96,10 +102,10 @@ export function useOnboarding() {
       });
 
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      setOnboardingStep("complete");
+      setOnboardingStep('complete');
     } catch (error) {
-      console.error("Error registering user:", error);
-      alert("Failed to register. Please try again.");
+      console.error('Error registering user:', error);
+      toast.error('Failed to register. Please try again.');
     }
   };
 

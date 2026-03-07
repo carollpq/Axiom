@@ -1,9 +1,9 @@
-import type { SubmissionStage, StageColorConfig } from "@/src/shared/types/editor-dashboard";
+import type { SubmissionStage, BadgeColorConfig } from "@/src/features/editor/types";
 import { Badge } from "@/src/shared/components";
 
 interface StageBadgeProps {
   stage: SubmissionStage;
-  colors: Record<SubmissionStage, StageColorConfig>;
+  colors: Record<SubmissionStage, BadgeColorConfig>;
 }
 
 export function StageBadge({ stage, colors }: StageBadgeProps) {

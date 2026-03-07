@@ -1,4 +1,4 @@
-import type { EditorProfile } from "@/src/shared/types/editor-dashboard";
+import type { EditorProfile } from "@/src/features/editor/types";
 
 interface EditorProfileCardProps {
   editor: EditorProfile;

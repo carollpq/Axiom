@@ -1,53 +1,41 @@
 name: CD
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
+
+concurrency:
+  group: cd-main
+  cancel-in-progress: false # Never cancel an in-progress migration
 
 jobs:
   migrate:
     name: DB migrate
     runs-on: ubuntu-latest
-
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
+
+      - name: Cache node_modules
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: deps-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Install dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Push schema to NeonDB
         run: npx drizzle-kit push --config drizzle.config.ts
 
-  deploy:
-    name: Deploy
-    runs-on: ubuntu-latest
-    needs: migrate
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # ── Replace the step below with your deployment target ──────────────
-      #
-      # Vercel example:
-      #   uses: amondnet/vercel-action@v25
-      #   with:
-      #     vercel-token: ${{ secrets.VERCEL_TOKEN }}
-      #     vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-      #     vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-      #     vercel-args: --prod
-      #
-      # Railway / Render / Fly.io: add their respective deploy actions here.
-      # ────────────────────────────────────────────────────────────────────
-      - name: Deploy application
-        run: echo "Add your deploy step here"
+  # Vercel deploys automatically via Git integration.
+  # No explicit deploy step needed — Vercel triggers on push to main.
+  # Configure your Vercel project at https://vercel.com/dashboard.

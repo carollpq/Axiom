@@ -1,19 +1,19 @@
-const ROLE_CONFIG = {
+import type { Role } from "@/src/features/auth/types";
+
+const ROLE_CONFIG: Record<Role, { title: string; subtitle: string }> = {
   researcher: {
     title: "Researcher Dashboard",
     subtitle: "Manage your research, contracts, and submissions",
   },
-  journal: {
-    title: "Journal Dashboard",
+  editor: {
+    title: "Editor Dashboard",
     subtitle: "Manage submissions, review criteria, and publication decisions",
   },
   reviewer: {
     title: "Reviewer Dashboard",
     subtitle: "Track reviews, build reputation, view feedback",
   },
-} as const;
-
-type Role = keyof typeof ROLE_CONFIG;
+};
 
 export function DashboardHeader({ role }: { role: Role }) {
   const { title, subtitle } = ROLE_CONFIG[role];

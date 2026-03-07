@@ -1,6 +1,6 @@
 "use client";
 
-import type { Recommendation } from "@/src/shared/types/review-workspace";
+import type { Recommendation } from "@/src/features/reviewer/types";
 
 interface RecommendationSectionProps {
   recommendation: Recommendation | null;

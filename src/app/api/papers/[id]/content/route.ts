@@ -1,18 +1,16 @@
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/src/shared/lib/auth/auth";
 import { getPaperById } from "@/src/features/papers/queries";
-import { getFileFromR2, isStorageConfigured } from "@/src/shared/lib/storage";
+import { getFileFromIPFS, isStorageConfigured } from "@/src/shared/lib/storage";
+import { requireSession } from "@/src/shared/lib/api-helpers";
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const session = await requireSession();
+  if (session instanceof NextResponse) return session;
 
   const { id } = await params;
   const paper = await getPaperById(id);
@@ -20,7 +18,7 @@ export async function GET(
     return NextResponse.json({ error: "Paper not found" }, { status: 404 });
   }
 
-  const latestVersion = paper.versions?.[0] ?? null;
+  const latestVersion = paper.versions?.at(-1) ?? null;
   if (!latestVersion?.fileStorageKey) {
     return NextResponse.json(
       { error: "No file uploaded for this paper" },
@@ -35,7 +33,18 @@ export async function GET(
     );
   }
 
-  const buffer = await getFileFromR2(latestVersion.fileStorageKey);
+  const buffer = await getFileFromIPFS(latestVersion.fileStorageKey);
+
+  // Return raw PDF bytes when requested (for non-Lit-encrypted viewing)
+  if (req.nextUrl.searchParams.get("format") === "raw") {
+    return new NextResponse(new Uint8Array(buffer), {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": "inline",
+        "Cache-Control": "private, max-age=300",
+      },
+    });
+  }
 
   return NextResponse.json({
     ciphertext: buffer.toString("base64"),

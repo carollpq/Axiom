@@ -1,4 +1,4 @@
-import { StatsSkeleton, PapersTableSkeleton } from "@/src/features/researcher/components/skeletons";
+import { StatsSkeleton, CarouselSkeleton } from "@/src/features/researcher/components/skeletons";
 
 export default function DashboardLoading() {
   return (
@@ -14,7 +14,7 @@ export default function DashboardLoading() {
         />
       </div>
       <StatsSkeleton />
-      <PapersTableSkeleton />
+      <CarouselSkeleton />
     </div>
   );
 }

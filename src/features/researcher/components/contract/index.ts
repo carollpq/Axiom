@@ -1,11 +1,11 @@
 export { PaperSelection } from "./PaperSelection";
 export { PercentageBar } from "./PercentageBar";
-export { ContributorRow } from "./ContributorRow";
+export { CurrentUserContributorRow } from "./CurrentUserContributorRow";
+export { ExternalContributorRow } from "./ExternalContributorRow";
 export { ContributorTable } from "./ContributorTable";
-export { SignatureProgress } from "./SignatureProgress";
+export { AuthorSearch } from "./AuthorSearch";
 export { ContractPreview } from "./ContractPreview";
 export { ModificationWarning } from "./ModificationWarning";
-export { SubmissionGate } from "./SubmissionGate";
 export { InviteModal } from "./InviteModal";
 export { ContractBuilderClient } from "./ContractBuilderClient";
 export { InviteClaimClient } from "./InviteClaimClient";

@@ -1,39 +1,109 @@
-"use client";
+'use client';
 
-import type { PoolReviewer, JournalIssue } from "@/src/shared/types/editor-dashboard";
-import { IssuesGrid } from "./management/IssuesGrid";
-import { EditableSection } from "./management/EditableSection";
-import { ReviewerGrid } from "./management/ReviewerGrid";
+import { useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import type { PoolReviewer, JournalIssue } from '@/src/features/editor/types';
+import { IssuesGrid } from './management/IssuesGrid';
+import { EditableSection } from './management/EditableSection';
+import { ReviewerGrid } from './management/ReviewerGrid';
 
 interface JournalManagementProps {
+  journalId: string;
   journalName: string;
   issues: JournalIssue[];
   aimsAndScope: string;
   submissionCriteria: string;
   reviewers: PoolReviewer[];
+  allReviewers: PoolReviewer[];
 }
 
 export function JournalManagement({
+  journalId,
   journalName,
   issues,
   aimsAndScope,
   submissionCriteria,
   reviewers,
+  allReviewers,
 }: JournalManagementProps) {
+  const router = useRouter();
+
+  const postAndRefresh = useCallback(
+    async (path: string, body: Record<string, unknown>, method = 'POST') => {
+      const res = await fetch(`/api/journals/${journalId}${path}`, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(err.error || 'Request failed');
+      }
+      router.refresh();
+    },
+    [journalId, router],
+  );
+
+  const handleSaveAims = useCallback(
+    async (value: string) => {
+      await postAndRefresh('', { aimsAndScope: value }, 'PATCH');
+      toast.success('Aims and scope saved');
+    },
+    [postAndRefresh],
+  );
+
+  const handleSaveCriteria = useCallback(
+    async (value: string) => {
+      await postAndRefresh('', { submissionCriteria: value }, 'PATCH');
+      toast.success('Submission criteria saved');
+    },
+    [postAndRefresh],
+  );
+
+  const handleCreateIssue = useCallback(
+    async (label: string) => {
+      await postAndRefresh('/issues', { label });
+      toast.success('Issue created');
+    },
+    [postAndRefresh],
+  );
+
+  const handleAddReviewer = useCallback(
+    async (wallet: string) => {
+      await postAndRefresh('/reviewers', { reviewerWallet: wallet });
+      toast.success('Reviewer added to pool');
+    },
+    [postAndRefresh],
+  );
+
   return (
     <div className="max-w-[1200px] mx-auto px-10 py-8">
-      {/* Page header */}
       <div className="mb-8">
         <h1 className="text-[28px] font-normal text-[#e8e0d4] m-0 tracking-[0.5px] font-serif">
           Journal Management
         </h1>
-        <p className="text-[13px] text-[#6a6050] mt-1.5 italic">{journalName}</p>
+        <p className="text-[13px] text-[#6a6050] mt-1.5 italic">
+          {journalName}
+        </p>
       </div>
 
-      <IssuesGrid issues={issues} />
-      <EditableSection title="Aims and Scope" initialValue={aimsAndScope} />
-      <EditableSection title="Submission Criteria" initialValue={submissionCriteria} />
-      <ReviewerGrid reviewers={reviewers} />
+      <IssuesGrid issues={issues} onCreateIssue={handleCreateIssue} />
+      <EditableSection
+        title="Aims and Scope"
+        initialValue={aimsAndScope}
+        onSave={handleSaveAims}
+      />
+      <EditableSection
+        title="Submission Criteria"
+        initialValue={submissionCriteria}
+        onSave={handleSaveCriteria}
+      />
+      <ReviewerGrid
+        reviewers={reviewers}
+        allReviewers={allReviewers}
+        onAddReviewer={handleAddReviewer}
+      />
     </div>
   );
 }

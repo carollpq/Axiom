@@ -1,10 +1,11 @@
-"use client";
+'use client';
 
-import { createContext, useContext, useState, useEffect, useRef } from "react";
-import { useActiveAccount } from "thirdweb/react";
-import { fetchApi } from "@/src/shared/lib/api";
-import { doLogout } from "@/src/shared/lib/auth/actions";
-import type { DbUser } from "@/src/shared/types/api";
+import { createContext, use, useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { useActiveAccount } from 'thirdweb/react';
+import { fetchApi } from '@/src/shared/lib/api';
+import { doLogout } from '@/src/shared/lib/auth/actions';
+import type { DbUser } from '@/src/shared/types/api';
 
 interface UserContextValue {
   account: ReturnType<typeof useActiveAccount>;
@@ -16,20 +17,30 @@ interface UserContextValue {
 const UserContext = createContext<UserContextValue | null>(null);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const account = useActiveAccount();
   const [user, setUser] = useState<DbUser | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   // Track whether the wallet has resolved at least once so we don't
   // mistake the initial undefined (Thirdweb rehydrating) for a disconnect.
   const walletReady = useRef(false);
 
   // Restore session on mount (page refresh, SSR rehydration)
   useEffect(() => {
-    setLoading(true);
-    fetchApi<DbUser>("/api/auth/me")
-      .then(setUser)
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    fetchApi<DbUser>('/api/auth/me')
+      .then((data) => {
+        if (!cancelled) setUser(data);
+      })
+      .catch(() => {
+        if (!cancelled) setUser(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // React to wallet connect/disconnect
@@ -37,16 +48,23 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (!account?.address) {
       // Still waiting for Thirdweb to rehydrate the wallet — don't log out yet.
       if (!walletReady.current) return;
-      doLogout().then(() => setUser(null));
+      doLogout().then(() => {
+        setUser(null);
+        router.push('/login');
+      });
       return;
     }
 
     walletReady.current = true;
 
     let cancelled = false;
-    setLoading(true);
 
-    fetchApi<DbUser>("/api/auth/me")
+    // Set loading via microtask to satisfy react-hooks/set-state-in-effect
+    Promise.resolve().then(() => {
+      if (!cancelled) setLoading(true);
+    });
+
+    fetchApi<DbUser>('/api/auth/me')
       .then((data) => {
         if (!cancelled) setUser(data);
       })
@@ -60,7 +78,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [account?.address]);
+  }, [account?.address, router]);
 
   return (
     <UserContext.Provider
@@ -72,7 +90,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useUser(): UserContextValue {
-  const ctx = useContext(UserContext);
-  if (!ctx) throw new Error("useUser must be used within UserProvider");
+  const ctx = use(UserContext);
+  if (!ctx) throw new Error('useUser must be used within UserProvider');
   return ctx;
 }

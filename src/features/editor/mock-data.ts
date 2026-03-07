@@ -4,7 +4,7 @@ import type {
   ReviewerWithStatus,
   EditorProfile,
   JournalIssue,
-} from "@/src/shared/types/editor-dashboard";
+} from "@/src/features/editor/types";
 
 /* ── Editor profile ── */
 
@@ -19,7 +19,7 @@ export const mockEditorProfile: EditorProfile = {
 
 export const mockIncomingPapers: PaperCardData[] = [
   {
-    id: "p1",
+    id: "p1", paperId: "p1", hasLitData: false,
     title: "Quantum Error Correction Using Topological Codes in Noisy Environments",
     authors: "A. Rodriguez, B. Kim, C. Patel",
     abstractSnippet:
@@ -27,7 +27,7 @@ export const mockIncomingPapers: PaperCardData[] = [
     submittedDate: "2026-02-20",
   },
   {
-    id: "p2",
+    id: "p2", paperId: "p2", hasLitData: false,
     title: "Federated Learning for Privacy-Preserving Medical Image Analysis",
     authors: "M. Zhang, L. Thompson",
     abstractSnippet:
@@ -35,7 +35,7 @@ export const mockIncomingPapers: PaperCardData[] = [
     submittedDate: "2026-02-18",
   },
   {
-    id: "p3",
+    id: "p3", paperId: "p3", hasLitData: false,
     title: "Scalable Graph Neural Networks for Molecular Property Prediction",
     authors: "J. Park, S. Müller, R. Gupta",
     abstractSnippet:
@@ -43,7 +43,7 @@ export const mockIncomingPapers: PaperCardData[] = [
     submittedDate: "2026-02-15",
   },
   {
-    id: "p4",
+    id: "p4", paperId: "p4", hasLitData: false,
     title: "Causal Inference in High-Dimensional Observational Studies",
     authors: "D. Williams, E. Nakamura",
     abstractSnippet:
@@ -54,7 +54,7 @@ export const mockIncomingPapers: PaperCardData[] = [
 
 export const mockUnderReviewPapers: PaperCardData[] = [
   {
-    id: "p5",
+    id: "p5", paperId: "p5", hasLitData: false,
     title: "Transformer Architectures for Long-Range Sequence Modeling",
     authors: "H. Li, F. Okonkwo, A. Sharma",
     abstractSnippet:
@@ -62,7 +62,7 @@ export const mockUnderReviewPapers: PaperCardData[] = [
     submittedDate: "2026-01-28",
   },
   {
-    id: "p6",
+    id: "p6", paperId: "p6", hasLitData: false,
     title: "Adversarial Robustness in Multi-Modal Foundation Models",
     authors: "K. Tanaka, P. Costa",
     abstractSnippet:
@@ -70,7 +70,7 @@ export const mockUnderReviewPapers: PaperCardData[] = [
     submittedDate: "2026-01-22",
   },
   {
-    id: "p7",
+    id: "p7", paperId: "p7", hasLitData: false,
     title: "Bayesian Optimization for Automated Hyperparameter Tuning at Scale",
     authors: "R. Singh, M. Dubois, C. Lee",
     abstractSnippet:
@@ -81,7 +81,7 @@ export const mockUnderReviewPapers: PaperCardData[] = [
 
 export const mockAcceptedPapers: PaperCardData[] = [
   {
-    id: "p8",
+    id: "p8", paperId: "p8", hasLitData: false,
     title: "Neural Architecture Search with Hardware-Aware Constraints",
     authors: "T. Brown, Y. Suzuki",
     abstractSnippet:
@@ -89,7 +89,7 @@ export const mockAcceptedPapers: PaperCardData[] = [
     submittedDate: "2025-12-10",
   },
   {
-    id: "p9",
+    id: "p9", paperId: "p9", hasLitData: false,
     title: "Self-Supervised Learning for Low-Resource Language Understanding",
     authors: "N. Osei, B. Petrov, A. Mahmoud",
     abstractSnippet:
@@ -101,12 +101,12 @@ export const mockAcceptedPapers: PaperCardData[] = [
 /* ── Reviewer pool ── */
 
 export const mockReviewerPool: PoolReviewer[] = [
-  { id: "r1", name: "Dr. Emily Watson", field: "Machine Learning", score: 4.7, orcid: "0000-0001-2345-6789", reviews: 23 },
-  { id: "r2", name: "Dr. James Liu", field: "Quantum Computing", score: 4.5, orcid: "0000-0002-3456-7890", reviews: 18 },
-  { id: "r3", name: "Dr. Priya Mehta", field: "NLP", score: 4.2, orcid: "0000-0003-4567-8901", reviews: 31 },
-  { id: "r4", name: "Dr. Carlos Rivera", field: "Computer Vision", score: 3.9, orcid: "0000-0004-5678-9012", reviews: 12 },
-  { id: "r5", name: "Dr. Anna Kowalski", field: "Statistics", score: 4.8, orcid: "0000-0005-6789-0123", reviews: 27 },
-  { id: "r6", name: "Dr. Omar Hassan", field: "Distributed Systems", score: 4.1, orcid: "0000-0006-7890-1234", reviews: 15 },
+  { id: "r1", name: "Dr. Emily Watson", field: "Machine Learning", score: 4.7, orcid: "0000-0001-2345-6789", reviews: 23, wallet: "0xmock1", institution: "MIT" },
+  { id: "r2", name: "Dr. James Liu", field: "Quantum Computing", score: 4.5, orcid: "0000-0002-3456-7890", reviews: 18, wallet: "0xmock2", institution: "Stanford University" },
+  { id: "r3", name: "Dr. Priya Mehta", field: "NLP", score: 4.2, orcid: "0000-0003-4567-8901", reviews: 31, wallet: "0xmock3", institution: "Oxford University" },
+  { id: "r4", name: "Dr. Carlos Rivera", field: "Computer Vision", score: 3.9, orcid: "0000-0004-5678-9012", reviews: 12, wallet: "0xmock4", institution: "ETH Zurich" },
+  { id: "r5", name: "Dr. Anna Kowalski", field: "Statistics", score: 4.8, orcid: "0000-0005-6789-0123", reviews: 27, wallet: "0xmock5", institution: "Cambridge University" },
+  { id: "r6", name: "Dr. Omar Hassan", field: "Distributed Systems", score: 4.1, orcid: "0000-0006-7890-1234", reviews: 15, wallet: "0xmock6", institution: "Carnegie Mellon" },
 ];
 
 /* ── Review statuses (for under-review view) ── */

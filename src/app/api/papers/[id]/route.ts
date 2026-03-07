@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/src/shared/lib/auth/auth";
 import { getPaperById } from "@/src/features/papers/queries";
 import { updatePaper } from "@/src/features/papers/actions";
+import { requireSession } from "@/src/shared/lib/api-helpers";
 
 export const runtime = "nodejs";
 
@@ -23,10 +23,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const wallet = await getSession();
-  if (!wallet) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const wallet = await requireSession();
+  if (wallet instanceof NextResponse) return wallet;
 
   const { id } = await params;
   const body = await req.json();

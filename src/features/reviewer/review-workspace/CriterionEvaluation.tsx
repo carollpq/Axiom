@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReviewCriterion, CriterionRating, CriterionEvaluation as CriterionEvalType } from "@/src/shared/types/review-workspace";
+import type { ReviewCriterion, CriterionRating, CriterionEvaluation as CriterionEvalType } from "@/src/features/reviewer/types";
 
 interface CriterionEvaluationProps {
   criterion: ReviewCriterion;
@@ -18,19 +18,6 @@ const ratingColors: Record<CriterionRating, { bg: string; text: string; border: 
   Partially: { bg: "rgba(212,164,90,0.15)", text: "#d4a45a", border: "rgba(212,164,90,0.4)" },
 };
 
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "8px 12px",
-  background: "rgba(30,28,24,0.8)",
-  border: "1px solid rgba(120,110,95,0.25)",
-  borderRadius: 4,
-  color: "#d4ccc0",
-  fontFamily: "'Georgia', serif",
-  fontSize: 12,
-  outline: "none",
-  boxSizing: "border-box",
-  resize: "vertical",
-};
 
 export function CriterionEvaluation({
   criterion,
@@ -80,7 +67,7 @@ export function CriterionEvaluation({
         value={evaluation.comment}
         onChange={e => onCommentChange(criterion.id, e.target.value)}
         rows={2}
-        style={inputStyle}
+        className="input-field resize-y text-[12px] py-2 px-3"
       />
     </div>
   );

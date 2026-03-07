@@ -1,65 +1,81 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import type { Contributor, ExistingDraft } from "@/src/features/researcher/types/contract";
-import { useCurrentUser } from "@/src/shared/hooks/useCurrentUser";
-import { fetchApi } from "@/src/shared/lib/api";
-import { hashString, canonicalJson } from "@/src/shared/lib/hashing";
-import { mapApiContributors } from "@/src/features/researcher/mappers/contract";
-import type { ApiContract } from "@/src/shared/types/api";
+import { useReducer, useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import type {
+  Contributor,
+  ExistingDraft,
+} from '@/src/features/researcher/types/contract';
+import { useCurrentUser } from '@/src/shared/hooks/useCurrentUser';
+import { fetchApi } from '@/src/shared/lib/api';
+import { mockTxHash } from '@/src/shared/lib/format';
+import { hashString, canonicalJson } from '@/src/shared/lib/hashing';
+import { mapApiContributors } from '@/src/features/researcher/mappers/contract';
+import type { ApiContract, UserSearchResult } from '@/src/shared/types/api';
+import {
+  contractBuilderReducer,
+  initialState,
+  selectTotalPct,
+  selectIsValid,
+  selectAllSigned,
+  selectHasSigned,
+} from '@/src/features/researcher/reducers/contract-builder';
 
 export function useContractBuilder(initialDrafts: ExistingDraft[]) {
   const { user, account } = useCurrentUser();
-
-  const [selectedDraft, setSelectedDraft] = useState<number | null>(null);
-  const [newTitle, setNewTitle] = useState("");
-  const [contributors, setContributors] = useState<Contributor[]>([]);
-  const [showAddRow, setShowAddRow] = useState(false);
-  const [addWallet, setAddWallet] = useState("");
-  const [showPreview, setShowPreview] = useState(false);
-  const [showInviteModal, setShowInviteModal] = useState(false);
-  const [inviteLink, setInviteLink] = useState("");
-  const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(contractBuilderReducer, initialState);
+  const [error, setError] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
 
   // When a draft is selected, load its pre-mapped contributors
   useEffect(() => {
-    if (selectedDraft === null) return;
-    const draft = initialDrafts.find((d) => d.id === selectedDraft);
+    if (state.selectedDraft === null) return;
+    const draft = initialDrafts.find((d) => d.id === state.selectedDraft);
     if (!draft) return;
 
     if (draft.contributors && draft.contributors.length > 0) {
-      setContributors(draft.contributors);
-      setSelectedContractId(draft.contractId ?? null);
+      dispatch({
+        type: 'SELECT_DRAFT_LOADED',
+        contributors: draft.contributors,
+        selectedContractId: draft.contractId ?? null,
+      });
     } else {
-      setContributors([]);
-      setSelectedContractId(null);
+      dispatch({
+        type: 'SELECT_DRAFT_LOADED',
+        contributors: [],
+        selectedContractId: null,
+      });
     }
-  }, [selectedDraft, initialDrafts]);
+  }, [state.selectedDraft, initialDrafts]);
 
-  const currentUserWallet = user?.walletAddress ?? "";
-
-  const totalPct = contributors.reduce((s, c) => s + (Number(c.pct) || 0), 0);
-  const isValid = totalPct === 100;
-  const signedCount = contributors.filter((c) => c.status === "signed").length;
-  const allSigned = contributors.length > 0 && signedCount === contributors.length;
-  const hasSigned = contributors.some((c) => c.status === "signed");
-  const draft = initialDrafts.find((d) => d.id === selectedDraft);
+  const currentUserWallet = user?.walletAddress ?? '';
+  const totalPct = selectTotalPct(state);
+  const isValid = selectIsValid(state);
+  const hasSigned = selectHasSigned(state);
+  const allSigned = selectAllSigned(state);
+  const signedCount = state.contributors.filter(
+    (c) => c.status === 'signed',
+  ).length;
+  const draft = initialDrafts.find((d) => d.id === state.selectedDraft);
 
   async function refreshContributors(contractId: string): Promise<void> {
-    const fresh = await fetchApi<ApiContract[]>("/api/contracts");
+    const fresh = await fetchApi<ApiContract[]>('/api/contracts');
     const match = fresh?.find((c) => c.id === contractId);
     if (match) {
-      setContributors(mapApiContributors(match.contributors));
+      dispatch({
+        type: 'SET_CONTRIBUTORS',
+        contributors: mapApiContributors(match.contributors),
+      });
     }
   }
 
   async function handleCreateContract(): Promise<string | null> {
     if (!user) return null;
-    const titleForContract = draft?.title ?? newTitle.trim();
+    const titleForContract = draft?.title ?? state.newTitle.trim();
     if (!titleForContract) return null;
 
-    const newContract = await fetchApi<ApiContract>("/api/contracts", {
-      method: "POST",
+    const newContract = await fetchApi<ApiContract>('/api/contracts', {
+      method: 'POST',
       body: JSON.stringify({
         paperTitle: titleForContract,
         paperId: draft?.dbId ?? null,
@@ -67,151 +83,138 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
     });
 
     const addResults = await Promise.all(
-      contributors.map((c) =>
-        fetchApi<{ id: string }>(`/api/contracts/${newContract.id}/contributors`, {
-          method: "POST",
-          body: JSON.stringify({
-            contributorWallet: c.wallet,
-            contributorName: c.name !== "Unknown user" ? c.name : null,
-            contributionPct: Number(c.pct) || 0,
-            roleDescription: c.role || null,
-            isCreator: c.isCreator,
-          }),
-        }),
+      state.contributors.map((c) =>
+        fetchApi<{ id: string }>(
+          `/api/contracts/${newContract.id}/contributors`,
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              contributorWallet: c.wallet,
+              contributorName: c.name !== 'Unknown user' ? c.name : null,
+              contributionPct: Number(c.pct) || 0,
+              roleDescription: c.role || null,
+              isCreator: c.isCreator,
+            }),
+          },
+        ),
       ),
     );
 
-    setContributors((prev) =>
-      prev.map((c, i) => ({ ...c, dbId: addResults[i]?.id })),
-    );
-    setSelectedContractId(newContract.id);
+    dispatch({
+      type: 'CONTRACT_CREATED',
+      selectedContractId: newContract.id,
+      contributorDbIds: addResults.map((r) => r?.id),
+    });
     return newContract.id;
   }
 
-  const updateContributor = (id: number, field: string, value: string | number) => {
+  const updateContributor = (
+    id: number,
+    field: string,
+    value: string | number,
+  ) => {
     const wasSignedBefore = hasSigned;
-    setContributors((prev) =>
-      prev.map((c) => {
-        if (c.id !== id) {
-          // Reset ALL signed contributors when ANY field changes
-          if (wasSignedBefore && c.status === "signed") {
-            return { ...c, status: "pending" as const, txHash: null, signedAt: null };
-          }
-          return c;
-        }
-        return {
-          ...c,
-          [field]: field === "pct" ? (value === "" ? "" : Number(value)) : value,
-          ...(wasSignedBefore && c.status === "signed"
-            ? { status: "pending" as const, txHash: null, signedAt: null }
-            : {}),
-        };
-      }),
-    );
+    dispatch({ type: 'UPDATE_CONTRIBUTOR', id, field, value });
     // Reset signatures in DB if any were signed before this edit
-    if (wasSignedBefore && selectedContractId) {
-      fetchApi(`/api/contracts/${selectedContractId}/reset-signatures`, { method: "PATCH" }).catch(
-        (err) => console.error("Reset signatures failed:", err),
-      );
+    if (wasSignedBefore && state.selectedContractId) {
+      fetchApi(`/api/contracts/${state.selectedContractId}/reset-signatures`, {
+        method: 'PATCH',
+      }).catch((err) => {
+        console.error('Reset signatures failed:', err);
+        toast.error('Failed to reset signatures');
+      });
     }
   };
 
   const removeContributor = async (id: number) => {
-    const contributor = contributors.find((c) => c.id === id);
-    if (selectedContractId && contributor?.dbId) {
+    const contributor = state.contributors.find((c) => c.id === id);
+    if (state.selectedContractId && contributor?.dbId) {
       try {
         await fetchApi(
-          `/api/contracts/${selectedContractId}/contributors?contributorId=${contributor.dbId}`,
-          { method: "DELETE" },
+          `/api/contracts/${state.selectedContractId}/contributors/${contributor.dbId}`,
+          { method: 'DELETE' },
         );
       } catch (err) {
-        console.error("Remove contributor failed:", err);
+        console.error('Remove contributor failed:', err);
+        toast.error('Failed to remove contributor');
         return;
       }
     }
-    setContributors((prev) => prev.filter((c) => c.id !== id));
+    dispatch({ type: 'REMOVE_CONTRIBUTOR', id });
   };
 
-  const addContributor = async () => {
-    const newId = Math.max(...contributors.map((c) => c.id), 0) + 1;
-    const newContributor: Contributor | null = addWallet.trim()
-      ? {
-          id: newId,
-          wallet: addWallet,
-          did: addWallet,
-          name: "Unknown user",
-          orcid: "\u2014",
-          pct: 0,
-          role: "",
-          status: "pending" as const,
-          txHash: null,
-          signedAt: null,
-          isCreator: false,
-        }
-      : null;
+  const addContributorFromSearch = async (result: UserSearchResult) => {
+    const newId = Math.max(...state.contributors.map((c) => c.id), 0) + 1;
+    const newContributor: Contributor = {
+      id: newId,
+      wallet: result.walletAddress,
+      did: result.walletAddress,
+      name: result.displayName || 'Unknown user',
+      orcid: result.orcidId || '\u2014',
+      pct: 0,
+      role: '',
+      status: 'pending' as const,
+      txHash: null,
+      signedAt: null,
+      isCreator: false,
+    };
 
-    if (!newContributor) return;
-
-    if (selectedContractId) {
+    if (state.selectedContractId) {
       try {
-        const result = await fetchApi<{ id: string }>(
-          `/api/contracts/${selectedContractId}/contributors`,
+        const dbResult = await fetchApi<{ id: string }>(
+          `/api/contracts/${state.selectedContractId}/contributors`,
           {
-            method: "POST",
+            method: 'POST',
             body: JSON.stringify({
               contributorWallet: newContributor.wallet,
-              contributorName: null,
+              contributorName:
+                newContributor.name !== 'Unknown user'
+                  ? newContributor.name
+                  : null,
               contributionPct: 0,
               roleDescription: null,
               isCreator: false,
             }),
           },
         );
-        newContributor.dbId = result.id;
+        newContributor.dbId = dbResult.id;
+        setError(null);
       } catch (err) {
-        console.error("Add contributor failed:", err);
+        console.error('Add contributor failed:', err);
+        setError('Failed to add contributor.');
+        toast.error('Failed to add contributor');
         return;
       }
     }
 
-    setContributors((prev) => [...prev, newContributor]);
-    setAddWallet("");
-    setShowAddRow(false);
+    dispatch({ type: 'ADD_CONTRIBUTOR', contributor: newContributor });
+    toast.success('Contributor added');
   };
 
   const handleSign = async (id: number) => {
-    const contributor = contributors.find((c) => c.id === id);
+    const contributor = state.contributors.find((c) => c.id === id);
 
     if (!contributor || !account || !user) {
-      setContributors((prev) =>
-        prev.map((c) =>
-          c.id === id
-            ? {
-                ...c,
-                status: "signed" as const,
-                txHash:
-                  "0x" +
-                  Math.random().toString(16).slice(2, 6) +
-                  "..." +
-                  Math.random().toString(16).slice(2, 6),
-                signedAt: new Date().toISOString(),
-              }
-            : c,
-        ),
-      );
+      dispatch({
+        type: 'SIGN_DEMO',
+        id,
+        txHash: mockTxHash(),
+        signedAt: new Date().toISOString(),
+      });
       return;
     }
 
     try {
-      const contractId = selectedContractId ?? (await handleCreateContract());
+      const contractId =
+        state.selectedContractId ?? (await handleCreateContract());
       if (!contractId) {
-        console.error("Could not create contract before signing");
+        console.error('Could not create contract before signing');
         return;
       }
 
       const contractPayload = {
-        paperTitle: draft?.title ?? newTitle,
-        contributors: contributors.map((c) => ({
+        paperTitle: draft?.title ?? state.newTitle,
+        contributors: state.contributors.map((c) => ({
           wallet: c.wallet,
           name: c.name,
           pct: c.pct,
@@ -222,7 +225,7 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
       const signature = await account.signMessage({ message: contractHash });
 
       await fetchApi(`/api/contracts/${contractId}/sign`, {
-        method: "POST",
+        method: 'POST',
         body: JSON.stringify({
           contributorWallet: contributor.wallet,
           signature,
@@ -230,47 +233,51 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
         }),
       });
 
+      setError(null);
       await refreshContributors(contractId);
+      toast.success('Contract signed');
     } catch (err) {
-      console.error("Signing failed:", err);
+      console.error('Signing failed:', err);
+      setError('Signing failed. Please try again.');
+      toast.error('Signing failed. Please try again.');
     }
   };
 
   const handleInvite = async (contributorDbId?: string) => {
-    if (!selectedContractId || !contributorDbId) {
-      // Fallback: open modal with empty link if no contract persisted yet
-      setInviteLink("");
-      setShowInviteModal(true);
+    if (!state.selectedContractId || !contributorDbId) {
+      dispatch({ type: 'SHOW_INVITE_MODAL', inviteLink: '' });
       return;
     }
     try {
       const res = await fetchApi<{ inviteLink: string }>(
-        `/api/contracts/${selectedContractId}/invite`,
+        `/api/contracts/${state.selectedContractId}/invite`,
         {
-          method: "POST",
+          method: 'POST',
           body: JSON.stringify({ contributorId: contributorDbId }),
         },
       );
-      setInviteLink(res.inviteLink);
-      setShowInviteModal(true);
+      setError(null);
+      dispatch({ type: 'SHOW_INVITE_MODAL', inviteLink: res.inviteLink });
     } catch (err) {
-      console.error("Invite generation failed:", err);
+      console.error('Invite generation failed:', err);
+      setError('Failed to generate invite link.');
+      toast.error('Failed to generate invite link');
     }
   };
 
-  const closeInviteModal = () => setShowInviteModal(false);
+  const closeInviteModal = () => dispatch({ type: 'CLOSE_INVITE_MODAL' });
 
   return {
     // State
-    selectedDraft,
-    newTitle,
-    contributors,
-    showAddRow,
-    addWallet,
-    showPreview,
-    showInviteModal,
-    inviteLink,
-    selectedContractId,
+    selectedDraft: state.selectedDraft,
+    newTitle: state.newTitle,
+    contributors: state.contributors,
+    showAddRow: state.showAddRow,
+    showPreview: state.showPreview,
+    showInviteModal: state.showInviteModal,
+    inviteLink: state.inviteLink,
+    selectedContractId: state.selectedContractId,
+    error,
     // Derived
     totalPct,
     isValid,
@@ -281,14 +288,36 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
     drafts: initialDrafts,
     currentUserWallet,
     // Handlers
-    setSelectedDraft,
-    setNewTitle,
-    setShowAddRow,
-    setAddWallet,
-    setShowPreview,
+    setSelectedDraft: (selectedDraft: number | null) =>
+      dispatch({ type: 'SET_SELECTED_DRAFT', selectedDraft }),
+    setNewTitle: (newTitle: string) =>
+      dispatch({ type: 'SET_NEW_TITLE', newTitle }),
+    setShowAddRow: (showAddRow: boolean) =>
+      dispatch({ type: 'SET_SHOW_ADD_ROW', showAddRow }),
+    setShowPreview: (showPreview: boolean) =>
+      dispatch({ type: 'SET_SHOW_PREVIEW', showPreview }),
     updateContributor,
     removeContributor,
-    addContributor,
+    addContributorFromSearch,
+    generating,
+    generateContract: async () => {
+      try {
+        setError(null);
+        setGenerating(true);
+        const id = await handleCreateContract();
+        if (!id) {
+          setError('Please select a paper or enter a title first.');
+        } else {
+          toast.success('Contract created');
+        }
+      } catch (err) {
+        console.error('Generate contract failed:', err);
+        setError('Failed to generate contract.');
+        toast.error('Failed to generate contract');
+      } finally {
+        setGenerating(false);
+      }
+    },
     handleSign,
     handleInvite,
     closeInviteModal,

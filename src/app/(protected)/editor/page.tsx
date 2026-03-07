@@ -1,61 +1,45 @@
-import { DashboardOverview } from "@/src/features/editor/components/dashboard-overview.client";
-import { getSession } from "@/src/shared/lib/auth/auth";
-import { getJournalByEditorWallet, listJournalSubmissions } from "@/src/features/editor/queries";
-import { mockDashboardStats } from "@/src/features/editor/mock-data";
-import type { StatCardProps } from "@/src/shared/types/shared";
+import { Suspense } from 'react';
+import { getSession } from '@/src/shared/lib/auth/auth';
+import { getUserByWallet } from '@/src/features/users/queries';
+import {
+  getJournalByEditorWallet,
+  listJournalSubmissions,
+} from '@/src/features/editor/queries';
+import { mapDbToEditorProfile } from '@/src/features/editor/mappers/journal';
+import { getInitials } from '@/src/shared/lib/format';
+import { EditorDashboardClient } from '@/src/features/editor/components/dashboard/editor-dashboard.client';
+import { DashboardSkeleton } from '@/src/features/editor/components/skeletons';
+import type { EditorProfile } from '@/src/features/editor/types';
+import type { DbJournalSubmission } from '@/src/features/editor/queries';
 
-export default async function JournalDashboard() {
-  const sessionWallet = await getSession();
+async function EditorContent() {
+  const wallet = (await getSession())!;
 
-  let stats: StatCardProps[];
+  const [user, journal] = await Promise.all([
+    getUserByWallet(wallet),
+    getJournalByEditorWallet(wallet),
+  ]);
 
-  if (sessionWallet) {
-    const journal = await getJournalByEditorWallet(sessionWallet);
-    if (journal) {
-      const subs = await listJournalSubmissions(journal.id);
+  const editorProfile: EditorProfile | null = mapDbToEditorProfile(
+    user,
+    journal,
+    getInitials,
+  );
+  let subs: DbJournalSubmission[] = [];
 
-      const newSubmissions = subs.filter(s => s.status === "submitted").length;
-      const criteriaPublished = subs.filter(s => s.status === "criteria_published").length;
-      const reviewersAssigned = subs.filter(s => s.status === "reviewers_assigned").length;
-      const underReview = subs.filter(s => s.status === "under_review").length;
-      const accepted = subs.filter(s => s.status === "accepted" || s.status === "published").length;
-      const rejected = subs.filter(s => s.status === "rejected").length;
-      const reviewsPending = (subs.flatMap(s => s.reviewAssignments ?? []) as { status: string }[])
-        .filter(a => a.status === "assigned" || a.status === "accepted")
-        .length;
-
-      stats = [
-        { label: "New Submissions", value: newSubmissions },
-        { label: "Criteria Published", value: criteriaPublished },
-        { label: "Reviewers Assigned", value: reviewersAssigned },
-        { label: "Under Review", value: underReview },
-        { label: "Accepted", value: accepted },
-        { label: "Rejected", value: rejected, alert: true },
-        { label: "Reviews Pending", value: reviewsPending },
-      ];
-    } else {
-      // No journal yet — show mock data
-      const s = mockDashboardStats;
-      stats = [
-        { label: "New Submissions", value: s.newSubmissions },
-        { label: "Awaiting Assignment", value: s.awaitingAssignment },
-        { label: "Under Review", value: s.underReview },
-        { label: "Accepted", value: s.acceptedPapers },
-        { label: "Rejected", value: s.rejectedPapers, alert: true },
-        { label: "Reviews Pending", value: s.reviewsPending },
-      ];
-    }
-  } else {
-    const s = mockDashboardStats;
-    stats = [
-      { label: "New Submissions", value: s.newSubmissions },
-      { label: "Awaiting Assignment", value: s.awaitingAssignment },
-      { label: "Under Review", value: s.underReview },
-      { label: "Accepted", value: s.acceptedPapers },
-      { label: "Rejected", value: s.rejectedPapers, alert: true },
-      { label: "Reviews Pending", value: s.reviewsPending },
-    ];
+  if (journal) {
+    subs = await listJournalSubmissions(journal.id);
   }
 
-  return <DashboardOverview stats={stats} />;
+  return <EditorDashboardClient subs={subs} editorProfile={editorProfile} />;
+}
+
+export default function JournalDashboard() {
+  return (
+    <div className="max-w-full mx-auto px-12 py-8">
+      <Suspense fallback={<DashboardSkeleton />}>
+        <EditorContent />
+      </Suspense>
+    </div>
+  );
 }

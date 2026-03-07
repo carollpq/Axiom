@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/src/shared/lib/auth/auth";
-import { db } from "@/src/shared/lib/db";
-import { submissions, journals } from "@/src/shared/lib/db/schema";
-import { eq } from "drizzle-orm";
 import { canonicalJson, hashString } from "@/src/shared/lib/hashing";
 import { publishCriteria } from "@/src/features/reviews/actions";
-import { isHederaConfigured } from "@/src/shared/lib/hedera/client";
-import { submitHcsMessage } from "@/src/shared/lib/hedera/hcs";
+import {
+  requireSession,
+  requireSubmissionEditor,
+  anchorAndNotify,
+} from "@/src/shared/lib/api-helpers";
 
 export const runtime = "nodejs";
 
@@ -22,26 +21,13 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const sessionWallet = await getSession();
-  if (!sessionWallet) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const session = await requireSession();
+  if (session instanceof NextResponse) return session;
 
   const { id: submissionId } = await params;
 
-  // Verify submission exists and editor owns the journal
-  const submission = await db.query.submissions.findFirst({
-    where: eq(submissions.id, submissionId),
-    with: { journal: true },
-  });
-
-  if (!submission) {
-    return NextResponse.json({ error: "Submission not found" }, { status: 404 });
-  }
-
-  if (submission.journal.editorWallet.toLowerCase() !== sessionWallet.toLowerCase()) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const submission = await requireSubmissionEditor(submissionId, session);
+  if (submission instanceof NextResponse) return submission;
 
   if (submission.status !== "submitted") {
     return NextResponse.json(
@@ -59,21 +45,28 @@ export async function POST(
   const criteriaJson = canonicalJson(body.criteria);
   const criteriaHash = await hashString(criteriaJson);
 
-  let hederaTxId: string | undefined;
+  const authorWallet = submission.paper?.owner?.walletAddress;
 
-  if (isHederaConfigured() && process.env.HCS_TOPIC_CRITERIA) {
-    try {
-      const { txId } = await submitHcsMessage(process.env.HCS_TOPIC_CRITERIA, {
-        type: "criteria_published",
-        submissionId,
-        criteriaHash,
-        timestamp: new Date().toISOString(),
-      });
-      hederaTxId = txId;
-    } catch (err) {
-      console.error("[HCS] Criteria anchor failed:", err);
-    }
-  }
+  const { txId: hederaTxId } = await anchorAndNotify({
+    topic: "HCS_TOPIC_CRITERIA",
+    payload: {
+      type: "criteria_published",
+      submissionId,
+      criteriaHash,
+      timestamp: new Date().toISOString(),
+    },
+    notifications: authorWallet
+      ? [
+          {
+            userWallet: authorWallet,
+            type: "criteria_published",
+            title: "Review criteria published",
+            body: `Review criteria have been published for "${submission.paper.title}".`,
+            link: `/researcher`,
+          },
+        ]
+      : [],
+  });
 
   const criteria = await publishCriteria({
     submissionId,
