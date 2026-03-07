@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 interface AbstractPaginatorProps {
   pages: string[];
@@ -7,7 +7,12 @@ interface AbstractPaginatorProps {
   onNext: () => void;
 }
 
-export function AbstractPaginator({ pages, currentPage, onPrev, onNext }: AbstractPaginatorProps) {
+export function AbstractPaginator({
+  pages,
+  currentPage,
+  onPrev,
+  onNext,
+}: AbstractPaginatorProps) {
   if (pages.length <= 1) return null;
 
   return (
@@ -15,38 +20,31 @@ export function AbstractPaginator({ pages, currentPage, onPrev, onNext }: Abstra
       <button
         onClick={onPrev}
         disabled={currentPage === 0}
-        className="px-2 py-1 rounded text-xs font-serif disabled:opacity-50"
+        className="px-2 py-1 rounded text-xs font-serif disabled:opacity-50 cursor-pointer disabled:cursor-default"
         style={{
           backgroundColor:
-            currentPage === 0
-              ? "rgba(120,110,95,0.1)"
-              : "rgba(201,164,74,0.3)",
-          color:
-            currentPage === 0 ? "#8a8070" : "#c9a44a",
+            currentPage === 0 ? 'rgba(120,110,95,0.1)' : 'rgba(201,164,74,0.3)',
+          color: currentPage === 0 ? '#8a8070' : '#c9a44a',
         }}
       >
-        ← Prev
+        Prev
       </button>
-      <span
-        className="text-xs font-serif"
-        style={{ color: "#8a8070" }}
-      >
+      <span className="text-xs font-serif" style={{ color: '#8a8070' }}>
         {currentPage + 1} / {pages.length}
       </span>
       <button
         onClick={onNext}
         disabled={currentPage === pages.length - 1}
-        className="px-2 py-1 rounded text-xs font-serif disabled:opacity-50"
+        className="px-2 py-1 rounded text-xs font-serif disabled:opacity-50 cursor-pointer disabled:cursor-default"
         style={{
           backgroundColor:
             currentPage === pages.length - 1
-              ? "rgba(120,110,95,0.1)"
-              : "rgba(201,164,74,0.3)",
-          color:
-            currentPage === pages.length - 1 ? "#8a8070" : "#c9a44a",
+              ? 'rgba(120,110,95,0.1)'
+              : 'rgba(201,164,74,0.3)',
+          color: currentPage === pages.length - 1 ? '#8a8070' : '#c9a44a',
         }}
       >
-        Next →
+        Next
       </button>
     </div>
   );

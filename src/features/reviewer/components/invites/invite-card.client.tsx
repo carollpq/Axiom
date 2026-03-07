@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { DynamicPdfViewer as PdfViewer } from "@/src/shared/components/DynamicPdfViewer";
-import { AbstractPaginator } from "./AbstractPaginator";
-import type { AssignedReview } from "@/src/features/reviewer/types";
+import { useState, useMemo } from 'react';
+import { DynamicPdfViewer as PdfViewer } from '@/src/shared/components/DynamicPdfViewer';
+import { AbstractPaginator } from './AbstractPaginator';
+import type { AssignedReview } from '@/src/features/reviewer/types';
 
 interface InviteCardProps {
   review: AssignedReview;
@@ -16,18 +16,52 @@ interface InviteCardProps {
   isLoading?: boolean;
 }
 
+const acceptStyle = {
+  backgroundColor: '#8fbc8f',
+  color: '#1a1816',
+  fontWeight: '600',
+} as const;
+
+const rejectStyle = {
+  backgroundColor: 'rgba(120,110,95,0.3)',
+  color: '#d4ccc0',
+} as const;
+
+/** Split text into pages of ~charLimit characters, breaking at word boundaries. */
+function splitAtWordBoundary(text: string, charLimit: number): string[] {
+  if (!text) return [''];
+  const pages: string[] = [];
+  let remaining = text;
+  while (remaining.length > 0) {
+    if (remaining.length <= charLimit) {
+      pages.push(remaining);
+      break;
+    }
+    let breakAt = remaining.lastIndexOf(' ', charLimit);
+    if (breakAt <= 0) breakAt = charLimit;
+    pages.push(remaining.slice(0, breakAt));
+    remaining = remaining.slice(breakAt).trimStart();
+  }
+  return pages;
+}
+
 export function InviteCard({
   review,
-  paperAbstract = "",
-  authors = ["Author1", "Author2"],
+  paperAbstract = '',
+  authors,
   pdfUrl,
-  editorName = "Editor",
+  editorName = 'Editor',
   onAccept,
   onReject,
   isLoading = false,
 }: InviteCardProps) {
-  const [abstractPage, setAbstractPage] = useState(0);
   const [isResponding, setIsResponding] = useState(false);
+  const [abstractPage, setAbstractPage] = useState(0);
+
+  const abstractPages = useMemo(
+    () => splitAtWordBoundary(paperAbstract, 400),
+    [paperAbstract],
+  );
 
   const handleAccept = async () => {
     if (!onAccept || isResponding || isLoading || !review.submissionId) return;
@@ -49,166 +83,152 @@ export function InviteCard({
     }
   };
 
-  const abstractPages = paperAbstract
-    ? paperAbstract.match(/[\s\S]{0,400}/g) || []
-    : [""];
-  const currentAbstractPage = abstractPages[abstractPage] || "";
+  const busy = isResponding || isLoading;
 
   return (
     <div
-      className="rounded-lg p-6 grid grid-cols-12 gap-6"
-      style={{ backgroundColor: "rgba(45,42,38,0.6)" }}
+      className="rounded-lg p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6"
+      style={{ backgroundColor: 'rgba(45,42,38,0.6)' }}
     >
-      {/* Left Column: Paper Info (3 cols) */}
-      <div className="col-span-3 border-r" style={{ borderColor: "rgba(120,110,95,0.3)" }}>
+      {/* Left Column: Paper Info */}
+      <div
+        className="lg:col-span-3 lg:border-r lg:pr-4"
+        style={{ borderColor: 'rgba(120,110,95,0.3)' }}
+      >
         <div className="space-y-4">
-          {/* Paper Title */}
-          <div>
-            <h3
-              className="font-serif font-bold text-sm leading-tight line-clamp-3"
-              style={{ color: "#d4ccc0" }}
-            >
-              {review.title}
-            </h3>
-          </div>
+          <h3
+            className="font-serif font-bold text-sm leading-tight line-clamp-3"
+            style={{ color: '#d4ccc0' }}
+          >
+            {review.title}
+          </h3>
 
-          {/* Authors */}
-          <div>
-            <p
-              className="text-xs font-serif"
-              style={{ color: "#b0a898" }}
-            >
-              {authors.join(", ")}
+          {authors && authors.length > 0 && (
+            <p className="text-xs font-serif" style={{ color: '#b0a898' }}>
+              {authors.join(', ')}
             </p>
-          </div>
+          )}
 
-          {/* Abstract Preview with Pagination */}
           <div
             className="rounded p-3 text-xs font-serif leading-relaxed"
             style={{
-              backgroundColor: "rgba(120,110,95,0.1)",
-              color: "#8a8070",
-              maxHeight: "180px",
-              overflowY: "auto",
+              backgroundColor: 'rgba(120,110,95,0.1)',
+              color: '#8a8070',
+              maxHeight: '180px',
+              overflowY: 'auto',
             }}
           >
-            {currentAbstractPage || "No abstract available"}
+            {abstractPages[abstractPage] || 'No abstract available'}
           </div>
 
-          {/* Abstract Pagination */}
           <AbstractPaginator
             pages={abstractPages}
             currentPage={abstractPage}
-            onPrev={() => setAbstractPage(Math.max(0, abstractPage - 1))}
-            onNext={() => setAbstractPage(Math.min(abstractPages.length - 1, abstractPage + 1))}
+            onPrev={() => setAbstractPage((p) => Math.max(0, p - 1))}
+            onNext={() =>
+              setAbstractPage((p) => Math.min(abstractPages.length - 1, p + 1))
+            }
           />
         </div>
       </div>
 
-      {/* Center Column: PDF Viewer (6 cols) */}
-      <div className="col-span-6 flex items-center justify-center rounded border" style={{ borderColor: "rgba(120,110,95,0.3)", minHeight: "400px" }}>
+      {/* Center Column: PDF Viewer */}
+      <div
+        className="lg:col-span-6 rounded border overflow-hidden min-h-[250px] sm:min-h-[350px] lg:min-h-[400px]"
+        style={{ borderColor: 'rgba(120,110,95,0.3)' }}
+      >
         {pdfUrl ? (
-          <PdfViewer fileUrl={pdfUrl} title={review.title} />
+          <div className="h-full w-full">
+            <PdfViewer fileUrl={pdfUrl} title={review.title} />
+          </div>
         ) : (
           <div
-            className="text-center p-8"
-            style={{ color: "#8a8070" }}
+            className="flex items-center justify-center h-full p-8"
+            style={{ color: '#8a8070' }}
           >
-            <p className="font-serif text-sm">PDF Viewer</p>
-            <p className="font-serif text-xs mt-2">No PDF available</p>
+            <div className="text-center">
+              <p className="font-serif text-sm">PDF Viewer</p>
+              <p className="font-serif text-xs mt-2">No PDF available</p>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Right Column: Invite Info (3 cols) */}
+      {/* Right Column: Invite Info */}
       <div
-        className="col-span-3 rounded-lg p-4 space-y-4"
-        style={{ backgroundColor: "rgba(120,110,95,0.1)" }}
+        className="lg:col-span-3 rounded-lg p-4 space-y-4 min-w-0"
+        style={{ backgroundColor: 'rgba(120,110,95,0.1)' }}
       >
-        <div>
-          <p
-            className="text-xs font-serif uppercase tracking-wider"
-            style={{ color: "#8a8070" }}
-          >
-            Invite Information
-          </p>
-        </div>
+        <p
+          className="text-xs font-serif uppercase tracking-wider"
+          style={{ color: '#8a8070' }}
+        >
+          Invite Information
+        </p>
 
-        {/* Journal Name */}
-        <div>
+        <div className="min-w-0">
           <p
             className="text-xs font-serif uppercase tracking-wide"
-            style={{ color: "#8a8070" }}
+            style={{ color: '#8a8070' }}
           >
             Journal Name
           </p>
           <p
-            className="text-sm font-serif mt-1"
-            style={{ color: "#d4ccc0" }}
+            className="text-sm font-serif mt-1 break-words"
+            style={{ color: '#d4ccc0' }}
           >
             {review.journal}
           </p>
         </div>
 
-        {/* Editor */}
-        <div>
+        <div className="min-w-0">
           <p
             className="text-xs font-serif uppercase tracking-wide"
-            style={{ color: "#8a8070" }}
+            style={{ color: '#8a8070' }}
           >
             Editor
           </p>
           <p
-            className="text-sm font-serif mt-1"
-            style={{ color: "#d4ccc0" }}
+            className="text-sm font-serif mt-1 truncate"
+            style={{ color: '#d4ccc0' }}
+            title={editorName}
           >
             {editorName}
           </p>
         </div>
 
-        {/* Assigned Timeline */}
-        <div>
+        <div className="min-w-0">
           <p
             className="text-xs font-serif uppercase tracking-wide"
-            style={{ color: "#8a8070" }}
+            style={{ color: '#8a8070' }}
           >
-            Assigned Timeline for Completion
+            Timeline
           </p>
-          <p
-            className="text-sm font-serif mt-1"
-            style={{ color: "#d4ccc0" }}
-          >
+          <p className="text-sm font-serif mt-1" style={{ color: '#d4ccc0' }}>
             {review.daysLeft} days
           </p>
         </div>
 
-        {/* Separator */}
-        <div style={{ height: "1px", backgroundColor: "rgba(120,110,95,0.3)" }} />
+        <div
+          style={{ height: '1px', backgroundColor: 'rgba(120,110,95,0.3)' }}
+        />
 
-        {/* Action Buttons */}
         <div className="flex gap-3 pt-2">
           <button
             onClick={handleAccept}
-            disabled={isResponding || isLoading}
-            className="flex-1 px-4 py-2 rounded font-serif text-sm transition-opacity disabled:opacity-50"
-            style={{
-              backgroundColor: "#8fbc8f",
-              color: "#1a1816",
-              fontWeight: "600",
-            }}
+            disabled={busy}
+            className="flex-1 px-4 py-2 rounded font-serif text-sm transition-all disabled:opacity-50 hover:brightness-110 active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed"
+            style={acceptStyle}
           >
-            {isResponding || isLoading ? "..." : "Accept"}
+            {busy ? '...' : 'Accept'}
           </button>
           <button
             onClick={handleReject}
-            disabled={isResponding || isLoading}
-            className="flex-1 px-4 py-2 rounded font-serif text-sm transition-opacity disabled:opacity-50"
-            style={{
-              backgroundColor: "rgba(120,110,95,0.3)",
-              color: "#d4ccc0",
-            }}
+            disabled={busy}
+            className="flex-1 px-4 py-2 rounded font-serif text-sm transition-all disabled:opacity-50 hover:brightness-125 active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed"
+            style={rejectStyle}
           >
-            {isResponding || isLoading ? "..." : "Reject"}
+            {busy ? '...' : 'Decline'}
           </button>
         </div>
       </div>

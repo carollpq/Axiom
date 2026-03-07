@@ -1,72 +1,92 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { InviteCard } from "./invite-card.client";
-import type { AssignedReviewExtended } from "@/src/features/reviewer/types";
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { InviteCard } from './invite-card.client';
+import { ConfirmDialog } from '@/src/shared/components/ConfirmDialog';
+import type { AssignedReviewExtended } from '@/src/features/reviewer/types';
 
 interface InviteCardListProps {
   invites: AssignedReviewExtended[];
-  onAccept?: (submissionId: string) => Promise<void>;
-  onReject?: (submissionId: string) => Promise<void>;
 }
 
-export function InviteCardList({ invites: initialInvites, onAccept, onReject }: InviteCardListProps) {
-  const [isLoading, setIsLoading] = useState(false);
+export function InviteCardList({
+  invites: initialInvites,
+}: InviteCardListProps) {
   const [invites, setInvites] = useState(initialInvites);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [declineTarget, setDeclineTarget] =
+    useState<AssignedReviewExtended | null>(null);
 
   const handleAccept = async (submissionId: string) => {
-    setIsLoading(true);
+    setLoadingId(submissionId);
     try {
-      const res = await fetch(`/api/submissions/${submissionId}/accept-assignment`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "accept" }),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to accept assignment");
-      }
-
-      // Remove the accepted invite from the UI
-      setInvites((prev) =>
-        prev.filter((inv) => inv.submissionId !== submissionId)
+      const res = await fetch(
+        `/api/submissions/${submissionId}/accept-assignment`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'accept' }),
+        },
       );
 
-      if (onAccept) await onAccept(submissionId);
+      if (!res.ok) {
+        const error = await res
+          .json()
+          .catch(() => ({ error: 'Unknown error' }));
+        throw new Error(error.error || 'Failed to accept assignment');
+      }
+
+      setInvites((prev) =>
+        prev.filter((inv) => inv.submissionId !== submissionId),
+      );
+      toast.success('Invitation accepted');
     } catch (error) {
-      console.error("Error accepting assignment:", error);
-      // Optionally show error toast here
+      const message =
+        error instanceof Error ? error.message : 'Failed to accept invitation';
+      toast.error(message);
     } finally {
-      setIsLoading(false);
+      setLoadingId(null);
     }
   };
 
-  const handleReject = async (submissionId: string) => {
-    setIsLoading(true);
+  const handleRejectClick = async (submissionId: string) => {
+    const target = invites.find((inv) => inv.submissionId === submissionId);
+    if (target) setDeclineTarget(target);
+  };
+
+  const confirmDecline = async () => {
+    if (!declineTarget?.submissionId) return;
+    const submissionId = declineTarget.submissionId;
+    setDeclineTarget(null);
+    setLoadingId(submissionId);
     try {
-      const res = await fetch(`/api/submissions/${submissionId}/accept-assignment`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "decline" }),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to decline assignment");
-      }
-
-      // Remove the rejected invite from the UI
-      setInvites((prev) =>
-        prev.filter((inv) => inv.submissionId !== submissionId)
+      const res = await fetch(
+        `/api/submissions/${submissionId}/accept-assignment`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'decline' }),
+        },
       );
 
-      if (onReject) await onReject(submissionId);
+      if (!res.ok) {
+        const error = await res
+          .json()
+          .catch(() => ({ error: 'Unknown error' }));
+        throw new Error(error.error || 'Failed to decline assignment');
+      }
+
+      setInvites((prev) =>
+        prev.filter((inv) => inv.submissionId !== submissionId),
+      );
+      toast.success('Invitation declined');
     } catch (error) {
-      console.error("Error declining assignment:", error);
-      // Optionally show error toast here
+      const message =
+        error instanceof Error ? error.message : 'Failed to decline invitation';
+      toast.error(message);
     } finally {
-      setIsLoading(false);
+      setLoadingId(null);
     }
   };
 
@@ -75,8 +95,8 @@ export function InviteCardList({ invites: initialInvites, onAccept, onReject }: 
       <div
         className="rounded-lg p-12 text-center"
         style={{
-          backgroundColor: "rgba(120,110,95,0.15)",
-          color: "#8a8070",
+          backgroundColor: 'rgba(120,110,95,0.15)',
+          color: '#8a8070',
         }}
       >
         <p className="font-serif">No pending invitations at this time</p>
@@ -85,20 +105,33 @@ export function InviteCardList({ invites: initialInvites, onAccept, onReject }: 
   }
 
   return (
-    <div className="space-y-6">
-      {invites.map((invite) => (
-        <InviteCard
-          key={invite.assignmentId}
-          review={invite}
-          paperAbstract={invite.abstract}
-          authors={invite.authors}
-          pdfUrl={invite.pdfUrl}
-          editorName={invite.editorName}
-          onAccept={handleAccept}
-          onReject={handleReject}
-          isLoading={isLoading}
-        />
-      ))}
-    </div>
+    <>
+      <div className="space-y-6">
+        {invites.map((invite) => (
+          <InviteCard
+            key={invite.assignmentId}
+            review={invite}
+            paperAbstract={invite.abstract}
+            authors={invite.authors}
+            pdfUrl={invite.pdfUrl}
+            editorName={invite.editorName}
+            onAccept={handleAccept}
+            onReject={handleRejectClick}
+            isLoading={loadingId === invite.submissionId}
+          />
+        ))}
+      </div>
+      <ConfirmDialog
+        isOpen={!!declineTarget}
+        onClose={() => setDeclineTarget(null)}
+        onConfirm={confirmDecline}
+        title="Decline Invitation"
+        message={`Are you sure you want to decline the review invitation for "${declineTarget?.title ?? 'this paper'}"? This action cannot be undone.`}
+        confirmLabel="Decline"
+        confirmVariant="red"
+        isLoading={false}
+        loadingLabel="Declining..."
+      />
+    </>
   );
 }
