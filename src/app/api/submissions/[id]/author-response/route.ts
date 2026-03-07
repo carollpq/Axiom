@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { db } from "@/src/shared/lib/db";
 import { submissions } from "@/src/shared/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -57,88 +57,101 @@ export async function POST(
   const editorWallet = submission.journal.editorWallet;
 
   if (body.action === "accept") {
-    // Anchor first, then single DB update with all fields
-    const { txId } = await anchorAndNotify({
-      topic: "HCS_TOPIC_SUBMISSIONS",
-      payload: {
-        type: "author_response",
-        submissionId,
-        action: "accept",
-        authorWallet: session,
-        timestamp: now,
-      },
-      notifications: editorWallet
-        ? [
-            {
-              userWallet: editorWallet,
-              type: "author_response",
-              title: "Author accepted reviews",
-              body: `The author has accepted reviews for "${submission.paper.title}".`,
-              link: `/editor`,
-            },
-          ]
-        : [],
-    });
-
     await updateSubmissionStatus(submissionId, "reviews_completed", {
       authorResponseStatus: "accepted",
       authorResponseAt: now,
-      authorResponseTxId: txId ?? null,
     });
 
-    return NextResponse.json({ status: "accepted", hederaTxId: txId });
+    // Non-blocking: HCS anchor + notification
+    after(async () => {
+      const { txId } = await anchorAndNotify({
+        topic: "HCS_TOPIC_SUBMISSIONS",
+        payload: {
+          type: "author_response",
+          submissionId,
+          action: "accept",
+          authorWallet: session,
+          timestamp: now,
+        },
+        notifications: editorWallet
+          ? [
+              {
+                userWallet: editorWallet,
+                type: "author_response",
+                title: "Author accepted reviews",
+                body: `The author has accepted reviews for "${submission.paper.title}".`,
+                link: `/editor`,
+              },
+            ]
+          : [],
+      });
+
+      if (txId) {
+        await updateSubmissionStatus(submissionId, "reviews_completed", {
+          authorResponseTxId: txId,
+        });
+      }
+    });
+
+    return NextResponse.json({ status: "accepted" });
   }
 
-  // Request rebuttal — anchor first, then single DB update
+  // Request rebuttal — DB updates first (critical path)
   const deadline = daysFromNow(14);
-
-  const { txId: hederaTxId } = await anchorToHcs("HCS_TOPIC_DECISIONS", {
-    type: "rebuttal_requested",
-    submissionId,
-    authorWallet: session,
-    deadline,
-    timestamp: now,
-  });
 
   await updateSubmissionStatus(submissionId, "rebuttal_open", {
     authorResponseStatus: "rebuttal_requested",
     authorResponseAt: now,
-    authorResponseTxId: hederaTxId ?? null,
   });
 
   const rebuttal = await openRebuttal({
     submissionId,
     authorWallet: session,
     deadline,
-    hederaTxId,
   });
 
-  if (editorWallet) {
-    await anchorAndNotify({
-      topic: "HCS_TOPIC_SUBMISSIONS",
-      payload: {
-        type: "author_response",
-        submissionId,
-        action: "request_rebuttal",
-        authorWallet: session,
-        timestamp: now,
-      },
-      notifications: [
-        {
-          userWallet: editorWallet,
-          type: "author_response",
-          title: "Author requested rebuttal",
-          body: `The author has requested a rebuttal for "${submission.paper.title}".`,
-          link: `/editor`,
-        },
-      ],
+  // Non-blocking: HCS anchoring + notifications
+  after(async () => {
+    const { txId: hederaTxId } = await anchorToHcs("HCS_TOPIC_DECISIONS", {
+      type: "rebuttal_requested",
+      submissionId,
+      authorWallet: session,
+      deadline,
+      timestamp: now,
     });
-  }
+
+    if (hederaTxId) {
+      await updateSubmissionStatus(submissionId, "rebuttal_open", {
+        authorResponseTxId: hederaTxId,
+      });
+    }
+
+    if (editorWallet) {
+      await anchorAndNotify({
+        topic: "HCS_TOPIC_SUBMISSIONS",
+        payload: {
+          type: "author_response",
+          submissionId,
+          action: "request_rebuttal",
+          authorWallet: session,
+          timestamp: now,
+        },
+        notifications: [
+          {
+            userWallet: editorWallet,
+            type: "author_response",
+            title: "Author requested rebuttal",
+            body: `The author has requested a rebuttal for "${submission.paper.title}".`,
+            link: `/editor`,
+          },
+        ],
+      });
+    }
+  });
 
   return NextResponse.json({
     status: "rebuttal_requested",
     rebuttalId: rebuttal?.id,
     deadline,
-    hederaTxId,
   });
 }

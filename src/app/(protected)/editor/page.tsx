@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getSession } from "@/src/shared/lib/auth/auth";
 import { getUserByWallet } from "@/src/features/users/queries";
 import { getJournalByEditorWallet, listJournalSubmissions } from "@/src/features/editor/queries";
@@ -6,10 +7,14 @@ import { getInitials } from "@/src/shared/lib/format";
 import { DashboardHeader } from "@/src/shared/components";
 import { StatsSection } from "@/src/features/editor/components/dashboard/stats.section";
 import { CarouselSection } from "@/src/features/editor/components/dashboard/carousel.section";
+import {
+  StatsSkeleton,
+  CarouselSkeleton,
+} from "@/src/features/editor/components/skeletons";
 import type { EditorProfile } from "@/src/features/editor/types";
 import type { DbJournalSubmission } from "@/src/features/editor/queries";
 
-export default async function JournalDashboard() {
+async function EditorContent() {
   const wallet = (await getSession())!;
 
   const [user, journal] = await Promise.all([
@@ -25,7 +30,7 @@ export default async function JournalDashboard() {
   }
 
   return (
-    <div className="max-w-[1200px] mx-auto px-10 py-8">
+    <>
       {/* Header row with compact profile */}
       <div className="flex items-center gap-4 mb-6">
         <div className="flex-1">
@@ -55,6 +60,23 @@ export default async function JournalDashboard() {
 
       <StatsSection subs={subs} />
       <CarouselSection subs={subs} />
+    </>
+  );
+}
+
+export default function JournalDashboard() {
+  return (
+    <div className="max-w-[1200px] mx-auto px-10 py-8">
+      <Suspense
+        fallback={
+          <>
+            <StatsSkeleton />
+            <CarouselSkeleton />
+          </>
+        }
+      >
+        <EditorContent />
+      </Suspense>
     </div>
   );
 }

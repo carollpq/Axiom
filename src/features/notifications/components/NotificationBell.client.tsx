@@ -4,6 +4,18 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Bell } from "lucide-react";
 import { useClickOutside } from "@/src/shared/hooks/useClickOutside";
 
+const BELL_BUTTON_STYLE = {
+  background: "transparent",
+  border: "1px solid rgba(120,110,95,0.2)",
+  color: "#b0a898",
+} as const;
+
+const DROPDOWN_STYLE = {
+  background: "rgba(35,32,28,0.98)",
+  border: "1px solid rgba(120,110,95,0.25)",
+  boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+} as const;
+
 interface Notification {
   id: string;
   type: string;
@@ -75,11 +87,7 @@ export function NotificationBell() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 rounded-md cursor-pointer"
-        style={{
-          background: "transparent",
-          border: "1px solid rgba(120,110,95,0.2)",
-          color: "#b0a898",
-        }}
+        style={BELL_BUTTON_STYLE}
         aria-label="Notifications"
       >
         <Bell size={18} />
@@ -96,11 +104,7 @@ export function NotificationBell() {
       {isOpen && (
         <div
           className="absolute right-0 top-full mt-2 w-[320px] max-h-[400px] overflow-y-auto rounded-lg z-50"
-          style={{
-            background: "rgba(35,32,28,0.98)",
-            border: "1px solid rgba(120,110,95,0.25)",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
-          }}
+          style={DROPDOWN_STYLE}
         >
           <div
             className="flex items-center justify-between px-4 py-3"

@@ -32,6 +32,12 @@ const AssignReviewersPanel = dynamic(
   { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading reviewer panel...</div> }
 );
 
+const DECISION_LABELS: Record<string, string> = {
+  accept: "accept",
+  reject: "reject",
+  revise: "request revision for",
+};
+
 interface UnderReviewProps {
   papers: PaperCardData[];
   reviewerPool: PoolReviewer[];
@@ -88,12 +94,6 @@ export function UnderReviewClient({
     selected?.hasLitData ? selected.paperId : null,
     true,
   );
-
-  const decisionLabels: Record<string, string> = {
-    accept: "accept",
-    reject: "reject",
-    revise: "request revision for",
-  };
 
   async function handleConfirmRelease() {
     const success = await confirmRelease();
@@ -169,7 +169,7 @@ export function UnderReviewClient({
         onClose={() => setShowDecisionConfirm(false)}
         onConfirm={handleConfirmRelease}
         title="Release Decision"
-        message={`Are you sure you want to ${decisionLabels[decision] ?? decision} this paper? This action cannot be undone.`}
+        message={`Are you sure you want to ${DECISION_LABELS[decision] ?? decision} this paper? This action cannot be undone.`}
         confirmLabel="Release"
         confirmVariant={decision === "reject" ? "red" : "gold"}
         isLoading={isReleasingDecision}

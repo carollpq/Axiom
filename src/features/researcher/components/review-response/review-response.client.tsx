@@ -58,12 +58,12 @@ export function ReviewResponseClient({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Per-review ratings state
+  // Per-review ratings state (lazy initializers avoid re-computing on every render)
   const [ratings, setRatings] = useState<Record<string, ProtocolRatings>>(
-    Object.fromEntries(reviews.map((r) => [r.id, { ...DEFAULT_RATINGS }])),
+    () => Object.fromEntries(reviews.map((r) => [r.id, { ...DEFAULT_RATINGS }])),
   );
   const [comments, setComments] = useState<Record<string, string>>(
-    Object.fromEntries(reviews.map((r) => [r.id, ""])),
+    () => Object.fromEntries(reviews.map((r) => [r.id, ""])),
   );
 
   function updateRating(reviewId: string, key: keyof ProtocolRatings, value: number) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducer, useCallback } from "react";
+import { useReducer, useCallback, useRef } from "react";
 import type { RebuttalPositionDb } from "@/src/shared/lib/db/schema";
 
 interface ResponseDraft {
@@ -71,8 +71,11 @@ export function useRebuttal(rebuttalId: string, reviewIds: string[]) {
     error: null,
   });
 
+  const responsesRef = useRef(state.responses);
+  responsesRef.current = state.responses;
+
   const submitRebuttal = useCallback(async () => {
-    const responses = Object.values(state.responses).filter((r) => r.justification.trim());
+    const responses = Object.values(responsesRef.current).filter((r) => r.justification.trim());
     if (responses.length === 0) {
       dispatch({ type: "SUBMIT_ERROR", error: "Please provide at least one response" });
       return;
@@ -97,7 +100,7 @@ export function useRebuttal(rebuttalId: string, reviewIds: string[]) {
     } catch {
       dispatch({ type: "SUBMIT_ERROR", error: "Network error" });
     }
-  }, [rebuttalId, state.responses]);
+  }, [rebuttalId]);
 
   return {
     ...state,

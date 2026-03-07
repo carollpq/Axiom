@@ -1,11 +1,5 @@
 "use client";
 
-import {
-  LitAccessControlConditionResource,
-  createSiweMessageWithResources,
-  generateAuthSig,
-} from "@lit-protocol/auth-helpers";
-import { LIT_ABILITY } from "@lit-protocol/constants";
 import { getLitClient } from "./client";
 import type { ConditionList } from "./access-control";
 import type { AccessControlConditions } from "@lit-protocol/types";
@@ -21,6 +15,10 @@ async function getSessionSigs(
   walletAddress: string,
   signMessage: (message: string) => Promise<string>,
 ) {
+  const { LitAccessControlConditionResource, createSiweMessageWithResources, generateAuthSig } =
+    await import("@lit-protocol/auth-helpers");
+  const { LIT_ABILITY } = await import("@lit-protocol/constants");
+
   const litClient = await getLitClient();
 
   const resource = new LitAccessControlConditionResource("*");

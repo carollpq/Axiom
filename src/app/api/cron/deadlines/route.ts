@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { listOverdueAssignments } from "@/src/features/reviews/queries";
 import { markAssignmentLate } from "@/src/features/reviews/actions";
 import { createNotification } from "@/src/features/notifications/actions";
@@ -21,37 +21,39 @@ export async function GET(req: NextRequest) {
 
   for (const assignment of overdue) {
     await markAssignmentLate(assignment.id);
-
-    await recordReputation(
-      assignment.reviewerWallet,
-      "review_late",
-      -2,
-      `Late review for submission ${assignment.submissionId}`,
-      { type: "review_late", assignmentId: assignment.id, submissionId: assignment.submissionId },
-    );
-
-    // Notify reviewer
-    await createNotification({
-      userWallet: assignment.reviewerWallet,
-      type: "review_late",
-      title: "Review overdue",
-      body: `Your review for "${assignment.submission.paper.title}" is past deadline.`,
-      link: `/reviewer`,
-    });
-
-    // Notify editor
-    if (assignment.submission.journal?.editorWallet) {
-      await createNotification({
-        userWallet: assignment.submission.journal.editorWallet,
-        type: "review_late",
-        title: "Reviewer overdue",
-        body: `A reviewer is past deadline for "${assignment.submission.paper.title}".`,
-        link: `/editor/under-review`,
-      });
-    }
-
     processed++;
   }
+
+  // Non-blocking: reputation minting + notifications run after response
+  after(async () => {
+    for (const assignment of overdue) {
+      await Promise.all([
+        recordReputation(
+          assignment.reviewerWallet,
+          "review_late",
+          -2,
+          `Late review for submission ${assignment.submissionId}`,
+          { type: "review_late", assignmentId: assignment.id, submissionId: assignment.submissionId },
+        ),
+        createNotification({
+          userWallet: assignment.reviewerWallet,
+          type: "review_late",
+          title: "Review overdue",
+          body: `Your review for "${assignment.submission.paper.title}" is past deadline.`,
+          link: `/reviewer`,
+        }),
+        ...(assignment.submission.journal?.editorWallet
+          ? [createNotification({
+              userWallet: assignment.submission.journal.editorWallet,
+              type: "review_late",
+              title: "Reviewer overdue",
+              body: `A reviewer is past deadline for "${assignment.submission.paper.title}".`,
+              link: `/editor/under-review`,
+            })]
+          : []),
+      ]);
+    }
+  });
 
   return NextResponse.json({ processed });
 }

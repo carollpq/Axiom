@@ -3,6 +3,22 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
+const SELECT_STYLE = {
+  background: "rgba(35,32,28,0.8)",
+  border: "1px solid rgba(120,110,95,0.2)",
+} as const;
+
+const ERROR_STYLE = {
+  background: "rgba(212,100,90,0.15)",
+  color: "#d4645a",
+  border: "1px solid rgba(212,100,90,0.3)",
+} as const;
+
+const FORM_CONTAINER_STYLE = {
+  background: "rgba(45,42,38,0.4)",
+  border: "1px solid rgba(120,110,95,0.15)",
+} as const;
+
 interface PaperOption {
   id: string;
   title: string;
@@ -95,11 +111,7 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
       {error && (
         <div
           className="rounded-md px-4 py-3 mb-4 text-[13px]"
-          style={{
-            background: "rgba(212,100,90,0.15)",
-            color: "#d4645a",
-            border: "1px solid rgba(212,100,90,0.3)",
-          }}
+          style={ERROR_STYLE}
         >
           {error}
         </div>
@@ -108,10 +120,7 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
       {/* Submission Form */}
       <div
         className="rounded-md p-6"
-        style={{
-          background: "rgba(45,42,38,0.4)",
-          border: "1px solid rgba(120,110,95,0.15)",
-        }}
+        style={FORM_CONTAINER_STYLE}
       >
         {/* Paper Title */}
         <div className="flex items-center gap-6 mb-5">
@@ -123,10 +132,7 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
             onChange={(e) => handlePaperChange(e.target.value)}
             disabled={submitting}
             className="flex-1 px-3 py-2.5 rounded-md text-[13px] font-serif text-[#d4ccc0] cursor-pointer"
-            style={{
-              background: "rgba(35,32,28,0.8)",
-              border: "1px solid rgba(120,110,95,0.2)",
-            }}
+            style={SELECT_STYLE}
           >
             <option value="">Select a paper from your repository</option>
             {papers.map((p) => (
@@ -148,8 +154,7 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
             disabled={!selectedPaperId || submitting}
             className="flex-1 px-3 py-2.5 rounded-md text-[13px] font-serif text-[#d4ccc0] cursor-pointer"
             style={{
-              background: "rgba(35,32,28,0.8)",
-              border: "1px solid rgba(120,110,95,0.2)",
+              ...SELECT_STYLE,
               opacity: selectedPaperId ? 1 : 0.5,
             }}
           >
@@ -172,10 +177,7 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
             onChange={(e) => setSelectedJournalId(e.target.value)}
             disabled={submitting}
             className="flex-1 px-3 py-2.5 rounded-md text-[13px] font-serif text-[#d4ccc0] cursor-pointer"
-            style={{
-              background: "rgba(35,32,28,0.8)",
-              border: "1px solid rgba(120,110,95,0.2)",
-            }}
+            style={SELECT_STYLE}
           >
             <option value="">Select a journal</option>
             {journals.map((j) => (
@@ -196,10 +198,7 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
             onChange={(e) => setSelectedContractId(e.target.value)}
             disabled={submitting}
             className="flex-1 px-3 py-2.5 rounded-md text-[13px] font-serif text-[#d4ccc0] cursor-pointer"
-            style={{
-              background: "rgba(35,32,28,0.8)",
-              border: "1px solid rgba(120,110,95,0.2)",
-            }}
+            style={SELECT_STYLE}
           >
             <option value="">Select a completed contract</option>
             {contracts.map((c) => (

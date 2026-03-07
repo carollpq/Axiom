@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { IncomingPapersClient } from "@/src/features/editor/components/incoming-papers.client";
 import { getSession } from "@/src/shared/lib/auth/auth";
 import {
@@ -7,8 +8,9 @@ import {
   listReputationScores,
 } from "@/src/features/editor/queries";
 import { mapDbToPaperCardData, mapDbToPoolReviewer } from "@/src/features/editor/mappers/journal";
+import IncomingPapersLoading from "./loading";
 
-export default async function IncomingPapersPage() {
+async function IncomingPapersContent() {
   const wallet = (await getSession())!;
   const journal = await getJournalByEditorWallet(wallet);
 
@@ -40,5 +42,13 @@ export default async function IncomingPapersPage() {
       papers={papersWithSubmissionId}
       reviewerPool={reviewerPool}
     />
+  );
+}
+
+export default function IncomingPapersPage() {
+  return (
+    <Suspense fallback={<IncomingPapersLoading />}>
+      <IncomingPapersContent />
+    </Suspense>
   );
 }

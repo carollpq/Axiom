@@ -1,11 +1,7 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useState } from "react";
-const PdfViewer = dynamic(
-  () => import("@/src/shared/components/PdfViewer").then((mod) => ({ default: mod.PdfViewer })),
-  { ssr: false, loading: () => <div>Loading PDF...</div> }
-);
+import { DynamicPdfViewer as PdfViewer } from "@/src/shared/components/DynamicPdfViewer";
 import type { AssignedReview } from "@/src/features/reviewer/types";
 
 interface InviteCardProps {
