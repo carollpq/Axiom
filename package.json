@@ -16,7 +16,8 @@
     "contracts:install": "npm --prefix contracts install",
     "contracts:compile": "npm --prefix contracts run compile",
     "contracts:test": "npm --prefix contracts run test",
-    "contracts:deploy:testnet": "npm --prefix contracts run deploy:testnet"
+    "contracts:deploy:testnet": "npm --prefix contracts run deploy:testnet",
+    "prepare": "husky"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.80.0",
@@ -45,11 +46,22 @@
     "drizzle-kit": "^0.31.9",
     "eslint": "^4.1.1",
     "eslint-config-next": "^0.2.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.3.2",
     "postcss": "^8",
     "prettier": "^3.6.2",
     "tailwindcss": "^4.1.18",
     "tsx": "^4.21.0",
     "typescript": "^5"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,jsx,json,css,md}": [
+      "prettier --write"
+    ]
   },
   "pnpm": {
     "overrides": {
