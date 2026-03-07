@@ -55,6 +55,9 @@ jobs:
             contracts/node_modules
           key: deps-${{ runner.os }}-${{ hashFiles('package-lock.json', 'contracts/package-lock.json') }}
 
+      - name: Compile contracts (generates TypeChain types)
+        run: cd contracts && npx hardhat compile
+
       - run: npx tsc --noEmit
 
   lint:
