@@ -1,34 +1,16 @@
 "use client";
 
-import type { Contributor } from "@/src/features/researcher/types/contract";
+import { CurrentUserContributorRow } from "./CurrentUserContributorRow";
+import { ExternalContributorRow } from "./ExternalContributorRow";
 import { PercentageBar } from "./PercentageBar";
 import { SignatureProgress } from "./SignatureProgress";
-import { ContributorRow } from "./ContributorRow";
 import { AuthorSearch } from "./AuthorSearch";
-import type { UserSearchResult } from "@/src/shared/types/api";
+import { useContractContext } from "@/src/features/researcher/context/ContractContext";
 
-interface ContributorTableProps {
-  contributors: Contributor[];
-  totalPct: number;
-  isValid: boolean;
-  hasSigned: boolean;
-  signedCount: number;
-  currentUserWallet: string;
-  showAddRow: boolean;
-  disabled?: boolean;
-  onAddFromSearch: (result: UserSearchResult) => void | Promise<void>;
-  onUpdate: (id: number, field: string, value: string | number) => void;
-  onRemove: (id: number) => void | Promise<void>;
-  onSign: (id: number) => void | Promise<void>;
-  onInvite: (dbId?: string) => void | Promise<void>;
-  onSetShowAddRow: (show: boolean) => void;
-}
+export function ContributorTable() {
+  const { state, actions } = useContractContext();
+  const { contributors, totalPct, isValid, signedCount, showAddRow, currentUserWallet } = state;
 
-export function ContributorTable({
-  contributors, totalPct, isValid, hasSigned, signedCount, currentUserWallet,
-  showAddRow, disabled,
-  onAddFromSearch, onUpdate, onRemove, onSign, onInvite, onSetShowAddRow,
-}: ContributorTableProps) {
   return (
     <div className="rounded-lg p-6 mb-6" style={{ background: "rgba(45,42,38,0.5)", border: "1px solid rgba(120,110,95,0.2)" }}>
       {/* Header */}
@@ -36,7 +18,7 @@ export function ContributorTable({
         <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px]">Contributors</div>
         <div className="flex items-center gap-4">
           <SignatureProgress signed={signedCount} total={contributors.length} />
-          <PercentageBar totalPct={totalPct} isValid={isValid} />
+          <PercentageBar />
         </div>
       </div>
 
@@ -70,33 +52,25 @@ export function ContributorTable({
       </div>
 
       {/* Rows */}
-      {contributors.map((c, i) => (
-        <ContributorRow
-          key={c.id}
-          contributor={c}
-          isValid={isValid}
-          hasSigned={hasSigned}
-          isCurrentUser={c.wallet === currentUserWallet}
-          isLast={i === contributors.length - 1}
-          showAddRow={showAddRow}
-          disabled={disabled}
-          onUpdate={onUpdate}
-          onRemove={onRemove}
-          onSign={onSign}
-          onInvite={onInvite}
-        />
-      ))}
+      {contributors.map((c, i) => {
+        const isLast = i === contributors.length - 1;
+        return c.wallet === currentUserWallet ? (
+          <CurrentUserContributorRow key={c.id} contributor={c} isLast={isLast} />
+        ) : (
+          <ExternalContributorRow key={c.id} contributor={c} isLast={isLast} />
+        );
+      })}
 
       {/* Add contributor */}
       {showAddRow ? (
         <AuthorSearch
-          onSelect={onAddFromSearch}
-          onCancel={() => onSetShowAddRow(false)}
+          onSelect={actions.onAddFromSearch}
+          onCancel={() => actions.onSetShowAddRow(false)}
         />
       ) : (
         <button
-          onClick={() => onSetShowAddRow(true)}
-          disabled={disabled}
+          onClick={() => actions.onSetShowAddRow(true)}
+          disabled={state.disabled}
           className="w-full py-2.5 mt-2.5 rounded text-[#6a6050] font-serif text-xs cursor-pointer transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           style={{ background: "transparent", border: "1px dashed rgba(120,110,95,0.25)" }}
         >+ Add Contributor</button>

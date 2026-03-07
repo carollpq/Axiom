@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { UnderReviewClient } from "@/src/features/editor/components/under-review.client";
 import { getSession } from "@/src/shared/lib/auth/auth";
 import {
@@ -10,8 +11,9 @@ import { mapDbToPaperCardData, mapDbToReviewerWithStatus, buildReviewerPool, bui
 import { getRebuttalBySubmission } from "@/src/features/rebuttals/queries";
 import type { ReviewerWithStatus } from "@/src/features/editor/types";
 import type { AuthorResponseStatusDb } from "@/src/shared/lib/db/schema";
+import UnderReviewLoading from "./loading";
 
-export default async function UnderReviewPage() {
+async function UnderReviewContent() {
   const wallet = (await getSession())!;
   const journal = await getJournalByEditorWallet(wallet);
 
@@ -82,5 +84,13 @@ export default async function UnderReviewPage() {
       authorResponseStatuses={authorResponseStatuses}
       rebuttalsBySubmission={rebuttalsBySubmission}
     />
+  );
+}
+
+export default function UnderReviewPage() {
+  return (
+    <Suspense fallback={<UnderReviewLoading />}>
+      <UnderReviewContent />
+    </Suspense>
   );
 }

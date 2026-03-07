@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useActiveAccount } from "thirdweb/react";
-import { decryptFileWithLit } from "@/src/shared/lib/lit/decrypt";
+// decryptFileWithLit is dynamically imported when actually needed
 
 type DecryptStatus = "idle" | "loading" | "success" | "error";
 
@@ -82,6 +82,7 @@ export function useDecryptPaper(
       }
 
       const conditions = JSON.parse(accessConditionsJson);
+      const { decryptFileWithLit } = await import("@/src/shared/lib/lit/decrypt");
       const decryptedData = await decryptFileWithLit(
         ciphertext,
         dataToEncryptHash,

@@ -1,18 +1,19 @@
-"use client";
+'use client';
 
-import { useReducer, useCallback, useRef } from "react";
-import { useCurrentUser } from "@/src/shared/hooks/useCurrentUser";
-import { fetchApi } from "@/src/shared/lib/api";
-import { hashFile } from "@/src/shared/lib/hashing";
-import { isLitConfigured } from "@/src/shared/lib/lit/config";
-import { uploadToIPFS } from "@/src/shared/lib/upload";
-import type { ApiPaperVersion } from "@/src/shared/types/api";
+import { useReducer, useCallback, useRef } from 'react';
+import { toast } from 'sonner';
+import { useCurrentUser } from '@/src/shared/hooks/useCurrentUser';
+import { fetchApi } from '@/src/shared/lib/api';
+import { hashFile } from '@/src/shared/lib/hashing';
+import { isLitConfigured } from '@/src/shared/lib/lit/config';
+import { uploadToIPFS } from '@/src/shared/lib/upload';
+import type { ApiPaperVersion } from '@/src/shared/types/api';
 import {
   uploadReducer,
   initialUploadState,
   validateUpload,
-} from "@/src/features/researcher/reducers/upload";
-import type { StudyTypeDb } from "@/src/shared/lib/db/schema";
+} from '@/src/features/researcher/reducers/upload';
+import type { StudyTypeDb } from '@/src/shared/lib/db/schema';
 
 async function encryptFileIfConfigured(
   file: File,
@@ -25,24 +26,30 @@ async function encryptFileIfConfigured(
   litAccessConditionsJson: string | null;
 }> {
   if (!isLitConfigured() || !walletAddress) {
-    return { fileToUpload: file, uploadHash: fileHash, litDataToEncryptHash: null, litAccessConditionsJson: null };
+    return {
+      fileToUpload: file,
+      uploadHash: fileHash,
+      litDataToEncryptHash: null,
+      litAccessConditionsJson: null,
+    };
   }
 
   try {
-    const [{ getLitClient }, { buildWalletListConditions }, { encryptFileWithLit }] =
-      await Promise.all([
-        import("@/src/shared/lib/lit/client"),
-        import("@/src/shared/lib/lit/access-control"),
-        import("@/src/shared/lib/lit/encrypt"),
-      ]);
+    const [
+      { getLitClient },
+      { buildWalletListConditions },
+      { encryptFileWithLit },
+    ] = await Promise.all([
+      import('@/src/shared/lib/lit/client'),
+      import('@/src/shared/lib/lit/access-control'),
+      import('@/src/shared/lib/lit/encrypt'),
+    ]);
     await getLitClient();
     const conditions = buildWalletListConditions([walletAddress]);
     const encrypted = await encryptFileWithLit(file, conditions);
-    const encryptedFile = new File(
-      [encrypted.ciphertext],
-      file.name + ".enc",
-      { type: "application/octet-stream" },
-    );
+    const encryptedFile = new File([encrypted.ciphertext], file.name + '.enc', {
+      type: 'application/octet-stream',
+    });
     const uploadHash = await hashFile(encryptedFile);
     return {
       fileToUpload: encryptedFile,
@@ -51,36 +58,46 @@ async function encryptFileIfConfigured(
       litAccessConditionsJson: encrypted.accessConditionsJson,
     };
   } catch (litErr) {
-    console.warn("[Lit] Encryption skipped:", litErr);
-    return { fileToUpload: file, uploadHash: fileHash, litDataToEncryptHash: null, litAccessConditionsJson: null };
+    console.warn('[Lit] Encryption skipped:', litErr);
+    return {
+      fileToUpload: file,
+      uploadHash: fileHash,
+      litDataToEncryptHash: null,
+      litAccessConditionsJson: null,
+    };
   }
 }
 
 export type UseUploadReturn = ReturnType<typeof useUpload>;
 
-export function useUpload(onRegistered?: (paperId: string, title: string) => void) {
+export function useUpload(
+  onRegistered?: (paperId: string, title: string) => void,
+) {
   const { user, isConnected, account } = useCurrentUser();
   const [state, dispatch] = useReducer(uploadReducer, initialUploadState);
   const uploadedFileRef = useRef<File | null>(null);
 
   const handleFileSelect = useCallback(async (file: File) => {
-    dispatch({ type: "FILE_UPLOAD_START", fileName: file.name });
+    dispatch({ type: 'FILE_UPLOAD_START', fileName: file.name });
     uploadedFileRef.current = file;
     try {
       const hash = await hashFile(file);
-      dispatch({ type: "FILE_UPLOAD_COMPLETE", fileHash: hash });
+      dispatch({ type: 'FILE_UPLOAD_COMPLETE', fileHash: hash });
     } catch {
-      dispatch({ type: "FILE_UPLOAD_ERROR" });
+      dispatch({ type: 'FILE_UPLOAD_ERROR' });
     }
   }, []);
 
   const removeFile = useCallback(() => {
-    dispatch({ type: "REMOVE_FILE" });
+    dispatch({ type: 'REMOVE_FILE' });
     uploadedFileRef.current = null;
   }, []);
 
-  const addKeyword = useCallback(() => dispatch({ type: "ADD_KEYWORD" }), []);
-  const removeKeyword = useCallback((index: number) => dispatch({ type: "REMOVE_KEYWORD", index }), []);
+  const addKeyword = useCallback(() => dispatch({ type: 'ADD_KEYWORD' }), []);
+  const removeKeyword = useCallback(
+    (index: number) => dispatch({ type: 'REMOVE_KEYWORD', index }),
+    [],
+  );
 
   const register = async () => {
     if (!isConnected || !user) return;
@@ -88,20 +105,32 @@ export function useUpload(onRegistered?: (paperId: string, title: string) => voi
     const errors = validateUpload(state);
     if (Object.keys(errors).length > 0) return;
 
-    dispatch({ type: "REGISTER_START" });
+    dispatch({ type: 'REGISTER_START' });
     try {
       const uploadedFile = uploadedFileRef.current;
       if (!uploadedFile || !state.fileHash) {
-        throw new Error("No file uploaded");
+        throw new Error('No file uploaded');
       }
 
-      const { fileToUpload, uploadHash, litDataToEncryptHash, litAccessConditionsJson } =
-        await encryptFileIfConfigured(uploadedFile, state.fileHash, account?.address);
+      const {
+        fileToUpload,
+        uploadHash,
+        litDataToEncryptHash,
+        litAccessConditionsJson,
+      } = await encryptFileIfConfigured(
+        uploadedFile,
+        state.fileHash,
+        account?.address,
+      );
 
-      const fileStorageKey = await uploadToIPFS(fileToUpload, uploadHash, "papers");
+      const fileStorageKey = await uploadToIPFS(
+        fileToUpload,
+        uploadHash,
+        'papers',
+      );
 
-      const paper = await fetchApi<{ id: string }>("/api/papers", {
-        method: "POST",
+      const paper = await fetchApi<{ id: string }>('/api/papers', {
+        method: 'POST',
         body: JSON.stringify({
           title: state.title,
           abstract: state.abstract,
@@ -111,52 +140,53 @@ export function useUpload(onRegistered?: (paperId: string, title: string) => voi
         }),
       });
 
-      await fetchApi<ApiPaperVersion>(
-        `/api/papers/${paper.id}/versions`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            paperHash: state.fileHash,
-            fileStorageKey,
-            datasetHash: null,
-            codeRepoUrl: null,
-            codeCommitHash: null,
-            envSpecHash: null,
-          }),
-        },
-      );
+      await fetchApi<ApiPaperVersion>(`/api/papers/${paper.id}/versions`, {
+        method: 'POST',
+        body: JSON.stringify({
+          paperHash: state.fileHash,
+          fileStorageKey,
+          datasetHash: null,
+          codeRepoUrl: null,
+          codeCommitHash: null,
+          envSpecHash: null,
+        }),
+      });
 
       await fetchApi(`/api/papers/${paper.id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status: "registered" }),
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'registered' }),
       });
 
-      dispatch({ type: "REGISTER_SUCCESS", paperId: paper.id });
+      dispatch({ type: 'REGISTER_SUCCESS', paperId: paper.id });
+      toast.success('Paper registered successfully');
       onRegistered?.(paper.id, state.title);
     } catch (err) {
-      console.error("Registration failed:", err);
-      dispatch({
-        type: "REGISTER_ERROR",
-        error: err instanceof Error ? err.message : "Registration failed",
-      });
+      console.error('Registration failed:', err);
+      const message =
+        err instanceof Error ? err.message : 'Registration failed';
+      dispatch({ type: 'REGISTER_ERROR', error: message });
+      toast.error(message);
     }
   };
 
   return {
     title: state.title,
-    setTitle: (title: string) => dispatch({ type: "SET_TITLE", title }),
+    setTitle: (title: string) => dispatch({ type: 'SET_TITLE', title }),
     abstract: state.abstract,
-    setAbstract: (abstract: string) => dispatch({ type: "SET_ABSTRACT", abstract }),
+    setAbstract: (abstract: string) =>
+      dispatch({ type: 'SET_ABSTRACT', abstract }),
     fileName: state.fileName,
     fileHash: state.fileHash,
     isHashing: state.isHashing,
     handleFileSelect,
     removeFile,
     studyType: state.studyType,
-    setStudyType: (studyType: StudyTypeDb) => dispatch({ type: "SET_STUDY_TYPE", studyType }),
+    setStudyType: (studyType: StudyTypeDb) =>
+      dispatch({ type: 'SET_STUDY_TYPE', studyType }),
     keywords: state.keywords,
     keywordInput: state.keywordInput,
-    setKeywordInput: (v: string) => dispatch({ type: "SET_KEYWORD_INPUT", keywordInput: v }),
+    setKeywordInput: (v: string) =>
+      dispatch({ type: 'SET_KEYWORD_INPUT', keywordInput: v }),
     addKeyword,
     removeKeyword,
     register,
@@ -164,6 +194,9 @@ export function useUpload(onRegistered?: (paperId: string, title: string) => voi
     registeredPaperId: state.paperId,
     registered: state.registered,
     error: state.error,
-    reset: () => { dispatch({ type: "RESET" }); uploadedFileRef.current = null; },
+    reset: () => {
+      dispatch({ type: 'RESET' });
+      uploadedFileRef.current = null;
+    },
   };
 }

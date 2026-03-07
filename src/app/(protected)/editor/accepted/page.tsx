@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AcceptedPapersClient } from "@/src/features/editor/components/accepted-papers.client";
 import { getSession } from "@/src/shared/lib/auth/auth";
 import {
@@ -8,8 +9,9 @@ import {
 } from "@/src/features/editor/queries";
 import { mapDbToPaperCardData, mapDbToReviewerWithStatus, buildNameByWallet, mapDbToJournalIssue } from "@/src/features/editor/mappers/journal";
 import type { ReviewerWithStatus } from "@/src/features/editor/types";
+import AcceptedPapersLoading from "./loading";
 
-export default async function AcceptedPapersPage() {
+async function AcceptedPapersContent() {
   const wallet = (await getSession())!;
   const journal = await getJournalByEditorWallet(wallet);
 
@@ -67,5 +69,13 @@ export default async function AcceptedPapersPage() {
       issues={issues}
       journalId={journal.id}
     />
+  );
+}
+
+export default function AcceptedPapersPage() {
+  return (
+    <Suspense fallback={<AcceptedPapersLoading />}>
+      <AcceptedPapersContent />
+    </Suspense>
   );
 }

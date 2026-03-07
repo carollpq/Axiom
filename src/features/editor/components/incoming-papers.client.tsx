@@ -1,28 +1,51 @@
-"use client";
+'use client';
 
-import dynamic from "next/dynamic";
-import { ThreeColumnLayout } from "@/src/shared/components/ThreeColumnLayout";
-import { DynamicPdfViewer as PdfViewer } from "@/src/shared/components/DynamicPdfViewer";
-import { PaperList } from "./PaperList.client";
-import { useIncomingPapers } from "@/src/features/editor/hooks/useIncomingPapers";
-import { useCollapseSidebar } from "@/src/shared/hooks/useCollapseSidebar";
-import { useDecryptPaper } from "@/src/shared/hooks/useDecryptPaper";
-import { SelectionPlaceholder } from "@/src/shared/components/SelectionPlaceholder";
-import { ConfirmDialog } from "@/src/shared/components/ConfirmDialog";
-import { useToast } from "@/src/shared/components/Toast";
-import type { PaperCardData, PoolReviewer } from "@/src/features/editor/types";
+import dynamic from 'next/dynamic';
+import { ThreeColumnLayout } from '@/src/shared/components/ThreeColumnLayout';
+import { DynamicPdfViewer as PdfViewer } from '@/src/shared/components/DynamicPdfViewer';
+import { PaperList } from '@/src/shared/components/PaperList';
+import { useIncomingPapers } from '@/src/features/editor/hooks/useIncomingPapers';
+import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
+import { useDecryptPaper } from '@/src/shared/hooks/useDecryptPaper';
+import { SelectionPlaceholder } from '@/src/shared/components/SelectionPlaceholder';
+import { ConfirmDialog } from '@/src/shared/components/ConfirmDialog';
+import { toast } from 'sonner';
+import type { PaperCardData, PoolReviewer } from '@/src/features/editor/types';
 
 const CriteriaBuilder = dynamic(
-  () => import("./CriteriaBuilder").then((m) => ({ default: m.CriteriaBuilder })),
-  { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading criteria builder...</div> }
+  () =>
+    import('./CriteriaBuilder').then((m) => ({ default: m.CriteriaBuilder })),
+  {
+    loading: () => (
+      <div className="p-6 text-[13px] text-[#6a6050]">
+        Loading criteria builder...
+      </div>
+    ),
+  },
 );
 const AssignReviewersPanel = dynamic(
-  () => import("./sidebar/AssignReviewersPanel").then((m) => ({ default: m.AssignReviewersPanel })),
-  { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading reviewer panel...</div> }
+  () =>
+    import('./sidebar/AssignReviewersPanel').then((m) => ({
+      default: m.AssignReviewersPanel,
+    })),
+  {
+    loading: () => (
+      <div className="p-6 text-[13px] text-[#6a6050]">
+        Loading reviewer panel...
+      </div>
+    ),
+  },
 );
 const DeskRejectPanel = dynamic(
-  () => import("./sidebar/DeskRejectPanel").then((m) => ({ default: m.DeskRejectPanel })),
-  { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading...</div> }
+  () =>
+    import('./sidebar/DeskRejectPanel').then((m) => ({
+      default: m.DeskRejectPanel,
+    })),
+  {
+    loading: () => (
+      <div className="p-6 text-[13px] text-[#6a6050]">Loading...</div>
+    ),
+  },
 );
 
 interface IncomingPapersProps {
@@ -30,9 +53,11 @@ interface IncomingPapersProps {
   reviewerPool: PoolReviewer[];
 }
 
-export function IncomingPapersClient({ papers: initialPapers, reviewerPool }: IncomingPapersProps) {
+export function IncomingPapersClient({
+  papers: initialPapers,
+  reviewerPool,
+}: IncomingPapersProps) {
   useCollapseSidebar();
-  const { showToast } = useToast();
   const {
     papers,
     selectedId,
@@ -47,6 +72,7 @@ export function IncomingPapersClient({ papers: initialPapers, reviewerPool }: In
     setDeskRejectComment,
     timelineDays,
     sendInvites,
+    isSendingInvites,
     submitDeskReject,
     confirmDeskReject,
     isDeskRejecting,
@@ -62,9 +88,9 @@ export function IncomingPapersClient({ papers: initialPapers, reviewerPool }: In
   async function handleConfirmDeskReject() {
     const success = await confirmDeskReject();
     if (success) {
-      showToast("Paper rejected successfully", "success");
+      toast.success('Paper rejected successfully');
     } else {
-      showToast("Failed to reject paper. Please try again.", "error");
+      toast.error('Failed to reject paper. Please try again.');
     }
   }
 
@@ -73,17 +99,21 @@ export function IncomingPapersClient({ papers: initialPapers, reviewerPool }: In
       <ThreeColumnLayout
         title="Incoming Papers"
         subtitle="Review new submissions and set criteria"
-        countLabel={`${papers.length} ${papers.length === 1 ? "paper" : "papers"}`}
+        countLabel={`${papers.length} ${papers.length === 1 ? 'paper' : 'papers'}`}
         sidebarTitle="Actions"
         list={
           <PaperList
             papers={papers}
             selectedId={selectedId}
             onSelect={setSelectedId}
+            emptyMessage="No papers in this stage."
           />
         }
         viewer={
-          <PdfViewer fileUrl={decryptedUrl ?? selected?.fileUrl} title={selected?.title} />
+          <PdfViewer
+            fileUrl={decryptedUrl ?? selected?.fileUrl}
+            title={selected?.title}
+          />
         }
         sidebar={
           selectedId ? (
@@ -99,6 +129,7 @@ export function IncomingPapersClient({ papers: initialPapers, reviewerPool }: In
                 timelineDays={timelineDays}
                 actionLabel="Send Invites"
                 onAction={sendInvites}
+                isLoading={isSendingInvites}
               />
               <DeskRejectPanel
                 comment={deskRejectComment}

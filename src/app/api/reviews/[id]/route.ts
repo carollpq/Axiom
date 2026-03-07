@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { getReviewAssignment, listReviewAssignmentsForSubmission } from "@/src/features/reviews/queries";
 import { createReview, updateReviewHedera, updateSubmissionStatus } from "@/src/features/reviews/actions";
 import { createNotification } from "@/src/features/notifications/actions";
@@ -77,61 +77,62 @@ export async function POST(
 
   const editorWallet = assignment.submission.journal?.editorWallet;
 
-  const { txId: hederaTxId, consensusTimestamp: hederaTimestamp } = await anchorAndNotify({
-    topic: "HCS_TOPIC_REVIEWS",
-    payload: {
-      type: "review_submitted",
-      reviewHash: body.reviewHash,
-      reviewerWallet: session,
-      submissionId: assignment.submissionId,
-      paperHash: latestVersion?.paperHash ?? null,
-      timestamp: new Date().toISOString(),
-    },
-    notifications: editorWallet
-      ? [
-          {
-            userWallet: editorWallet,
-            type: "review_submitted",
-            title: "Review submitted",
-            body: `A reviewer has submitted their review for "${assignment.submission.paper.title}".`,
-            link: `/editor/under-review`,
-          },
-        ]
-      : [],
-  });
-
-  if (hederaTxId) {
-    await updateReviewHedera(review.id, hederaTxId);
-  }
-
-  await recordReputation(
-    session,
-    "review_completed",
-    1,
-    JSON.stringify({ reviewId: review.id, submissionId: assignment.submissionId }),
-    { type: "review_completed", reviewId: review.id, submissionId: assignment.submissionId },
-  );
-
-  // Check if all non-declined assignments are now submitted → transition to reviews_completed
-  const allAssignments = await listReviewAssignmentsForSubmission(assignment.submissionId);
-  const activeAssignments = allAssignments.filter(a => a.status !== "declined");
-  const allSubmitted = activeAssignments.length > 0 && activeAssignments.every(a => a.status === "submitted");
-
-  if (allSubmitted && assignment.submission.paper.owner?.walletAddress) {
-    await updateSubmissionStatus(assignment.submissionId, "reviews_completed");
-
-    await createNotification({
-      userWallet: assignment.submission.paper.owner.walletAddress,
-      type: "reviews_completed",
-      title: "All reviews complete",
-      body: `All reviews are complete for "${assignment.submission.paper.title}". Please review and respond.`,
-      link: `/researcher/view-submissions`,
+  // Non-blocking: HCS anchoring, reputation, and status transition run after response
+  after(async () => {
+    const { txId: hederaTxId } = await anchorAndNotify({
+      topic: "HCS_TOPIC_REVIEWS",
+      payload: {
+        type: "review_submitted",
+        reviewHash: body.reviewHash,
+        reviewerWallet: session,
+        submissionId: assignment.submissionId,
+        paperHash: latestVersion?.paperHash ?? null,
+        timestamp: new Date().toISOString(),
+      },
+      notifications: editorWallet
+        ? [
+            {
+              userWallet: editorWallet,
+              type: "review_submitted",
+              title: "Review submitted",
+              body: `A reviewer has submitted their review for "${assignment.submission.paper.title}".`,
+              link: `/editor/under-review`,
+            },
+          ]
+        : [],
     });
-  }
+
+    if (hederaTxId) {
+      await updateReviewHedera(review.id, hederaTxId);
+    }
+
+    await recordReputation(
+      session,
+      "review_completed",
+      1,
+      JSON.stringify({ reviewId: review.id, submissionId: assignment.submissionId }),
+      { type: "review_completed", reviewId: review.id, submissionId: assignment.submissionId },
+    );
+
+    // Check if all non-declined assignments are now submitted → transition to reviews_completed
+    const allAssignments = await listReviewAssignmentsForSubmission(assignment.submissionId);
+    const activeAssignments = allAssignments.filter(a => a.status !== "declined");
+    const allSubmitted = activeAssignments.length > 0 && activeAssignments.every(a => a.status === "submitted");
+
+    if (allSubmitted && assignment.submission.paper.owner?.walletAddress) {
+      await updateSubmissionStatus(assignment.submissionId, "reviews_completed");
+
+      await createNotification({
+        userWallet: assignment.submission.paper.owner.walletAddress,
+        type: "reviews_completed",
+        title: "All reviews complete",
+        body: `All reviews are complete for "${assignment.submission.paper.title}". Please review and respond.`,
+        link: `/researcher/view-submissions`,
+      });
+    }
+  });
 
   return NextResponse.json({
     reviewId: review.id,
-    hederaTxId,
-    hederaTimestamp,
   });
 }

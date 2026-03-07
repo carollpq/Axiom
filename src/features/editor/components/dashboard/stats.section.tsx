@@ -1,9 +1,14 @@
-import { StatCard } from "@/src/shared/components/StatCard";
-import type { StatCardProps } from "@/src/shared/types/shared";
-import type { DbJournalSubmission } from "@/src/features/editor/queries";
+import { DashboardStatCard } from '@/src/shared/components/DashboardStatCard';
+import type { DbJournalSubmission } from '@/src/features/editor/queries';
 
 interface Props {
   subs: DbJournalSubmission[];
+}
+
+interface Stat {
+  label: string;
+  value: number;
+  alert?: boolean;
 }
 
 export function StatsSection({ subs }: Props) {
@@ -16,47 +21,59 @@ export function StatsSection({ subs }: Props) {
   for (const s of subs) {
     const countAccepted = () =>
       (s.reviewAssignments ?? []).filter(
-        (a: { status: string }) => a.status === "accepted" || a.status === "submitted",
+        (a: { status: string }) =>
+          a.status === 'accepted' || a.status === 'submitted',
       ).length;
 
     switch (s.status) {
-      case "submitted":
-      case "viewed_by_editor":
+      case 'submitted':
+      case 'viewed_by_editor':
         newSubmissions++;
         break;
-      case "criteria_published":
-      case "reviewers_assigned":
-        if (s.status === "reviewers_assigned" && countAccepted() >= 2) underReview++;
+      case 'criteria_published':
+      case 'reviewers_assigned':
+        if (s.status === 'reviewers_assigned' && countAccepted() >= 2)
+          underReview++;
         else awaitingAssignment++;
         break;
-      case "under_review":
-      case "reviews_completed":
-      case "rebuttal_open":
+      case 'under_review':
+      case 'reviews_completed':
+      case 'rebuttal_open':
         underReview++;
         break;
-      case "accepted":
-      case "published":
+      case 'accepted':
+      case 'published':
         accepted++;
         break;
-      case "rejected":
+      case 'rejected':
         rejected++;
         break;
     }
   }
 
-  const stats: StatCardProps[] = [
-    { label: "New Submissions", value: newSubmissions },
-    { label: "Awaiting Reviewer Assignment", value: awaitingAssignment },
-    { label: "Under Review", value: underReview },
-    { label: "Accepted Papers", value: accepted },
-    { label: "Rejected Papers", value: rejected, alert: true },
+  const stats: Stat[] = [
+    { label: 'New Submissions', value: newSubmissions },
+    { label: 'Awaiting Assignment', value: awaitingAssignment },
+    { label: 'Under Review', value: underReview },
+    { label: 'Accepted Papers', value: accepted },
+    { label: 'Rejected Papers', value: rejected, alert: true },
   ];
 
   return (
-    <div className="flex gap-4 mb-8 flex-wrap">
-      {stats.map((s) => (
-        <StatCard key={s.label} {...s} />
-      ))}
-    </div>
+    <>
+      <h3 className="text-lg font-bold mb-6" style={{ color: '#d4ccc0' }}>
+        Submission Overview
+      </h3>
+      <div className="grid grid-cols-5 gap-4">
+        {stats.map((s) => (
+          <DashboardStatCard
+            key={s.label}
+            value={s.value}
+            label={s.label}
+            alert={s.alert}
+          />
+        ))}
+      </div>
+    </>
   );
 }

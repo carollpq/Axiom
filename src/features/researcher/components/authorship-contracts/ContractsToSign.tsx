@@ -1,8 +1,9 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useCurrentUser } from "@/src/shared/hooks/useCurrentUser";
-import { hashString, canonicalJson } from "@/src/shared/lib/hashing";
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { useCurrentUser } from '@/src/shared/hooks/useCurrentUser';
+import { hashString, canonicalJson } from '@/src/shared/lib/hashing';
 
 interface ContractContributor {
   name: string;
@@ -51,8 +52,8 @@ export function ContractsToSign({ contracts, currentWallet }: Props) {
       const signature = await account.signMessage({ message: contractHash });
 
       const res = await fetch(`/api/contracts/${contractId}/sign`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contributorWallet: currentWallet,
           signature,
@@ -62,12 +63,15 @@ export function ContractsToSign({ contracts, currentWallet }: Props) {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Signing failed");
+        throw new Error(data.error || 'Signing failed');
       }
 
       setDismissed((prev) => new Set(prev).add(contractId));
+      toast.success('Contract signed successfully');
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Signing failed");
+      const message = err instanceof Error ? err.message : 'Signing failed';
+      setError(message);
+      toast.error(message);
     } finally {
       setSigning(null);
     }
@@ -84,8 +88,8 @@ export function ContractsToSign({ contracts, currentWallet }: Props) {
       <div
         className="rounded-md px-6 py-10 text-center text-[13px] text-[#6a6050]"
         style={{
-          background: "rgba(45,42,38,0.4)",
-          border: "1px solid rgba(120,110,95,0.15)",
+          background: 'rgba(45,42,38,0.4)',
+          border: '1px solid rgba(120,110,95,0.15)',
         }}
       >
         No contracts to sign at the moment.
@@ -99,9 +103,9 @@ export function ContractsToSign({ contracts, currentWallet }: Props) {
         <div
           className="rounded-md px-4 py-3 text-[13px]"
           style={{
-            background: "rgba(212,100,90,0.15)",
-            color: "#d4645a",
-            border: "1px solid rgba(212,100,90,0.3)",
+            background: 'rgba(212,100,90,0.15)',
+            color: '#d4645a',
+            border: '1px solid rgba(212,100,90,0.3)',
           }}
         >
           {error}
@@ -113,8 +117,8 @@ export function ContractsToSign({ contracts, currentWallet }: Props) {
           key={contract.id}
           className="rounded-md p-5"
           style={{
-            background: "rgba(45,42,38,0.5)",
-            border: "1px solid rgba(120,110,95,0.2)",
+            background: 'rgba(45,42,38,0.5)',
+            border: '1px solid rgba(120,110,95,0.2)',
           }}
         >
           <div className="flex items-start justify-between gap-4">
@@ -137,22 +141,22 @@ export function ContractsToSign({ contracts, currentWallet }: Props) {
                 disabled={signing === contract.id}
                 className="px-4 py-2 rounded text-[12px] font-medium cursor-pointer"
                 style={{
-                  background: "rgba(143,188,143,0.2)",
-                  color: "#8fbc8f",
-                  border: "1px solid rgba(143,188,143,0.3)",
+                  background: 'rgba(143,188,143,0.2)',
+                  color: '#8fbc8f',
+                  border: '1px solid rgba(143,188,143,0.3)',
                   opacity: signing === contract.id ? 0.5 : 1,
                 }}
               >
-                {signing === contract.id ? "Signing..." : "Sign Contract"}
+                {signing === contract.id ? 'Signing...' : 'Sign Contract'}
               </button>
               <button
                 type="button"
                 onClick={() => handleReject(contract.id)}
                 className="px-4 py-2 rounded text-[12px] font-medium cursor-pointer"
                 style={{
-                  background: "rgba(212,100,90,0.15)",
-                  color: "#d4645a",
-                  border: "1px solid rgba(212,100,90,0.3)",
+                  background: 'rgba(212,100,90,0.15)',
+                  color: '#d4645a',
+                  border: '1px solid rgba(212,100,90,0.3)',
                 }}
               >
                 Reject Contract

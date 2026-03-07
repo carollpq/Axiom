@@ -10,9 +10,7 @@ We use **async Server Components** with **granular Suspense boundaries**. This m
 3. Each async component is wrapped in `<Suspense>`
 4. Client components handle only interactivity (tabs, search, hover, mutations)
 
-> **Note on current state:** Most pages still use the old pattern — `'use client'` on the page, data fetched via `useAuthFetch` in a hook. The refactor moves pages toward the pattern below. The old pattern is documented at the bottom for reference.
-
-**Reference code**: `features/papers/queries.ts`, `features/contracts/queries.ts`, `lib/auth.ts`
+**Reference code**: `src/features/papers/queries.ts`, `src/features/contracts/queries.ts`, `src/shared/lib/auth/auth.ts`
 
 ---
 
@@ -22,22 +20,23 @@ We use **async Server Components** with **granular Suspense boundaries**. This m
 - **Independent loading** — a slow papers query doesn't block the stats cards from rendering
 - **No client waterfall** — data is fetched on the server before HTML is sent; no loading spinner on initial render
 - **Simpler hooks** — hooks become pure UI state machines (tabs, filters, hover) with no fetch logic
+- **Non-blocking side effects** — API routes use `after()` from `next/server` to defer HCS anchoring and notifications after the response is sent
 
 ---
 
 ## Basic Example
 
 ```tsx
-// app/(author)/page.tsx — static shell, no 'use client', no async
+// app/(protected)/researcher/page.tsx — static shell, no 'use client', no async
 import { Suspense } from 'react';
-import { PapersTableSkeleton } from '@/components/author-dashboard/PapersTableSkeleton';
-import { PapersSection } from '@/components/author-dashboard/PapersSection';
+import { PapersTableSkeleton } from '@/src/features/researcher/components/skeletons';
+import { PapersSection } from '@/src/features/researcher/components/PapersSection';
 
-export default function AuthorDashboard() {
+export default function ResearcherDashboard() {
   return (
     <div className="max-w-[1200px] mx-auto px-10 py-8">
       <h1 className="text-[28px] font-normal italic text-[#e8e0d4]">
-        Author Dashboard
+        Researcher Dashboard
       </h1>
 
       <Suspense fallback={<PapersTableSkeleton />}>
@@ -49,10 +48,10 @@ export default function AuthorDashboard() {
 ```
 
 ```tsx
-// components/author-dashboard/PapersSection.tsx — async Server Component
-import { getSession } from '@/lib/auth';
-import { listUserPapers } from '@/features/papers/queries';
-import { PapersClient } from './PapersClient';
+// src/features/researcher/components/PapersSection.tsx — async Server Component
+import { getSession } from '@/src/shared/lib/auth/auth';
+import { listUserPapers } from '@/src/features/papers/queries';
+import { PapersClient } from './papers-table.client';
 
 export async function PapersSection() {
   const wallet = await getSession();           // reads JWT cookie — server only
@@ -63,11 +62,11 @@ export async function PapersSection() {
 ```
 
 ```tsx
-// components/author-dashboard/PapersClient.tsx — 'use client', interactivity only
+// src/features/researcher/components/papers-table.client.tsx — 'use client', interactivity only
 'use client';
 
 import { useState, useMemo } from 'react';
-import type { Paper } from '@/types/dashboard';
+import type { Paper } from '@/src/shared/types/dashboard';
 
 export function PapersClient({ initialPapers }: { initialPapers: Paper[] }) {
   const [statusFilter, setStatusFilter] = useState('All');
@@ -89,10 +88,10 @@ export function PapersClient({ initialPapers }: { initialPapers: Paper[] }) {
 
 ## Auth in Server Components
 
-`getSession()` from `lib/auth.ts` reads the httpOnly JWT cookie on the server — no client fetch needed:
+`getSession()` from `src/shared/lib/auth/auth.ts` reads the httpOnly JWT cookie on the server — no client fetch needed:
 
 ```ts
-import { getSession } from '@/lib/auth';
+import { getSession } from '@/src/shared/lib/auth/auth';
 
 export async function MySection() {
   const wallet = await getSession(); // returns lowercase wallet address or null
@@ -103,21 +102,21 @@ export async function MySection() {
 }
 ```
 
-This works inside any Server Component or `async` function called from one. Do not call `getSession()` from client components — use `useUser()` from `context/UserContext.tsx` there instead.
+This works inside any Server Component or `async` function called from one. Do not call `getSession()` from client components — use `useUser()` from `@/src/shared/context/UserContext.tsx` there instead.
 
 ---
 
 ## Queries
 
-All DB reads live in `features/{domain}/queries.ts`. Call them directly from Server Components — no HTTP round-trip, no API route needed for initial page data.
+All DB reads live in `src/features/{domain}/queries.ts`. Call them directly from Server Components — no HTTP round-trip, no API route needed for initial page data.
 
 ```ts
-// features/papers/queries.ts
+// src/features/papers/queries.ts
 export function listUserPapers(walletAddress: string) { ... }
 export function listPublicPapers() { ... }
 export function getPaperById(id: string) { ... }
 
-// features/contracts/queries.ts
+// src/features/contracts/queries.ts
 export function listUserContracts(walletAddress: string) { ... }
 export function getContractById(id: string) { ... }
 ```
@@ -151,8 +150,8 @@ The client component must **not** re-fetch on mount. The `initialX` prop is the 
 For the explorer and any unauthenticated pages, call the query directly — no `getSession()` needed:
 
 ```tsx
-// components/explorer/PapersSection.tsx
-import { listPublicPapers } from '@/features/papers/queries';
+// src/features/researcher/components/explorer/PapersSection.tsx
+import { listPublicPapers } from '@/src/features/papers/queries';
 
 export async function PapersSection() {
   const papers = await listPublicPapers();
@@ -180,9 +179,11 @@ Keep boundaries granular — one per logical section, not one for the whole page
 
 ---
 
-## The Old Pattern (Being Phased Out)
+## The Old Pattern (Historical Reference)
 
-The existing pages use client-side fetching via `useAuthFetch`. This is the pattern being replaced:
+> **Note:** This pattern has been fully replaced for researcher and editor pages, which are now server-first with DB-backed data. Only the reviewer dashboard still uses mock data. Documented here for historical reference.
+
+The old pages used client-side fetching via `useAuthFetch`:
 
 ```tsx
 // OLD — page is 'use client', hook fetches on mount
@@ -200,7 +201,7 @@ Problems with this pattern:
 - Two extra HTTP round-trips (client → `/api/papers` → DB) instead of direct DB call
 - Hooks mix data fetching and UI state, making them harder to test and reason about
 
-Do not extend `useAuthFetch` for new page-level data. Use it only for **mutations triggered by user interaction** that need to refetch after success.
+Do not use `useAuthFetch` for new page-level data. Use it only for **mutations triggered by user interaction** that need to refetch after success.
 
 ---
 
@@ -238,9 +239,9 @@ const wallet = await getSession(); // throws at runtime
 ```tsx
 // DO — use UserContext for wallet address on the client
 'use client';
-const { user } = useUser(); // from context/UserContext.tsx
+const { user } = useUser(); // from @/src/shared/context/UserContext.tsx
 ```
 
 ### Forgetting `'use client'` is contagious
 
-If a Server Component imports a client component, the client component stays client-side — that's fine. But if a client component imports a server-only module (e.g. `lib/db`, `lib/auth`), the build will fail. Keep the boundary clean: server modules stay in `features/` and `lib/`; client modules stay in `hooks/` and `components/`.
+If a Server Component imports a client component, the client component stays client-side — that's fine. But if a client component imports a server-only module (e.g. `lib/db`, `lib/auth`), the build will fail. Keep the boundary clean: server modules stay in `src/features/` and `src/shared/lib/`; client modules stay in `hooks/` and `components/`.

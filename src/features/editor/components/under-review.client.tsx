@@ -1,36 +1,69 @@
-"use client";
+'use client';
 
-import dynamic from "next/dynamic";
-import { ThreeColumnLayout } from "@/src/shared/components/ThreeColumnLayout";
-import { DynamicPdfViewer as PdfViewer } from "@/src/shared/components/DynamicPdfViewer";
-import { PaperList } from "./PaperList.client";
-import { ReviewStatusPanel } from "./sidebar/ReviewStatusPanel";
-import { useUnderReview } from "@/src/features/editor/hooks/useUnderReview";
-import { useCollapseSidebar } from "@/src/shared/hooks/useCollapseSidebar";
-import { useDecryptPaper } from "@/src/shared/hooks/useDecryptPaper";
-import { SelectionPlaceholder } from "@/src/shared/components/SelectionPlaceholder";
-import { ConfirmDialog } from "@/src/shared/components/ConfirmDialog";
-import { useToast } from "@/src/shared/components/Toast";
+import dynamic from 'next/dynamic';
+import { ThreeColumnLayout } from '@/src/shared/components/ThreeColumnLayout';
+import { DynamicPdfViewer as PdfViewer } from '@/src/shared/components/DynamicPdfViewer';
+import { PaperList } from '@/src/shared/components/PaperList';
+import { ReviewStatusPanel } from './sidebar/ReviewStatusPanel';
+import { useUnderReview } from '@/src/features/editor/hooks/useUnderReview';
+import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
+import { useDecryptPaper } from '@/src/shared/hooks/useDecryptPaper';
+import { SelectionPlaceholder } from '@/src/shared/components/SelectionPlaceholder';
+import { ConfirmDialog } from '@/src/shared/components/ConfirmDialog';
+import { toast } from 'sonner';
 import type {
   PaperCardData,
   PoolReviewer,
   ReviewerWithStatus,
   RebuttalInfo,
-} from "@/src/features/editor/types";
-import type { AuthorResponseStatusDb } from "@/src/shared/lib/db/schema";
+} from '@/src/features/editor/types';
+import type { AuthorResponseStatusDb } from '@/src/shared/lib/db/schema';
 
 const FinalDecisionPanel = dynamic(
-  () => import("./sidebar/FinalDecisionPanel").then((m) => ({ default: m.FinalDecisionPanel })),
-  { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading decision panel...</div> }
+  () =>
+    import('./sidebar/FinalDecisionPanel').then((m) => ({
+      default: m.FinalDecisionPanel,
+    })),
+  {
+    loading: () => (
+      <div className="p-6 text-[13px] text-[#6a6050]">
+        Loading decision panel...
+      </div>
+    ),
+  },
 );
 const ResolveRebuttalPanel = dynamic(
-  () => import("./sidebar/ResolveRebuttalPanel").then((m) => ({ default: m.ResolveRebuttalPanel })),
-  { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading rebuttal panel...</div> }
+  () =>
+    import('./sidebar/ResolveRebuttalPanel').then((m) => ({
+      default: m.ResolveRebuttalPanel,
+    })),
+  {
+    loading: () => (
+      <div className="p-6 text-[13px] text-[#6a6050]">
+        Loading rebuttal panel...
+      </div>
+    ),
+  },
 );
 const AssignReviewersPanel = dynamic(
-  () => import("./sidebar/AssignReviewersPanel").then((m) => ({ default: m.AssignReviewersPanel })),
-  { loading: () => <div className="p-6 text-[13px] text-[#6a6050]">Loading reviewer panel...</div> }
+  () =>
+    import('./sidebar/AssignReviewersPanel').then((m) => ({
+      default: m.AssignReviewersPanel,
+    })),
+  {
+    loading: () => (
+      <div className="p-6 text-[13px] text-[#6a6050]">
+        Loading reviewer panel...
+      </div>
+    ),
+  },
 );
+
+const DECISION_LABELS: Record<string, string> = {
+  accept: 'accept',
+  reject: 'reject',
+  revise: 'request revision for',
+};
 
 interface UnderReviewProps {
   papers: PaperCardData[];
@@ -48,7 +81,6 @@ export function UnderReviewClient({
   rebuttalsBySubmission,
 }: UnderReviewProps) {
   useCollapseSidebar();
-  const { showToast } = useToast();
   const {
     papers,
     selectedId,
@@ -89,18 +121,12 @@ export function UnderReviewClient({
     true,
   );
 
-  const decisionLabels: Record<string, string> = {
-    accept: "accept",
-    reject: "reject",
-    revise: "request revision for",
-  };
-
   async function handleConfirmRelease() {
     const success = await confirmRelease();
     if (success) {
-      showToast("Decision released successfully", "success");
+      toast.success('Decision released successfully');
     } else {
-      showToast("Failed to release decision. Please try again.", "error");
+      toast.error('Failed to release decision. Please try again.');
     }
   }
 
@@ -109,21 +135,27 @@ export function UnderReviewClient({
       <ThreeColumnLayout
         title="Under Review"
         subtitle="Track review progress and make decisions"
-        countLabel={`${papers.length} ${papers.length === 1 ? "paper" : "papers"}`}
+        countLabel={`${papers.length} ${papers.length === 1 ? 'paper' : 'papers'}`}
         sidebarTitle="Review Status"
         list={
           <PaperList
             papers={papers}
             selectedId={selectedId}
             onSelect={setSelectedId}
+            emptyMessage="No papers in this stage."
           />
         }
-        viewer={<PdfViewer fileUrl={decryptedUrl ?? selected?.fileUrl} title={selected?.title} />}
+        viewer={
+          <PdfViewer
+            fileUrl={decryptedUrl ?? selected?.fileUrl}
+            title={selected?.title}
+          />
+        }
         sidebar={
           selectedId ? (
             <>
               <ReviewStatusPanel reviewers={currentReviewers} />
-              {currentRebuttal && currentRebuttal.status === "submitted" ? (
+              {currentRebuttal && currentRebuttal.status === 'submitted' ? (
                 <ResolveRebuttalPanel
                   rebuttalId={currentRebuttal.id}
                   responses={currentRebuttal.responses.map((r, i) => ({
@@ -169,9 +201,9 @@ export function UnderReviewClient({
         onClose={() => setShowDecisionConfirm(false)}
         onConfirm={handleConfirmRelease}
         title="Release Decision"
-        message={`Are you sure you want to ${decisionLabels[decision] ?? decision} this paper? This action cannot be undone.`}
+        message={`Are you sure you want to ${DECISION_LABELS[decision] ?? decision} this paper? This action cannot be undone.`}
         confirmLabel="Release"
-        confirmVariant={decision === "reject" ? "red" : "gold"}
+        confirmVariant={decision === 'reject' ? 'red' : 'gold'}
         isLoading={isReleasingDecision}
         loadingLabel="Releasing..."
       />

@@ -1,18 +1,19 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
-import { getStatusColors } from "@/src/features/researcher/constants/status-colors";
-import { ReviewsStatusSection } from "./ReviewsStatusSection";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import { toast } from 'sonner';
+import { getStatusColors } from '@/src/features/researcher/constants/status-colors';
+import { ReviewsStatusSection } from './ReviewsStatusSection';
 
-const AuthorFeedback = dynamic(() => import("./AuthorFeedbackSection"));
-const ReviewerFeedback = dynamic(() => import("./ReviewerFeedbackSection"));
+const AuthorFeedback = dynamic(() => import('./AuthorFeedbackSection'));
+const ReviewerFeedback = dynamic(() => import('./ReviewerFeedbackSection'));
 
 interface ReviewerInfo {
   assignmentId: string;
   label: string;
-  status: "in_progress" | "complete";
+  status: 'in_progress' | 'complete';
   reviewId?: string;
 }
 
@@ -60,18 +61,22 @@ export function ViewSubmissionsClient({ submissions }: Props) {
       const res = await fetch(
         `/api/submissions/${selected.id}/author-response`,
         {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "accept" }),
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'accept' }),
         },
       );
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Failed to accept reviews");
+        throw new Error(data.error || 'Failed to accept reviews');
       }
+      toast.success('Reviews accepted');
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const message =
+        err instanceof Error ? err.message : 'Something went wrong';
+      setError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -85,21 +90,25 @@ export function ViewSubmissionsClient({ submissions }: Props) {
       const res = await fetch(
         `/api/submissions/${selected.id}/author-response`,
         {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            action: "request_rebuttal",
+            action: 'request_rebuttal',
             comment: comment || undefined,
           }),
         },
       );
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Failed to invoke rebuttal");
+        throw new Error(data.error || 'Failed to invoke rebuttal');
       }
+      toast.success('Rebuttal requested');
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const message =
+        err instanceof Error ? err.message : 'Something went wrong';
+      setError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -116,16 +125,19 @@ export function ViewSubmissionsClient({ submissions }: Props) {
       if (comment.trim()) body.comment = comment.trim();
 
       const res = await fetch(`/api/reviews/${reviewId}/rate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
       if (!res.ok && res.status !== 409) {
         const data = await res.json();
-        throw new Error(data.error || "Failed to rate reviewer");
+        throw new Error(data.error || 'Failed to rate reviewer');
       }
+      toast.success('Rating submitted');
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Rating failed");
+      const message = err instanceof Error ? err.message : 'Rating failed';
+      setError(message);
+      toast.error(message);
     }
   };
 
@@ -142,9 +154,9 @@ export function ViewSubmissionsClient({ submissions }: Props) {
         <div
           className="rounded-md px-4 py-3 mb-4 text-[13px]"
           style={{
-            background: "rgba(212,100,90,0.15)",
-            color: "#d4645a",
-            border: "1px solid rgba(212,100,90,0.3)",
+            background: 'rgba(212,100,90,0.15)',
+            color: '#d4645a',
+            border: '1px solid rgba(212,100,90,0.3)',
           }}
         >
           {error}
@@ -158,8 +170,8 @@ export function ViewSubmissionsClient({ submissions }: Props) {
             <div
               className="rounded-md px-4 py-8 text-center text-[13px] text-[#6a6050]"
               style={{
-                background: "rgba(45,42,38,0.4)",
-                border: "1px solid rgba(120,110,95,0.15)",
+                background: 'rgba(45,42,38,0.4)',
+                border: '1px solid rgba(120,110,95,0.15)',
               }}
             >
               No submissions yet.
@@ -176,17 +188,19 @@ export function ViewSubmissionsClient({ submissions }: Props) {
                   className="text-left rounded-md p-4 cursor-pointer transition-colors"
                   style={{
                     background: isSelected
-                      ? "rgba(45,42,38,0.8)"
-                      : "rgba(45,42,38,0.4)",
+                      ? 'rgba(45,42,38,0.8)'
+                      : 'rgba(45,42,38,0.4)',
                     border: isSelected
-                      ? "1px solid rgba(201,164,74,0.3)"
-                      : "1px solid rgba(120,110,95,0.15)",
+                      ? '1px solid rgba(201,164,74,0.3)'
+                      : '1px solid rgba(120,110,95,0.15)',
                   }}
                 >
                   <h3 className="text-[13px] font-serif text-[#e8e0d4] mb-1 line-clamp-2">
                     {sub.paperTitle}
                   </h3>
-                  <p className="text-[11px] text-[#8a8070] mb-1">{sub.authors}</p>
+                  <p className="text-[11px] text-[#8a8070] mb-1">
+                    {sub.authors}
+                  </p>
                   <p className="text-[10px] text-[#6a6050] line-clamp-2 mb-2">
                     {sub.abstract}
                   </p>
@@ -212,8 +226,8 @@ export function ViewSubmissionsClient({ submissions }: Props) {
             <div
               className="rounded-md p-6"
               style={{
-                background: "rgba(45,42,38,0.4)",
-                border: "1px solid rgba(120,110,95,0.15)",
+                background: 'rgba(45,42,38,0.4)',
+                border: '1px solid rgba(120,110,95,0.15)',
               }}
             >
               <h2 className="text-[18px] font-serif text-[#e8e0d4] mb-1">
@@ -266,8 +280,8 @@ export function ViewSubmissionsClient({ submissions }: Props) {
             <div
               className="rounded-md px-6 py-16 text-center text-[13px] text-[#6a6050]"
               style={{
-                background: "rgba(45,42,38,0.4)",
-                border: "1px solid rgba(120,110,95,0.15)",
+                background: 'rgba(45,42,38,0.4)',
+                border: '1px solid rgba(120,110,95,0.15)',
               }}
             >
               Select a submission to view details.

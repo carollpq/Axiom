@@ -8,15 +8,15 @@ import { ROLE_DASHBOARD_ROUTES } from "@/src/shared/lib/routes";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, isConnected } = useUser();
 
   useEffect(() => {
-    // If user has a role, redirect to their dashboard
-    if (user && user.roles && user.roles.length > 0) {
+    // Only redirect if wallet is actually connected AND user has a role
+    if (isConnected && user && user.roles && user.roles.length > 0) {
       const primaryRole = user.roles[0];
       router.push(ROLE_DASHBOARD_ROUTES[primaryRole] || "/researcher");
     }
-  }, [user, router]);
+  }, [isConnected, user, router]);
 
   return (
     <div

@@ -10,7 +10,7 @@ We use real `<form>` elements with `useActionState` for validation feedback. Thi
 - Automatic pending state
 - Type-safe validation errors
 
-**Reference code**: `app/actions/auth.ts`, `components/paper-registration/PaperDetailsStep.tsx`
+**Reference code**: `app/actions/auth.ts`, `src/features/researcher/components/paper-version-control/PaperDetailsStep.tsx`
 
 ---
 
@@ -22,7 +22,7 @@ Used in paper registration and contract builder. State lives in a custom hook; c
 
 **When to use:** Multi-step flows, forms that need client-side computation before submit (e.g. SHA-256 hashing, Lit encryption, wallet signing).
 
-**Reference:** `components/paper-registration/PaperDetailsStep.tsx`, `hooks/usePaperRegistration.ts`
+**Reference:** `src/features/researcher/components/paper-version-control/PaperDetailsStep.tsx`, `src/features/researcher/hooks/usePaperRegistration.ts`
 
 ### 2. Server Action forms (`useActionState`)
 
@@ -40,7 +40,7 @@ Used for simple, self-contained mutations. The `<form action={action}>` sends `F
 'use client';
 
 import { useActionState } from 'react';
-import { updateProfile, type State } from '@/app/actions/profile';
+import { updateProfile, type State } from '@/src/app/actions/profile';
 
 export function UpdateProfileForm() {
   const [state, action, pending] = useActionState<State, FormData>(
@@ -160,7 +160,7 @@ const labelStyle: React.CSSProperties = {
 };
 ```
 
-These are defined at the top of each component file (see `PaperDetailsStep.tsx`, `GeneralCommentsSection.tsx`). Do not put them in a shared file — keep them co-located with the component.
+These are defined at module scope in each component file. Do not put them in a shared file — keep them co-located with the component. This also prevents re-creation on every render (a performance pattern used throughout the codebase).
 
 ---
 
@@ -169,12 +169,12 @@ These are defined at the top of each component file (see `PaperDetailsStep.tsx`,
 For forms that span multiple steps (paper registration, contract builder):
 
 ```
-hooks/useDomain.ts         — all state, step index, handlers, submit logic
-components/domain/
-  StepOne.tsx              — controlled inputs, no internal state
+src/features/{domain}/hooks/useDomain.ts              — all state, step index, handlers, submit logic
+src/features/{domain}/components/{subdomain}/
+  StepOne.tsx                                          — controlled inputs, no internal state
   StepTwo.tsx
-  StepNavigation.tsx       — prev/next buttons, disabled logic
-app/.../page.tsx           — imports hook + components, renders active step
+  StepNavigation.tsx                                   — prev/next buttons, disabled logic
+src/app/(protected)/{role}/{route}/page.tsx            — server component passes initialData to client boundary
 ```
 
 **Key rules:**
@@ -182,7 +182,7 @@ app/.../page.tsx           — imports hook + components, renders active step
 - The hook owns all state and orchestrates submission (hashing → encrypt → upload → API → HCS).
 - `StepNavigation` receives `onNext`, `onBack`, `canProceed` from the hook.
 
-**Reference:** `hooks/usePaperRegistration.ts` + `components/paper-registration/`
+**Reference:** `src/features/researcher/hooks/usePaperRegistration.ts` + `src/features/researcher/components/paper-version-control/`
 
 ---
 
@@ -286,10 +286,10 @@ const fileInputRef = useRef<HTMLInputElement>(null);
 Hash the file client-side immediately on selection — do not wait for form submission:
 
 ```ts
-const hash = await hashFile(file); // lib/hashing.ts — Web Crypto API
+const hash = await hashFile(file); // src/shared/lib/hashing.ts — Web Crypto API
 ```
 
-**Reference:** `components/paper-registration/PaperDetailsStep.tsx`
+**Reference:** `src/features/researcher/components/paper-version-control/PaperDetailsStep.tsx`
 
 ### Confidential fields
 
@@ -302,7 +302,7 @@ Some fields must never appear in on-chain hashes. Add a visible note beneath the
 </div>
 ```
 
-**Reference:** `components/review-workspace/GeneralCommentsSection.tsx` (`confidentialEditorComments` field)
+**Reference:** `src/features/reviewer/components/review-workspace/GeneralCommentsSection.tsx` (`confidentialEditorComments` field)
 
 ---
 

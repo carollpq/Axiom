@@ -1,6 +1,7 @@
 export { PaperSelection } from "./PaperSelection";
 export { PercentageBar } from "./PercentageBar";
-export { ContributorRow } from "./ContributorRow";
+export { CurrentUserContributorRow } from "./CurrentUserContributorRow";
+export { ExternalContributorRow } from "./ExternalContributorRow";
 export { ContributorTable } from "./ContributorTable";
 export { AuthorSearch } from "./AuthorSearch";
 export { ContractPreview } from "./ContractPreview";

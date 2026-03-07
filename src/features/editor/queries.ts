@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { db } from "@/src/shared/lib/db";
-import { journals, submissions, reputationScores, journalIssues, journalReviewers } from "@/src/shared/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { journals, submissions, reputationScores, journalIssues, journalReviewers, users } from "@/src/shared/lib/db/schema";
+import { eq, sql } from "drizzle-orm";
 
 export const listJournals = cache(async () => {
   return db
@@ -35,8 +35,9 @@ export const listJournalSubmissions = cache(async (journalId?: string) => {
 });
 
 export const listReviewerPool = cache(async () => {
-  const reviewers = await db.query.users.findMany();
-  return reviewers.filter((u) => (u.roles as string[]).includes("reviewer"));
+  return db.query.users.findMany({
+    where: sql`${users.roles}::jsonb @> '["reviewer"]'::jsonb`,
+  });
 });
 
 export const listReputationScores = cache(async () => {
