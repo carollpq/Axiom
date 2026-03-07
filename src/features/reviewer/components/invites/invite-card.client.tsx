@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { DynamicPdfViewer as PdfViewer } from "@/src/shared/components/DynamicPdfViewer";
+import { AbstractPaginator } from "./AbstractPaginator";
 import type { AssignedReview } from "@/src/features/reviewer/types";
 
 interface InviteCardProps {
@@ -95,48 +96,12 @@ export function InviteCard({
           </div>
 
           {/* Abstract Pagination */}
-          {abstractPages.length > 1 && (
-            <div className="flex items-center justify-between gap-2">
-              <button
-                onClick={() => setAbstractPage(Math.max(0, abstractPage - 1))}
-                disabled={abstractPage === 0}
-                className="px-2 py-1 rounded text-xs font-serif disabled:opacity-50"
-                style={{
-                  backgroundColor:
-                    abstractPage === 0
-                      ? "rgba(120,110,95,0.1)"
-                      : "rgba(201,164,74,0.3)",
-                  color:
-                    abstractPage === 0 ? "#8a8070" : "#c9a44a",
-                }}
-              >
-                ← Prev
-              </button>
-              <span
-                className="text-xs font-serif"
-                style={{ color: "#8a8070" }}
-              >
-                {abstractPage + 1} / {abstractPages.length}
-              </span>
-              <button
-                onClick={() =>
-                  setAbstractPage(Math.min(abstractPages.length - 1, abstractPage + 1))
-                }
-                disabled={abstractPage === abstractPages.length - 1}
-                className="px-2 py-1 rounded text-xs font-serif disabled:opacity-50"
-                style={{
-                  backgroundColor:
-                    abstractPage === abstractPages.length - 1
-                      ? "rgba(120,110,95,0.1)"
-                      : "rgba(201,164,74,0.3)",
-                  color:
-                    abstractPage === abstractPages.length - 1 ? "#8a8070" : "#c9a44a",
-                }}
-              >
-                Next →
-              </button>
-            </div>
-          )}
+          <AbstractPaginator
+            pages={abstractPages}
+            currentPage={abstractPage}
+            onPrev={() => setAbstractPage(Math.max(0, abstractPage - 1))}
+            onNext={() => setAbstractPage(Math.min(abstractPages.length - 1, abstractPage + 1))}
+          />
         </div>
       </div>
 

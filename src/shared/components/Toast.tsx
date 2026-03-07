@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
+import { createContext, use, useState, useCallback, useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 
 type ToastVariant = "success" | "error";
@@ -18,7 +18,7 @@ interface ToastContextValue {
 const ToastContext = createContext<ToastContextValue | null>(null as ToastContextValue | null);
 
 export function useToast() {
-  const ctx = useContext(ToastContext);
+  const ctx = use(ToastContext);
   if (!ctx) throw new Error("useToast must be used within ToastProvider");
   return ctx;
 }

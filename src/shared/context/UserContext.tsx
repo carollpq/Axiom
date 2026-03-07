@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useRef } from "react";
+import { createContext, use, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useActiveAccount } from "thirdweb/react";
 import { fetchApi } from "@/src/shared/lib/api";
@@ -77,7 +77,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useUser(): UserContextValue {
-  const ctx = useContext(UserContext);
+  const ctx = use(UserContext);
   if (!ctx) throw new Error("useUser must be used within UserProvider");
   return ctx;
 }

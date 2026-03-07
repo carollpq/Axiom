@@ -2,17 +2,8 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-
-const SELECT_STYLE = {
-  background: "rgba(35,32,28,0.8)",
-  border: "1px solid rgba(120,110,95,0.2)",
-} as const;
-
-const ERROR_STYLE = {
-  background: "rgba(212,100,90,0.15)",
-  color: "#d4645a",
-  border: "1px solid rgba(212,100,90,0.3)",
-} as const;
+import { ErrorAlert } from "@/src/shared/components/ErrorAlert";
+import { FormSelectRow } from "./FormSelectRow";
 
 const FORM_CONTAINER_STYLE = {
   background: "rgba(45,42,38,0.4)",
@@ -40,6 +31,17 @@ interface Props {
   papers: PaperOption[];
   journals: JournalOption[];
   contracts: ContractOption[];
+}
+
+function getMissingFieldHint(
+  selectedPaperId: string,
+  selectedVersionId: string,
+  selectedJournalId: string,
+): string {
+  if (!selectedPaperId) return "Please select a paper";
+  if (!selectedVersionId) return "Please select a paper version";
+  if (!selectedJournalId) return "Please select a journal";
+  return "Please select an authorship contract";
 }
 
 export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
@@ -109,11 +111,8 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
       </p>
 
       {error && (
-        <div
-          className="rounded-md px-4 py-3 mb-4 text-[13px]"
-          style={ERROR_STYLE}
-        >
-          {error}
+        <div className="mb-4">
+          <ErrorAlert message={error} />
         </div>
       )}
 
@@ -122,103 +121,67 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
         className="rounded-md p-6"
         style={FORM_CONTAINER_STYLE}
       >
-        {/* Paper Title */}
-        <div className="flex items-center gap-6 mb-5">
-          <label className="text-[13px] text-[#b0a898] w-[200px] shrink-0">
-            Paper Title
-          </label>
-          <select
-            value={selectedPaperId}
-            onChange={(e) => handlePaperChange(e.target.value)}
-            disabled={submitting}
-            className="flex-1 px-3 py-2.5 rounded-md text-[13px] font-serif text-[#d4ccc0] cursor-pointer"
-            style={SELECT_STYLE}
-          >
-            <option value="">Select a paper from your repository</option>
-            {papers.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.title}
-              </option>
-            ))}
-          </select>
-        </div>
+        <FormSelectRow
+          label="Paper Title"
+          value={selectedPaperId}
+          onChange={handlePaperChange}
+          disabled={submitting}
+          placeholder="Select a paper from your repository"
+        >
+          {papers.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.title}
+            </option>
+          ))}
+        </FormSelectRow>
 
-        {/* Paper Version */}
-        <div className="flex items-center gap-6 mb-5">
-          <label className="text-[13px] text-[#b0a898] w-[200px] shrink-0">
-            Paper Version
-          </label>
-          <select
-            value={selectedVersionId}
-            onChange={(e) => setSelectedVersionId(e.target.value)}
-            disabled={!selectedPaperId || submitting}
-            className="flex-1 px-3 py-2.5 rounded-md text-[13px] font-serif text-[#d4ccc0] cursor-pointer"
-            style={{
-              ...SELECT_STYLE,
-              opacity: selectedPaperId ? 1 : 0.5,
-            }}
-          >
-            <option value="">Select a version</option>
-            {versions.map((v) => (
-              <option key={v.id} value={v.id}>
-                Version {v.versionNumber}
-              </option>
-            ))}
-          </select>
-        </div>
+        <FormSelectRow
+          label="Paper Version"
+          value={selectedVersionId}
+          onChange={setSelectedVersionId}
+          disabled={!selectedPaperId || submitting}
+          placeholder="Select a version"
+          style={{ opacity: selectedPaperId ? 1 : 0.5 }}
+        >
+          {versions.map((v) => (
+            <option key={v.id} value={v.id}>
+              Version {v.versionNumber}
+            </option>
+          ))}
+        </FormSelectRow>
 
-        {/* Journal Name */}
-        <div className="flex items-center gap-6 mb-5">
-          <label className="text-[13px] text-[#b0a898] w-[200px] shrink-0">
-            Journal Name
-          </label>
-          <select
-            value={selectedJournalId}
-            onChange={(e) => setSelectedJournalId(e.target.value)}
-            disabled={submitting}
-            className="flex-1 px-3 py-2.5 rounded-md text-[13px] font-serif text-[#d4ccc0] cursor-pointer"
-            style={SELECT_STYLE}
-          >
-            <option value="">Select a journal</option>
-            {journals.map((j) => (
-              <option key={j.id} value={j.id}>
-                {j.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        <FormSelectRow
+          label="Journal Name"
+          value={selectedJournalId}
+          onChange={setSelectedJournalId}
+          disabled={submitting}
+          placeholder="Select a journal"
+        >
+          {journals.map((j) => (
+            <option key={j.id} value={j.id}>
+              {j.name}
+            </option>
+          ))}
+        </FormSelectRow>
 
-        {/* Associated Authorship Contract */}
-        <div className="flex items-center gap-6 mb-5">
-          <label className="text-[13px] text-[#b0a898] w-[200px] shrink-0">
-            Associated Authorship Contract
-          </label>
-          <select
-            value={selectedContractId}
-            onChange={(e) => setSelectedContractId(e.target.value)}
-            disabled={submitting}
-            className="flex-1 px-3 py-2.5 rounded-md text-[13px] font-serif text-[#d4ccc0] cursor-pointer"
-            style={SELECT_STYLE}
-          >
-            <option value="">Select a completed contract</option>
-            {contracts.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.paperTitle} ({c.contributors})
-              </option>
-            ))}
-          </select>
-        </div>
+        <FormSelectRow
+          label="Associated Authorship Contract"
+          value={selectedContractId}
+          onChange={setSelectedContractId}
+          disabled={submitting}
+          placeholder="Select a completed contract"
+        >
+          {contracts.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.paperTitle} ({c.contributors})
+            </option>
+          ))}
+        </FormSelectRow>
 
         {/* Validation hint */}
         {!canSubmit && (
           <p className="text-[12px] text-[#8a8070] mb-3 text-right italic">
-            {!selectedPaperId
-              ? "Please select a paper"
-              : !selectedVersionId
-                ? "Please select a paper version"
-                : !selectedJournalId
-                  ? "Please select a journal"
-                  : "Please select an authorship contract"}
+            {getMissingFieldHint(selectedPaperId, selectedVersionId, selectedJournalId)}
           </p>
         )}
 

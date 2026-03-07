@@ -1,7 +1,10 @@
 "use client";
 
+import { useMemo } from "react";
 import { useContractBuilder } from "@/src/features/researcher/hooks/useContractBuilder";
 import { AlertBanner } from "@/src/shared/components/AlertBanner";
+import { ContractContext } from "@/src/features/researcher/context/ContractContext";
+import type { ContractContextValue } from "@/src/features/researcher/context/ContractContext";
 import { PaperSelection } from "./PaperSelection";
 import { ContributorTable } from "./ContributorTable";
 import { ContractPreview } from "./ContractPreview";
@@ -23,6 +26,40 @@ export function ContractBuilderClient({ initialDrafts }: ContractBuilderClientPr
     updateContributor, removeContributor, addContributorFromSearch, generateContract, handleSign, handleInvite, closeInviteModal,
   } = useContractBuilder(initialDrafts);
 
+  const contextValue = useMemo<ContractContextValue>(() => ({
+    state: {
+      contributors,
+      totalPct,
+      isValid,
+      hasSigned,
+      signedCount,
+      currentUserWallet,
+      showAddRow,
+      disabled: generating,
+    },
+    actions: {
+      onUpdate: updateContributor,
+      onRemove: removeContributor,
+      onSign: handleSign,
+      onInvite: handleInvite,
+      onAddFromSearch: addContributorFromSearch,
+      onSetShowAddRow: setShowAddRow,
+      onGenerateContract: generateContract,
+    },
+    meta: {
+      draft,
+      newTitle,
+      allSigned,
+      selectedContractId: selectedContractId ?? null,
+      paperId: draft?.dbId,
+    },
+  }), [
+    contributors, totalPct, isValid, hasSigned, signedCount, currentUserWallet,
+    showAddRow, generating, updateContributor, removeContributor, handleSign,
+    handleInvite, addContributorFromSearch, setShowAddRow, generateContract,
+    draft, newTitle, allSigned, selectedContractId,
+  ]);
+
   return (
     <>
       <div>
@@ -40,36 +77,11 @@ export function ContractBuilderClient({ initialDrafts }: ContractBuilderClientPr
           onNewTitle={setNewTitle}
         />
 
-        <ContributorTable
-          contributors={contributors}
-          totalPct={totalPct}
-          isValid={isValid}
-          hasSigned={hasSigned}
-          signedCount={signedCount}
-          currentUserWallet={currentUserWallet}
-          showAddRow={showAddRow}
-          disabled={generating}
-          onAddFromSearch={addContributorFromSearch}
-          onUpdate={updateContributor}
-          onRemove={removeContributor}
-          onSign={handleSign}
-          onInvite={handleInvite}
-          onSetShowAddRow={setShowAddRow}
-        />
-
-        <ContractPreview
-          title={newTitle}
-          draft={draft}
-          contributors={contributors}
-          allSigned={allSigned}
-          isValid={isValid}
-          signedCount={signedCount}
-          paperId={draft?.dbId}
-          contractId={selectedContractId}
-          onGenerateContract={generateContract}
-        />
-
-        <ModificationWarning visible={hasSigned} />
+        <ContractContext value={contextValue}>
+          <ContributorTable />
+          <ContractPreview />
+          <ModificationWarning visible={hasSigned} />
+        </ContractContext>
       </div>
 
       <InviteModal

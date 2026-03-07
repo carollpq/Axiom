@@ -3,18 +3,14 @@
 import { useReducer, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useActiveAccount } from "thirdweb/react";
-import { ConnectButton } from "thirdweb/react";
-import { client } from "@/src/shared/lib/thirdweb";
-import {
-  getLoginPayload,
-  doLogin,
-  doLogout,
-  isLoggedIn,
-} from "@/src/shared/lib/auth/actions";
+import { isLoggedIn } from "@/src/shared/lib/auth/actions";
 import { ROLE_DASHBOARD_ROUTES } from "@/src/shared/lib/routes";
 import type { Role } from "@/src/features/auth/types";
 import { RoleSelector } from "./role-selector";
 import { OrcidVerificationStep } from "./orcid-verification-step";
+import { WalletConnectStep } from "./WalletConnectStep";
+import { ErrorAlert } from "@/src/shared/components/ErrorAlert";
+
 type Step = "role-select" | "wallet" | "orcid" | "complete";
 
 interface State {
@@ -124,15 +120,8 @@ export function LoginFlow() {
 
       {/* Error Alert */}
       {state.error && (
-        <div
-          className="mb-6 p-4 rounded border text-sm"
-          style={{
-            backgroundColor: "rgba(212, 100, 90, 0.1)",
-            borderColor: "#d4645a",
-            color: "#d4645a",
-          }}
-        >
-          {state.error}
+        <div className="mb-6">
+          <ErrorAlert message={state.error} />
         </div>
       )}
 
@@ -144,78 +133,12 @@ export function LoginFlow() {
       )}
 
       {state.step === "wallet" && state.selectedRole && (
-        <div className="space-y-4">
-          <div
-            className="p-4 rounded"
-            style={{ backgroundColor: "rgba(45, 42, 38, 0.6)" }}
-          >
-            <p className="text-sm mb-3" style={{ color: "#b0a898" }}>
-              Connect your Web3 wallet to sign in as a {state.selectedRole}:
-            </p>
-
-            <div className="flex justify-center">
-              <ConnectButton
-                client={client}
-                auth={{ isLoggedIn, getLoginPayload, doLogin, doLogout }}
-                theme="dark"
-                connectButton={{
-                  label: "Connect Wallet",
-                  style: {
-                    backgroundColor: "#c9a44a",
-                    color: "#1a1816",
-                    border: "none",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    fontFamily: "Georgia, serif",
-                    padding: "8px 24px",
-                    height: "38px",
-                    fontWeight: "600",
-                  },
-                }}
-              />
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <button
-              onClick={() => dispatch({ type: "BACK" })}
-              className="flex-1 py-2 text-sm rounded transition-all cursor-pointer"
-              style={{
-                backgroundColor: "transparent",
-                color: "#b0a898",
-                border: "1px solid #5a4a3a",
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = "rgba(201, 164, 74, 0.5)";
-                e.currentTarget.style.color = "#d4ccc0";
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = "#5a4a3a";
-                e.currentTarget.style.color = "#b0a898";
-              }}
-            >
-              Back
-            </button>
-            {account?.address && (
-              <button
-                onClick={() => dispatch({ type: "ADVANCE_TO_ORCID" })}
-                className="flex-1 py-2 text-sm rounded font-semibold transition-all cursor-pointer"
-                style={{
-                  backgroundColor: "#c9a44a",
-                  color: "#1a1816",
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.backgroundColor = "#d4b45a";
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.backgroundColor = "#c9a44a";
-                }}
-              >
-                Continue
-              </button>
-            )}
-          </div>
-        </div>
+        <WalletConnectStep
+          selectedRole={state.selectedRole}
+          hasAccount={!!account?.address}
+          onBack={() => dispatch({ type: "BACK" })}
+          onContinue={() => dispatch({ type: "ADVANCE_TO_ORCID" })}
+        />
       )}
 
       {state.step === "orcid" && (

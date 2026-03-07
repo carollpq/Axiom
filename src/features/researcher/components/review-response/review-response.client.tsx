@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ReviewContent, type ReviewCriterion } from "./ReviewContent";
+import { ReviewerRatingCard } from "./ReviewerRatingCard";
+import { ErrorAlert } from "@/src/shared/components/ErrorAlert";
 
 interface AnonymizedReview {
   id: string;
@@ -22,14 +24,6 @@ interface ProtocolRatings {
   justifiedRecommendation: number;
   appropriateExpertise: number;
 }
-
-const PROTOCOL_LABELS: { key: keyof ProtocolRatings; label: string }[] = [
-  { key: "actionableFeedback", label: "Actionable Feedback" },
-  { key: "deepEngagement", label: "Deep Engagement" },
-  { key: "fairObjective", label: "Fair & Objective" },
-  { key: "justifiedRecommendation", label: "Justified Recommendation" },
-  { key: "appropriateExpertise", label: "Appropriate Expertise" },
-];
 
 const DEFAULT_RATINGS: ProtocolRatings = {
   actionableFeedback: 3,
@@ -124,14 +118,7 @@ export function ReviewResponseClient({
         {paperTitle} &mdash; {journalName}
       </p>
 
-      {error && (
-        <div
-          className="rounded-md px-4 py-3 mb-6 text-[13px]"
-          style={{ background: "rgba(212,100,90,0.15)", color: "#d4645a", border: "1px solid rgba(212,100,90,0.3)" }}
-        >
-          {error}
-        </div>
-      )}
+      {error && <ErrorAlert message={error} />}
 
       <p className="text-[12px] text-[#6a6050] mb-6">
         All reviews are complete. Please rate each reviewer and then accept the reviews or request a rebuttal.
@@ -156,65 +143,15 @@ export function ReviewResponseClient({
               label={review.label}
             />
 
-            {/* 5-Protocol Rating */}
-            <div
-              className="rounded-md p-4 mt-4"
-              style={{ background: "rgba(30,28,25,0.5)", border: "1px solid rgba(120,110,95,0.1)" }}
-            >
-              <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-3">
-                Rate This Reviewer
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 mb-3">
-                {PROTOCOL_LABELS.map(({ key, label }) => (
-                  <div key={key}>
-                    <label className="text-[10px] text-[#8a8070] block mb-1">{label}</label>
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map((v) => (
-                        <button
-                          key={v}
-                          type="button"
-                          onClick={() => updateRating(review.id, key, v)}
-                          className="w-7 h-7 rounded text-[11px] font-medium transition-colors"
-                          style={{
-                            background:
-                              ratings[review.id]?.[key] === v
-                                ? "rgba(201,164,74,0.3)"
-                                : "rgba(120,110,95,0.1)",
-                            color:
-                              ratings[review.id]?.[key] === v ? "#c9a44a" : "#6a6050",
-                            border: `1px solid ${
-                              ratings[review.id]?.[key] === v
-                                ? "rgba(201,164,74,0.4)"
-                                : "rgba(120,110,95,0.15)"
-                            }`,
-                          }}
-                        >
-                          {v}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div>
-                <label className="text-[10px] text-[#8a8070] block mb-1">
-                  Anonymous Comment (optional)
-                </label>
-                <textarea
-                  className="w-full rounded-md px-3 py-2 text-[12px] text-[#d4ccc0] font-serif resize-none"
-                  style={{
-                    background: "rgba(45,42,38,0.5)",
-                    border: "1px solid rgba(120,110,95,0.15)",
-                  }}
-                  rows={2}
-                  placeholder="Optional feedback for this reviewer..."
-                  value={comments[review.id] ?? ""}
-                  onChange={(e) =>
-                    setComments((prev) => ({ ...prev, [review.id]: e.target.value }))
-                  }
-                />
-              </div>
-            </div>
+            <ReviewerRatingCard
+              reviewId={review.id}
+              ratings={ratings[review.id]}
+              comment={comments[review.id] ?? ""}
+              onRatingChange={(key, value) => updateRating(review.id, key, value)}
+              onCommentChange={(value) =>
+                setComments((prev) => ({ ...prev, [review.id]: value }))
+              }
+            />
           </div>
       ))}
 

@@ -3,25 +3,16 @@
 import { useState } from "react";
 import { fetchApi } from "@/src/shared/lib/api";
 import { ModalOverlay } from "@/src/shared/components/ModalOverlay";
-import type { Contributor, ExistingDraft } from "@/src/features/researcher/types/contract";
+import { useContractContext } from "@/src/features/researcher/context/ContractContext";
 import type { RegisteredJournal } from "@/src/features/researcher/types/paper-registration";
 
-interface ContractPreviewProps {
-  title: string;
-  draft: ExistingDraft | undefined;
-  contributors: Contributor[];
-  allSigned: boolean;
-  isValid: boolean;
-  signedCount: number;
-  paperId?: string;
-  contractId?: string | null;
-  onGenerateContract: () => Promise<void>;
-}
+export function ContractPreview() {
+  const { state, actions, meta } = useContractContext();
+  const { contributors, isValid, signedCount } = state;
+  const { draft, newTitle, allSigned, selectedContractId, paperId } = meta;
 
-export function ContractPreview({
-  title, draft, contributors,
-  allSigned, isValid, signedCount, paperId, contractId, onGenerateContract,
-}: ContractPreviewProps) {
+  const title = newTitle;
+  const contractId = selectedContractId;
   const remaining = contributors.length - signedCount;
   const canGenerate = isValid && contributors.length > 0;
   const [showModal, setShowModal] = useState(false);
@@ -103,7 +94,7 @@ export function ContractPreview({
           <div className="mt-4 text-right">
             {!contractId && !submitted ? (
               <button
-                onClick={onGenerateContract}
+                onClick={actions.onGenerateContract}
                 disabled={!canGenerate}
                 className="py-3 px-8 rounded font-serif text-sm tracking-wide"
                 style={{
