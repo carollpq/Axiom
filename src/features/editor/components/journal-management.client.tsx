@@ -1,11 +1,12 @@
-"use client";
+'use client';
 
-import { useCallback } from "react";
-import { useRouter } from "next/navigation";
-import type { PoolReviewer, JournalIssue } from "@/src/features/editor/types";
-import { IssuesGrid } from "./management/IssuesGrid";
-import { EditableSection } from "./management/EditableSection";
-import { ReviewerGrid } from "./management/ReviewerGrid";
+import { useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import type { PoolReviewer, JournalIssue } from '@/src/features/editor/types';
+import { IssuesGrid } from './management/IssuesGrid';
+import { EditableSection } from './management/EditableSection';
+import { ReviewerGrid } from './management/ReviewerGrid';
 
 interface JournalManagementProps {
   journalId: string;
@@ -29,34 +30,50 @@ export function JournalManagement({
   const router = useRouter();
 
   const postAndRefresh = useCallback(
-    async (path: string, body: Record<string, unknown>, method = "POST") => {
-      await fetch(`/api/journals/${journalId}${path}`, {
+    async (path: string, body: Record<string, unknown>, method = 'POST') => {
+      const res = await fetch(`/api/journals/${journalId}${path}`, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(err.error || 'Request failed');
+      }
       router.refresh();
     },
     [journalId, router],
   );
 
   const handleSaveAims = useCallback(
-    (value: string) => postAndRefresh("", { aimsAndScope: value }, "PATCH"),
+    async (value: string) => {
+      await postAndRefresh('', { aimsAndScope: value }, 'PATCH');
+      toast.success('Aims and scope saved');
+    },
     [postAndRefresh],
   );
 
   const handleSaveCriteria = useCallback(
-    (value: string) => postAndRefresh("", { submissionCriteria: value }, "PATCH"),
+    async (value: string) => {
+      await postAndRefresh('', { submissionCriteria: value }, 'PATCH');
+      toast.success('Submission criteria saved');
+    },
     [postAndRefresh],
   );
 
   const handleCreateIssue = useCallback(
-    (label: string) => postAndRefresh("/issues", { label }),
+    async (label: string) => {
+      await postAndRefresh('/issues', { label });
+      toast.success('Issue created');
+    },
     [postAndRefresh],
   );
 
   const handleAddReviewer = useCallback(
-    (wallet: string) => postAndRefresh("/reviewers", { reviewerWallet: wallet }),
+    async (wallet: string) => {
+      await postAndRefresh('/reviewers', { reviewerWallet: wallet });
+      toast.success('Reviewer added to pool');
+    },
     [postAndRefresh],
   );
 
@@ -66,13 +83,27 @@ export function JournalManagement({
         <h1 className="text-[28px] font-normal text-[#e8e0d4] m-0 tracking-[0.5px] font-serif">
           Journal Management
         </h1>
-        <p className="text-[13px] text-[#6a6050] mt-1.5 italic">{journalName}</p>
+        <p className="text-[13px] text-[#6a6050] mt-1.5 italic">
+          {journalName}
+        </p>
       </div>
 
       <IssuesGrid issues={issues} onCreateIssue={handleCreateIssue} />
-      <EditableSection title="Aims and Scope" initialValue={aimsAndScope} onSave={handleSaveAims} />
-      <EditableSection title="Submission Criteria" initialValue={submissionCriteria} onSave={handleSaveCriteria} />
-      <ReviewerGrid reviewers={reviewers} allReviewers={allReviewers} onAddReviewer={handleAddReviewer} />
+      <EditableSection
+        title="Aims and Scope"
+        initialValue={aimsAndScope}
+        onSave={handleSaveAims}
+      />
+      <EditableSection
+        title="Submission Criteria"
+        initialValue={submissionCriteria}
+        onSave={handleSaveCriteria}
+      />
+      <ReviewerGrid
+        reviewers={reviewers}
+        allReviewers={allReviewers}
+        onAddReviewer={handleAddReviewer}
+      />
     </div>
   );
 }

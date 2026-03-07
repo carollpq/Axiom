@@ -1,9 +1,10 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { useSelection } from "@/src/shared/hooks/useSelection";
-import type { PaperCardData, PoolReviewer } from "@/src/features/editor/types";
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { useSelection } from '@/src/shared/hooks/useSelection';
+import type { PaperCardData, PoolReviewer } from '@/src/features/editor/types';
 
 export function useIncomingPapers(
   initialPapers: PaperCardData[],
@@ -11,12 +12,14 @@ export function useIncomingPapers(
 ) {
   const router = useRouter();
   const [papers, setPapers] = useState(initialPapers);
-  useEffect(() => { setPapers(initialPapers); }, [initialPapers]);
+  useEffect(() => {
+    setPapers(initialPapers);
+  }, [initialPapers]);
 
   const { selectedId, setSelectedId, selected } = useSelection(papers);
   const [assignedIds, setAssignedIds] = useState<string[]>([]);
-  const [reviewerSearch, setReviewerSearch] = useState("");
-  const [deskRejectComment, setDeskRejectComment] = useState("");
+  const [reviewerSearch, setReviewerSearch] = useState('');
+  const [deskRejectComment, setDeskRejectComment] = useState('');
   const [timelineDays] = useState(21);
   const [isSendingInvites, setIsSendingInvites] = useState(false);
   const [isDeskRejecting, setIsDeskRejecting] = useState(false);
@@ -27,7 +30,9 @@ export function useIncomingPapers(
   useEffect(() => {
     if (!selectedId || viewedRef.current.has(selectedId)) return;
     viewedRef.current.add(selectedId);
-    fetch(`/api/submissions/${selectedId}/view`, { method: "POST" }).catch(() => {});
+    fetch(`/api/submissions/${selectedId}/view`, { method: 'POST' }).catch(
+      () => {},
+    );
   }, [selectedId]);
 
   function assignReviewer(id: string) {
@@ -42,26 +47,34 @@ export function useIncomingPapers(
     if (!selectedId || assignedIds.length === 0) return;
     setIsSendingInvites(true);
 
-    const reviewerWallets = assignedIds.map(id => {
-      const reviewer = initialReviewerPool.find(r => r.id === id);
+    const reviewerWallets = assignedIds.map((id) => {
+      const reviewer = initialReviewerPool.find((r) => r.id === id);
       return reviewer?.wallet ?? id;
     });
 
     try {
-      const response = await fetch(`/api/submissions/${selectedId}/assign-reviewer`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reviewerWallets, deadlineDays: timelineDays }),
-      });
+      const response = await fetch(
+        `/api/submissions/${selectedId}/assign-reviewer`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reviewerWallets, deadlineDays: timelineDays }),
+        },
+      );
 
       if (!response.ok) {
-        const err = await response.json().catch(() => ({ error: "Unknown error" }));
-        console.error("[sendInvites] API error:", err);
+        const err = await response
+          .json()
+          .catch(() => ({ error: 'Unknown error' }));
+        console.error('[sendInvites] API error:', err);
+        toast.error(err.error || 'Failed to send invites');
       } else {
         setAssignedIds([]);
+        toast.success('Reviewer invites sent');
       }
     } catch (err) {
-      console.error("[sendInvites] Unexpected error:", err);
+      console.error('[sendInvites] Unexpected error:', err);
+      toast.error('Failed to send invites');
     } finally {
       setIsSendingInvites(false);
     }
@@ -78,18 +91,20 @@ export function useIncomingPapers(
 
     try {
       const response = await fetch(`/api/submissions/${selectedId}/decision`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          decision: "reject",
+          decision: 'reject',
           comment: deskRejectComment,
           allCriteriaMet: false,
         }),
       });
 
       if (!response.ok) {
-        const err = await response.json().catch(() => ({ error: "Unknown error" }));
-        console.error("[deskReject] API error:", err);
+        const err = await response
+          .json()
+          .catch(() => ({ error: 'Unknown error' }));
+        console.error('[deskReject] API error:', err);
         return false;
       }
 
@@ -97,12 +112,12 @@ export function useIncomingPapers(
       const rejectedId = selectedId;
       setPapers((prev) => prev.filter((p) => p.id !== rejectedId));
       setSelectedId(null);
-      setDeskRejectComment("");
+      setDeskRejectComment('');
       setShowDeskRejectConfirm(false);
       router.refresh();
       return true;
     } catch (err) {
-      console.error("[deskReject] Unexpected error:", err);
+      console.error('[deskReject] Unexpected error:', err);
       return false;
     } finally {
       setIsDeskRejecting(false);

@@ -1,15 +1,16 @@
-"use client";
+'use client';
 
-import { useState, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useSelection } from "@/src/shared/hooks/useSelection";
+import { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { useSelection } from '@/src/shared/hooks/useSelection';
 import type {
   PaperCardData,
   PoolReviewer,
   ReviewerWithStatus,
   RebuttalInfo,
-} from "@/src/features/editor/types";
-import type { AuthorResponseStatusDb } from "@/src/shared/lib/db/schema";
+} from '@/src/features/editor/types';
+import type { AuthorResponseStatusDb } from '@/src/shared/lib/db/schema';
 
 interface UseUnderReviewOptions {
   initialPapers: PaperCardData[];
@@ -28,13 +29,15 @@ export function useUnderReview({
 }: UseUnderReviewOptions) {
   const router = useRouter();
   const [papers, setPapers] = useState(initialPapers);
-  useEffect(() => { setPapers(initialPapers); }, [initialPapers]);
+  useEffect(() => {
+    setPapers(initialPapers);
+  }, [initialPapers]);
 
   const { selectedId, setSelectedId, selected } = useSelection(papers);
-  const [editorComment, setEditorComment] = useState("");
-  const [decision, setDecision] = useState("");
+  const [editorComment, setEditorComment] = useState('');
+  const [decision, setDecision] = useState('');
   const [additionalAssigned, setAdditionalAssigned] = useState<string[]>([]);
-  const [reviewerSearch, setReviewerSearch] = useState("");
+  const [reviewerSearch, setReviewerSearch] = useState('');
   const [timelineDays] = useState(21);
   const [isReleasingDecision, setIsReleasingDecision] = useState(false);
   const [isResolvingRebuttal, setIsResolvingRebuttal] = useState(false);
@@ -46,11 +49,18 @@ export function useUnderReview({
   );
 
   const allReviewsComplete = useMemo(() => {
-    return currentReviewers.length > 0 && currentReviewers.every(r => r.status === "complete");
+    return (
+      currentReviewers.length > 0 &&
+      currentReviewers.every((r) => r.status === 'complete')
+    );
   }, [currentReviewers]);
 
-  const currentAuthorResponseStatus = selectedId ? (authorResponseStatuses[selectedId] ?? null) : null;
-  const canMakeDecision = currentAuthorResponseStatus === "accepted" || currentAuthorResponseStatus === "rebuttal_requested";
+  const currentAuthorResponseStatus = selectedId
+    ? (authorResponseStatuses[selectedId] ?? null)
+    : null;
+  const canMakeDecision =
+    currentAuthorResponseStatus === 'accepted' ||
+    currentAuthorResponseStatus === 'rebuttal_requested';
 
   function releaseToAuthor() {
     if (!selectedId || !decision || !canMakeDecision) return;
@@ -63,18 +73,20 @@ export function useUnderReview({
 
     try {
       const response = await fetch(`/api/submissions/${selectedId}/decision`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          decision: decision as "accept" | "reject" | "revise",
+          decision: decision as 'accept' | 'reject' | 'revise',
           comment: editorComment,
           allCriteriaMet: allReviewsComplete,
         }),
       });
 
       if (!response.ok) {
-        const err = await response.json().catch(() => ({ error: "Unknown error" }));
-        console.error("[releaseToAuthor] API error:", err);
+        const err = await response
+          .json()
+          .catch(() => ({ error: 'Unknown error' }));
+        console.error('[releaseToAuthor] API error:', err);
         return false;
       }
 
@@ -82,13 +94,13 @@ export function useUnderReview({
       const releasedId = selectedId;
       setPapers((prev) => prev.filter((p) => p.id !== releasedId));
       setSelectedId(null);
-      setEditorComment("");
-      setDecision("");
+      setEditorComment('');
+      setDecision('');
       setShowDecisionConfirm(false);
       router.refresh();
       return true;
     } catch (err) {
-      console.error("[releaseToAuthor] Unexpected error:", err);
+      console.error('[releaseToAuthor] Unexpected error:', err);
       return false;
     } finally {
       setIsReleasingDecision(false);
@@ -100,21 +112,28 @@ export function useUnderReview({
     return rebuttalsBySubmission[selectedId] ?? null;
   }, [selectedId, rebuttalsBySubmission]);
 
-  async function resolveRebuttal(resolution: "upheld" | "rejected" | "partial", notes: string) {
+  async function resolveRebuttal(
+    resolution: 'upheld' | 'rejected' | 'partial',
+    notes: string,
+  ) {
     if (!currentRebuttal) return;
     setIsResolvingRebuttal(true);
     try {
       const res = await fetch(`/api/rebuttals/${currentRebuttal.id}/resolve`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ resolution, editorNotes: notes }),
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Unknown error" }));
-        console.error("[resolveRebuttal] API error:", err);
+        const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('[resolveRebuttal] API error:', err);
+        toast.error(err.error || 'Failed to resolve rebuttal');
+      } else {
+        toast.success('Rebuttal resolved');
       }
     } catch (err) {
-      console.error("[resolveRebuttal] Unexpected error:", err);
+      console.error('[resolveRebuttal] Unexpected error:', err);
+      toast.error('Failed to resolve rebuttal');
     } finally {
       setIsResolvingRebuttal(false);
     }
