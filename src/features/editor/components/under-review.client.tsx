@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { ThreeColumnLayout } from '@/src/shared/components/ThreeColumnLayout';
 import { DynamicPdfViewer as PdfViewer } from '@/src/shared/components/DynamicPdfViewer';
-import { PaperList } from './PaperList.client';
+import { PaperList } from '@/src/shared/components/PaperList';
 import { ReviewStatusPanel } from './sidebar/ReviewStatusPanel';
 import { useUnderReview } from '@/src/features/editor/hooks/useUnderReview';
 import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
@@ -142,6 +142,7 @@ export function UnderReviewClient({
             papers={papers}
             selectedId={selectedId}
             onSelect={setSelectedId}
+            emptyMessage="No papers in this stage."
           />
         }
         viewer={

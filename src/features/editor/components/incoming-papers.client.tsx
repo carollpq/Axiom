@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { ThreeColumnLayout } from '@/src/shared/components/ThreeColumnLayout';
 import { DynamicPdfViewer as PdfViewer } from '@/src/shared/components/DynamicPdfViewer';
-import { PaperList } from './PaperList.client';
+import { PaperList } from '@/src/shared/components/PaperList';
 import { useIncomingPapers } from '@/src/features/editor/hooks/useIncomingPapers';
 import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
 import { useDecryptPaper } from '@/src/shared/hooks/useDecryptPaper';
@@ -105,6 +105,7 @@ export function IncomingPapersClient({
             papers={papers}
             selectedId={selectedId}
             onSelect={setSelectedId}
+            emptyMessage="No papers in this stage."
           />
         }
         viewer={

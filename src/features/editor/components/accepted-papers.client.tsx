@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import { toast } from 'sonner';
 import { ThreeColumnLayout } from '@/src/shared/components/ThreeColumnLayout';
 import { DynamicPdfViewer as PdfViewer } from '@/src/shared/components/DynamicPdfViewer';
-import { PaperList } from './PaperList.client';
+import { PaperList } from '@/src/shared/components/PaperList';
 import { useAcceptedPapers } from '@/src/features/editor/hooks/useAcceptedPapers';
 import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
 import { useDecryptPaper } from '@/src/shared/hooks/useDecryptPaper';
@@ -109,6 +109,7 @@ export function AcceptedPapersClient({
           papers={papers}
           selectedId={selectedId}
           onSelect={setSelectedId}
+          emptyMessage="No papers in this stage."
         />
       }
       viewer={

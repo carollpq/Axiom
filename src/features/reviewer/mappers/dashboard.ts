@@ -1,4 +1,4 @@
-import type { PaperListItemData } from "@/src/shared/components/PaperListItem";
+import type { PaperListItemData } from '@/src/shared/components/PaperListItem';
 import type {
   AssignedReview,
   AssignedReviewExtended,
@@ -7,9 +7,18 @@ import type {
   ReviewerDisplayStatus,
   ReputationScores,
   ReputationBreakdownItem,
-} from "@/src/features/reviewer/types";
-import type { DbAssignedReview, DbCompletedReview, DbCompletedReviewExtended, DbReputationRow } from "../queries";
-import { formatIsoDate, truncateHash, toFivePointScale } from "@/src/shared/lib/format";
+} from '@/src/features/reviewer/types';
+import type {
+  DbAssignedReview,
+  DbCompletedReview,
+  DbCompletedReviewExtended,
+  DbReputationRow,
+} from '../queries';
+import {
+  formatIsoDate,
+  truncateHash,
+  toFivePointScale,
+} from '@/src/shared/lib/format';
 
 function daysUntil(deadline: string | null): number {
   if (!deadline) return 0;
@@ -18,7 +27,9 @@ function daysUntil(deadline: string | null): number {
 }
 
 export function extractAuthors(
-  contracts?: Array<{ contributors?: Array<{ contributorName?: string | null }> }>,
+  contracts?: Array<{
+    contributors?: Array<{ contributorName?: string | null }>;
+  }>,
 ): string[] {
   const authors: string[] = [];
   contracts?.forEach((contract) => {
@@ -35,40 +46,51 @@ export function buildPdfUrl(
 ): string | undefined {
   const latest = (versions ?? []).at(-1);
   return latest?.fileStorageKey
-    ? `/api/papers/${paperId}/content/${latest.fileStorageKey}`
+    ? `/api/papers/${paperId}/content?format=raw`
     : undefined;
 }
 
-function reviewStatus(assignmentStatus: string, daysLeft: number): ReviewerDisplayStatus {
-  if (assignmentStatus === "submitted") return "Submitted";
-  if (daysLeft < 0) return "Late";
-  if (daysLeft <= 3) return "In Progress";
-  return "Pending";
+function reviewStatus(
+  assignmentStatus: string,
+  daysLeft: number,
+): ReviewerDisplayStatus {
+  if (assignmentStatus === 'submitted') return 'Submitted';
+  if (daysLeft < 0) return 'Late';
+  if (daysLeft <= 3) return 'In Progress';
+  return 'Pending';
 }
 
-export function mapDbToAssignedReview(a: DbAssignedReview, index: number): AssignedReview {
+export function mapDbToAssignedReview(
+  a: DbAssignedReview,
+  index: number,
+): AssignedReview {
   const daysLeft = daysUntil(a.deadline);
   return {
     id: index + 1,
     assignmentId: a.id,
     submissionId: a.submissionId,
     title: a.submission.paper.title,
-    journal: a.submission.journal?.name ?? "—",
+    journal: a.submission.journal?.name ?? '—',
     assigned: formatIsoDate(a.assignedAt),
-    deadline: a.deadline ? formatIsoDate(a.deadline) : "—",
+    deadline: a.deadline ? formatIsoDate(a.deadline) : '—',
     status: reviewStatus(a.status, daysLeft),
     daysLeft,
   };
 }
 
-export function mapDbToCompletedReview(a: DbCompletedReview, index: number): CompletedReview {
-  const versions = (a.submission.paper as { versions?: { paperHash: string }[] }).versions ?? [];
+export function mapDbToCompletedReview(
+  a: DbCompletedReview,
+  index: number,
+): CompletedReview {
+  const versions =
+    (a.submission.paper as { versions?: { paperHash: string }[] }).versions ??
+    [];
   const latest = versions.at(-1);
-  const hash = latest ? truncateHash(latest.paperHash, 8) : "—";
+  const hash = latest ? truncateHash(latest.paperHash, 8) : '—';
   return {
     id: index + 1,
     title: a.submission.paper.title,
-    journal: a.submission.journal?.name ?? "—",
+    journal: a.submission.journal?.name ?? '—',
     submitted: formatIsoDate(a.submittedAt ?? a.assignedAt),
     editorRating: 0,
     authorRating: 0,
@@ -76,7 +98,9 @@ export function mapDbToCompletedReview(a: DbCompletedReview, index: number): Com
   };
 }
 
-export function mapDbToReputationScores(row: DbReputationRow): ReputationScores {
+export function mapDbToReputationScores(
+  row: DbReputationRow,
+): ReputationScores {
   return {
     overall: toFivePointScale(row.overallScore),
     change: 0, // no historical delta available yet
@@ -87,24 +111,47 @@ export function mapDbToReputationScores(row: DbReputationRow): ReputationScores 
   };
 }
 
-export function mapDbToReputationBreakdown(row: DbReputationRow): ReputationBreakdownItem[] {
+export function mapDbToReputationBreakdown(
+  row: DbReputationRow,
+): ReputationBreakdownItem[] {
   return [
-    { label: "Timeliness",       value: toFivePointScale(row.timelinessScore),  desc: "Avg days to deadline" },
-    { label: "Editor Ratings",   value: toFivePointScale(row.editorRatingAvg),  desc: "From journal editors" },
-    { label: "Author Feedback",  value: toFivePointScale(row.authorRatingAvg),  desc: "Anonymous aggregate" },
-    { label: "Post-Publication", value: toFivePointScale(row.publicationScore), desc: "Publication outcome" },
+    {
+      label: 'Timeliness',
+      value: toFivePointScale(row.timelinessScore),
+      desc: 'Avg days to deadline',
+    },
+    {
+      label: 'Editor Ratings',
+      value: toFivePointScale(row.editorRatingAvg),
+      desc: 'From journal editors',
+    },
+    {
+      label: 'Author Feedback',
+      value: toFivePointScale(row.authorRatingAvg),
+      desc: 'Anonymous aggregate',
+    },
+    {
+      label: 'Post-Publication',
+      value: toFivePointScale(row.publicationScore),
+      desc: 'Publication outcome',
+    },
   ];
 }
 
-export function mapDbToCompletedReviewExtended(a: DbCompletedReviewExtended, index: number): CompletedReviewExtended {
+export function mapDbToCompletedReviewExtended(
+  a: DbCompletedReviewExtended,
+  index: number,
+): CompletedReviewExtended {
   const base = mapDbToCompletedReview(a, index);
   const { paper } = a.submission;
   const authors = extractAuthors(paper.contracts);
   const pdfUrl = buildPdfUrl(paper.id, paper.versions);
-  const editorName = a.submission.journal?.editorWallet ?? "Editor";
+  const editorName = a.submission.journal?.editorWallet ?? 'Editor';
 
   // Find this reviewer's review from the assignment's reviews
-  const myReview = a.reviews?.find((r) => r.reviewerWallet === a.reviewerWallet);
+  const myReview = a.reviews?.find(
+    (r) => r.reviewerWallet === a.reviewerWallet,
+  );
   const reviewContent = myReview
     ? {
         strengths: myReview.strengths ?? undefined,
@@ -126,7 +173,9 @@ export function mapDbToCompletedReviewExtended(a: DbCompletedReviewExtended, ind
         editorNotes: rebuttalRow.editorNotes ?? undefined,
         responseForThisReview: myReview
           ? (() => {
-              const resp = rebuttalRow.responses?.find((r) => r.reviewId === myReview.id);
+              const resp = rebuttalRow.responses?.find(
+                (r) => r.reviewId === myReview.id,
+              );
               return resp
                 ? { position: resp.position, justification: resp.justification }
                 : undefined;
@@ -150,21 +199,31 @@ export function mapDbToCompletedReviewExtended(a: DbCompletedReviewExtended, ind
 }
 
 /** Convert reviewer display items to shared PaperListItemData for the shared PaperList. */
-export function toReviewerPaperListItems(papers: Array<{ id: number; title: string; authors?: string[]; abstract?: string }>): PaperListItemData[] {
+export function toReviewerPaperListItems(
+  papers: Array<{
+    id: number;
+    title: string;
+    authors?: string[];
+    abstract?: string;
+  }>,
+): PaperListItemData[] {
   return papers.map((p) => ({
     id: String(p.id),
     title: p.title,
-    authors: p.authors?.join(", "),
+    authors: p.authors?.join(', '),
     abstractSnippet: p.abstract,
   }));
 }
 
-export function mapDbToAssignedReviewExtended(a: DbAssignedReview, index: number): AssignedReviewExtended {
+export function mapDbToAssignedReviewExtended(
+  a: DbAssignedReview,
+  index: number,
+): AssignedReviewExtended {
   const baseReview = mapDbToAssignedReview(a, index);
   const { paper } = a.submission;
   const authors = extractAuthors(paper.contracts);
   const pdfUrl = buildPdfUrl(paper.id, paper.versions);
-  const editorName = a.submission.journal?.editorWallet ?? "Editor";
+  const editorName = a.submission.journal?.editorWallet ?? 'Editor';
 
   return {
     ...baseReview,
