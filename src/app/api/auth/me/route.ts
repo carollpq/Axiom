@@ -3,7 +3,7 @@ import { getOrCreateUser } from "@/src/features/users/queries";
 import { registerUserRole } from "@/src/features/users/actions";
 import { requireSession } from "@/src/shared/lib/api-helpers";
 import { ROLES } from "@/src/features/auth/types";
-import { ORCID_REGEX } from "@/src/shared/lib/validation";
+
 
 export const runtime = "nodejs";
 
@@ -29,9 +29,16 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    if (!ORCID_REGEX.test(orcidId)) {
+
+    // Validate ORCID ID using the ORCID public API
+    const orcidApiUrl = `https://pub.orcid.org/v3.0/${encodeURIComponent(orcidId)}`;
+    const orcidRes = await fetch(orcidApiUrl, {
+      headers: { Accept: "application/json" },
+      method: "GET",
+    });
+    if (!orcidRes.ok) {
       return NextResponse.json(
-        { message: "Invalid ORCID format" },
+        { message: "ORCID ID not found or invalid" },
         { status: 400 }
       );
     }
