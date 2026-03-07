@@ -2,7 +2,7 @@
 ## Axiom — Blockchain-Backed Review Fairness for Academic Publishing
 
 **Version:** 3.0  
-**Stack:** Next.js 15 · Hedera (HCS + HTS + Smart Contracts + DID) · Lit Protocol · Vercel  
+**Stack:** Next.js 16 · React 19.2 · Hedera (HCS + HTS + Smart Contracts + DID) · Lit Protocol · Vercel  
 **Date:** February 2026  
 **Hackathon:** Hedera Hello Future: Apex
 
@@ -137,9 +137,9 @@ Journals join (free, no revenue impact)
 
 | Component | Technology | Responsibility |
 |---|---|---|
-| **Frontend** | Next.js 15 (App Router, Turbopack) | Pages, wallet integration, client-side hashing, Lit encrypt/decrypt |
+| **Frontend** | Next.js 16 (App Router, Turbopack), React 19.2 | Pages, wallet integration, client-side hashing, Lit encrypt/decrypt |
 | **API Layer** | Next.js Route Handlers (Vercel) | Business logic, off-chain CRUD, Hedera submission orchestration |
-| **Database** | PostgreSQL (Neon) / SQLite (dev) | Users, papers, contracts, reviews, reputation, submissions |
+| **Database** | PostgreSQL (Neon) | Users, papers, contracts, reviews, reputation, submissions |
 | **File Storage** | IPFS via web3.storage (Filecoin archival) | Lit-encrypted paper PDFs, datasets, environment specs |
 | **Blockchain (Consensus)** | Hedera HCS | Immutable audit logs: papers, contracts, reviews, criteria, decisions |
 | **Blockchain (Tokens)** | Hedera HTS | Soulbound reputation NFTs for reviewers |
@@ -154,8 +154,8 @@ Journals join (free, no revenue impact)
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                       BROWSER CLIENT                          │
-│  Next.js 15 · Thirdweb v5 · Client-side Hashing              │
-│  Lit SDK (encrypt/decrypt) · React 19                         │
+│  Next.js 16 · Thirdweb v5 · Client-side Hashing              │
+│  Lit SDK (dynamically imported) · React 19.2                  │
 └───────┬──────────────────────┬───────────────────────────────┘
         │ HTTPS (API Routes)   │ Wallet Signing / Lit Network
         ▼                      ▼
@@ -733,7 +733,7 @@ Retrieval via w3s.link gateway: https://w3s.link/ipfs/{cid}
 
 ## 11. Database Schema Design
 
-PostgreSQL (Neon prod) / SQLite (dev) via Drizzle ORM.
+PostgreSQL (Neon) via Drizzle ORM.
 
 ### 11.1 Core Tables
 
@@ -1197,8 +1197,10 @@ Wallet address is the primary identifier. All API routes derive identity from th
 
 ```
 src/app/
-├── page.tsx                       # Landing page
-├── login/page.tsx                 # Wallet connect
+├── layout.tsx                        # Root layout (imports providers.client.tsx)
+├── providers.client.tsx              # Client boundary: ThirdwebProvider + UserProvider (code-split)
+├── page.tsx                          # Landing page
+├── login/page.tsx                    # Wallet connect
 ├── onboarding/page.tsx            # Role selection + ORCID (placeholder)
 ├── verify/page.tsx                # Public paper verification tool ✅
 ├── (protected)/
@@ -1335,7 +1337,7 @@ Author                     Lit Network       API           Hedera      IPFS
 
 ```
 Vercel Project
-├── Framework: Next.js 15 (App Router, Turbopack)
+├── Framework: Next.js 16 (App Router, Turbopack)
 ├── Runtime: Node.js (NOT Edge)
 ├── Environment Variables:
 │   ├── NEXT_PUBLIC_THIRDWEB_CLIENT_ID, AUTH_PRIVATE_KEY

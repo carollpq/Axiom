@@ -46,7 +46,7 @@ The codebase is a **functional full-stack application**. The researcher and edit
 - Reviewer search by reputation score in assignment UI
 - Hedera mirror node lookups
 
-**Current stack:** Next.js 15 (App Router, Turbopack) · React 19 · Tailwind CSS v4 · Thirdweb v5 · TypeScript strict mode · Neon PostgreSQL/Drizzle ORM · Hedera SDK (HCS + HTS) · Lit Protocol SDK (encrypt only) · web3.storage (IPFS + Filecoin) · react-pdf v10 (pdfjs-dist v5)
+**Current stack:** Next.js 16 (App Router, Turbopack) · React 19.2 · Tailwind CSS v4 · Thirdweb v5 · TypeScript strict mode · Neon PostgreSQL/Drizzle ORM · Hedera SDK (HCS + HTS) · Lit Protocol SDK (encrypt only, dynamically imported) · web3.storage (IPFS + Filecoin) · react-pdf v10 (pdfjs-dist v5)
 
 ## Common Commands
 
@@ -168,6 +168,17 @@ Each role group has its own layout using `RoleShell` from `src/shared/components
 - Layout properties use Tailwind utilities. Semi-transparent colors use inline `style={{}}`.
 - Dark palette: bg `#1a1816` / `rgba(45,42,38,...)`, text `#d4ccc0` / `#b0a898` / `#8a8070`, accents `#c9a44a` (gold) / `#8fbc8f` (green) / `#d4645a` (red) / `#5a7a9a` (blue)
 - Font: `font-serif` (Georgia/serif stack)
+
+### Performance Patterns
+
+- **Provider code splitting** — `ThirdwebProvider` + `UserProvider` extracted into `providers.client.tsx` client boundary. Root layout imports it as a client component, enabling automatic code splitting of the ~200KB Thirdweb bundle.
+- **Lit SDK dynamic imports** — `@lit-protocol/auth-helpers` and `@lit-protocol/constants` are dynamically imported inside function bodies in `decrypt.ts`, deferring ~500KB from the initial bundle. `useDecryptPaper.ts` dynamically imports `decryptFileWithLit`.
+- **Suspense streaming** — All 5 editor pages wrap async data-fetching content in `<Suspense>` with skeleton fallbacks, enabling progressive rendering.
+- **`after()` for non-blocking side effects** — API routes (`cron/deadlines`, `reviews/[id]`, `submissions/[id]/decision`, `submissions/[id]/author-response`, `rebuttals/[rebuttalId]/resolve`) use `after()` from `next/server` to defer HCS anchoring, reputation minting, and notification creation after the response is sent.
+- **SQL-level filtering** — `listReviewerPool` uses PostgreSQL JSONB `@>` operator instead of fetching all users and filtering in JS.
+- **Hoisted style constants** — Shared inline style objects extracted to module scope in `CreateSubmission`, `NotificationBell`, and `under-review` to prevent re-creation on every render.
+- **Stable callbacks** — `useRebuttal.submitRebuttal` uses a ref to read `state.responses` inside `useCallback`, avoiding dependency on the changing object reference.
+- **Lazy useState** — `ReviewResponseClient` uses lazy initializer functions for `useState` to avoid re-computing initial values.
 
 ### Web3 Integration
 
@@ -292,7 +303,8 @@ All source code lives under `src/`. The `@/` path alias resolves to the project 
 ```
 src/
 ├── app/
-│   ├── layout.tsx                 # Root (ThirdwebProvider, UserProvider, globals)
+│   ├── layout.tsx                 # Root (imports Providers from providers.client.tsx)
+│   ├── providers.client.tsx       # Client boundary: ThirdwebProvider + UserProvider (code-split)
 │   ├── page.tsx                   # Landing page
 │   ├── globals.css                # Tailwind v4 import
 │   ├── login/page.tsx
@@ -355,10 +367,11 @@ src/
 - **Auth:** `getSession()` from `@/src/shared/lib/auth/auth`. Never trust wallet from request body.
 - **Validation:** `createInsertSchema(table)` from `drizzle-zod`. Don't duplicate DB schema.
 - **Canonical JSON:** Always `canonicalJson()` from `lib/hashing.ts` for anything hashed. Never raw `JSON.stringify()`.
+- **Non-blocking side effects:** Use `after()` from `next/server` in API routes for HCS anchoring, reputation minting, and notifications. Return the response immediately after critical DB writes.
 
 ## Database
 
-Drizzle ORM. Dev: SQLite. Prod: Neon PostgreSQL. Schema in `src/shared/lib/db/schema.ts`.
+Drizzle ORM. Neon PostgreSQL (dev and prod). Schema in `src/shared/lib/db/schema.ts`.
 
 **All 16 tables:**
 - `users` — wallet, ORCID, role, research fields

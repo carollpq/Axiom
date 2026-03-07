@@ -42,16 +42,17 @@ Axiom moves the critical trust infrastructure of academic publishing onto Hedera
 
 | Layer | Technology |
 |---|---|
-| Frontend | Next.js 15 (App Router, Turbopack), React 19 |
+| Frontend | Next.js 16 (App Router, Turbopack), React 19.2 |
 | Styling | Tailwind CSS v4 |
 | Blockchain | Hedera (HCS for anchoring, HTS for reputation tokens) |
 | Wallets | Thirdweb v5 (MetaMask, HashPack) |
 | Access Control | Lit Protocol (threshold encryption) |
-| Database | Neon PostgreSQL (prod) / Drizzle ORM |
+| Database | Neon PostgreSQL / Drizzle ORM |
 | File Storage | IPFS via web3.storage (Filecoin archival) |
 | PDF Viewing | react-pdf v10 / pdfjs-dist v5 |
 | Deployment | Vercel |
 | Identity | ORCID verification |
+| Performance | Suspense streaming, `after()` non-blocking side effects, dynamic imports |
 
 ---
 
@@ -60,8 +61,8 @@ Axiom moves the critical trust infrastructure of academic publishing onto Hedera
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                       BROWSER CLIENT                          │
-│  Next.js App · Wallet SDKs · Client-side Hashing              │
-│  Lit SDK (encrypt) · PDF Viewer                               │
+│  Next.js 16 App · Wallet SDKs · Client-side Hashing           │
+│  Lit SDK (dynamically imported) · PDF Viewer                  │
 └───────┬──────────────────────┬───────────────┬───────────────┘
         │ HTTPS (API Routes)   │ Wallet Signing │ Lit Network
         ▼                      ▼               ▼
@@ -215,7 +216,8 @@ The app will be available at `http://localhost:3000`.
 ```
 src/
 ├── app/
-│   ├── layout.tsx                  # Root layout
+│   ├── layout.tsx                  # Root layout (imports providers.client.tsx)
+│   ├── providers.client.tsx        # Client boundary: ThirdwebProvider + UserProvider
 │   ├── page.tsx                    # Landing page
 │   ├── login/                      # Multi-step auth flow
 │   ├── verify/                     # Public hash verification
