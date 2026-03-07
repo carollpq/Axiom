@@ -1,33 +1,45 @@
-"use client";
+'use client';
 
-import { useState, useMemo } from "react";
-import { ThreeColumnLayout } from "@/src/shared/components/ThreeColumnLayout";
-import { SelectionPlaceholder } from "@/src/shared/components/SelectionPlaceholder";
-import { PaperList } from "@/src/shared/components/PaperList";
-import { DynamicPdfViewer } from "@/src/shared/components/DynamicPdfViewer";
-import { useCollapseSidebar } from "@/src/shared/hooks/useCollapseSidebar";
-import type { AssignedReviewExtended } from "@/src/features/reviewer/types";
-import { toReviewerPaperListItems } from "@/src/features/reviewer/mappers/dashboard";
-import { AssignedReviewSidebar } from "./assigned-review-sidebar";
+import { useState, useMemo } from 'react';
+import { ThreeColumnLayout } from '@/src/shared/components/ThreeColumnLayout';
+import { SelectionPlaceholder } from '@/src/shared/components/SelectionPlaceholder';
+import { PaperList } from '@/src/shared/components/PaperList';
+import { DynamicPdfViewer } from '@/src/shared/components/DynamicPdfViewer';
+import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
+import type { DbAssignedReview } from '@/src/features/reviewer/queries';
+import {
+  mapDbToAssignedReviewExtended,
+  toReviewerPaperListItems,
+} from '@/src/features/reviewer/mappers/dashboard';
+import { AssignedReviewSidebar } from './assigned-review-sidebar.client';
 
 interface Props {
-  initialAssigned: AssignedReviewExtended[];
+  initialRaw: DbAssignedReview[];
 }
 
-export function PapersUnderReviewClient({ initialAssigned }: Props) {
+export function PapersUnderReviewClient({ initialRaw }: Props) {
   useCollapseSidebar();
-  const [selectedId, setSelectedId] = useState<string | null>(
-    initialAssigned.length > 0 ? String(initialAssigned[0].id) : null,
+
+  const mapped = useMemo(
+    () => initialRaw.map(mapDbToAssignedReviewExtended),
+    [initialRaw],
   );
 
-  const paperItems = useMemo(() => toReviewerPaperListItems(initialAssigned), [initialAssigned]);
-  const selected = initialAssigned.find((p) => String(p.id) === selectedId) ?? null;
+  const [selectedId, setSelectedId] = useState<string | null>(
+    mapped[0] ? String(mapped[0].id) : null,
+  );
+
+  const paperItems = useMemo(() => toReviewerPaperListItems(mapped), [mapped]);
+
+  const selectedIndex = mapped.findIndex((p) => String(p.id) === selectedId);
+  const selected = selectedIndex >= 0 ? mapped[selectedIndex] : null;
+  const selectedRaw = selectedIndex >= 0 ? initialRaw[selectedIndex] : null;
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#1a1816" }}>
+    <div className="min-h-screen" style={{ backgroundColor: '#1a1816' }}>
       <ThreeColumnLayout
         title="Papers Under Review"
-        countLabel={`${initialAssigned.length} paper${initialAssigned.length !== 1 ? "s" : ""}`}
+        countLabel={`${mapped.length} paper${mapped.length !== 1 ? 's' : ''}`}
         list={
           <PaperList
             papers={paperItems}
@@ -40,12 +52,17 @@ export function PapersUnderReviewClient({ initialAssigned }: Props) {
           selected?.pdfUrl ? (
             <DynamicPdfViewer fileUrl={selected.pdfUrl} />
           ) : (
-            <SelectionPlaceholder message={selected ? "No PDF available" : "Select a paper to view"} />
+            <SelectionPlaceholder
+              message={selected ? 'No PDF available' : 'Select a paper to view'}
+            />
           )
         }
         sidebar={
-          selected ? (
-            <AssignedReviewSidebar paper={selected} />
+          selected && selectedRaw ? (
+            <AssignedReviewSidebar
+              paper={selected}
+              rawAssignment={selectedRaw}
+            />
           ) : (
             <div className="p-4 text-[12px] text-[#6a6050]">
               Select a paper to see details

@@ -327,7 +327,7 @@ src/
 │   ├── (protected)/
 │   │   ├── researcher/            # Dashboard, authorship-contracts, create-submission, view-submissions, paper-version-control (includes paper registration), rebuttal/[submissionId], review-response/[submissionId]
 │   │   ├── editor/                # Dashboard, incoming, under-review, accepted, management
-│   │   └── reviewer/              # Dashboard, review_workspace/[id]
+│   │   └── reviewer/              # Dashboard, assigned (inline review sidebar)
 ├── features/
 │   ├── auth/                      # Login flow components
 │   ├── researcher/                # Components, hooks, reducers, config, constants, mappers, queries, types, nav

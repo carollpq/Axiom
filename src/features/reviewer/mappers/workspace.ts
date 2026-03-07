@@ -2,7 +2,32 @@ import type {
   PaperUnderReview,
   ReviewCriterion,
 } from '@/src/features/reviewer/types';
-import type { DbReviewAssignment } from '@/src/features/reviews/queries';
+
+/** Common shape accepted by workspace mappers — both DbReviewAssignment and DbAssignedReview satisfy this. */
+export interface ReviewAssignmentLike {
+  id: string;
+  submission: {
+    paper: {
+      id: string;
+      title: string;
+      abstract: string | null;
+      versions: Array<{
+        versionNumber: number;
+        paperHash: string;
+        datasetHash: string | null;
+        codeRepoUrl: string | null;
+        codeCommitHash: string | null;
+        envSpecHash: string | null;
+        fileStorageKey: string | null;
+      }>;
+    };
+    journal: { name: string } | null;
+    reviewCriteria?: Array<{
+      criteriaJson: string | null;
+      criteriaHash: string;
+    }>;
+  };
+}
 
 const FALLBACK_PROVENANCE = [
   { label: 'Paper Hash', hash: '—', verified: false },
@@ -40,7 +65,7 @@ interface DbCriterion {
 }
 
 export function mapAssignmentToPaper(
-  assignment: NonNullable<DbReviewAssignment>,
+  assignment: ReviewAssignmentLike,
 ): PaperUnderReview {
   const paper = assignment.submission.paper;
   const journal = assignment.submission.journal;
@@ -97,7 +122,7 @@ export function mapAssignmentToPaper(
 }
 
 export function mapAssignmentToCriteria(
-  assignment: NonNullable<DbReviewAssignment>,
+  assignment: ReviewAssignmentLike,
 ): ReviewCriterion[] {
   const reviewCriteriaRow = assignment.submission.reviewCriteria?.[0];
   if (!reviewCriteriaRow?.criteriaJson) return FALLBACK_CRITERIA;
