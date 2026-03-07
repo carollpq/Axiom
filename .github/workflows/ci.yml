@@ -25,12 +25,16 @@ jobs:
         id: cache-deps
         uses: actions/cache@v4
         with:
-          path: node_modules
-          key: deps-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          path: |
+            node_modules
+            contracts/node_modules
+          key: deps-${{ runner.os }}-${{ hashFiles('package-lock.json', 'contracts/package-lock.json') }}
 
       - name: Install dependencies
         if: steps.cache-deps.outputs.cache-hit != 'true'
-        run: npm ci
+        run: |
+          npm ci
+          cd contracts && npm ci
 
   typecheck:
     name: Type-check
@@ -46,8 +50,10 @@ jobs:
       - name: Restore node_modules
         uses: actions/cache@v4
         with:
-          path: node_modules
-          key: deps-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          path: |
+            node_modules
+            contracts/node_modules
+          key: deps-${{ runner.os }}-${{ hashFiles('package-lock.json', 'contracts/package-lock.json') }}
 
       - run: npx tsc --noEmit
 
@@ -65,8 +71,10 @@ jobs:
       - name: Restore node_modules
         uses: actions/cache@v4
         with:
-          path: node_modules
-          key: deps-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          path: |
+            node_modules
+            contracts/node_modules
+          key: deps-${{ runner.os }}-${{ hashFiles('package-lock.json', 'contracts/package-lock.json') }}
 
       - run: npm run lint
 
@@ -89,8 +97,10 @@ jobs:
       - name: Restore node_modules
         uses: actions/cache@v4
         with:
-          path: node_modules
-          key: deps-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          path: |
+            node_modules
+            contracts/node_modules
+          key: deps-${{ runner.os }}-${{ hashFiles('package-lock.json', 'contracts/package-lock.json') }}
 
       - name: Cache Next.js build
         uses: actions/cache@v4
