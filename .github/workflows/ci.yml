@@ -88,8 +88,32 @@ jobs:
     env:
       NEXT_PUBLIC_THIRDWEB_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_THIRDWEB_CLIENT_ID }}
       NEXT_PUBLIC_APP_DOMAIN: ${{ secrets.NEXT_PUBLIC_APP_DOMAIN }}
+    
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       AUTH_PRIVATE_KEY: ${{ secrets.AUTH_PRIVATE_KEY }}
+    
+      THIRDWEB_PROJECT_SECRET_KEY: ${{ secrets.THIRDWEB_PROJECT_SECRET_KEY }}
+    
+      HEDERA_NETWORK: ${{ secrets.HEDERA_NETWORK }}
+      HEDERA_OPERATOR_ID: ${{ secrets.HEDERA_OPERATOR_ID }}
+      HEDERA_OPERATOR_KEY: ${{ secrets.HEDERA_OPERATOR_KEY }}
+    
+      HCS_TOPIC_PAPERS: ${{ secrets.HCS_TOPIC_PAPERS }}
+      HCS_TOPIC_CONTRACTS: ${{ secrets.HCS_TOPIC_CONTRACTS }}
+      HCS_TOPIC_SUBMISSIONS: ${{ secrets.HCS_TOPIC_SUBMISSIONS }}
+      HCS_TOPIC_CRITERIA: ${{ secrets.HCS_TOPIC_CRITERIA }}
+      HCS_TOPIC_REVIEWS: ${{ secrets.HCS_TOPIC_REVIEWS }}
+      HCS_TOPIC_DECISIONS: ${{ secrets.HCS_TOPIC_DECISIONS }}
+      HCS_TOPIC_RETRACTIONS: ${{ secrets.HCS_TOPIC_RETRACTIONS }}
+      HCS_TOPIC_EARNINGS: ${{ secrets.HCS_TOPIC_EARNINGS }}
+      HTS_REPUTATION_TOKEN_ID: ${{ secrets.HTS_REPUTATION_TOKEN_ID }}
+    
+      NEXT_PUBLIC_LIT_NETWORK: ${{ secrets.NEXT_PUBLIC_LIT_NETWORK }}
+    
+      PINATA_API_KEY: ${{ secrets.PINATA_API_KEY }}
+      PINATA_JWT: ${{ secrets.PINATA_JWT }}
+      PINATA_SECRET_KEY: ${{ secrets.PINATA_SECRET_KEY }}
+      PINATA_GATEWAY_URL: ${{ secrets.PINATA_GATEWAY_URL }}
     steps:
       - uses: actions/checkout@v4
 
