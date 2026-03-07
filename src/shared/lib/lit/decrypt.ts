@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { getLitClient } from "./client";
-import type { ConditionList } from "./access-control";
-import type { AccessControlConditions } from "@lit-protocol/types";
+import { getLitClient } from './client';
+import type { ConditionList } from './access-control';
+import type { AccessControlConditions } from '@lit-protocol/types';
 
 /**
  * Retrieves Lit session signatures by having the user sign a SIWE message.
@@ -15,35 +15,44 @@ async function getSessionSigs(
   walletAddress: string,
   signMessage: (message: string) => Promise<string>,
 ) {
-  const { LitAccessControlConditionResource, createSiweMessageWithResources, generateAuthSig } =
-    await import("@lit-protocol/auth-helpers");
-  const { LIT_ABILITY } = await import("@lit-protocol/constants");
+  const {
+    LitAccessControlConditionResource,
+    createSiweMessageWithResources,
+    generateAuthSig,
+  } = await import('@lit-protocol/auth-helpers');
+  const { LIT_ABILITY } = await import('@lit-protocol/constants');
 
   const litClient = await getLitClient();
 
-  const resource = new LitAccessControlConditionResource("*");
+  const resource = new LitAccessControlConditionResource('*');
 
   return litClient.getSessionSigs({
-    chain: "ethereum",
+    chain: 'ethereum',
     expiration: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resourceAbilityRequests: [
       {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         resource: resource as any,
         ability: LIT_ABILITY.AccessControlConditionDecryption,
       },
-    ] as any,
-    authNeededCallback: async ({ uri, expiration, resourceAbilityRequests }) => {
-      const nonce = await litClient.getLatestBlockhash();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ] as any,
+    authNeededCallback: async ({
+      uri,
+      expiration,
+      resourceAbilityRequests,
+    }) => {
+      const nonce = await litClient.getLatestBlockhash();
       const toSign = await createSiweMessageWithResources({
-        uri: uri ?? "",
+        uri: uri ?? '',
         expiration:
           expiration ?? new Date(Date.now() + 1000 * 60 * 60).toISOString(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         resources: (resourceAbilityRequests ?? []) as any,
         walletAddress,
         nonce,
         litNodeClient: litClient,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
 
       const signature = await signMessage(toSign);
@@ -84,7 +93,7 @@ export async function decryptFileWithLit(
   const sessionSigs = await getSessionSigs(walletAddress, signMessage);
 
   const { decryptedData } = await litClient.decrypt({
-    chain: "ethereum",
+    chain: 'ethereum',
     ciphertext,
     dataToEncryptHash,
     accessControlConditions:
