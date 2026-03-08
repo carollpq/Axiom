@@ -1,12 +1,12 @@
-import { db } from "@/src/shared/lib/db";
+import { db } from '@/src/shared/lib/db';
 import {
   authorshipContracts,
   contractContributors,
   users,
   type ContractStatusDb,
   type ContributorStatusDb,
-} from "@/src/shared/lib/db/schema";
-import { and, eq } from "drizzle-orm";
+} from '@/src/shared/lib/db/schema';
+import { and, eq } from 'drizzle-orm';
 
 export interface CreateContractInput {
   paperTitle: string;
@@ -62,7 +62,10 @@ export async function addContributor(input: AddContributorInput) {
   )[0];
 }
 
-export async function removeContributor(contractId: string, contributorId: string) {
+export async function removeContributor(
+  contractId: string,
+  contributorId: string,
+) {
   return (
     (
       await db
@@ -87,16 +90,25 @@ export async function updateContractHedera(
     (
       await db
         .update(authorshipContracts)
-        .set({ hederaTxId, hederaTimestamp, updatedAt: new Date().toISOString() })
+        .set({
+          hederaTxId,
+          hederaTimestamp,
+          updatedAt: new Date().toISOString(),
+        })
         .where(eq(authorshipContracts.id, contractId))
         .returning()
     )[0] ?? null
   );
 }
 
-export async function generateInviteToken(contractId: string, contributorId: string) {
+export async function generateInviteToken(
+  contractId: string,
+  contributorId: string,
+) {
   const token = crypto.randomUUID();
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const expiresAt = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000,
+  ).toISOString();
 
   const updated = (
     await db
@@ -120,7 +132,11 @@ export async function resetContractSignatures(contractId: string) {
 
   await db
     .update(contractContributors)
-    .set({ status: "pending" as ContributorStatusDb, signature: null, signedAt: null })
+    .set({
+      status: 'pending' as ContributorStatusDb,
+      signature: null,
+      signedAt: null,
+    })
     .where(eq(contractContributors.contractId, contractId));
 
   return (
@@ -128,7 +144,7 @@ export async function resetContractSignatures(contractId: string) {
       await db
         .update(authorshipContracts)
         .set({
-          status: "pending_signatures" as ContractStatusDb,
+          status: 'pending_signatures' as ContractStatusDb,
           contractHash: null,
           updatedAt: now,
         })
@@ -145,6 +161,41 @@ export interface SignContributorInput {
   contractHash?: string;
 }
 
+export async function updateContractSchedule(
+  contractId: string,
+  scheduleId: string,
+  scheduleTxId: string,
+) {
+  return (
+    (
+      await db
+        .update(authorshipContracts)
+        .set({
+          hederaScheduleId: scheduleId,
+          hederaScheduleTxId: scheduleTxId,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(authorshipContracts.id, contractId))
+        .returning()
+    )[0] ?? null
+  );
+}
+
+export async function updateContributorScheduleSign(
+  contributorId: string,
+  scheduleTxId: string,
+) {
+  return (
+    (
+      await db
+        .update(contractContributors)
+        .set({ hederaScheduleSignTxId: scheduleTxId })
+        .where(eq(contractContributors.id, contributorId))
+        .returning()
+    )[0] ?? null
+  );
+}
+
 export async function signContributor(input: SignContributorInput) {
   const now = new Date().toISOString();
 
@@ -153,7 +204,7 @@ export async function signContributor(input: SignContributorInput) {
       .update(contractContributors)
       .set({
         signature: input.signature,
-        status: "signed" as ContributorStatusDb,
+        status: 'signed' as ContributorStatusDb,
         signedAt: now,
       })
       .where(
@@ -176,14 +227,14 @@ export async function signContributor(input: SignContributorInput) {
     .from(contractContributors)
     .where(eq(contractContributors.contractId, input.contractId));
 
-  const allSigned = allContribs.every((c) => c.status === "signed");
+  const allSigned = allContribs.every((c) => c.status === 'signed');
 
   await db
     .update(authorshipContracts)
     .set({
       status: (allSigned
-        ? "fully_signed"
-        : "pending_signatures") as ContractStatusDb,
+        ? 'fully_signed'
+        : 'pending_signatures') as ContractStatusDb,
       contractHash: allSigned ? (input.contractHash ?? null) : undefined,
       updatedAt: now,
     })

@@ -29,9 +29,9 @@ Axiom moves the critical trust infrastructure of academic publishing onto Hedera
 2. **Soulbound reviewer reputation** — HTS NFTs minted per review event. Portable, non-transferable, cross-journal. Reviewers build a verifiable quality record.
 3. **Pre-registered review criteria** — Journals publish criteria on HCS before review begins. Criteria become immutable. Rejections must be justifiable against stated criteria.
 4. **Rebuttal phase** — Authors can challenge specific reviewer comments. Upheld rebuttals create negative reputation events for reviewers.
-5. **Enforced timelines** — Deadlines tracked with on-chain anchoring. Late reviews = negative reputation tokens.
+5. **Enforced timelines** — Deadlines registered on-chain via TimelineEnforcer smart contract (Hedera EVM). Cross-verified in cron job. Late reviews = negative reputation tokens.
 6. **Transparent post-decision reviews** — After final decision, anonymized review comments become public.
-7. **Authorship contracts** — All contributors cryptographically sign contribution splits before submission.
+7. **Authorship contracts** — All contributors cryptographically sign contribution splits before submission. Fully-signed contracts anchored via Hedera Scheduled Transactions.
 8. **Paper registration** — Research drafts timestamped on-chain, proving first disclosure.
 
 **What we do NOT change:** Journal revenue models, paywalls, subscriptions, or APCs. Journals gain tools without losing revenue.
@@ -44,7 +44,7 @@ Axiom moves the critical trust infrastructure of academic publishing onto Hedera
 |---|---|
 | Frontend | Next.js 16 (App Router, Turbopack), React 19.2 |
 | Styling | Tailwind CSS v4 |
-| Blockchain | Hedera (HCS for anchoring, HTS for reputation tokens) |
+| Blockchain | Hedera (HCS + HTS + Smart Contracts + Mirror Node + Scheduled Transactions) |
 | Wallets | Thirdweb v5 (MetaMask, HashPack) |
 | Access Control | Lit Protocol (threshold encryption) |
 | Database | Neon PostgreSQL / Drizzle ORM |
@@ -52,6 +52,7 @@ Axiom moves the critical trust infrastructure of academic publishing onto Hedera
 | PDF Viewing | react-pdf v10 / pdfjs-dist v5 |
 | Deployment | Vercel |
 | Identity | ORCID verification |
+| Smart Contracts | ethers v6 + Hardhat (TimelineEnforcer on Hedera EVM) |
 | Performance | Suspense streaming, `after()` non-blocking side effects, dynamic imports |
 
 ---
@@ -72,8 +73,9 @@ Axiom moves the critical trust infrastructure of academic publishing onto Hedera
 │                    │  │              │  │                  │
 │  Business Logic    │  │  HCS Topics  │  │  Threshold MPC   │
 │  Review Pipeline   │  │  HTS Tokens  │  │  Access Control   │
-│  Reputation System │  │  (Soulbound) │  │  Encrypt/Decrypt  │
-│  Cron Jobs         │  │              │  │                  │
+│  Reputation System │  │  Smart Ctrts │  │  Encrypt/Decrypt  │
+│  Cron Jobs         │  │  Mirror Node │  │                  │
+│                    │  │  Scheduled Tx│  │                  │
 └────────┬───────────┘  └──────────────┘  └──────────────────┘
          │
          ▼
@@ -119,10 +121,9 @@ For the full architecture document, see [`docs/architecture.md`](docs/architectu
 - **Dashboard** — Assigned reviews, deadlines, reputation score breakdown with 5-protocol feedback display
 - **Assignment acceptance** — Accept or decline review assignments via API
 - **Review workspace** — Evaluate paper against published criteria with structured feedback
-- **Reputation** — Soulbound HTS tokens tracking review quality across journals with 5-dimensional quality data
+- **Reputation** — Soulbound HTS tokens tracking review quality across journals with 5-dimensional quality data. Public verification via `GET /api/reviews/reputation?wallet=` (DB score + Mirror Node on-chain data)
 
 ### Public
-- **`/verify`** — Upload any PDF, client-side hash, verify against on-chain registration
 - **Review transparency** — After final decision, anonymized reviews become publicly visible
 
 ---
@@ -164,6 +165,10 @@ HCS_TOPIC_DECISIONS=0.0.xxxxx
 
 # HTS (optional — graceful fallback)
 HTS_REPUTATION_TOKEN_ID=0.0.xxxxx
+
+# Smart Contract (optional — graceful fallback)
+HEDERA_EVM_PRIVATE_KEY=0x...
+TIMELINE_ENFORCER_ADDRESS=0x...
 
 # Cron (optional)
 CRON_SECRET=your-cron-secret
@@ -220,7 +225,6 @@ src/
 │   ├── providers.client.tsx        # Client boundary: ThirdwebProvider + UserProvider
 │   ├── page.tsx                    # Landing page
 │   ├── login/                      # Multi-step auth flow
-│   ├── verify/                     # Public hash verification
 │   ├── api/
 │   │   ├── auth/                   # Authentication endpoints
 │   │   ├── papers/                 # Paper CRUD + submit + reviews
@@ -230,7 +234,6 @@ src/
 │   │   ├── rebuttals/[rebuttalId]/ # Respond + resolve
 │   │   ├── notifications/          # List + mark read
 │   │   ├── cron/deadlines/         # Deadline enforcement
-│   │   └── verify/                 # Hash verification
 │   └── (protected)/
 │       ├── researcher/             # Dashboard, authorship-contracts, create-submission, view-submissions, paper-version-control (includes paper registration), rebuttal/[submissionId], review-response/[submissionId]
 │       ├── editor/                 # Dashboard, incoming, under-review, accepted, management (all DB-backed, three-column layouts)
@@ -242,7 +245,6 @@ src/
 │   ├── reviews/                    # Review DB queries + actions
 │   ├── rebuttals/                  # Rebuttal DB + hooks + components
 │   ├── notifications/              # Notification DB + NotificationBell
-│   ├── verify/                     # VerifyClient component
 │   ├── contracts/                  # Contract DB queries + actions
 │   ├── papers/                     # Paper DB queries + actions
 │   └── users/                      # User DB queries
@@ -252,7 +254,7 @@ src/
     └── lib/
         ├── auth/                   # JWT utilities
         ├── db/schema.ts            # Drizzle schema (16 tables)
-        ├── hedera/                 # HCS + HTS integration
+        ├── hedera/                 # HCS + HTS + Mirror Node + Scheduled Txs + TimelineEnforcer
         ├── lit/                    # Lit Protocol encryption
         ├── hashing.ts              # SHA-256 + canonical JSON
         └── storage.ts              # IPFS upload/fetch (web3.storage)
@@ -281,7 +283,9 @@ vercel --prod
 |---|---|
 | Finality | Transactions finalize in 3-5 seconds |
 | Cost | HCS messages cost fractions of a cent |
-| EVM Compatibility | Solidity smart contracts + native HTS via System Contracts |
+| EVM Compatibility | TimelineEnforcer smart contract deployed + native HTS via System Contracts |
+| Scheduled Transactions | Atomic multi-party contract anchoring with operator co-signing |
+| Mirror Node | Public API for on-chain reputation verification without SDK |
 | Governance | Enterprise-grade governing council |
 | Sustainability | Carbon-negative network |
 

@@ -1,21 +1,32 @@
-import { NextResponse } from "next/server";
-import type { ZodError } from "zod";
-import { getSession } from "@/src/shared/lib/auth/auth";
-import { db } from "@/src/shared/lib/db";
-import { submissions, reviews, rebuttals, journals } from "@/src/shared/lib/db/schema";
-import type { NotificationTypeDb, ReputationEventTypeDb } from "@/src/shared/lib/db/schema";
-import { eq } from "drizzle-orm";
-import { isHederaConfigured } from "@/src/shared/lib/hedera/client";
-import { submitHcsMessage } from "@/src/shared/lib/hedera/hcs";
-import { mintReputationToken } from "@/src/shared/lib/hedera/hts";
-import { createReputationEvent } from "@/src/features/reviews/actions";
-import { createNotification } from "@/src/features/notifications/actions";
-import { getRebuttalById } from "@/src/features/rebuttals/queries";
+import { NextResponse } from 'next/server';
+import type { ZodError } from 'zod';
+import { getSession } from '@/src/shared/lib/auth/auth';
+import { db } from '@/src/shared/lib/db';
+import {
+  submissions,
+  reviews,
+  rebuttals,
+  journals,
+} from '@/src/shared/lib/db/schema';
+import type {
+  NotificationTypeDb,
+  ReputationEventTypeDb,
+} from '@/src/shared/lib/db/schema';
+import { eq } from 'drizzle-orm';
+import { isHederaConfigured } from '@/src/shared/lib/hedera/client';
+import { submitHcsMessage } from '@/src/shared/lib/hedera/hcs';
+import { mintReputationToken } from '@/src/shared/lib/hedera/hts';
+import {
+  createReputationEvent,
+  upsertReputationScore,
+} from '@/src/features/reviews/actions';
+import { createNotification } from '@/src/features/notifications/actions';
+import { getRebuttalById } from '@/src/features/rebuttals/queries';
 
 /** Return a 400 response with structured Zod field errors. */
 export function validationError(err: ZodError): NextResponse {
   return NextResponse.json(
-    { error: "Validation failed", fieldErrors: err.flatten().fieldErrors },
+    { error: 'Validation failed', fieldErrors: err.flatten().fieldErrors },
     { status: 400 },
   );
 }
@@ -31,7 +42,7 @@ export function validationError(err: ZodError): NextResponse {
 export async function requireSession(): Promise<string | NextResponse> {
   const wallet = await getSession();
   if (!wallet) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   return wallet;
 }
@@ -40,20 +51,17 @@ export async function requireSession(): Promise<string | NextResponse> {
  * Journal editor guard — verifies the journal exists and the session wallet
  * matches the editor. Returns the journal row or a 404/403 response.
  */
-export async function requireJournalEditor(
-  journalId: string,
-  wallet: string,
-) {
+export async function requireJournalEditor(journalId: string, wallet: string) {
   const journal = await db.query.journals.findFirst({
     where: eq(journals.id, journalId),
   });
 
   if (!journal) {
-    return NextResponse.json({ error: "Journal not found" }, { status: 404 });
+    return NextResponse.json({ error: 'Journal not found' }, { status: 404 });
   }
 
   if (journal.editorWallet.toLowerCase() !== wallet.toLowerCase()) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   return journal;
@@ -75,28 +83,26 @@ export async function requireSubmissionEditor(
 
   if (!submission) {
     return NextResponse.json(
-      { error: "Submission not found" },
+      { error: 'Submission not found' },
       { status: 404 },
     );
   }
 
-  if (
-    submission.journal.editorWallet.toLowerCase() !== wallet.toLowerCase()
-  ) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (submission.journal.editorWallet.toLowerCase() !== wallet.toLowerCase()) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   return submission;
 }
 
 type HcsTopicEnvVar =
-  | "HCS_TOPIC_PAPERS"
-  | "HCS_TOPIC_CONTRACTS"
-  | "HCS_TOPIC_SUBMISSIONS"
-  | "HCS_TOPIC_CRITERIA"
-  | "HCS_TOPIC_REVIEWS"
-  | "HCS_TOPIC_DECISIONS"
-  | "HCS_TOPIC_RETRACTIONS";
+  | 'HCS_TOPIC_PAPERS'
+  | 'HCS_TOPIC_CONTRACTS'
+  | 'HCS_TOPIC_SUBMISSIONS'
+  | 'HCS_TOPIC_CRITERIA'
+  | 'HCS_TOPIC_REVIEWS'
+  | 'HCS_TOPIC_DECISIONS'
+  | 'HCS_TOPIC_RETRACTIONS';
 
 /**
  * Anchor a JSON payload to an HCS topic with graceful fallback.
@@ -105,7 +111,7 @@ type HcsTopicEnvVar =
 export async function anchorToHcs(
   topicEnvVar: HcsTopicEnvVar,
   payload: Record<string, unknown>,
-  label = "HCS",
+  label = 'HCS',
 ): Promise<{ txId?: string; consensusTimestamp?: string }> {
   const topicId = process.env[topicEnvVar];
   if (!isHederaConfigured() || !topicId) return {};
@@ -141,7 +147,7 @@ export async function recordReputation(
     serial = result?.serial;
     txId = result?.txId;
   } catch (err) {
-    console.error("[HTS] Reputation token mint failed:", err);
+    console.error('[HTS] Reputation token mint failed:', err);
   }
 
   await createReputationEvent({
@@ -152,6 +158,13 @@ export async function recordReputation(
     htsTokenSerial: serial,
     hederaTxId: txId,
   });
+
+  // Recompute materialized reputation score
+  try {
+    await upsertReputationScore(wallet);
+  } catch (err) {
+    console.error('[Reputation] Score computation failed:', err);
+  }
 
   return { serial, txId };
 }
@@ -184,14 +197,11 @@ export async function requireRebuttalAuthor(
   });
 
   if (!rebuttal) {
-    return NextResponse.json(
-      { error: "Rebuttal not found" },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: 'Rebuttal not found' }, { status: 404 });
   }
 
   if (rebuttal.authorWallet.toLowerCase() !== wallet.toLowerCase()) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   return rebuttal;
@@ -209,15 +219,12 @@ export async function requireRebuttalEditor(
   const rebuttal = await getRebuttalById(rebuttalId);
 
   if (!rebuttal) {
-    return NextResponse.json(
-      { error: "Rebuttal not found" },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: 'Rebuttal not found' }, { status: 404 });
   }
 
   if (!rebuttal.submission?.journal) {
     return NextResponse.json(
-      { error: "Submission not found" },
+      { error: 'Submission not found' },
       { status: 404 },
     );
   }
@@ -226,7 +233,7 @@ export async function requireRebuttalEditor(
     rebuttal.submission.journal.editorWallet.toLowerCase() !==
     wallet.toLowerCase()
   ) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   return rebuttal;
@@ -250,17 +257,14 @@ export async function requireReviewWithPaperOwner(
   });
 
   if (!review) {
-    return NextResponse.json(
-      { error: "Review not found" },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: 'Review not found' }, { status: 404 });
   }
 
   if (
     review.submission.paper.owner.walletAddress.toLowerCase() !==
     wallet.toLowerCase()
   ) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   return review;
