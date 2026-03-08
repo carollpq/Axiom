@@ -19,6 +19,7 @@ import {
   selectIsValid,
   selectAllSigned,
   selectHasSigned,
+  selectCurrentUserHasSigned,
 } from '@/src/features/researcher/reducers/contract-builder';
 
 export function useContractBuilder(initialDrafts: ExistingDraft[]) {
@@ -52,6 +53,10 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
   const totalPct = selectTotalPct(state);
   const isValid = selectIsValid(state);
   const hasSigned = selectHasSigned(state);
+  const hasCurrentUserSigned = selectCurrentUserHasSigned(
+    state,
+    currentUserWallet,
+  );
   const allSigned = selectAllSigned(state);
   const signedCount = state.contributors.filter(
     (c) => c.status === 'signed',
@@ -284,6 +289,7 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
     signedCount,
     allSigned,
     hasSigned,
+    hasCurrentUserSigned,
     draft,
     drafts: initialDrafts,
     currentUserWallet,

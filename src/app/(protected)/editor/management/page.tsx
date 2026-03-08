@@ -1,21 +1,25 @@
-import { Suspense } from "react";
-import { JournalManagement } from "@/src/features/editor/components/journal-management.client";
-import { getSession } from "@/src/shared/lib/auth/auth";
+import { Suspense } from 'react';
+import { JournalManagement } from '@/src/features/editor/components/journal-management.client';
+import { getSession } from '@/src/shared/lib/auth/auth';
 import {
   getJournalByEditorWallet,
   listReviewerPool,
   listReputationScores,
   listJournalIssues,
-  listJournalReviewerWallets,
-} from "@/src/features/editor/queries";
-import { buildReviewerPool, mapDbToJournalIssue, filterPoolByJournal } from "@/src/features/editor/mappers/journal";
-import ManagementLoading from "./loading";
+  listJournalReviewersWithStatus,
+} from '@/src/features/editor/queries';
+import {
+  buildReviewerPool,
+  mapDbToJournalIssue,
+  buildPoolReviewersWithStatus,
+} from '@/src/features/editor/mappers/journal';
+import ManagementLoading from './loading';
 
 const DEFAULT_AIMS_AND_SCOPE =
-  "The Journal of Computational Research publishes original research articles in all areas of computational science, including machine learning, quantum computing, distributed systems, and computational biology. We welcome both theoretical contributions and applied studies that advance the state of the art.";
+  'The Journal of Computational Research publishes original research articles in all areas of computational science, including machine learning, quantum computing, distributed systems, and computational biology. We welcome both theoretical contributions and applied studies that advance the state of the art.';
 
 const DEFAULT_SUBMISSION_CRITERIA =
-  "Submissions must include reproducible methodology, accessible datasets, appropriate statistical analysis, and evidence-supported claims. All papers undergo double-blind peer review against pre-registered criteria published on-chain before review begins.";
+  'Submissions must include reproducible methodology, accessible datasets, appropriate statistical analysis, and evidence-supported claims. All papers undergo double-blind peer review against pre-registered criteria published on-chain before review begins.';
 
 async function ManagementContent() {
   const wallet = (await getSession())!;
@@ -39,13 +43,12 @@ async function ManagementContent() {
     listReviewerPool(),
     listReputationScores(),
     listJournalIssues(journal.id),
-    listJournalReviewerWallets(journal.id),
+    listJournalReviewersWithStatus(journal.id),
   ]);
 
   const allReviewers = buildReviewerPool(reviewers, scores);
   const issues = dbIssues.map(mapDbToJournalIssue);
-  const poolWalletSet = new Set(journalReviewerRows.map(r => r.reviewerWallet.toLowerCase()));
-  const { poolReviewers } = filterPoolByJournal(allReviewers, poolWalletSet);
+  const poolReviewers = buildPoolReviewersWithStatus(journalReviewerRows);
 
   return (
     <JournalManagement
@@ -53,7 +56,9 @@ async function ManagementContent() {
       journalName={journal.name}
       issues={issues}
       aimsAndScope={journal.aimsAndScope ?? DEFAULT_AIMS_AND_SCOPE}
-      submissionCriteria={journal.submissionCriteria ?? DEFAULT_SUBMISSION_CRITERIA}
+      submissionCriteria={
+        journal.submissionCriteria ?? DEFAULT_SUBMISSION_CRITERIA
+      }
       reviewers={poolReviewers}
       allReviewers={allReviewers}
     />

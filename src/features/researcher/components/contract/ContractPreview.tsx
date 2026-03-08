@@ -195,8 +195,20 @@ export function ContractPreview() {
                 >
                   Proceed to Submission {'\u2192'}
                 </button>
-                <div className="text-[10px] text-[#4a4238] mt-2 italic">
-                  All co-authors must sign before submission
+                <div
+                  className="mt-3 p-3 rounded text-[10px] text-[#8a8070]"
+                  style={{ background: 'rgba(120,110,95,0.06)' }}
+                >
+                  <div className="font-semibold mb-1.5">
+                    📋 Signing Workflow
+                  </div>
+                  <div className="leading-relaxed">
+                    <div className="mb-1">
+                      1. Sign as yourself first (creator row)
+                    </div>
+                    <div className="mb-1">2. Send invites to co-authors</div>
+                    <div>3. All signatures collected = ready to submit</div>
+                  </div>
                 </div>
               </div>
             )}

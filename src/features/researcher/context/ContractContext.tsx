@@ -1,14 +1,18 @@
-"use client";
+'use client';
 
-import { createContext, use } from "react";
-import type { Contributor, ExistingDraft } from "@/src/features/researcher/types/contract";
-import type { UserSearchResult } from "@/src/shared/types/api";
+import { createContext, use } from 'react';
+import type {
+  Contributor,
+  ExistingDraft,
+} from '@/src/features/researcher/types/contract';
+import type { UserSearchResult } from '@/src/shared/types/api';
 
 interface ContractContextState {
   contributors: Contributor[];
   totalPct: number;
   isValid: boolean;
   hasSigned: boolean;
+  hasCurrentUserSigned: boolean;
   signedCount: number;
   currentUserWallet: string;
   showAddRow: boolean;
@@ -43,6 +47,9 @@ export const ContractContext = createContext<ContractContextValue | null>(null);
 
 export function useContractContext(): ContractContextValue {
   const ctx = use(ContractContext);
-  if (!ctx) throw new Error("useContractContext must be used within ContractContext.Provider");
+  if (!ctx)
+    throw new Error(
+      'useContractContext must be used within ContractContext.Provider',
+    );
   return ctx;
 }

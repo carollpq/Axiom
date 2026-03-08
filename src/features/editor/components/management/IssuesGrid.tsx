@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { Plus, X } from 'lucide-react';
 import type { JournalIssue } from '@/src/features/editor/types';
 import { ModalOverlay } from '@/src/shared/components/ModalOverlay';
 
@@ -11,7 +12,9 @@ interface IssuesGridProps {
 }
 
 export function IssuesGrid({ issues, onCreateIssue }: IssuesGridProps) {
-  const [selectedIssue, setSelectedIssue] = useState<JournalIssue | null>(null);
+  const [selectedIssue, setSelectedIssue] = useState<JournalIssue | null>(
+    issues.length > 0 ? issues[0] : null,
+  );
   const [showAddForm, setShowAddForm] = useState(false);
   const [newIssueLabel, setNewIssueLabel] = useState('');
   const [creating, setCreating] = useState(false);
@@ -33,110 +36,139 @@ export function IssuesGrid({ issues, onCreateIssue }: IssuesGridProps) {
   };
 
   return (
-    <div className="mb-8">
-      <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-4">
-        Issues
-      </div>
-      <div className="grid grid-cols-4 gap-4">
-        {issues.length === 0 && (
-          <div className="col-span-4 py-6 text-center text-[13px] text-[#6a6050] italic">
-            No issues created yet.
-          </div>
-        )}
-        {issues.map((issue) => (
-          <div
-            key={issue.id}
-            onClick={() => setSelectedIssue(issue)}
-            className="rounded-[6px] p-5 flex flex-col items-center justify-center cursor-pointer transition-colors"
-            style={{
-              background: 'rgba(45,42,38,0.5)',
-              border: '1px solid rgba(120,110,95,0.2)',
-              minHeight: 100,
-            }}
-          >
-            <div className="font-serif text-sm text-[#e8e0d4]">
-              {issue.label}
-            </div>
-            <div className="text-[11px] text-[#6a6050] mt-1">
-              {issue.paperCount} papers
-            </div>
-          </div>
-        ))}
-
-        <div
+    <div className="mb-12">
+      <div className="text-[10px] text-[#6a6050] uppercase tracking-[1.5px] mb-5 flex items-center justify-between">
+        <span>Issues & Volumes</span>
+        <button
           onClick={() => setShowAddForm(true)}
-          className="rounded-[6px] p-5 flex items-center justify-center cursor-pointer transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-[5px] text-[11px] font-serif"
           style={{
-            border: '2px dashed rgba(120,110,95,0.25)',
-            minHeight: 100,
+            background:
+              'linear-gradient(135deg, rgba(180,160,120,0.2), rgba(160,140,100,0.1))',
+            border: '1px solid rgba(180,160,120,0.4)',
+            color: '#d4c8a8',
           }}
         >
-          <div className="text-[12px] text-[#6a6050] font-serif text-center">
-            Add new issue...
-          </div>
-        </div>
+          <Plus size={14} />
+          New Issue
+        </button>
       </div>
 
-      <ModalOverlay
-        isOpen={!!selectedIssue}
-        onClose={() => setSelectedIssue(null)}
-        maxWidth="480px"
-      >
-        {selectedIssue && (
-          <>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-serif text-[18px] text-[#e8e0d4]">
+      <div className="grid grid-cols-12 gap-4">
+        {/* Issues List */}
+        <div
+          className="col-span-3 rounded-[8px] p-4 overflow-y-auto"
+          style={{
+            background: 'rgba(45,42,38,0.5)',
+            border: '1px solid rgba(120,110,95,0.15)',
+            maxHeight: 400,
+          }}
+        >
+          {issues.length === 0 ? (
+            <div className="text-center text-[12px] text-[#6a6050] italic py-6">
+              No issues yet.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {issues.map((issue) => (
+                <button
+                  key={issue.id}
+                  onClick={() => setSelectedIssue(issue)}
+                  className="w-full text-left px-3 py-2.5 rounded-[6px] transition-colors"
+                  style={{
+                    background:
+                      selectedIssue?.id === issue.id
+                        ? 'rgba(180,160,120,0.2)'
+                        : 'transparent',
+                    borderLeft: `3px solid ${
+                      selectedIssue?.id === issue.id ? '#c9a44a' : 'transparent'
+                    }`,
+                    color: '#d4ccc0',
+                  }}
+                >
+                  <div className="font-serif text-[13px]">{issue.label}</div>
+                  <div className="text-[11px] text-[#6a6050]">
+                    {issue.paperCount} paper{issue.paperCount !== 1 ? 's' : ''}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Issue Details */}
+        <div
+          className="col-span-9 rounded-[8px] p-6"
+          style={{
+            background: 'rgba(45,42,38,0.5)',
+            border: '1px solid rgba(120,110,95,0.15)',
+          }}
+        >
+          {selectedIssue ? (
+            <>
+              <h3 className="font-serif text-[18px] text-[#e8e0d4] mb-4">
                 {selectedIssue.label}
               </h3>
-              <button
-                onClick={() => setSelectedIssue(null)}
-                className="text-[#6a6050] hover:text-[#d4ccc0] text-lg cursor-pointer"
-              >
-                &times;
-              </button>
-            </div>
-            <p className="text-[13px] text-[#8a8070] mb-4">
-              {selectedIssue.paperCount} papers in this issue
-            </p>
-            {selectedIssue.papers && selectedIssue.papers.length > 0 ? (
-              <ul className="space-y-2">
-                {selectedIssue.papers.map((p) => (
-                  <li
-                    key={p.submissionId}
-                    className="text-[12px] text-[#d4ccc0] font-serif py-1.5 px-3 rounded"
-                    style={{ background: 'rgba(30,28,24,0.5)' }}
-                  >
-                    {p.title}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-[12px] text-[#6a6050] italic">
-                No papers assigned yet.
+              <p className="text-[12px] text-[#8a8070] mb-6">
+                {selectedIssue.paperCount} paper
+                {selectedIssue.paperCount !== 1 ? 's' : ''} assigned
               </p>
-            )}
-          </>
-        )}
-      </ModalOverlay>
+              {selectedIssue.papers && selectedIssue.papers.length > 0 ? (
+                <div>
+                  <div className="text-[11px] text-[#6a6050] uppercase tracking-[1px] mb-3">
+                    Assigned Papers
+                  </div>
+                  <div className="space-y-2">
+                    {selectedIssue.papers.map((p) => (
+                      <div
+                        key={p.submissionId}
+                        className="text-[12px] text-[#d4ccc0] font-serif py-2.5 px-3 rounded"
+                        style={{ background: 'rgba(30,28,24,0.5)' }}
+                      >
+                        {p.title}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-[12px] text-[#6a6050] italic">
+                  No papers assigned to this issue yet.
+                </p>
+              )}
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-40 text-[12px] text-[#6a6050] italic">
+              Select an issue to view details
+            </div>
+          )}
+        </div>
+      </div>
 
       <ModalOverlay
         isOpen={showAddForm}
         onClose={() => setShowAddForm(false)}
         maxWidth="384px"
       >
-        <h3 className="font-serif text-[16px] text-[#e8e0d4] mb-4">
-          New Issue
-        </h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-serif text-[16px] text-[#e8e0d4]">New Issue</h3>
+          <button
+            onClick={() => setShowAddForm(false)}
+            className="text-[#6a6050] hover:text-[#d4ccc0] text-xl cursor-pointer"
+          >
+            <X size={20} />
+          </button>
+        </div>
         <input
           type="text"
           value={newIssueLabel}
           onChange={(e) => setNewIssueLabel(e.target.value)}
-          placeholder="Issue label (e.g. Issue #3)"
-          className="w-full rounded-[6px] px-3 py-2 text-[13px] font-serif text-[#d4ccc0] outline-none mb-3"
+          placeholder="Issue label (e.g. Vol. 1, Issue #3)"
+          className="w-full rounded-[6px] px-3 py-2 text-[13px] font-serif text-[#d4ccc0] outline-none mb-4"
           style={{
             background: 'rgba(30,28,24,0.8)',
             border: '1px solid rgba(120,110,95,0.25)',
           }}
+          autoFocus
         />
         <div className="flex justify-end gap-2">
           <button

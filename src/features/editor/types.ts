@@ -1,19 +1,22 @@
-import type { RebuttalData, RebuttalResponse } from "@/src/features/rebuttals/types";
+import type {
+  RebuttalData,
+  RebuttalResponse,
+} from '@/src/features/rebuttals/types';
 
 export type SubmissionStage =
-  | "New"
-  | "Criteria Published"
-  | "Reviewers Assigned"
-  | "Under Review"
-  | "Decision Pending"
-  | "Published"
-  | "Rejected";
+  | 'New'
+  | 'Criteria Published'
+  | 'Reviewers Assigned'
+  | 'Under Review'
+  | 'Decision Pending'
+  | 'Published'
+  | 'Rejected';
 
-export type StageFilter = "All" | SubmissionStage;
+export type StageFilter = 'All' | SubmissionStage;
 
-export type DetailTab = "info" | "criteria" | "reviewers" | "decision";
+export type DetailTab = 'info' | 'criteria' | 'reviewers' | 'decision';
 
-export type ViewMode = "table" | "kanban";
+export type ViewMode = 'table' | 'kanban';
 
 export interface JournalSubmission {
   id: number;
@@ -37,6 +40,7 @@ export interface PoolReviewer {
   reviews: number;
   wallet: string;
   institution: string;
+  poolInviteStatus?: 'pending' | 'accepted' | 'rejected';
 }
 
 export interface CriterionTemplate {
@@ -44,8 +48,8 @@ export interface CriterionTemplate {
   type: string;
 }
 
-export type { BadgeColorConfig } from "@/src/shared/types/shared";
-export type { StatCardProps as JournalStatCardData } from "@/src/shared/types/shared";
+export type { BadgeColorConfig } from '@/src/shared/types/shared';
+export type { StatCardProps as JournalStatCardData } from '@/src/shared/types/shared';
 
 export type PipelineCounts = Record<SubmissionStage, number>;
 
@@ -62,7 +66,11 @@ export interface PaperCardData {
   fileUrl?: string;
 }
 
-export type AssignmentDisplayStatus = "complete" | "in_progress" | "rejected" | "pending";
+export type AssignmentDisplayStatus =
+  | 'complete'
+  | 'in_progress'
+  | 'rejected'
+  | 'pending';
 
 export interface ReviewerWithStatus {
   id: string;
@@ -92,8 +100,14 @@ export interface JournalIssue {
   papers?: Array<{ submissionId: string; title: string }>;
 }
 
-export type RebuttalResponseInfo = Pick<RebuttalResponse, "reviewId" | "position" | "justification">;
+export type RebuttalResponseInfo = Pick<
+  RebuttalResponse,
+  'reviewId' | 'position' | 'justification'
+>;
 
-export type RebuttalInfo = Pick<RebuttalData, "id" | "submissionId" | "status"> & {
+export type RebuttalInfo = Pick<
+  RebuttalData,
+  'id' | 'submissionId' | 'status'
+> & {
   responses: RebuttalResponseInfo[];
 };

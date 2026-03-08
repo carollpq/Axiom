@@ -1,6 +1,25 @@
-import type { JournalSubmission, SubmissionStage, PoolReviewer, PaperCardData, ReviewerWithStatus, EditorProfile, JournalIssue } from "@/src/features/editor/types";
-import type { DbJournalSubmission, DbReviewer, DbReputationScore, DbJournalIssue } from "../queries";
-import { formatIsoDate, truncateHash, displayNameOrWallet, toFivePointScale } from "@/src/shared/lib/format";
+import type {
+  JournalSubmission,
+  SubmissionStage,
+  PoolReviewer,
+  PaperCardData,
+  ReviewerWithStatus,
+  EditorProfile,
+  JournalIssue,
+} from '@/src/features/editor/types';
+import type {
+  DbJournalSubmission,
+  DbReviewer,
+  DbReputationScore,
+  DbJournalIssue,
+  DbJournalReviewerWithStatus,
+} from '../queries';
+import {
+  formatIsoDate,
+  truncateHash,
+  displayNameOrWallet,
+  toFivePointScale,
+} from '@/src/shared/lib/format';
 
 export function deriveStage(
   status: string,
@@ -9,31 +28,40 @@ export function deriveStage(
   criteriaMet: boolean | null,
   decision: string | null,
 ): SubmissionStage {
-  if (status === "published") return "Published";
-  if (status === "rejected") return "Rejected";
-  if (status === "reviews_completed") return "Decision Pending";
-  if (status === "under_review") {
-    if (criteriaMet !== null || decision !== null) return "Decision Pending";
-    return "Under Review";
+  if (status === 'published') return 'Published';
+  if (status === 'rejected') return 'Rejected';
+  if (status === 'reviews_completed') return 'Decision Pending';
+  if (status === 'under_review') {
+    if (criteriaMet !== null || decision !== null) return 'Decision Pending';
+    return 'Under Review';
   }
-  if (status === "rebuttal_open") return "Under Review";
+  if (status === 'rebuttal_open') return 'Under Review';
   // "submitted" / "viewed_by_editor" / "revision_requested"
-  if (reviewerWallets.length > 0) return "Reviewers Assigned";
-  if (criteriaHash) return "Criteria Published";
-  return "New";
+  if (reviewerWallets.length > 0) return 'Reviewers Assigned';
+  if (criteriaHash) return 'Criteria Published';
+  return 'New';
 }
 
-export function mapDbToJournalSubmission(s: DbJournalSubmission, index: number): JournalSubmission {
+export function mapDbToJournalSubmission(
+  s: DbJournalSubmission,
+  index: number,
+): JournalSubmission {
   const latestVersion = s.paper.versions?.at(-1);
-  const hash = latestVersion ? truncateHash(latestVersion.paperHash, 8) : "—";
+  const hash = latestVersion ? truncateHash(latestVersion.paperHash, 8) : '—';
   const wallets = (s.reviewerWallets as string[] | null) ?? [];
 
   return {
     id: index + 1,
     title: s.paper.title,
-    authors: s.paper.owner?.displayName ?? "Unknown",
+    authors: s.paper.owner?.displayName ?? 'Unknown',
     submitted: formatIsoDate(s.submittedAt),
-    stage: deriveStage(s.status, s.criteriaHash ?? null, wallets, s.criteriaMet ?? null, s.decision ?? null),
+    stage: deriveStage(
+      s.status,
+      s.criteriaHash ?? null,
+      wallets,
+      s.criteriaMet ?? null,
+      s.decision ?? null,
+    ),
     reviewers: wallets,
     deadline: s.reviewDeadline ?? null,
     criteriaPublished: !!s.criteriaHash,
@@ -42,46 +70,70 @@ export function mapDbToJournalSubmission(s: DbJournalSubmission, index: number):
   };
 }
 
-export function mapDbToPoolReviewer(u: DbReviewer, scoreRow?: DbReputationScore | null): PoolReviewer {
+export function mapDbToPoolReviewer(
+  u: DbReviewer,
+  scoreRow?: DbReputationScore | null,
+): PoolReviewer {
   const fields = (u.researchFields as string[] | null) ?? [];
   return {
     id: String(u.id),
     name: String(u.displayName ?? u.walletAddress),
-    field: fields[0] ?? "—",
+    field: fields[0] ?? '—',
     score: scoreRow ? toFivePointScale(scoreRow.overallScore) : 0,
-    orcid: String(u.orcidId ?? "—"),
+    orcid: String(u.orcidId ?? '—'),
     reviews: scoreRow?.reviewCount ?? 0,
     wallet: String(u.walletAddress),
-    institution: String(u.institution ?? "—"),
+    institution: String(u.institution ?? '—'),
   };
 }
 
 export function mapDbToPaperCardData(s: DbJournalSubmission): PaperCardData {
-  const abstract = s.paper.abstract ?? "";
-  const submittedDate = s.submittedAt ? formatIsoDate(String(s.submittedAt)) : "—";
-  const hasLitData = !!(s.paper.litDataToEncryptHash && s.paper.litAccessConditionsJson);
+  const abstract = s.paper.abstract ?? '';
+  const submittedDate = s.submittedAt
+    ? formatIsoDate(String(s.submittedAt))
+    : '—';
+  const hasLitData = !!(
+    s.paper.litDataToEncryptHash && s.paper.litAccessConditionsJson
+  );
   const latestVersion = s.paper.versions?.at(-1);
   const hasFile = !!latestVersion?.fileStorageKey;
   return {
     id: s.id,
     paperId: s.paper.id,
     title: s.paper.title,
-    authors: s.paper.owner?.displayName ?? s.paper.owner?.walletAddress ?? "Unknown",
-    abstractSnippet: abstract.length > 180 ? abstract.slice(0, 177) + "…" : abstract,
+    authors:
+      s.paper.owner?.displayName ?? s.paper.owner?.walletAddress ?? 'Unknown',
+    abstractSnippet:
+      abstract.length > 180 ? abstract.slice(0, 177) + '…' : abstract,
     submittedDate,
     hasLitData,
-    fileUrl: !hasLitData && hasFile ? `/api/papers/${s.paper.id}/content?format=raw` : undefined,
+    fileUrl:
+      !hasLitData && hasFile
+        ? `/api/papers/${s.paper.id}/content?format=raw`
+        : undefined,
   };
 }
 
-export function buildReviewerPool(reviewers: DbReviewer[], scores: DbReputationScore[]): PoolReviewer[] {
-  const scoreByWallet = Object.fromEntries(scores.map(s => [s.userWallet, s]));
-  return reviewers.map(u => mapDbToPoolReviewer(u, scoreByWallet[u.walletAddress as string]));
+export function buildReviewerPool(
+  reviewers: DbReviewer[],
+  scores: DbReputationScore[],
+): PoolReviewer[] {
+  const scoreByWallet = Object.fromEntries(
+    scores.map((s) => [s.userWallet, s]),
+  );
+  return reviewers.map((u) =>
+    mapDbToPoolReviewer(u, scoreByWallet[u.walletAddress as string]),
+  );
 }
 
-export function buildNameByWallet(reviewers: DbReviewer[]): Record<string, string> {
+export function buildNameByWallet(
+  reviewers: DbReviewer[],
+): Record<string, string> {
   return Object.fromEntries(
-    reviewers.map(u => [u.walletAddress as string, (u.displayName ?? u.walletAddress) as string]),
+    reviewers.map((u) => [
+      u.walletAddress as string,
+      (u.displayName ?? u.walletAddress) as string,
+    ]),
   );
 }
 
@@ -90,12 +142,12 @@ export function mapDbToEditorProfile(
   journal: { name: string } | null,
   getInitialsFn: (name: string) => string,
 ): EditorProfile {
-  const name = user?.displayName ?? "Editor";
+  const name = user?.displayName ?? 'Editor';
   return {
     name,
     initials: getInitialsFn(name),
-    affiliation: user?.institution ?? "—",
-    journalName: journal?.name ?? "—",
+    affiliation: user?.institution ?? '—',
+    journalName: journal?.name ?? '—',
   };
 }
 
@@ -103,12 +155,12 @@ export function mapDbToReviewerWithStatus(
   assignment: { id: string; reviewerWallet: string; status: string },
   nameByWallet?: Record<string, string>,
 ): ReviewerWithStatus {
-  const statusMap: Record<string, ReviewerWithStatus["status"]> = {
-    assigned: "pending",
-    accepted: "in_progress",
-    submitted: "complete",
-    declined: "rejected",
-    late: "in_progress",
+  const statusMap: Record<string, ReviewerWithStatus['status']> = {
+    assigned: 'pending',
+    accepted: 'in_progress',
+    submitted: 'complete',
+    declined: 'rejected',
+    late: 'in_progress',
   };
   const name =
     nameByWallet?.[assignment.reviewerWallet] ??
@@ -116,17 +168,22 @@ export function mapDbToReviewerWithStatus(
   return {
     id: assignment.id,
     name,
-    status: statusMap[assignment.status] ?? "pending",
-    hasComment: assignment.status === "submitted",
+    status: statusMap[assignment.status] ?? 'pending',
+    hasComment: assignment.status === 'submitted',
   };
 }
 
 export function mapDbToJournalIssue(dbIssue: DbJournalIssue): JournalIssue {
   const papers = (dbIssue.papers ?? []).map((ip) => ({
     submissionId: ip.submissionId,
-    title: ip.submission?.paper?.title ?? "Untitled",
+    title: ip.submission?.paper?.title ?? 'Untitled',
   }));
-  return { id: dbIssue.id, label: dbIssue.label, paperCount: papers.length, papers };
+  return {
+    id: dbIssue.id,
+    label: dbIssue.label,
+    paperCount: papers.length,
+    papers,
+  };
 }
 
 export function filterPoolByJournal(
@@ -143,4 +200,20 @@ export function filterPoolByJournal(
     }
   }
   return { poolReviewers, nonPoolReviewers };
+}
+
+export function buildPoolReviewersWithStatus(
+  reviewerRows: DbJournalReviewerWithStatus[],
+): PoolReviewer[] {
+  return reviewerRows.map((row) => ({
+    id: row.id,
+    name: row.user?.displayName ?? displayNameOrWallet(null, row.wallet),
+    field: ((row.user?.researchFields as string[] | null) ?? [])[0] ?? '—',
+    score: row.score ? toFivePointScale(row.score.overallScore) : 0,
+    orcid: row.user?.orcidId ?? '—',
+    reviews: row.score?.reviewCount ?? 0,
+    wallet: row.wallet,
+    institution: row.user?.institution ?? '—',
+    poolInviteStatus: row.status as 'pending' | 'accepted' | 'rejected',
+  }));
 }

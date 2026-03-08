@@ -4,6 +4,8 @@ import {
   reviewAssignments,
   reputationScores,
   users,
+  journalReviewers,
+  journals,
 } from '@/src/shared/lib/db/schema';
 import { eq, and, or, inArray } from 'drizzle-orm';
 import { displayNameOrWallet } from '@/src/shared/lib/format';
@@ -161,9 +163,72 @@ export type DbAssignedReview = Awaited<
 export type DbCompletedReview = Awaited<
   ReturnType<typeof listCompletedReviews>
 >[number];
+
+/** Get pending pool invites for a reviewer. */
+export const listPendingPoolInvites = cache(async (reviewerWallet: string) => {
+  return db.query.journalReviewers.findMany({
+    where: and(
+      eq(journalReviewers.reviewerWallet, reviewerWallet.toLowerCase()),
+      eq(journalReviewers.status, 'pending'),
+    ),
+    with: {
+      journal: true,
+    },
+    orderBy: (a, { asc }) => [asc(a.addedAt)],
+  });
+});
+
+/** Get all pool invites (pending + accepted + rejected) for a reviewer. */
+export const listAllPoolInvites = cache(async (reviewerWallet: string) => {
+  return db.query.journalReviewers.findMany({
+    where: eq(journalReviewers.reviewerWallet, reviewerWallet.toLowerCase()),
+    with: {
+      journal: true,
+    },
+    orderBy: (a, { desc }) => [desc(a.addedAt)],
+  });
+});
+
+export type DbPendingPoolInvite = Awaited<
+  ReturnType<typeof listPendingPoolInvites>
+>[number];
+export type DbPoolInvite = Awaited<
+  ReturnType<typeof listAllPoolInvites>
+>[number];
 export type DbCompletedReviewExtended = Awaited<
   ReturnType<typeof listCompletedReviewsExtended>
 >[number];
 export type DbReputationRow = NonNullable<
   Awaited<ReturnType<typeof getReviewerReputation>>
 >;
+
+/** Build editor wallet → displayName map from pool invites. */
+export async function buildEditorNameMapFromPoolInvites(
+  invites: Array<{ journal?: { editorWallet?: string } | null }>,
+): Promise<Record<string, string>> {
+  const wallets = [
+    ...new Set(
+      invites
+        .map((i) => i.journal?.editorWallet?.toLowerCase())
+        .filter((w): w is string => !!w),
+    ),
+  ];
+  if (wallets.length === 0) return {};
+
+  const rows = await db
+    .select({
+      walletAddress: users.walletAddress,
+      displayName: users.displayName,
+    })
+    .from(users)
+    .where(inArray(users.walletAddress, wallets));
+
+  const map: Record<string, string> = {};
+  for (const row of rows) {
+    map[row.walletAddress.toLowerCase()] = displayNameOrWallet(
+      row.displayName,
+      row.walletAddress,
+    );
+  }
+  return map;
+}
