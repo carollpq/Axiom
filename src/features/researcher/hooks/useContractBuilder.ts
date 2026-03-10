@@ -8,7 +8,7 @@ import type {
   ExistingDraft,
 } from '@/src/features/researcher/types/contract';
 import { useCurrentUser } from '@/src/shared/hooks/useCurrentUser';
-import { hashString, canonicalJson } from '@/src/shared/lib/hashing';
+import { sha256, canonicalJson } from '@/src/shared/lib/hashing';
 import type { UserSearchResult } from '@/src/shared/types/domain';
 import {
   createContractAction,
@@ -205,7 +205,7 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
           role: c.role,
         })),
       };
-      const contractHash = await hashString(canonicalJson(contractPayload));
+      const contractHash = await sha256(canonicalJson(contractPayload));
       const signature = await account.signMessage({ message: contractHash });
 
       await signContractAction({

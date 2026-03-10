@@ -5,7 +5,7 @@ import { db } from '@/src/shared/lib/db';
 import { reviewAssignments, submissions } from '@/src/shared/lib/db/schema';
 import type { SubmissionStatusDb } from '@/src/shared/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
-import { canonicalJson, hashString } from '@/src/shared/lib/hashing';
+import { canonicalJson, sha256 } from '@/src/shared/lib/hashing';
 import {
   requireAuth,
   requireSubmissionEditor,
@@ -60,7 +60,7 @@ export async function publishCriteriaAction(
   }
 
   const criteriaJson = canonicalJson(criteria);
-  const criteriaHash = await hashString(criteriaJson);
+  const criteriaHash = await sha256(criteriaJson);
 
   const authorWallet = submission.paper?.owner?.walletAddress;
 

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/src/shared/hooks/useCurrentUser';
-import { hashString, canonicalJson } from '@/src/shared/lib/hashing';
+import { sha256, canonicalJson } from '@/src/shared/lib/hashing';
 import { signContractAction } from '@/src/features/contracts/actions';
 
 interface ContractContributor {
@@ -51,7 +51,7 @@ export function ContractsToSign({ contracts, currentWallet }: Props) {
           role: c.role,
         })),
       };
-      const contractHash = await hashString(canonicalJson(payload));
+      const contractHash = await sha256(canonicalJson(payload));
       const signature = await account.signMessage({ message: contractHash });
 
       await signContractAction({

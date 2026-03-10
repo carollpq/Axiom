@@ -6,7 +6,7 @@ import type {
   RebuttalPositionDb,
   RebuttalResolutionDb,
 } from '@/src/shared/lib/db/schema';
-import { canonicalJson, hashString } from '@/src/shared/lib/hashing';
+import { canonicalJson, sha256 } from '@/src/shared/lib/hashing';
 import {
   requireAuth,
   requireRebuttalAuthor,
@@ -58,7 +58,7 @@ export async function respondToRebuttalAction(
   }
 
   const parsed = respondSchema.parse(input);
-  const rebuttalHash = await hashString(canonicalJson(parsed.responses));
+  const rebuttalHash = await sha256(canonicalJson(parsed.responses));
 
   const editorWallet = rebuttal.submission?.journal?.editorWallet;
 

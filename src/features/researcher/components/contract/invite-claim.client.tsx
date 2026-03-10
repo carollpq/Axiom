@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/src/shared/hooks/useCurrentUser';
-import { hashString, canonicalJson } from '@/src/shared/lib/hashing';
+import { sha256, canonicalJson } from '@/src/shared/lib/hashing';
 import { signContractAction } from '@/src/features/contracts/actions';
 
 interface ContractSummary {
@@ -54,7 +54,7 @@ export function InviteClaimClient({
           role: c.roleDescription,
         })),
       };
-      const contractHash = await hashString(canonicalJson(contractPayload));
+      const contractHash = await sha256(canonicalJson(contractPayload));
       const signature = await account.signMessage({ message: contractHash });
 
       await signContractAction({

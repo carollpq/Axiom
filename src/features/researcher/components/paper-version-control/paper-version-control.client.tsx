@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { toast } from 'sonner';
 import { Plus, X } from 'lucide-react';
-import { hashFile } from '@/src/shared/lib/hashing';
+import { sha256 } from '@/src/shared/lib/hashing';
 import { uploadToIPFS } from '@/src/shared/lib/upload';
 import { registerVersionAction } from '@/src/features/papers/actions';
 import { useUpload } from '@/src/features/researcher/hooks/useUpload';
@@ -78,7 +78,7 @@ export function PaperVersionControlClient({ papers }: Props) {
       setError(null);
 
       try {
-        const hash = await hashFile(file);
+        const hash = await sha256(file);
         const fileStorageKey = await uploadToIPFS(file, hash, 'papers');
 
         const newVersion = await registerVersionAction({

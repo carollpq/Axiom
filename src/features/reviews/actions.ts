@@ -5,7 +5,7 @@ import { after } from 'next/server';
 import { db } from '@/src/shared/lib/db';
 import { paperVersions, reviewerRatings } from '@/src/shared/lib/db/schema';
 import { eq, desc } from 'drizzle-orm';
-import { canonicalJson, hashString } from '@/src/shared/lib/hashing';
+import { canonicalJson, sha256 } from '@/src/shared/lib/hashing';
 import {
   requireAuth,
   requireReviewWithPaperOwner,
@@ -214,7 +214,7 @@ export async function rateReviewerAction(
     PROTOCOL_KEYS.reduce((sum, k) => sum + parsed[k], 0) / PROTOCOL_KEYS.length,
   );
 
-  const ratingHash = await hashString(
+  const ratingHash = await sha256(
     canonicalJson({
       reviewId,
       actionableFeedback,
@@ -227,7 +227,7 @@ export async function rateReviewerAction(
 
   let commentHash: string | null = null;
   if (comment?.trim()) {
-    commentHash = await hashString(canonicalJson({ comment, reviewId }));
+    commentHash = await sha256(canonicalJson({ comment, reviewId }));
   }
 
   // Critical DB write — must complete before returning

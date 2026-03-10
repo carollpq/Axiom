@@ -3,7 +3,7 @@
 import { useReducer, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/src/shared/hooks/useCurrentUser';
-import { hashFile } from '@/src/shared/lib/hashing';
+import { sha256 } from '@/src/shared/lib/hashing';
 import { isLitConfigured } from '@/src/shared/lib/lit/config';
 import { uploadToIPFS } from '@/src/shared/lib/upload';
 import {
@@ -53,7 +53,7 @@ async function encryptFileIfConfigured(
     const encryptedFile = new File([encrypted.ciphertext], file.name + '.enc', {
       type: 'application/octet-stream',
     });
-    const uploadHash = await hashFile(encryptedFile);
+    const uploadHash = await sha256(encryptedFile);
     return {
       fileToUpload: encryptedFile,
       uploadHash,
@@ -84,7 +84,7 @@ export function useUpload(
     dispatch({ type: 'FILE_UPLOAD_START', fileName: file.name });
     uploadedFileRef.current = file;
     try {
-      const hash = await hashFile(file);
+      const hash = await sha256(file);
       dispatch({ type: 'FILE_UPLOAD_COMPLETE', fileHash: hash });
     } catch {
       dispatch({ type: 'FILE_UPLOAD_ERROR' });

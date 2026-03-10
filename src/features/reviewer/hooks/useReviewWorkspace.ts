@@ -7,7 +7,7 @@ import type {
   GeneralComments,
   Recommendation,
 } from '@/src/features/reviewer/types';
-import { canonicalJson, hashString } from '@/src/shared/lib/hashing';
+import { canonicalJson, sha256 } from '@/src/shared/lib/hashing';
 import { formatDate } from '@/src/shared/lib/format';
 import { submitReviewAction } from '@/src/features/reviews/actions';
 import {
@@ -85,7 +85,7 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
       weaknesses: state.generalComments.weaknesses,
       questionsForAuthors: state.generalComments.questionsForAuthors,
     };
-    const reviewHash = await hashString(canonicalJson(reviewPayload));
+    const reviewHash = await sha256(canonicalJson(reviewPayload));
 
     try {
       const result = await submitReviewAction(assignment.id, {
