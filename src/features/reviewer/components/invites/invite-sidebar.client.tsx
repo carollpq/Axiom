@@ -3,14 +3,14 @@
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { ConfirmDialog } from '@/src/shared/components/ConfirmDialog';
+import { ConfirmDialog } from '@/src/shared/components/confirm-dialog.client';
 import type { AssignedReviewExtended } from '@/src/features/reviewer/types';
 import {
   getUrgencyColor,
   formatDaysLeft,
   SidebarField,
   TimelineRow,
-} from '@/src/features/reviewer/components/shared/sidebar-primitives';
+} from '@/src/features/reviewer/components/shared/sidebar-primitives.client';
 
 interface InviteSidebarProps {
   paper: AssignedReviewExtended;

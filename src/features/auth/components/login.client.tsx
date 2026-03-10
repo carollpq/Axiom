@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
 import { client } from '@/src/shared/lib/thirdweb';
 import { CONNECT_AUTH } from '@/src/shared/lib/auth/connect-auth';
-import { useUser } from '@/src/shared/context/UserContext';
+import { useUser } from '@/src/shared/context/user-context.client';
 import { AuthHeader } from './auth-header';
 import { CONNECT_BUTTON_STYLE } from './connect-button-style';
 

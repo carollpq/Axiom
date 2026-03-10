@@ -3,9 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { ReviewContent, type ReviewCriterion } from './ReviewContent';
-import { ReviewerRatingCard } from './ReviewerRatingCard';
-import { ErrorAlert } from '@/src/shared/components/ErrorAlert';
+import { ReviewContent, type ReviewCriterion } from './review-content';
+import { ReviewerRatingCard } from './reviewer-rating-card.client';
+import { ErrorAlert } from '@/src/shared/components/error-alert';
 
 interface AnonymizedReview {
   id: string;

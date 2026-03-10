@@ -4,9 +4,9 @@ import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import type { PoolReviewer, JournalIssue } from '@/src/features/editor/types';
-import { IssuesGrid } from './management/IssuesGrid';
-import { EditableSection } from './management/EditableSection';
-import { ReviewerGrid } from './management/ReviewerGrid';
+import { IssuesGrid } from './management/issues-grid.client';
+import { EditableSection } from './management/editable-section.client';
+import { ReviewerGrid } from './management/reviewer-grid.client';
 
 interface JournalManagementProps {
   journalId: string;

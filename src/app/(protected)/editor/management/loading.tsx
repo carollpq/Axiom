@@ -1,4 +1,4 @@
-import { PulseBlock } from "@/src/shared/components/PulseBlock";
+import { PulseBlock } from '@/src/shared/components/pulse-block';
 
 export default function ManagementLoading() {
   return (

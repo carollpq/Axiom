@@ -4,13 +4,13 @@ import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { toast } from 'sonner';
-import { ThreeColumnLayout } from '@/src/shared/components/ThreeColumnLayout';
-import { DynamicPdfViewer as PdfViewer } from '@/src/shared/components/DynamicPdfViewer';
-import { PaperList } from '@/src/shared/components/PaperList';
+import { ThreeColumnLayout } from '@/src/shared/components/three-column-layout';
+import { DynamicPdfViewer as PdfViewer } from '@/src/shared/components/dynamic-pdf-viewer.client';
+import { PaperList } from '@/src/shared/components/paper-list.client';
 import { useAcceptedPapers } from '@/src/features/editor/hooks/useAcceptedPapers';
 import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
 import { useDecryptPaper } from '@/src/shared/hooks/useDecryptPaper';
-import { SelectionPlaceholder } from '@/src/shared/components/SelectionPlaceholder';
+import { SelectionPlaceholder } from '@/src/shared/components/selection-placeholder';
 import type {
   PaperCardData,
   ReviewerWithStatus,
@@ -19,7 +19,7 @@ import type {
 
 const ReviewCommentsPanel = dynamic(
   () =>
-    import('./sidebar/ReviewCommentsPanel').then((m) => ({
+    import('./sidebar/review-comments-panel').then((m) => ({
       default: m.ReviewCommentsPanel,
     })),
   {
@@ -30,7 +30,7 @@ const ReviewCommentsPanel = dynamic(
 );
 const AddToIssuePanel = dynamic(
   () =>
-    import('./sidebar/AddToIssuePanel').then((m) => ({
+    import('./sidebar/add-to-issue-panel.client').then((m) => ({
       default: m.AddToIssuePanel,
     })),
   {

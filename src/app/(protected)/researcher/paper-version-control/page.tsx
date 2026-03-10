@@ -1,6 +1,6 @@
-import { getSession } from "@/src/shared/lib/auth/auth";
-import { listUserPapers } from "@/src/features/papers/queries";
-import { PaperVersionControlClient } from "@/src/features/researcher/components/paper-version-control/PaperVersionControl.client";
+import { getSession } from '@/src/shared/lib/auth/auth';
+import { listUserPapers } from '@/src/features/papers/queries';
+import { PaperVersionControlClient } from '@/src/features/researcher/components/paper-version-control/paper-version-control.client';
 
 export default async function PaperVersionControl() {
   const wallet = (await getSession())!;

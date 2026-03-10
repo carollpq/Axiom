@@ -6,10 +6,10 @@ import { useActiveAccount } from 'thirdweb/react';
 import { isLoggedIn } from '@/src/shared/lib/auth/actions';
 import { ROLE_DASHBOARD_ROUTES } from '@/src/shared/lib/routes';
 import type { Role } from '@/src/features/auth/types';
-import { RoleSelector } from './role-selector';
-import { OrcidVerificationStep } from './orcid-verification-step';
-import { WalletConnectStep } from './WalletConnectStep';
-import { ErrorAlert } from '@/src/shared/components/ErrorAlert';
+import { RoleSelector } from './role-selector.client';
+import { OrcidVerificationStep } from './orcid-verification-step.client';
+import { WalletConnectStep } from './wallet-connect-step.client';
+import { ErrorAlert } from '@/src/shared/components/error-alert';
 import { AuthHeader } from './auth-header';
 
 type Step = 'role-select' | 'wallet' | 'orcid' | 'complete';

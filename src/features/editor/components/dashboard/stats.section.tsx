@@ -1,4 +1,4 @@
-import { DashboardStatCard } from '@/src/shared/components/DashboardStatCard';
+import { DashboardStatCard } from '@/src/shared/components/dashboard-stat-card';
 import type { DbJournalSubmission } from '@/src/features/editor/queries';
 
 interface Props {

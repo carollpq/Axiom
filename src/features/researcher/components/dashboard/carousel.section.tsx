@@ -1,6 +1,6 @@
-import { listUserPapers } from "@/src/features/papers/queries";
-import { mapPapersToSubmissionCards } from "@/src/features/researcher/mappers/dashboard";
-import { SubmissionCarousel } from "./SubmissionCarousel.client";
+import { listUserPapers } from '@/src/features/papers/queries';
+import { mapPapersToSubmissionCards } from '@/src/features/researcher/mappers/dashboard';
+import { SubmissionCarousel } from './submission-carousel.client';
 
 interface Props {
   papersPromise: ReturnType<typeof listUserPapers>;

@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { ThreeColumnLayout } from '@/src/shared/components/ThreeColumnLayout';
-import { SelectionPlaceholder } from '@/src/shared/components/SelectionPlaceholder';
-import { PaperList } from '@/src/shared/components/PaperList';
-import { DynamicPdfViewer } from '@/src/shared/components/DynamicPdfViewer';
+import { ThreeColumnLayout } from '@/src/shared/components/three-column-layout';
+import { SelectionPlaceholder } from '@/src/shared/components/selection-placeholder';
+import { PaperList } from '@/src/shared/components/paper-list.client';
+import { DynamicPdfViewer } from '@/src/shared/components/dynamic-pdf-viewer.client';
 import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
 import type { DbAssignedReview } from '@/src/features/reviewer/queries';
 import {

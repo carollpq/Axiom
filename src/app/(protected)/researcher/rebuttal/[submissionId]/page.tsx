@@ -1,7 +1,7 @@
-import { getSession } from "@/src/shared/lib/auth/auth";
-import { getRebuttalBySubmission } from "@/src/features/rebuttals/queries";
-import { listReviewsForSubmission } from "@/src/features/reviews/queries";
-import { RebuttalWorkspace } from "@/src/features/rebuttals/components/RebuttalWorkspace.client";
+import { getSession } from '@/src/shared/lib/auth/auth';
+import { getRebuttalBySubmission } from '@/src/features/rebuttals/queries';
+import { listReviewsForSubmission } from '@/src/features/reviews/queries';
+import { RebuttalWorkspace } from '@/src/features/rebuttals/components/rebuttal-workspace.client';
 
 export default async function RebuttalPage({
   params,

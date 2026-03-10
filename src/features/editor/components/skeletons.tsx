@@ -1,7 +1,7 @@
 // Loading skeleton components for editor dashboard.
 
-import { PulseBlock } from '@/src/shared/components/PulseBlock';
-import { DashboardCard } from '@/src/shared/components/DashboardCard';
+import { PulseBlock } from '@/src/shared/components/pulse-block';
+import { DashboardCard } from '@/src/shared/components/dashboard-card';
 
 /** 5 stat cards matching reviewer-style dimensions */
 export function StatsSkeleton() {

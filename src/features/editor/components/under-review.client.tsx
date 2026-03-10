@@ -1,15 +1,15 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { ThreeColumnLayout } from '@/src/shared/components/ThreeColumnLayout';
-import { DynamicPdfViewer as PdfViewer } from '@/src/shared/components/DynamicPdfViewer';
-import { PaperList } from '@/src/shared/components/PaperList';
-import { ReviewStatusPanel } from './sidebar/ReviewStatusPanel';
+import { ThreeColumnLayout } from '@/src/shared/components/three-column-layout';
+import { DynamicPdfViewer as PdfViewer } from '@/src/shared/components/dynamic-pdf-viewer.client';
+import { PaperList } from '@/src/shared/components/paper-list.client';
+import { ReviewStatusPanel } from './sidebar/review-status-panel';
 import { useUnderReview } from '@/src/features/editor/hooks/useUnderReview';
 import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
 import { useDecryptPaper } from '@/src/shared/hooks/useDecryptPaper';
-import { SelectionPlaceholder } from '@/src/shared/components/SelectionPlaceholder';
-import { ConfirmDialog } from '@/src/shared/components/ConfirmDialog';
+import { SelectionPlaceholder } from '@/src/shared/components/selection-placeholder';
+import { ConfirmDialog } from '@/src/shared/components/confirm-dialog.client';
 import { toast } from 'sonner';
 import type {
   PaperCardData,
@@ -21,7 +21,7 @@ import type { AuthorResponseStatusDb } from '@/src/shared/lib/db/schema';
 
 const FinalDecisionPanel = dynamic(
   () =>
-    import('./sidebar/FinalDecisionPanel').then((m) => ({
+    import('./sidebar/final-decision-panel.client').then((m) => ({
       default: m.FinalDecisionPanel,
     })),
   {
@@ -34,7 +34,7 @@ const FinalDecisionPanel = dynamic(
 );
 const ResolveRebuttalPanel = dynamic(
   () =>
-    import('./sidebar/ResolveRebuttalPanel').then((m) => ({
+    import('./sidebar/resolve-rebuttal-panel.client').then((m) => ({
       default: m.ResolveRebuttalPanel,
     })),
   {
@@ -47,7 +47,7 @@ const ResolveRebuttalPanel = dynamic(
 );
 const AssignReviewersPanel = dynamic(
   () =>
-    import('./sidebar/AssignReviewersPanel').then((m) => ({
+    import('./sidebar/assign-reviewers-panel.client').then((m) => ({
       default: m.AssignReviewersPanel,
     })),
   {

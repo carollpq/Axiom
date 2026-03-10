@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/src/shared/context/UserContext';
+import { useUser } from '@/src/shared/context/user-context.client';
 import { ROLE_DASHBOARD_ROUTES } from '@/src/shared/lib/routes';
 
 /**

@@ -1,4 +1,4 @@
-import type { PaperListItemData } from '@/src/shared/components/PaperListItem';
+import type { PaperListItemData } from '@/src/shared/components/paper-list-item';
 import type {
   AssignedReview,
   AssignedReviewExtended,

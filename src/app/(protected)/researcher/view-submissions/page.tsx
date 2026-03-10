@@ -1,10 +1,10 @@
-import { getSession } from "@/src/shared/lib/auth/auth";
-import { listUserPapers } from "@/src/features/papers/queries";
-import { db } from "@/src/shared/lib/db";
-import { reviewAssignments, reviews } from "@/src/shared/lib/db/schema";
-import { inArray } from "drizzle-orm";
-import { ViewSubmissionsClient } from "@/src/features/researcher/components/view-submissions/ViewSubmissions.client";
-import { deriveSubmissionDisplayStatus } from "@/src/features/researcher/mappers/dashboard";
+import { getSession } from '@/src/shared/lib/auth/auth';
+import { listUserPapers } from '@/src/features/papers/queries';
+import { db } from '@/src/shared/lib/db';
+import { reviewAssignments, reviews } from '@/src/shared/lib/db/schema';
+import { inArray } from 'drizzle-orm';
+import { ViewSubmissionsClient } from '@/src/features/researcher/components/view-submissions/view-submissions.client';
+import { deriveSubmissionDisplayStatus } from '@/src/features/researcher/mappers/dashboard';
 
 export default async function ViewSubmissionsPage() {
   const wallet = (await getSession())!;
@@ -38,7 +38,7 @@ export default async function ViewSubmissionsPage() {
         ?.flatMap((c) => c.contributors ?? [])
         .map((c) => c.contributorName)
         .filter(Boolean)
-        .join(", ") || "\u2014";
+        .join(', ') || '\u2014';
 
     return (paper.submissions ?? []).map((sub, _idx) => {
       const subAssignments = assignmentRows.filter(
@@ -47,18 +47,16 @@ export default async function ViewSubmissionsPage() {
       const subReviews = reviewRows.filter((r) => r.submissionId === sub.id);
 
       const completedCount = subAssignments.filter(
-        (a) => a.status === "submitted",
+        (a) => a.status === 'submitted',
       ).length;
 
       const reviewers = subAssignments.map((a, i) => ({
         assignmentId: a.id,
         label: `Reviewer ${String.fromCharCode(65 + i)}`,
-        status: (a.status === "submitted" ? "complete" : "in_progress") as
-          | "complete"
-          | "in_progress",
-        reviewId: subReviews.find(
-          (r) => r.assignmentId === a.id,
-        )?.id,
+        status: (a.status === 'submitted' ? 'complete' : 'in_progress') as
+          | 'complete'
+          | 'in_progress',
+        reviewId: subReviews.find((r) => r.assignmentId === a.id)?.id,
       }));
 
       const anonymizedReviews = subReviews.map((r, i) => ({
@@ -83,12 +81,12 @@ export default async function ViewSubmissionsPage() {
         id: sub.id,
         paperTitle: paper.title,
         authors,
-        abstract: paper.abstract ?? "",
+        abstract: paper.abstract ?? '',
         status,
         reviewers,
         reviews: anonymizedReviews,
         allReviewsComplete:
-          sub.status === "reviews_completed" ||
+          sub.status === 'reviews_completed' ||
           (subAssignments.length > 0 &&
             completedCount === subAssignments.length &&
             subAssignments.length > 0),

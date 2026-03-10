@@ -3,17 +3,17 @@
 import type { AssignedReviewExtended } from '@/src/features/reviewer/types';
 import type { DbAssignedReview } from '@/src/features/reviewer/queries';
 import { useReviewWorkspace } from '@/src/features/reviewer/hooks/useReviewWorkspace';
-import { CriteriaEvaluationSection } from '@/src/features/reviewer/review-workspace/CriteriaEvaluationSection';
-import { GeneralCommentsSection } from '@/src/features/reviewer/review-workspace/GeneralCommentsSection';
-import { RecommendationSection } from '@/src/features/reviewer/review-workspace/RecommendationSection';
-import { SubmissionActions } from '@/src/features/reviewer/review-workspace/SubmissionActions';
-import { SubmissionConfirmation } from '@/src/features/reviewer/review-workspace/SubmissionConfirmation';
+import { CriteriaEvaluationSection } from '@/src/features/reviewer/review-workspace/criteria-evaluation-section';
+import { GeneralCommentsSection } from '@/src/features/reviewer/review-workspace/general-comments-section.client';
+import { RecommendationSection } from '@/src/features/reviewer/review-workspace/recommendation-section.client';
+import { SubmissionActions } from '@/src/features/reviewer/review-workspace/submission-actions';
+import { SubmissionConfirmation } from '@/src/features/reviewer/review-workspace/submission-confirmation';
 import {
   getUrgencyColor,
   formatDaysLeft,
   SidebarField,
   TimelineRow,
-} from '@/src/features/reviewer/components/shared/sidebar-primitives';
+} from '@/src/features/reviewer/components/shared/sidebar-primitives.client';
 
 interface AssignedReviewSidebarProps {
   paper: AssignedReviewExtended;

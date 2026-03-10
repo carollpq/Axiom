@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { DashboardGridLayout } from '@/src/shared/components/DashboardGridLayout';
-import { ProfileCard } from '@/src/shared/components/ProfileCard';
+import { DashboardGridLayout } from '@/src/shared/components/dashboard-grid-layout';
+import { ProfileCard } from '@/src/shared/components/profile-card';
 import type {
   AssignedReview,
   CompletedReview,
@@ -11,8 +11,8 @@ import type {
   UserProfile,
   ResearcherInsight,
 } from '@/src/features/reviewer/types';
-import { PerformanceMetrics } from '../../reviewer-dashboard/PerformanceMetrics';
-import { ResearchersInsights } from '../../reviewer-dashboard/ResearchersInsights';
+import { PerformanceMetrics } from '../../reviewer-dashboard/performance-metrics';
+import { ResearchersInsights } from '../../reviewer-dashboard/researchers-insights';
 
 const DEFAULT_REPUTATION_SCORES: ReputationScores = {
   overall: 4.4,

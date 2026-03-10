@@ -1,4 +1,4 @@
-import { PulseBlock } from "@/src/shared/components/PulseBlock";
+import { PulseBlock } from '@/src/shared/components/pulse-block';
 
 /** Dashboard page skeleton — stats + profile + insights */
 export function DashboardSkeleton() {
@@ -20,7 +20,10 @@ export function DashboardSkeleton() {
       {/* Stats row */}
       <div className="flex gap-4 mb-6">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="flex-1 rounded-[6px] p-5 border border-[rgba(120,110,95,0.25)]">
+          <div
+            key={i}
+            className="flex-1 rounded-[6px] p-5 border border-[rgba(120,110,95,0.25)]"
+          >
             <PulseBlock className="h-7 w-12 mb-2" />
             <PulseBlock className="h-4 w-20" />
           </div>
@@ -38,7 +41,10 @@ export function InvitesSkeleton() {
     <div className="max-w-[1200px] mx-auto px-10 py-8">
       <PulseBlock className="h-8 w-[200px] mb-6" />
       {[1, 2].map((i) => (
-        <div key={i} className="mb-4 rounded-[6px] border border-[rgba(120,110,95,0.25)] p-6">
+        <div
+          key={i}
+          className="mb-4 rounded-[6px] border border-[rgba(120,110,95,0.25)] p-6"
+        >
           <PulseBlock className="h-5 w-[300px] mb-3" />
           <PulseBlock className="h-4 w-[200px] mb-2" />
           <PulseBlock className="h-32 w-full" />
@@ -51,9 +57,12 @@ export function InvitesSkeleton() {
 /** Three-column layout skeleton (assigned / completed pages) */
 export function ThreeColumnSkeleton() {
   return (
-    <div className="flex" style={{ height: "calc(100vh - 56px)" }}>
+    <div className="flex" style={{ height: 'calc(100vh - 56px)' }}>
       {/* Left list */}
-      <div style={{ width: 360, borderRight: "1px solid rgba(120,110,95,0.15)" }} className="p-4 space-y-3">
+      <div
+        style={{ width: 360, borderRight: '1px solid rgba(120,110,95,0.15)' }}
+        className="p-4 space-y-3"
+      >
         {[1, 2, 3, 4].map((i) => (
           <div key={i}>
             <PulseBlock className="h-4 w-[80%] mb-2" />
@@ -67,7 +76,10 @@ export function ThreeColumnSkeleton() {
         <PulseBlock className="h-full w-full" />
       </div>
       {/* Right sidebar */}
-      <div style={{ width: 320, borderLeft: "1px solid rgba(120,110,95,0.15)" }} className="p-4 space-y-4">
+      <div
+        style={{ width: 320, borderLeft: '1px solid rgba(120,110,95,0.15)' }}
+        className="p-4 space-y-4"
+      >
         <PulseBlock className="h-4 w-24" />
         <PulseBlock className="h-3 w-32" />
         <PulseBlock className="h-3 w-28" />
@@ -80,7 +92,7 @@ export function ThreeColumnSkeleton() {
 /** Review workspace page skeleton */
 export function WorkspaceSkeleton() {
   return (
-    <div className="flex" style={{ height: "calc(100vh - 56px)" }}>
+    <div className="flex" style={{ height: 'calc(100vh - 56px)' }}>
       {/* Left — paper panel */}
       <div className="flex-1 p-6">
         <PulseBlock className="h-6 w-[60%] mb-3" />
@@ -88,7 +100,10 @@ export function WorkspaceSkeleton() {
         <PulseBlock className="h-[70vh] w-full" />
       </div>
       {/* Right — criteria sidebar */}
-      <div style={{ width: 420, borderLeft: "1px solid rgba(120,110,95,0.15)" }} className="p-4 space-y-4">
+      <div
+        style={{ width: 420, borderLeft: '1px solid rgba(120,110,95,0.15)' }}
+        className="p-4 space-y-4"
+      >
         <PulseBlock className="h-5 w-32 mb-4" />
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="mb-4">
