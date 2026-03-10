@@ -5,7 +5,7 @@ import { useActiveWallet, useDisconnect } from 'thirdweb/react';
 import { LogOut } from 'lucide-react';
 import { doLogout } from '@/src/shared/lib/auth/actions';
 import { ROLES, ROLE_META } from '@/src/features/auth/types';
-import { ROLE_DASHBOARD_ROUTES } from '@/src/shared/lib/routes';
+import { ROUTES, ROLE_DASHBOARD_ROUTES } from '@/src/shared/lib/routes';
 import type { UserProfile } from '@/src/shared/types/shared';
 
 interface RolePopoverProps {
@@ -87,7 +87,7 @@ export function RolePopover({ user, onClose }: RolePopoverProps) {
           onClick={async () => {
             if (wallet) disconnect(wallet);
             await doLogout();
-            window.location.href = '/login';
+            window.location.href = ROUTES.login;
           }}
           className="flex w-full items-center justify-center gap-1.5 rounded-md cursor-pointer"
           style={{

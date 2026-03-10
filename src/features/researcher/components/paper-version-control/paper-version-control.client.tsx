@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import { toast } from 'sonner';
 import { Plus, X } from 'lucide-react';
 import { sha256 } from '@/src/shared/lib/hashing';
-import { uploadToIPFS } from '@/src/shared/lib/upload';
+import { uploadToIPFS } from '@/src/features/researcher/upload';
 import { registerVersionAction } from '@/src/features/papers/actions';
 import { useUpload } from '@/src/features/researcher/hooks/useUpload';
 import { validateUpload } from '@/src/features/researcher/reducers/upload';

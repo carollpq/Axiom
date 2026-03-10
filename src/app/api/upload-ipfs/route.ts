@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isStorageConfigured, uploadToIPFS } from '@/src/shared/lib/storage';
+import { isStorageConfigured, uploadToIPFS } from '@/src/shared/lib/pinata';
 import { requireSession } from '@/src/shared/lib/api-helpers';
-import type { UploadFolder } from '@/src/shared/lib/upload';
+import type { UploadFolder } from '@/src/shared/lib/pinata';
 
 export const runtime = 'nodejs';
 

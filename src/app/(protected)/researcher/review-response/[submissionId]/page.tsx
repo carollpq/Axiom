@@ -1,10 +1,14 @@
-import { getSession } from "@/src/shared/lib/auth/auth";
-import { db } from "@/src/shared/lib/db";
-import { submissions, users } from "@/src/shared/lib/db/schema";
-import { eq } from "drizzle-orm";
-import { redirect } from "next/navigation";
-import { listReviewsForSubmission, getPublishedCriteria } from "@/src/features/reviews/queries";
-import { ReviewResponseClient } from "@/src/features/researcher/components/review-response/review-response.client";
+import { getSession } from '@/src/shared/lib/auth/auth';
+import { db } from '@/src/shared/lib/db';
+import { submissions, users } from '@/src/shared/lib/db/schema';
+import { eq } from 'drizzle-orm';
+import { redirect } from 'next/navigation';
+import { ROUTES } from '@/src/shared/lib/routes';
+import {
+  listReviewsForSubmission,
+  getPublishedCriteria,
+} from '@/src/features/reviews/queries';
+import { ReviewResponseClient } from '@/src/features/researcher/components/review-response/review-response.client';
 
 export default async function ReviewResponsePage({
   params,
@@ -22,7 +26,7 @@ export default async function ReviewResponsePage({
     },
   });
 
-  if (!submission) redirect("/researcher");
+  if (!submission) redirect(ROUTES.researcher.root);
 
   // Verify ownership
   const user = await db
@@ -30,12 +34,14 @@ export default async function ReviewResponsePage({
     .from(users)
     .where(eq(users.walletAddress, wallet.toLowerCase()))
     .limit(1)
-    .then(rows => rows[0] ?? null);
+    .then((rows) => rows[0] ?? null);
 
-  if (!user || submission.paper.ownerId !== user.id) redirect("/researcher");
+  if (!user || submission.paper.ownerId !== user.id)
+    redirect(ROUTES.researcher.root);
 
   // Only allow access if reviews are completed
-  if (submission.status !== "reviews_completed") redirect("/researcher");
+  if (submission.status !== 'reviews_completed')
+    redirect(ROUTES.researcher.root);
 
   const [reviews, criteria] = await Promise.all([
     listReviewsForSubmission(submissionId),

@@ -4,7 +4,7 @@ import { getSession } from '@/src/shared/lib/auth/auth';
 import { getUserByWallet } from '@/src/features/users/queries';
 import { journalNavItems } from '@/src/features/editor/nav';
 import { buildUserProfile } from '@/src/features/users/mappers';
-import { ROLE_DASHBOARD_ROUTES } from '@/src/shared/lib/routes';
+import { ROUTES, ROLE_DASHBOARD_ROUTES } from '@/src/shared/lib/routes';
 
 export default async function JournalLayout({
   children,
@@ -21,7 +21,7 @@ export default async function JournalLayout({
     if (fallbackRole && fallbackRole in ROLE_DASHBOARD_ROUTES) {
       redirect(ROLE_DASHBOARD_ROUTES[fallbackRole]);
     }
-    redirect('/login');
+    redirect(ROUTES.login);
   }
 
   const profile = buildUserProfile(wallet, user, 'editor');

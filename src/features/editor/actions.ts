@@ -5,6 +5,7 @@ import {
   requireAuth,
   requireJournalEditor,
 } from '@/src/shared/lib/server-action-helpers';
+import { ROUTES } from '@/src/shared/lib/routes';
 import {
   updateJournalMetadata,
   createJournalIssue,
@@ -69,7 +70,7 @@ export async function addReviewerToPoolAction(
         type: 'pool_added',
         title: 'Added to reviewer pool',
         body: `You have been added to the reviewer pool for ${journalRow.name}. You may be assigned to review submissions.`,
-        link: `/reviewer`,
+        link: ROUTES.reviewer.root,
       });
     }
   });

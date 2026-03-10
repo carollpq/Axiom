@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/src/shared/context/user-context.client';
+import { ROUTES } from '@/src/shared/lib/routes';
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -10,7 +11,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!loading && !isConnected) {
-      router.push('/login');
+      router.push(ROUTES.login);
     }
   }, [loading, isConnected, router]);
 

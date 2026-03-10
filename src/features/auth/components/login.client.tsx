@@ -6,7 +6,7 @@ import { ConnectButton, useActiveAccount } from 'thirdweb/react';
 import { client } from '@/src/shared/lib/thirdweb';
 import { CONNECT_AUTH } from '@/src/shared/lib/auth/connect-auth';
 import { useUser } from '@/src/shared/context/user-context.client';
-import { ROLE_DASHBOARD_ROUTES } from '@/src/shared/lib/routes';
+import { ROUTES, ROLE_DASHBOARD_ROUTES } from '@/src/shared/lib/routes';
 import type { Role } from '@/src/features/auth/types';
 import { AuthHeader } from './auth-header';
 import { CONNECT_BUTTON_STYLE } from './connect-button-style';
@@ -25,7 +25,7 @@ export function Login() {
     if (!isConnected || !account?.address || !user) return;
 
     if (userRoles.length === 0) {
-      router.push('/register');
+      router.push(ROUTES.register);
     } else if (userRoles.length === 1) {
       router.push(ROLE_DASHBOARD_ROUTES[userRoles[0]]);
     }
@@ -69,7 +69,7 @@ export function Login() {
         <p className="text-center text-sm mt-6" style={{ color: '#8a8070' }}>
           New here?{' '}
           <a
-            href="/register"
+            href={ROUTES.register}
             className="underline"
             style={{ color: '#c9a44a' }}
           >

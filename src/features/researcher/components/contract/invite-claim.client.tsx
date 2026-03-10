@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { useCurrentUser } from '@/src/shared/hooks/useCurrentUser';
 import { sha256, canonicalJson } from '@/src/shared/lib/hashing';
 import { signContractAction } from '@/src/features/contracts/actions';
+import { ROUTES } from '@/src/shared/lib/routes';
 
 interface ContractSummary {
   id: string;
@@ -65,7 +66,7 @@ export function InviteClaimClient({
       });
 
       setSigned(true);
-      setTimeout(() => router.push('/researcher/authorship-contracts'), 2500);
+      setTimeout(() => router.push(ROUTES.researcher.contracts), 2500);
     } catch (err) {
       const message =
         err instanceof Error

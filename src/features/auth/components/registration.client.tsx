@@ -4,7 +4,7 @@ import { useReducer, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useActiveAccount } from 'thirdweb/react';
 import { isLoggedIn } from '@/src/shared/lib/auth/actions';
-import { ROLE_DASHBOARD_ROUTES } from '@/src/shared/lib/routes';
+import { ROUTES, ROLE_DASHBOARD_ROUTES } from '@/src/shared/lib/routes';
 import type { Role } from '@/src/features/auth/types';
 import { RoleSelector } from './role-selector.client';
 import { OrcidVerificationStep } from './orcid-verification-step.client';
@@ -153,7 +153,11 @@ export function Registration() {
       {state.step !== 'complete' && (
         <p className="text-center text-sm mt-6" style={{ color: '#8a8070' }}>
           Already have an account?{' '}
-          <a href="/login" className="underline" style={{ color: '#c9a44a' }}>
+          <a
+            href={ROUTES.login}
+            className="underline"
+            style={{ color: '#c9a44a' }}
+          >
             Log in
           </a>
         </p>

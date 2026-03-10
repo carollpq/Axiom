@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { useCurrentUser } from '@/src/shared/hooks/useCurrentUser';
 import { sha256 } from '@/src/shared/lib/hashing';
 import { isLitConfigured } from '@/src/shared/lib/lit/config';
-import { uploadToIPFS } from '@/src/shared/lib/upload';
+import { uploadToIPFS } from '@/src/features/researcher/upload';
 import {
   createPaperAction,
   registerVersionAction,

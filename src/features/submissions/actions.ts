@@ -12,6 +12,7 @@ import {
   anchorAndNotify,
   anchorToHcs,
 } from '@/src/shared/lib/server-action-helpers';
+import { ROUTES } from '@/src/shared/lib/routes';
 
 function daysFromNow(days: number): string {
   return new Date(Date.now() + days * 86_400_000).toISOString();
@@ -79,7 +80,7 @@ export async function publishCriteriaAction(
             type: 'criteria_published',
             title: 'Review criteria published',
             body: `Review criteria have been published for "${submission.paper.title}".`,
-            link: `/researcher`,
+            link: ROUTES.researcher.root,
           },
         ]
       : [],
@@ -138,7 +139,7 @@ export async function assignReviewersAction(
       type: 'reviewers_assigned',
       title: 'Reviewers assigned',
       body: `${reviewerWallets.length} reviewer(s) have been assigned to "${submission.paper.title}".`,
-      link: `/researcher`,
+      link: ROUTES.researcher.root,
     });
   }
 
@@ -150,7 +151,7 @@ export async function assignReviewersAction(
         type: 'reviewers_assigned',
         title: 'New review assignment',
         body: `You have been assigned to review "${submission.paper?.title ?? 'a paper'}".`,
-        link: `/reviewer`,
+        link: ROUTES.reviewer.root,
       }),
     ),
   );
@@ -251,7 +252,7 @@ export async function makeDecisionAction(
               type: 'decision_made',
               title: `Paper ${decisionLabel}`,
               body: `Your paper "${submission.paper.title}" has been ${decisionLabel}.`,
-              link: `/researcher`,
+              link: ROUTES.researcher.root,
             },
           ]
         : [],
@@ -299,7 +300,7 @@ export async function markViewedAction(submissionId: string) {
               type: 'submission_viewed',
               title: 'Paper viewed by editor',
               body: `Your paper "${submission.paper.title}" has been viewed by the editor.`,
-              link: `/researcher`,
+              link: ROUTES.researcher.root,
             },
           ]
         : [],
@@ -358,7 +359,7 @@ export async function acceptAssignmentAction(
             type: 'assignment_declined',
             title: 'Reviewer declined assignment',
             body: `A reviewer has declined the assignment for "${submission.paper.title}".`,
-            link: `/editor`,
+            link: ROUTES.editor.root,
           },
         ],
       });
@@ -388,7 +389,7 @@ export async function acceptAssignmentAction(
       type: 'assignment_accepted',
       title: 'Reviewer accepted assignment',
       body: `A reviewer has accepted the assignment for "${submission.paper.title}".`,
-      link: `/editor`,
+      link: ROUTES.editor.root,
     });
   }
 
@@ -406,7 +407,7 @@ export async function acceptAssignmentAction(
         type: 'reviewers_assigned',
         title: 'Paper now under review',
         body: `Minimum reviewers accepted — your paper "${submission.paper.title}" is now under review.`,
-        link: `/researcher`,
+        link: ROUTES.researcher.root,
       });
     }
   }
@@ -480,7 +481,7 @@ export async function authorResponseAction(
                 type: 'author_response',
                 title: 'Author accepted reviews',
                 body: `The author has accepted reviews for "${submission.paper.title}".`,
-                link: `/editor`,
+                link: ROUTES.editor.root,
               },
             ]
           : [],
@@ -541,7 +542,7 @@ export async function authorResponseAction(
             type: 'author_response',
             title: 'Author requested rebuttal',
             body: `The author has requested a rebuttal for "${submission.paper.title}".`,
-            link: `/editor`,
+            link: ROUTES.editor.root,
           },
         ],
       });

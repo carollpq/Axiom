@@ -5,6 +5,7 @@ import { db } from '@/src/shared/lib/db';
 import { journalReviewers, journals } from '@/src/shared/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { requireAuth } from '@/src/shared/lib/server-action-helpers';
+import { ROUTES } from '@/src/shared/lib/routes';
 import { respondToPoolInvite } from '@/src/features/reviewer/mutations';
 import { createNotification } from '@/src/features/notifications/mutations';
 
@@ -58,7 +59,7 @@ export async function respondToPoolInviteAction(
         type: notificationType,
         title,
         body: bodyText,
-        link: `/editor/management`,
+        link: ROUTES.editor.management,
       });
     }
   });

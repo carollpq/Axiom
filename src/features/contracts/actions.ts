@@ -7,6 +7,7 @@ import {
   requireAuth,
   anchorToHcs,
 } from '@/src/shared/lib/server-action-helpers';
+import { ROUTES } from '@/src/shared/lib/routes';
 import {
   createContract,
   addContributor,
@@ -104,7 +105,7 @@ export async function addContributorAction(
         type: 'contributor_added',
         title: 'Added to authorship contract',
         body: `You have been added as a contributor on "${paperTitle}". Please review and sign the contract.`,
-        link: `/researcher/authorship-contracts`,
+        link: ROUTES.researcher.contracts,
       });
     });
   }
@@ -275,7 +276,7 @@ export async function signContractAction(input: z.infer<typeof signSchema>) {
       contributorWallet,
     );
 
-    const contractLink = `/researcher/authorship-contracts?id=${contractId}`;
+    const contractLink = `${ROUTES.researcher.contracts}?id=${contractId}`;
 
     if (isFullySigned) {
       await Promise.all(

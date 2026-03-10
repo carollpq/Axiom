@@ -13,6 +13,7 @@ import {
   anchorToHcs,
   recordReputation,
 } from '@/src/shared/lib/server-action-helpers';
+import { ROUTES } from '@/src/shared/lib/routes';
 import {
   getReviewAssignment,
   listReviewAssignmentsForSubmission,
@@ -102,7 +103,7 @@ export async function submitReviewAction(
               type: 'review_submitted',
               title: 'Review submitted',
               body: `A reviewer has submitted their review for "${assignment.submission.paper.title}".`,
-              link: `/editor/under-review`,
+              link: ROUTES.editor.underReview,
             },
           ]
         : [],
@@ -155,7 +156,7 @@ export async function submitReviewAction(
         type: 'reviews_completed',
         title: 'All reviews complete',
         body: `All reviews are complete for "${assignment.submission.paper.title}". Please review and respond.`,
-        link: `/researcher/view-submissions`,
+        link: ROUTES.researcher.viewSubmissions,
       });
     }
   });

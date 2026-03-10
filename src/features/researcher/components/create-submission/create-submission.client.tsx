@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { ErrorAlert } from '@/src/shared/components/error-alert';
 import { FormSelectRow } from './form-select-row.client';
 import { submitPaperAction } from '@/src/features/papers/actions';
+import { ROUTES } from '@/src/shared/lib/routes';
 
 const FORM_CONTAINER_STYLE = {
   background: 'rgba(45,42,38,0.4)',
@@ -87,7 +88,7 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
       });
 
       toast.success('Paper submitted successfully');
-      router.push('/researcher');
+      router.push(ROUTES.researcher.root);
       router.refresh();
     } catch (err) {
       const message =

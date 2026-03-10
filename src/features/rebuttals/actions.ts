@@ -14,6 +14,7 @@ import {
   anchorAndNotify,
   recordReputation,
 } from '@/src/shared/lib/server-action-helpers';
+import { ROUTES } from '@/src/shared/lib/routes';
 import {
   submitRebuttalResponses,
   resolveRebuttal,
@@ -78,7 +79,7 @@ export async function respondToRebuttalAction(
             type: 'rebuttal_submitted',
             title: 'Rebuttal response submitted',
             body: `The author has responded to the rebuttal for "${rebuttal.submission.paper?.title}".`,
-            link: `/editor/under-review`,
+            link: ROUTES.editor.underReview,
           },
         ]
       : [],
@@ -132,7 +133,7 @@ export async function resolveRebuttalAction(
             type: 'rebuttal_resolved',
             title: 'Rebuttal resolved',
             body: `Your rebuttal has been resolved: ${resolution}. ${editorNotes || ''}`.trim(),
-            link: `/researcher/rebuttal/${rebuttal.submissionId}`,
+            link: ROUTES.researcher.rebuttal(rebuttal.submissionId),
           },
         ]
       : [],

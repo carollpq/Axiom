@@ -8,6 +8,7 @@ import { ReviewerRatingCard } from './reviewer-rating-card.client';
 import { ErrorAlert } from '@/src/shared/components/error-alert';
 import { rateReviewerAction } from '@/src/features/reviews/actions';
 import { authorResponseAction } from '@/src/features/submissions/actions';
+import { ROUTES } from '@/src/shared/lib/routes';
 
 interface AnonymizedReview {
   id: string;
@@ -97,7 +98,7 @@ export function ReviewResponseClient({
       await authorResponseAction(submissionId, action);
 
       toast.success('Response submitted');
-      router.push('/researcher');
+      router.push(ROUTES.researcher.root);
       router.refresh();
     } catch (err) {
       const message =

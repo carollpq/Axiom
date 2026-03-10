@@ -3,6 +3,7 @@
 import { createContext, use, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useActiveAccount } from 'thirdweb/react';
+import { ROUTES } from '@/src/shared/lib/routes';
 import { doLogout, getCurrentUser } from '@/src/shared/lib/auth/actions';
 import type { User } from '@/src/shared/types/domain';
 
@@ -49,7 +50,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       if (!walletReady.current) return;
       doLogout().then(() => {
         setUser(null);
-        router.push('/login');
+        router.push(ROUTES.login);
       });
       return;
     }

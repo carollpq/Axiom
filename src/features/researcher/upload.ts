@@ -1,4 +1,4 @@
-export type UploadFolder = 'papers' | 'datasets' | 'environments';
+import type { UploadFolder } from '@/src/shared/lib/pinata';
 
 /**
  * Upload a file to IPFS via the /api/upload-ipfs route.
