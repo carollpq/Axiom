@@ -46,8 +46,6 @@ export async function createContractSchedule(
     const scheduleId = receipt.scheduleId?.toString() ?? '';
     const txId = response.transactionId.toString();
 
-    console.log(`[Schedule] Created schedule: ${scheduleId}, tx=${txId}`);
-
     return { scheduleId, txId };
   } catch (err) {
     console.error('[Schedule] createContractSchedule failed:', err);
@@ -79,10 +77,6 @@ export async function signScheduleAsOperator(
     const info = await getScheduleInfo(scheduleId);
     const executed = info?.executed ?? false;
 
-    console.log(
-      `[Schedule] Signed schedule ${scheduleId}: tx=${txId}, executed=${executed}`,
-    );
-
     return { txId, executed };
   } catch (err) {
     console.error('[Schedule] signScheduleAsOperator failed:', err);
@@ -93,7 +87,7 @@ export async function signScheduleAsOperator(
 /**
  * Query schedule info to check execution status.
  */
-export async function getScheduleInfo(
+async function getScheduleInfo(
   scheduleId: string,
 ): Promise<{ executed: boolean; executedAt: string | null } | null> {
   if (!isHederaConfigured()) return null;

@@ -3,12 +3,12 @@
  * Uses plain fetch — no SDK needed. Defaults to testnet like client.ts.
  */
 
-function getMirrorBaseUrl(): string {
-  const network = process.env.HEDERA_NETWORK ?? 'testnet';
-  return network === 'mainnet'
+import { HEDERA_NETWORK } from './network';
+
+const MIRROR_BASE_URL =
+  HEDERA_NETWORK === 'mainnet'
     ? 'https://mainnet.mirrornode.hedera.com'
     : 'https://testnet.mirrornode.hedera.com';
-}
 
 export interface MirrorNft {
   token_id: string;
@@ -32,8 +32,7 @@ export async function getAccountNfts(
   tokenId?: string,
 ): Promise<MirrorNft[] | null> {
   try {
-    const baseUrl = getMirrorBaseUrl();
-    let url = `${baseUrl}/api/v1/accounts/${accountId}/nfts`;
+    let url = `${MIRROR_BASE_URL}/api/v1/accounts/${accountId}/nfts`;
     const params = new URLSearchParams({ limit: '100' });
     if (tokenId) params.set('token.id', tokenId);
     url += `?${params.toString()}`;
@@ -60,8 +59,7 @@ export async function getNftMetadata(
   serial: number,
 ): Promise<MirrorNft | null> {
   try {
-    const baseUrl = getMirrorBaseUrl();
-    const url = `${baseUrl}/api/v1/tokens/${tokenId}/nfts/${serial}`;
+    const url = `${MIRROR_BASE_URL}/api/v1/tokens/${tokenId}/nfts/${serial}`;
     const res = await fetch(url);
     if (!res.ok) return null;
 
@@ -91,8 +89,7 @@ export function decodeNftMetadata(
  */
 export async function getAccountId(evmAddress: string): Promise<string | null> {
   try {
-    const baseUrl = getMirrorBaseUrl();
-    const url = `${baseUrl}/api/v1/accounts/${evmAddress}`;
+    const url = `${MIRROR_BASE_URL}/api/v1/accounts/${evmAddress}`;
     const res = await fetch(url);
     if (!res.ok) return null;
 

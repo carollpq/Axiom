@@ -1,4 +1,5 @@
 import { ethers } from 'ethers';
+import { HEDERA_NETWORK } from './network';
 
 const TIMELINE_ENFORCER_ABI = [
   'function registerDeadline(bytes32 submissionHash, uint256 dueTimestamp, address responsible) external',
@@ -19,9 +20,8 @@ let _contract: ethers.Contract | null = null;
 function getContract(): ethers.Contract {
   if (_contract) return _contract;
 
-  const network = process.env.HEDERA_NETWORK ?? 'testnet';
   const rpcUrl =
-    network === 'mainnet'
+    HEDERA_NETWORK === 'mainnet'
       ? 'https://mainnet.hashio.io/api'
       : 'https://testnet.hashio.io/api';
   const provider = new ethers.JsonRpcProvider(rpcUrl, undefined, {
@@ -40,7 +40,7 @@ function getContract(): ethers.Contract {
 }
 
 /** Convert a submission UUID to a bytes32 hash for the contract. */
-export function submissionToHash(submissionId: string): string {
+function submissionToHash(submissionId: string): string {
   return ethers.keccak256(ethers.toUtf8Bytes(submissionId));
 }
 
@@ -84,9 +84,6 @@ export async function registerDeadline(
       }
     }
 
-    console.log(
-      `[TimelineEnforcer] Registered deadline: submission=${submissionId}, index=${index}, tx=${receipt.hash}`,
-    );
     return { txHash: receipt.hash, index };
   } catch (err) {
     console.error('[TimelineEnforcer] registerDeadline failed:', err);
@@ -111,9 +108,6 @@ export async function markDeadlineCompleted(
     const tx = await contract.markCompleted(subHash, index);
     const receipt = await tx.wait();
 
-    console.log(
-      `[TimelineEnforcer] Marked completed: submission=${submissionId}, index=${index}, tx=${receipt.hash}`,
-    );
     return receipt.hash;
   } catch (err) {
     console.error('[TimelineEnforcer] markDeadlineCompleted failed:', err);

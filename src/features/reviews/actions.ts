@@ -70,7 +70,7 @@ export async function submitReviewAction(
     assignmentId,
     reviewerWallet: session,
     reviewHash: input.reviewHash,
-    criteriaEvaluations: JSON.stringify(input.criteriaEvaluations),
+    criteriaEvaluations: canonicalJson(input.criteriaEvaluations),
     strengths: input.strengths ?? '',
     weaknesses: input.weaknesses ?? '',
     questionsForAuthors: input.questionsForAuthors ?? '',
@@ -113,7 +113,7 @@ export async function submitReviewAction(
       session,
       'review_completed',
       1,
-      JSON.stringify({
+      canonicalJson({
         reviewId: review.id,
         submissionId: assignment.submissionId,
       }),

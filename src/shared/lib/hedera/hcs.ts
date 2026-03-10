@@ -1,5 +1,6 @@
 import { TopicMessageSubmitTransaction, TopicId } from '@hashgraph/sdk';
 import { getHederaClient, isHederaConfigured } from './client';
+import { canonicalJson } from '@/src/shared/lib/hashing';
 
 export interface HcsReceipt {
   txId: string;
@@ -16,7 +17,7 @@ export async function submitHcsMessage(
   payload: object,
 ): Promise<HcsReceipt> {
   const client = getHederaClient();
-  const message = JSON.stringify(payload);
+  const message = canonicalJson(payload);
 
   const submitTx = await new TopicMessageSubmitTransaction()
     .setTopicId(TopicId.fromString(topicId))
