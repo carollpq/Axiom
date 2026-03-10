@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { toast } from 'sonner';
-import { getStatusColors } from '@/src/features/researcher/constants/status-colors';
+import { getStatusColors } from '@/src/shared/lib/status-colors';
 import { authorResponseAction } from '@/src/features/submissions/actions';
 import { rateReviewerAction } from '@/src/features/reviews/actions';
 import { ReviewsStatusSection } from './reviews-status-section.client';

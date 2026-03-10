@@ -1,5 +1,5 @@
 import type { SubmissionCard } from '@/src/features/researcher/types/dashboard';
-import { getStatusColors } from '@/src/features/researcher/constants/status-colors';
+import { getStatusColors } from '@/src/shared/lib/status-colors';
 
 interface Props {
   card: SubmissionCard;

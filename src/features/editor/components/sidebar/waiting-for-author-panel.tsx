@@ -1,29 +1,9 @@
 import { SidebarSection } from '@/src/shared/components/sidebar-section';
+import {
+  getStatusColors,
+  authorStatusLabels,
+} from '@/src/shared/lib/status-colors';
 import type { AuthorResponseStatusDb } from '@/src/shared/lib/db/schema';
-
-const authorStatusLabels: Record<
-  AuthorResponseStatusDb,
-  { label: string; color: string; bg: string; border: string }
-> = {
-  pending: {
-    label: 'Pending',
-    color: '#9a9aad',
-    bg: 'rgba(150,150,170,0.15)',
-    border: 'rgba(150,150,170,0.3)',
-  },
-  accepted: {
-    label: 'Accepted Reviews',
-    color: '#8fbc8f',
-    bg: 'rgba(120,180,120,0.15)',
-    border: 'rgba(120,180,120,0.3)',
-  },
-  rebuttal_requested: {
-    label: 'Rebuttal Requested',
-    color: '#c9a44a',
-    bg: 'rgba(180,160,120,0.15)',
-    border: 'rgba(180,160,120,0.3)',
-  },
-};
 
 interface WaitingForAuthorPanelProps {
   authorResponseStatus: AuthorResponseStatusDb | null;
@@ -32,7 +12,8 @@ interface WaitingForAuthorPanelProps {
 export function WaitingForAuthorPanel({
   authorResponseStatus,
 }: WaitingForAuthorPanelProps) {
-  const statusInfo = authorStatusLabels[authorResponseStatus ?? 'pending'];
+  const label = authorStatusLabels[authorResponseStatus ?? 'pending'];
+  const statusInfo = getStatusColors(label);
 
   return (
     <SidebarSection title="Editorial Decision">
@@ -45,10 +26,10 @@ export function WaitingForAuthorPanel({
           style={{
             background: statusInfo.bg,
             border: `1px solid ${statusInfo.border}`,
-            color: statusInfo.color,
+            color: statusInfo.text,
           }}
         >
-          {statusInfo.label}
+          {label}
         </div>
         <p className="text-[10px] text-[#6a6050] mt-1.5 italic">
           Waiting for author to respond to reviews before final decision can be

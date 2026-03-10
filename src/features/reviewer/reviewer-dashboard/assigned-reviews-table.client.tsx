@@ -1,6 +1,7 @@
 'use client';
 
 import type { AssignedReview } from '@/src/features/reviewer/types';
+import { URGENCY_LATE, URGENCY_WARNING } from '@/src/shared/lib/status-colors';
 import { StatusBadge } from './status-badge';
 
 interface AssignedReviewsTableProps {
@@ -73,9 +74,9 @@ export function AssignedReviewsTable({
                   : 'none',
               borderLeft:
                 r.status === 'Late'
-                  ? '3px solid #d4645a'
+                  ? `3px solid ${URGENCY_LATE}`
                   : r.daysLeft <= 3
-                    ? '3px solid #d4a45a'
+                    ? `3px solid ${URGENCY_WARNING}`
                     : '3px solid transparent',
             }}
           >

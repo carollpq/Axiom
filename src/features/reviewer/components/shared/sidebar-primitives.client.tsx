@@ -1,9 +1,15 @@
 'use client';
 
+import {
+  URGENCY_LATE,
+  URGENCY_WARNING,
+  URGENCY_OK,
+} from '@/src/shared/lib/status-colors';
+
 export function getUrgencyColor(daysLeft: number): string {
-  if (daysLeft < 0) return '#d4645a';
-  if (daysLeft <= 3) return '#c9a44a';
-  return '#8fbc8f';
+  if (daysLeft < 0) return URGENCY_LATE;
+  if (daysLeft <= 3) return URGENCY_WARNING;
+  return URGENCY_OK;
 }
 
 export function formatDaysLeft(daysLeft: number): string {

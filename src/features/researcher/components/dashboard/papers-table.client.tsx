@@ -9,7 +9,7 @@ const PAPER_STATUSES: PaperStatus[] = [
   'Draft',
   'Contract Pending',
   'Submitted',
-  'Viewed by Editor',
+  'Viewed By Editor',
   'Under Review',
   'Reviews Complete',
   'Revision Requested',

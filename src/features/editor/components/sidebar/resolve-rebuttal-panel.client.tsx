@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { RebuttalResolutionDb } from '@/src/shared/lib/db/schema';
+import { getStatusColors } from '@/src/shared/lib/status-colors';
 import { Button } from '@/src/shared/components/button.client';
 import { FormTextarea } from '@/src/shared/components/form-textarea.client';
 import { FormSelect } from '@/src/shared/components/form-select.client';
@@ -23,19 +24,6 @@ interface ResolveRebuttalPanelProps {
   isResolving: boolean;
 }
 
-const positionColors = {
-  agree: {
-    bg: 'rgba(120,180,120,0.15)',
-    text: '#8fbc8f',
-    border: 'rgba(120,180,120,0.3)',
-  },
-  disagree: {
-    bg: 'rgba(200,100,90,0.15)',
-    text: '#d4645a',
-    border: 'rgba(200,100,90,0.3)',
-  },
-};
-
 export function ResolveRebuttalPanel({
   responses,
   rebuttalId,
@@ -49,7 +37,9 @@ export function ResolveRebuttalPanel({
     <SidebarSection title="Rebuttal Responses">
       <div className="space-y-2 mb-4 max-h-[200px] overflow-y-auto">
         {responses.map((r) => {
-          const c = positionColors[r.position];
+          const c = getStatusColors(
+            r.position === 'agree' ? 'Agree' : 'Disagree',
+          );
           return (
             <ListRow key={`${r.reviewId}-${r.position}`} className="block p-3">
               <div className="flex items-center justify-between mb-1">

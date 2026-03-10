@@ -2,45 +2,57 @@
 
 import type { CompletedReviewExtended } from '@/src/features/reviewer/types';
 import type { AuthorResponseStatusDb } from '@/src/shared/lib/db/schema';
+import {
+  getStatusColors,
+  rebuttalResolutionLabels,
+} from '@/src/shared/lib/status-colors';
 import { CollapsibleSection } from '@/src/shared/components/collapsible-section.client';
+
+const authorResponseLabels: Record<AuthorResponseStatusDb, string> = {
+  pending: 'Pending',
+  accepted: 'Accepted Review',
+  rebuttal_requested: 'Invoked Rebuttal',
+};
+
+const authorResponseColorKeys: Record<AuthorResponseStatusDb, string> = {
+  pending: 'Pending',
+  accepted: 'Accepted',
+  rebuttal_requested: 'Rebuttal Requested',
+};
 
 interface CompletedReviewSidebarProps {
   paper: CompletedReviewExtended;
 }
 
 function AuthorResponseBadge({ status }: { status?: AuthorResponseStatusDb }) {
-  if (!status || status === 'pending') {
-    return (
-      <span
-        className="inline-block text-[11px] px-2 py-1 rounded"
-        style={{ backgroundColor: 'rgba(138,128,112,0.2)', color: '#8a8070' }}
-      >
-        Pending
-      </span>
-    );
-  }
-  if (status === 'accepted') {
-    return (
-      <span
-        className="inline-block text-[11px] px-2 py-1 rounded"
-        style={{ backgroundColor: 'rgba(143,188,143,0.2)', color: '#8fbc8f' }}
-      >
-        Accepted Review
-      </span>
-    );
-  }
-  // rebuttal_requested
+  const key = status ?? 'pending';
+  const label = authorResponseLabels[key];
+  const c = getStatusColors(authorResponseColorKeys[key]);
   return (
     <span
       className="inline-block text-[11px] px-2 py-1 rounded"
-      style={{ backgroundColor: 'rgba(201,164,74,0.2)', color: '#c9a44a' }}
+      style={{ backgroundColor: c.bg, color: c.text }}
     >
-      Invoked Rebuttal
+      {label}
     </span>
   );
 }
 
 export function CompletedReviewSidebar({ paper }: CompletedReviewSidebarProps) {
+  const rebuttalStatusColors = getStatusColors('In Progress');
+  const positionColors = paper.rebuttal?.responseForThisReview
+    ? getStatusColors(
+        paper.rebuttal.responseForThisReview.position === 'agree'
+          ? 'Agree'
+          : 'Disagree',
+      )
+    : null;
+  const resolutionColors = paper.rebuttal?.resolution
+    ? getStatusColors(
+        rebuttalResolutionLabels[paper.rebuttal.resolution] ?? 'Partial',
+      )
+    : null;
+
   return (
     <div className="space-y-0">
       {/* Meta info */}
@@ -178,15 +190,15 @@ export function CompletedReviewSidebar({ paper }: CompletedReviewSidebarProps) {
                 <span
                   className="inline-block text-[11px] px-2 py-1 rounded capitalize"
                   style={{
-                    backgroundColor: 'rgba(90,122,154,0.2)',
-                    color: '#5a7a9a',
+                    backgroundColor: rebuttalStatusColors.bg,
+                    color: rebuttalStatusColors.text,
                   }}
                 >
                   {paper.rebuttal.status}
                 </span>
               </div>
 
-              {paper.rebuttal.responseForThisReview && (
+              {paper.rebuttal.responseForThisReview && positionColors && (
                 <div>
                   <div
                     className="text-[10px] uppercase tracking-wider mb-1"
@@ -197,16 +209,8 @@ export function CompletedReviewSidebar({ paper }: CompletedReviewSidebarProps) {
                   <span
                     className="inline-block text-[11px] px-2 py-1 rounded capitalize mb-2"
                     style={{
-                      backgroundColor:
-                        paper.rebuttal.responseForThisReview.position ===
-                        'agree'
-                          ? 'rgba(143,188,143,0.2)'
-                          : 'rgba(212,100,90,0.2)',
-                      color:
-                        paper.rebuttal.responseForThisReview.position ===
-                        'agree'
-                          ? '#8fbc8f'
-                          : '#d4645a',
+                      backgroundColor: positionColors.bg,
+                      color: positionColors.text,
                     }}
                   >
                     {paper.rebuttal.responseForThisReview.position}
@@ -220,7 +224,7 @@ export function CompletedReviewSidebar({ paper }: CompletedReviewSidebarProps) {
                 </div>
               )}
 
-              {paper.rebuttal.resolution && (
+              {paper.rebuttal.resolution && resolutionColors && (
                 <div>
                   <div
                     className="text-[10px] uppercase tracking-wider mb-1"
@@ -231,18 +235,8 @@ export function CompletedReviewSidebar({ paper }: CompletedReviewSidebarProps) {
                   <span
                     className="inline-block text-[11px] px-2 py-1 rounded capitalize"
                     style={{
-                      backgroundColor:
-                        paper.rebuttal.resolution === 'upheld'
-                          ? 'rgba(212,100,90,0.2)'
-                          : paper.rebuttal.resolution === 'rejected'
-                            ? 'rgba(143,188,143,0.2)'
-                            : 'rgba(201,164,74,0.2)',
-                      color:
-                        paper.rebuttal.resolution === 'upheld'
-                          ? '#d4645a'
-                          : paper.rebuttal.resolution === 'rejected'
-                            ? '#8fbc8f'
-                            : '#c9a44a',
+                      backgroundColor: resolutionColors.bg,
+                      color: resolutionColors.text,
                     }}
                   >
                     {paper.rebuttal.resolution}

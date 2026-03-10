@@ -5,6 +5,7 @@ import type {
   CriterionRating,
   CriterionEvaluation as CriterionEvalType,
 } from '@/src/features/reviewer/types';
+import { getStatusColors } from '@/src/shared/lib/status-colors';
 
 interface CriterionEvaluationProps {
   criterion: ReviewCriterion;
@@ -15,27 +16,6 @@ interface CriterionEvaluationProps {
 }
 
 const RATINGS: CriterionRating[] = ['Yes', 'No', 'Partially'];
-
-const ratingColors: Record<
-  CriterionRating,
-  { bg: string; text: string; border: string }
-> = {
-  Yes: {
-    bg: 'rgba(143,188,143,0.15)',
-    text: '#8fbc8f',
-    border: 'rgba(143,188,143,0.4)',
-  },
-  No: {
-    bg: 'rgba(212,100,90,0.15)',
-    text: '#d4645a',
-    border: 'rgba(212,100,90,0.4)',
-  },
-  Partially: {
-    bg: 'rgba(212,164,90,0.15)',
-    text: '#d4a45a',
-    border: 'rgba(212,164,90,0.4)',
-  },
-};
 
 export function CriterionEvaluation({
   criterion,
@@ -60,7 +40,7 @@ export function CriterionEvaluation({
         <div className="flex gap-2 flex-shrink-0">
           {RATINGS.map((r) => {
             const active = evaluation.rating === r;
-            const colors = ratingColors[r];
+            const colors = getStatusColors(r);
             return (
               <button
                 key={r}
