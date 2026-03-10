@@ -8,7 +8,7 @@ import type {
   Recommendation,
 } from '@/src/features/reviewer/types';
 import { canonicalJson, hashString } from '@/src/shared/lib/hashing';
-import { formatTimestampUtc } from '@/src/shared/lib/format';
+import { formatDate } from '@/src/shared/lib/format';
 import { submitReviewAction } from '@/src/features/reviews/actions';
 import {
   reviewWorkspaceReducer,
@@ -105,7 +105,7 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
         type: 'SUBMIT_SUCCESS',
         submissionResult: {
           txHash: 'pending',
-          timestamp: formatTimestampUtc(new Date().toISOString()),
+          timestamp: formatDate(new Date().toISOString(), 'datetime'),
           paperHash: paper.provenance[0]?.hash.slice(0, 16) + '...',
           reviewHash: reviewHash.slice(0, 16) + '...',
           criteriaSummary: { met, partial, notMet },

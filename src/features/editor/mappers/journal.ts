@@ -14,12 +14,9 @@ import type {
   DbJournalIssue,
   DbJournalReviewerWithStatus,
 } from '../queries';
-import {
-  formatIsoDate,
-  truncateHash,
-  displayNameOrWallet,
-  toFivePointScale,
-} from '@/src/shared/lib/format';
+import { formatDate, truncate } from '@/src/shared/lib/format';
+import { displayNameOrWallet } from '@/src/features/users/mappers';
+import { toFivePointScale } from '@/src/features/reviews/mappers';
 
 export function deriveStage(
   status: string,
@@ -47,14 +44,14 @@ export function mapDbToJournalSubmission(
   index: number,
 ): JournalSubmission {
   const latestVersion = s.paper.versions?.at(-1);
-  const hash = latestVersion ? truncateHash(latestVersion.paperHash, 8) : '—';
+  const hash = latestVersion ? truncate(latestVersion.paperHash, 8) : '—';
   const wallets = (s.reviewerWallets as string[] | null) ?? [];
 
   return {
     id: index + 1,
     title: s.paper.title,
     authors: s.paper.owner?.displayName ?? 'Unknown',
-    submitted: formatIsoDate(s.submittedAt),
+    submitted: formatDate(s.submittedAt),
     stage: deriveStage(
       s.status,
       s.criteriaHash ?? null,
@@ -89,9 +86,7 @@ export function mapDbToPoolReviewer(
 
 export function mapDbToPaperCardData(s: DbJournalSubmission): PaperCardData {
   const abstract = s.paper.abstract ?? '';
-  const submittedDate = s.submittedAt
-    ? formatIsoDate(String(s.submittedAt))
-    : '—';
+  const submittedDate = s.submittedAt ? formatDate(String(s.submittedAt)) : '—';
   const hasLitData = !!(
     s.paper.litDataToEncryptHash && s.paper.litAccessConditionsJson
   );

@@ -8,7 +8,7 @@ import type {
   ContractContributor,
   Paper,
 } from '@/src/shared/types/domain';
-import { formatIsoDate } from '@/src/shared/lib/format';
+import { formatDate } from '@/src/shared/lib/format';
 
 export function mapApiContributors(
   dbContribs: ContractContributor[],
@@ -113,6 +113,6 @@ export function mapDbContractToSigned(c: Contract): SignedContract {
     title: c.paperTitle,
     hash: c.contractHash ?? '\u2014',
     contributors: contribSummary || '\u2014',
-    date: formatIsoDate(c.createdAt),
+    date: formatDate(c.createdAt),
   };
 }

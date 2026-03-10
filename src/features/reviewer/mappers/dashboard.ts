@@ -14,12 +14,8 @@ import type {
   DbCompletedReviewExtended,
   DbReputationRow,
 } from '../queries';
-import {
-  formatIsoDate,
-  truncateHash,
-  truncateWallet,
-  toFivePointScale,
-} from '@/src/shared/lib/format';
+import { formatDate, truncate } from '@/src/shared/lib/format';
+import { toFivePointScale } from '@/src/features/reviews/mappers';
 
 /** Wallet address → display name lookup, built at the server page level. */
 export type EditorNameMap = Record<string, string>;
@@ -29,7 +25,7 @@ function resolveEditorName(
   editorNames?: EditorNameMap,
 ): string {
   if (!wallet) return 'Editor';
-  return editorNames?.[wallet.toLowerCase()] ?? truncateWallet(wallet);
+  return editorNames?.[wallet.toLowerCase()] ?? truncate(wallet);
 }
 
 function daysUntil(deadline: string | null): number {
@@ -83,8 +79,8 @@ export function mapDbToAssignedReview(
     submissionId: a.submissionId,
     title: a.submission.paper.title,
     journal: a.submission.journal?.name ?? '—',
-    assigned: formatIsoDate(a.assignedAt),
-    deadline: a.deadline ? formatIsoDate(a.deadline) : '—',
+    assigned: formatDate(a.assignedAt),
+    deadline: a.deadline ? formatDate(a.deadline) : '—',
     status: reviewStatus(a.status, daysLeft),
     daysLeft,
   };
@@ -98,12 +94,12 @@ export function mapDbToCompletedReview(
     (a.submission.paper as { versions?: { paperHash: string }[] }).versions ??
     [];
   const latest = versions.at(-1);
-  const hash = latest ? truncateHash(latest.paperHash, 8) : '—';
+  const hash = latest ? truncate(latest.paperHash, 8) : '—';
   return {
     id: index + 1,
     title: a.submission.paper.title,
     journal: a.submission.journal?.name ?? '—',
-    submitted: formatIsoDate(a.submittedAt ?? a.assignedAt),
+    submitted: formatDate(a.submittedAt ?? a.assignedAt),
     editorRating: 0,
     authorRating: 0,
     hash,

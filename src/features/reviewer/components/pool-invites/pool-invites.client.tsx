@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { Check, X } from 'lucide-react';
 import type { DbPendingPoolInvite } from '@/src/features/reviewer/queries';
-import { displayNameOrWallet } from '@/src/shared/lib/format';
+import { displayNameOrWallet } from '@/src/features/users/mappers';
 import { respondToPoolInviteAction } from '@/src/features/reviewer/actions';
 
 interface PoolInvitesClientProps {

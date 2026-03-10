@@ -3,10 +3,10 @@ import type {
   SubmissionDisplayStatus,
   DashboardStats,
   StatCardData,
-} from "@/src/features/researcher/types/dashboard";
-import type { DbPaperWithRelations } from "@/src/features/papers/queries";
-import { formatIsoDate } from "@/src/shared/lib/format";
-import { Send, Clock, FileCheck, CheckCircle, XCircle } from "lucide-react";
+} from '@/src/features/researcher/types/dashboard';
+import type { DbPaperWithRelations } from '@/src/features/papers/queries';
+import { formatDate } from '@/src/shared/lib/format';
+import { Send, Clock, FileCheck, CheckCircle, XCircle } from 'lucide-react';
 
 /**
  * Derives a user-friendly submission status from the DB submission status,
@@ -20,29 +20,29 @@ export function deriveSubmissionDisplayStatus(
   hasReviews: boolean,
 ): SubmissionDisplayStatus {
   switch (dbStatus) {
-    case "submitted":
-      return "Paper Submitted";
-    case "viewed_by_editor":
-      return "Viewed By Editor";
-    case "rejected":
-      return hasReviews ? "Rejected" : "Desk Reject";
-    case "criteria_published":
-    case "reviewers_assigned":
-      return `Assigned ${totalReviewCount} Reviewer${totalReviewCount !== 1 ? "s" : ""}`;
-    case "under_review":
+    case 'submitted':
+      return 'Paper Submitted';
+    case 'viewed_by_editor':
+      return 'Viewed By Editor';
+    case 'rejected':
+      return hasReviews ? 'Rejected' : 'Desk Reject';
+    case 'criteria_published':
+    case 'reviewers_assigned':
+      return `Assigned ${totalReviewCount} Reviewer${totalReviewCount !== 1 ? 's' : ''}`;
+    case 'under_review':
       return `${completedReviewCount}/${totalReviewCount} Reviews Completed`;
-    case "reviews_completed":
-      if (authorResponseStatus === "accepted") return "Reviews Sent to Editor";
-      return "All Reviews Completed";
-    case "rebuttal_open":
-      return "Rebuttal Phase";
-    case "accepted":
-    case "published":
-      return "Accepted";
-    case "revision_requested":
-      return "Reviews Sent to Editor";
+    case 'reviews_completed':
+      if (authorResponseStatus === 'accepted') return 'Reviews Sent to Editor';
+      return 'All Reviews Completed';
+    case 'rebuttal_open':
+      return 'Rebuttal Phase';
+    case 'accepted':
+    case 'published':
+      return 'Accepted';
+    case 'revision_requested':
+      return 'Reviews Sent to Editor';
     default:
-      return "Paper Submitted";
+      return 'Paper Submitted';
   }
 }
 
@@ -63,7 +63,7 @@ export function mapPapersToSubmissionCards(
         ?.flatMap((c) => c.contributors ?? [])
         .map((c) => c.contributorName)
         .filter(Boolean)
-        .join(", ") || "\u2014";
+        .join(', ') || '\u2014';
 
     for (const sub of p.submissions) {
       // These relations are included by the enriched listUserPapers query
@@ -74,7 +74,7 @@ export function mapPapersToSubmissionCards(
       const assignments = subAny.reviewAssignments ?? [];
       const totalReviewCount = assignments.length;
       const completedReviewCount = assignments.filter(
-        (a) => a.status === "submitted",
+        (a) => a.status === 'submitted',
       ).length;
 
       const status = deriveSubmissionDisplayStatus(
@@ -89,9 +89,9 @@ export function mapPapersToSubmissionCards(
         id: sub.id,
         paperId: p.id,
         paperTitle: p.title,
-        journalName: subAny.journal?.name ?? "\u2014",
+        journalName: subAny.journal?.name ?? '\u2014',
         authors,
-        submittedAt: formatIsoDate(sub.submittedAt),
+        submittedAt: formatDate(sub.submittedAt),
         status,
         reviewerCount: totalReviewCount,
         completedReviewCount,
@@ -110,17 +110,18 @@ export function mapPapersToSubmissionCards(
 export function computeStats(cards: SubmissionCard[]): DashboardStats {
   return {
     newSubmissions: cards.filter(
-      (c) => c.status === "Paper Submitted" || c.status === "Viewed By Editor",
+      (c) => c.status === 'Paper Submitted' || c.status === 'Viewed By Editor',
     ).length,
     underReview: cards.filter(
-      (c) => c.status.startsWith("Assigned") || (c.status.includes("Reviews Completed") && !c.status.startsWith("All")),
+      (c) =>
+        c.status.startsWith('Assigned') ||
+        (c.status.includes('Reviews Completed') && !c.status.startsWith('All')),
     ).length,
-    reviewsPending: cards.filter(
-      (c) => c.status === "All Reviews Completed",
-    ).length,
-    accepted: cards.filter((c) => c.status === "Accepted").length,
+    reviewsPending: cards.filter((c) => c.status === 'All Reviews Completed')
+      .length,
+    accepted: cards.filter((c) => c.status === 'Accepted').length,
     rejected: cards.filter(
-      (c) => c.status === "Rejected" || c.status === "Desk Reject",
+      (c) => c.status === 'Rejected' || c.status === 'Desk Reject',
     ).length,
   };
 }
@@ -130,10 +131,22 @@ export function computeStats(cards: SubmissionCard[]): DashboardStats {
  */
 export function statsToCards(stats: DashboardStats): StatCardData[] {
   return [
-    { label: "New Submissions", value: String(stats.newSubmissions), icon: Send },
-    { label: "Under Review", value: String(stats.underReview), icon: Clock },
-    { label: "Reviews Pending", value: String(stats.reviewsPending), icon: FileCheck },
-    { label: "Accepted Papers", value: String(stats.accepted), icon: CheckCircle },
-    { label: "Rejected Papers", value: String(stats.rejected), icon: XCircle },
+    {
+      label: 'New Submissions',
+      value: String(stats.newSubmissions),
+      icon: Send,
+    },
+    { label: 'Under Review', value: String(stats.underReview), icon: Clock },
+    {
+      label: 'Reviews Pending',
+      value: String(stats.reviewsPending),
+      icon: FileCheck,
+    },
+    {
+      label: 'Accepted Papers',
+      value: String(stats.accepted),
+      icon: CheckCircle,
+    },
+    { label: 'Rejected Papers', value: String(stats.rejected), icon: XCircle },
   ];
 }

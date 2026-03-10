@@ -8,10 +8,8 @@ import type {
   ExistingDraft,
 } from '@/src/features/researcher/types/contract';
 import { useCurrentUser } from '@/src/shared/hooks/useCurrentUser';
-import { mockTxHash } from '@/src/shared/lib/format';
 import { hashString, canonicalJson } from '@/src/shared/lib/hashing';
-import { mapApiContributors } from '@/src/features/researcher/mappers/contract';
-import type { Contract, UserSearchResult } from '@/src/shared/types/domain';
+import type { UserSearchResult } from '@/src/shared/types/domain';
 import {
   createContractAction,
   addContributorAction,
@@ -184,7 +182,7 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
       dispatch({
         type: 'SIGN_DEMO',
         id,
-        txHash: mockTxHash(),
+        txHash: '0x' + Math.random().toString(16).slice(2, 10),
         signedAt: new Date().toISOString(),
       });
       return;

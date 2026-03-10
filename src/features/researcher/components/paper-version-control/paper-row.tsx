@@ -1,5 +1,5 @@
 import { ChevronRight, ChevronDown, Download, Upload } from 'lucide-react';
-import { formatIsoDate } from '@/src/shared/lib/format';
+import { formatDate } from '@/src/shared/lib/format';
 import type { PaperWithVersions } from './types';
 
 interface PaperRowProps {
@@ -61,7 +61,7 @@ export function PaperRow({
                 Version {v.versionNumber}
               </span>
               <span className="text-[11px] text-[#6a6050] ml-auto">
-                {formatIsoDate(v.createdAt)}
+                {formatDate(v.createdAt)}
               </span>
               <button
                 type="button"
