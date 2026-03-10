@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { fetchApi } from '@/src/shared/lib/api';
 import { useClickOutside } from '@/src/shared/hooks/useClickOutside';
+import { searchUsersAction } from '@/src/features/users/actions';
 import type { UserSearchResult } from '@/src/shared/types/api';
 
 interface AuthorSearchProps {
@@ -39,9 +39,9 @@ export function AuthorSearch({ onSelect, onCancel }: AuthorSearchProps) {
     timerRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const data = await fetchApi<UserSearchResult[]>(
-          `/api/users/search?q=${encodeURIComponent(value.trim())}`,
-        );
+        const data = (await searchUsersAction(
+          value.trim(),
+        )) as UserSearchResult[];
         setResults(data ?? []);
         setOpen(true);
       } catch {
