@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { useCurrentUser } from '@/src/shared/hooks/useCurrentUser';
+import { useUser } from '@/src/shared/context/user-context.client';
 import { sha256, canonicalJson } from '@/src/shared/lib/hashing';
 import { signContractAction } from '@/src/features/contracts/actions';
 import { ROUTES } from '@/src/shared/lib/routes';
@@ -30,7 +30,7 @@ export function InviteClaimClient({
   contractId,
   contract,
 }: InviteClaimClientProps) {
-  const { user, account } = useCurrentUser();
+  const { user, account } = useUser();
   const router = useRouter();
   const [signing, setSigning] = useState(false);
   const [signed, setSigned] = useState(false);

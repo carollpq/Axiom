@@ -1,6 +1,6 @@
 'use client';
 
-import { useReducer, useCallback, useRef, useEffect } from 'react';
+import { useReducer, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import type { RebuttalPositionDb } from '@/src/shared/lib/db/schema';
 import { respondToRebuttalAction } from '@/src/features/rebuttals/actions';
@@ -14,18 +14,12 @@ interface ResponseDraft {
 interface State {
   responses: Record<string, ResponseDraft>;
   selectedReviewId: string | null;
-  isSubmitting: boolean;
-  submitted: boolean;
-  error: string | null;
 }
 
 type Action =
   | { type: 'SELECT_REVIEW'; reviewId: string }
   | { type: 'SET_POSITION'; reviewId: string; position: RebuttalPositionDb }
-  | { type: 'SET_JUSTIFICATION'; reviewId: string; justification: string }
-  | { type: 'SUBMIT_START' }
-  | { type: 'SUBMIT_SUCCESS' }
-  | { type: 'SUBMIT_ERROR'; error: string };
+  | { type: 'SET_JUSTIFICATION'; reviewId: string; justification: string };
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -61,12 +55,6 @@ function reducer(state: State, action: Action): State {
           },
         },
       };
-    case 'SUBMIT_START':
-      return { ...state, isSubmitting: true, error: null };
-    case 'SUBMIT_SUCCESS':
-      return { ...state, isSubmitting: false, submitted: true };
-    case 'SUBMIT_ERROR':
-      return { ...state, isSubmitting: false, error: action.error };
   }
 }
 
@@ -79,44 +67,41 @@ export function useRebuttal(rebuttalId: string, reviewIds: string[]) {
       ]),
     ),
     selectedReviewId: reviewIds[0] ?? null,
-    isSubmitting: false,
-    submitted: false,
-    error: null,
   });
 
-  const responsesRef = useRef(state.responses);
-  useEffect(() => {
-    responsesRef.current = state.responses;
-  }, [state.responses]);
+  const [isPending, startTransition] = useTransition();
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const submitRebuttal = useCallback(async () => {
-    const responses = Object.values(responsesRef.current).filter((r) =>
+  const submitRebuttal = () => {
+    const responses = Object.values(state.responses).filter((r) =>
       r.justification.trim(),
     );
     if (responses.length === 0) {
-      dispatch({
-        type: 'SUBMIT_ERROR',
-        error: 'Please provide at least one response',
-      });
+      setError('Please provide at least one response');
       return;
     }
 
-    dispatch({ type: 'SUBMIT_START' });
-
-    try {
-      await respondToRebuttalAction(rebuttalId, { responses });
-
-      dispatch({ type: 'SUBMIT_SUCCESS' });
-      toast.success('Rebuttal submitted');
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Submission failed';
-      dispatch({ type: 'SUBMIT_ERROR', error: message });
-      toast.error(message);
-    }
-  }, [rebuttalId]);
+    setError(null);
+    startTransition(async () => {
+      try {
+        await respondToRebuttalAction(rebuttalId, { responses });
+        setSubmitted(true);
+        toast.success('Rebuttal submitted');
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : 'Submission failed';
+        setError(message);
+        toast.error(message);
+      }
+    });
+  };
 
   return {
     ...state,
+    isSubmitting: isPending,
+    submitted,
+    error,
     selectReview: (id: string) =>
       dispatch({ type: 'SELECT_REVIEW', reviewId: id }),
     setPosition: (reviewId: string, position: RebuttalPositionDb) =>

@@ -1,13 +1,13 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { toast } from 'sonner';
 import { ThreeColumnLayout } from '@/src/shared/components/three-column-layout';
 import { DynamicPdfViewer as PdfViewer } from '@/src/shared/components/dynamic-pdf-viewer.client';
 import { PaperList } from '@/src/shared/components/paper-list.client';
-import { useAcceptedPapers } from '@/src/features/editor/hooks/useAcceptedPapers';
+import { useSelection } from '@/src/shared/hooks/useSelection';
 import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
 import { useDecryptPaper } from '@/src/shared/hooks/useDecryptPaper';
 import { SelectionPlaceholder } from '@/src/shared/components/selection-placeholder';
@@ -56,14 +56,12 @@ export function AcceptedPapersClient({
 }: AcceptedPapersProps) {
   useCollapseSidebar();
   const router = useRouter();
-  const {
-    selectedId,
-    setSelectedId,
-    selected,
-    currentReviewers,
-    selectedIssue,
-    setSelectedIssue,
-  } = useAcceptedPapers(papers, reviewStatuses);
+  const { selectedId, setSelectedId, selected } = useSelection(papers);
+  const [selectedIssue, setSelectedIssue] = useState('');
+  const currentReviewers = useMemo(
+    () => (selectedId ? (reviewStatuses[selectedId] ?? []) : []),
+    [selectedId, reviewStatuses],
+  );
 
   const { fileUrl: decryptedUrl } = useDecryptPaper(
     selected?.hasLitData ? selected.paperId : null,

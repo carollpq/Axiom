@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { useCurrentUser } from '@/src/shared/hooks/useCurrentUser';
+import { useUser } from '@/src/shared/context/user-context.client';
 import { sha256, canonicalJson } from '@/src/shared/lib/hashing';
 import { signContractAction } from '@/src/features/contracts/actions';
 
@@ -27,7 +27,7 @@ interface Props {
 }
 
 export function ContractsToSign({ contracts, currentWallet }: Props) {
-  const { account } = useCurrentUser();
+  const { account } = useUser();
   const router = useRouter();
   const [signing, setSigning] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

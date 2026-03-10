@@ -7,7 +7,7 @@ import type {
   Contributor,
   ExistingDraft,
 } from '@/src/features/researcher/types/contract';
-import { useCurrentUser } from '@/src/shared/hooks/useCurrentUser';
+import { useUser } from '@/src/shared/context/user-context.client';
 import { sha256, canonicalJson } from '@/src/shared/lib/hashing';
 import type { UserSearchResult } from '@/src/shared/types/domain';
 import {
@@ -29,7 +29,7 @@ import {
 } from '@/src/features/researcher/reducers/contract-builder';
 
 export function useContractBuilder(initialDrafts: ExistingDraft[]) {
-  const { user, account } = useCurrentUser();
+  const { user, account } = useUser();
   const router = useRouter();
   const [state, dispatch] = useReducer(contractBuilderReducer, initialState);
   const [error, setError] = useState<string | null>(null);

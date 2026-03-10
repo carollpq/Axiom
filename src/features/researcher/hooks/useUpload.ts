@@ -2,7 +2,7 @@
 
 import { useReducer, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
-import { useCurrentUser } from '@/src/shared/hooks/useCurrentUser';
+import { useUser } from '@/src/shared/context/user-context.client';
 import { sha256 } from '@/src/shared/lib/hashing';
 import { isLitConfigured } from '@/src/shared/lib/lit/config';
 import { uploadToIPFS } from '@/src/features/researcher/upload';
@@ -76,7 +76,7 @@ export type UseUploadReturn = ReturnType<typeof useUpload>;
 export function useUpload(
   onRegistered?: (paperId: string, title: string) => void,
 ) {
-  const { user, isConnected, account } = useCurrentUser();
+  const { user, isConnected, account } = useUser();
   const [state, dispatch] = useReducer(uploadReducer, initialUploadState);
   const uploadedFileRef = useRef<File | null>(null);
 
