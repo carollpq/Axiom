@@ -1,4 +1,5 @@
 import { Client, AccountId, PrivateKey } from '@hashgraph/sdk';
+import { HEDERA_NETWORK } from './network';
 
 /** Parse a private key string — supports DER, ED25519 hex, and ECDSA hex. */
 function parsePrivateKey(keyStr: string): PrivateKey {
@@ -12,8 +13,6 @@ function parsePrivateKey(keyStr: string): PrivateKey {
     }
   }
 }
-
-import { HEDERA_NETWORK } from './network';
 
 let _client: Client | null = null;
 

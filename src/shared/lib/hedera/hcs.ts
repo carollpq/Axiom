@@ -29,8 +29,9 @@ export async function submitHcsMessage(
 
   const txId = submitTx.transactionId.toString();
 
-  // The transaction ID encodes the valid-start time: "0.0.XXXXX@SECONDS.NANOS"
-  // Use it as an approximate consensus timestamp (actual consensus is slightly later).
+  // Extract valid-start time from the tx ID ("0.0.XXXXX@SECONDS.NANOS").
+  // This is an approximation — the actual consensus timestamp is only on
+  // TransactionRecord, which costs an extra network query.
   const match = txId.match(/@(\d+)\./);
   const epochSeconds = match
     ? parseInt(match[1], 10)
