@@ -71,6 +71,8 @@ export type RebuttalResolutionDb = 'upheld' | 'rejected' | 'partial';
 
 export type RebuttalPositionDb = 'agree' | 'disagree';
 
+export type PoolInviteStatusDb = 'pending' | 'accepted' | 'rejected';
+
 export type NotificationTypeDb =
   | 'reviewers_assigned'
   | 'criteria_published'
@@ -88,7 +90,10 @@ export type NotificationTypeDb =
   | 'assignment_declined'
   | 'contributor_added'
   | 'contract_signed'
-  | 'contract_fully_signed';
+  | 'contract_fully_signed'
+  | 'pool_added'
+  | 'pool_invite_accepted'
+  | 'pool_invite_rejected';
 
 // ── Tables ─────────────────────────────────────────────────────────────────
 
@@ -265,9 +270,14 @@ export const journalReviewers = pgTable('journal_reviewers', {
     .notNull()
     .references(() => journals.id),
   reviewerWallet: text('reviewer_wallet').notNull(),
+  status: text('status')
+    .$type<PoolInviteStatusDb>()
+    .notNull()
+    .default('pending'),
   addedAt: text('added_at')
     .notNull()
     .default(sql`now()`),
+  respondedAt: text('responded_at'),
 });
 
 export const submissions = pgTable('submissions', {

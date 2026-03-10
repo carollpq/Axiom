@@ -47,35 +47,75 @@ export function JournalManagement({
 
   const handleSaveAims = useCallback(
     async (value: string) => {
+      if (!journalId) {
+        toast.error('No journal associated with your account');
+        return;
+      }
       await postAndRefresh('', { aimsAndScope: value }, 'PATCH');
       toast.success('Aims and scope saved');
     },
-    [postAndRefresh],
+    [postAndRefresh, journalId],
   );
 
   const handleSaveCriteria = useCallback(
     async (value: string) => {
+      if (!journalId) {
+        toast.error('No journal associated with your account');
+        return;
+      }
       await postAndRefresh('', { submissionCriteria: value }, 'PATCH');
       toast.success('Submission criteria saved');
     },
-    [postAndRefresh],
+    [postAndRefresh, journalId],
   );
 
   const handleCreateIssue = useCallback(
     async (label: string) => {
+      if (!journalId) {
+        toast.error('No journal associated with your account');
+        return;
+      }
       await postAndRefresh('/issues', { label });
       toast.success('Issue created');
     },
-    [postAndRefresh],
+    [postAndRefresh, journalId],
   );
 
   const handleAddReviewer = useCallback(
     async (wallet: string) => {
+      if (!journalId) {
+        toast.error('No journal associated with your account');
+        return;
+      }
       await postAndRefresh('/reviewers', { reviewerWallet: wallet });
       toast.success('Reviewer added to pool');
     },
-    [postAndRefresh],
+    [postAndRefresh, journalId],
   );
+
+  if (!journalId) {
+    return (
+      <div className="max-w-[1200px] mx-auto px-10 py-8">
+        <div className="mb-8">
+          <h1 className="text-[28px] font-normal text-[#e8e0d4] m-0 tracking-[0.5px] font-serif">
+            Journal Management
+          </h1>
+        </div>
+        <div
+          className="rounded-[8px] p-6 mb-6"
+          style={{
+            background: 'rgba(212, 100, 90, 0.15)',
+            border: '1px solid rgba(212, 100, 90, 0.3)',
+          }}
+        >
+          <p className="text-[13px] text-[#d4a89a] m-0">
+            No journal associated with your account. Please contact the system
+            administrator to create or assign a journal.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[1200px] mx-auto px-10 py-8">

@@ -1,4 +1,4 @@
-import type { Contributor } from "@/src/features/researcher/types/contract";
+import type { Contributor } from '@/src/features/researcher/types/contract';
 
 export interface ContractBuilderState {
   selectedDraft: number | null;
@@ -13,109 +13,137 @@ export interface ContractBuilderState {
 
 export const initialState: ContractBuilderState = {
   selectedDraft: null,
-  newTitle: "",
+  newTitle: '',
   contributors: [],
   showAddRow: false,
   showPreview: false,
   showInviteModal: false,
-  inviteLink: "",
+  inviteLink: '',
   selectedContractId: null,
 };
 
 export type ContractBuilderAction =
-  | { type: "SET_SELECTED_DRAFT"; selectedDraft: number | null }
-  | { type: "SELECT_DRAFT_LOADED"; contributors: Contributor[]; selectedContractId: string | null }
-  | { type: "SET_NEW_TITLE"; newTitle: string }
-  | { type: "SET_CONTRIBUTORS"; contributors: Contributor[] }
-  | { type: "UPDATE_CONTRIBUTOR"; id: number; field: string; value: string | number }
-  | { type: "REMOVE_CONTRIBUTOR"; id: number }
-  | { type: "ADD_CONTRIBUTOR"; contributor: Contributor }
-  | { type: "SET_SHOW_ADD_ROW"; showAddRow: boolean }
-  | { type: "SET_SHOW_PREVIEW"; showPreview: boolean }
-  | { type: "SHOW_INVITE_MODAL"; inviteLink: string }
-  | { type: "CLOSE_INVITE_MODAL" }
-  | { type: "SIGN_DEMO"; id: number; txHash: string; signedAt: string }
-  | { type: "CONTRACT_CREATED"; selectedContractId: string; contributorDbIds: (string | undefined)[] };
+  | { type: 'SET_SELECTED_DRAFT'; selectedDraft: number | null }
+  | {
+      type: 'SELECT_DRAFT_LOADED';
+      contributors: Contributor[];
+      selectedContractId: string | null;
+    }
+  | { type: 'SET_NEW_TITLE'; newTitle: string }
+  | { type: 'SET_CONTRIBUTORS'; contributors: Contributor[] }
+  | {
+      type: 'UPDATE_CONTRIBUTOR';
+      id: number;
+      field: string;
+      value: string | number;
+    }
+  | { type: 'REMOVE_CONTRIBUTOR'; id: number }
+  | { type: 'ADD_CONTRIBUTOR'; contributor: Contributor }
+  | { type: 'SET_SHOW_ADD_ROW'; showAddRow: boolean }
+  | { type: 'SET_SHOW_PREVIEW'; showPreview: boolean }
+  | { type: 'SHOW_INVITE_MODAL'; inviteLink: string }
+  | { type: 'CLOSE_INVITE_MODAL' }
+  | { type: 'SIGN_DEMO'; id: number; txHash: string; signedAt: string }
+  | {
+      type: 'CONTRACT_CREATED';
+      selectedContractId: string;
+      contributorDbIds: (string | undefined)[];
+    };
 
 export function contractBuilderReducer(
   state: ContractBuilderState,
   action: ContractBuilderAction,
 ): ContractBuilderState {
   switch (action.type) {
-    case "SET_SELECTED_DRAFT":
+    case 'SET_SELECTED_DRAFT':
       return { ...state, selectedDraft: action.selectedDraft };
 
-    case "SELECT_DRAFT_LOADED":
+    case 'SELECT_DRAFT_LOADED':
       return {
         ...state,
         contributors: action.contributors,
         selectedContractId: action.selectedContractId,
       };
 
-    case "SET_NEW_TITLE":
+    case 'SET_NEW_TITLE':
       return { ...state, newTitle: action.newTitle };
 
-    case "SET_CONTRIBUTORS":
+    case 'SET_CONTRIBUTORS':
       return { ...state, contributors: action.contributors };
 
-    case "UPDATE_CONTRIBUTOR": {
-      const hasSigned = state.contributors.some((c) => c.status === "signed");
+    case 'UPDATE_CONTRIBUTOR': {
+      const hasSigned = state.contributors.some((c) => c.status === 'signed');
       return {
         ...state,
         contributors: state.contributors.map((c) => {
           if (c.id !== action.id) {
-            if (hasSigned && c.status === "signed") {
-              return { ...c, status: "pending" as const, txHash: null, signedAt: null };
+            if (hasSigned && c.status === 'signed') {
+              return {
+                ...c,
+                status: 'pending' as const,
+                txHash: null,
+                signedAt: null,
+              };
             }
             return c;
           }
           return {
             ...c,
-            [action.field]: action.field === "pct" ? (action.value === "" ? "" : Number(action.value)) : action.value,
-            ...(hasSigned && c.status === "signed"
-              ? { status: "pending" as const, txHash: null, signedAt: null }
+            [action.field]:
+              action.field === 'pct'
+                ? action.value === ''
+                  ? ''
+                  : Number(action.value)
+                : action.value,
+            ...(hasSigned && c.status === 'signed'
+              ? { status: 'pending' as const, txHash: null, signedAt: null }
               : {}),
           };
         }),
       };
     }
 
-    case "REMOVE_CONTRIBUTOR":
+    case 'REMOVE_CONTRIBUTOR':
       return {
         ...state,
         contributors: state.contributors.filter((c) => c.id !== action.id),
       };
 
-    case "ADD_CONTRIBUTOR":
+    case 'ADD_CONTRIBUTOR':
       return {
         ...state,
         contributors: [...state.contributors, action.contributor],
         showAddRow: false,
       };
 
-    case "SET_SHOW_ADD_ROW":
+    case 'SET_SHOW_ADD_ROW':
       return { ...state, showAddRow: action.showAddRow };
 
-    case "SET_SHOW_PREVIEW":
+    case 'SET_SHOW_PREVIEW':
       return { ...state, showPreview: action.showPreview };
 
-    case "SHOW_INVITE_MODAL":
+    case 'SHOW_INVITE_MODAL':
       return { ...state, showInviteModal: true, inviteLink: action.inviteLink };
 
-    case "CLOSE_INVITE_MODAL":
+    case 'CLOSE_INVITE_MODAL':
       return { ...state, showInviteModal: false };
 
-    case "SIGN_DEMO":
+    case 'SIGN_DEMO':
       return {
         ...state,
         contributors: state.contributors.map((c) =>
           c.id === action.id
-            ? { ...c, status: "signed" as const, txHash: action.txHash, signedAt: action.signedAt }
+            ? {
+                ...c,
+                status: 'signed' as const,
+                txHash: action.txHash,
+                signedAt: action.signedAt,
+              }
             : c,
         ),
       };
 
-    case "CONTRACT_CREATED":
+    case 'CONTRACT_CREATED':
       return {
         ...state,
         selectedContractId: action.selectedContractId,
@@ -139,9 +167,23 @@ export function selectIsValid(state: ContractBuilderState): boolean {
 }
 
 export function selectAllSigned(state: ContractBuilderState): boolean {
-  return state.contributors.length > 0 && state.contributors.every((c) => c.status === "signed");
+  return (
+    state.contributors.length > 0 &&
+    state.contributors.every((c) => c.status === 'signed')
+  );
 }
 
 export function selectHasSigned(state: ContractBuilderState): boolean {
-  return state.contributors.some((c) => c.status === "signed");
+  return state.contributors.some((c) => c.status === 'signed');
+}
+
+export function selectCurrentUserHasSigned(
+  state: ContractBuilderState,
+  currentUserWallet: string,
+): boolean {
+  return state.contributors.some(
+    (c) =>
+      c.wallet.toLowerCase() === currentUserWallet.toLowerCase() &&
+      c.status === 'signed',
+  );
 }

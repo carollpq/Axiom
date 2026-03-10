@@ -23,7 +23,6 @@ import {
   SIDEBAR_WIDTH_EXPANDED,
   SIDEBAR_WIDTH_COLLAPSED,
 } from '@/src/shared/context/SidebarContext';
-import { WalletSection } from './WalletSection';
 import type { NavItemData, UserProfile } from '@/src/shared/types/shared';
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -134,14 +133,6 @@ export function Sidebar({
           />
         ))}
       </nav>
-
-      {/* Wallet address at bottom */}
-      <div
-        className="shrink-0 border-t"
-        style={{ borderColor: 'rgba(120,110,95,0.2)' }}
-      >
-        <WalletSection user={user} collapsed={collapsed} />
-      </div>
     </aside>
   );
 }

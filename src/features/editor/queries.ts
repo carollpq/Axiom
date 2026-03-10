@@ -1,17 +1,28 @@
-import { cache } from "react";
-import { db } from "@/src/shared/lib/db";
-import { journals, submissions, reputationScores, journalIssues, journalReviewers, users } from "@/src/shared/lib/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { cache } from 'react';
+import { db } from '@/src/shared/lib/db';
+import {
+  journals,
+  submissions,
+  reputationScores,
+  journalIssues,
+  journalReviewers,
+  users,
+} from '@/src/shared/lib/db/schema';
+import { eq, sql } from 'drizzle-orm';
 
 export const listJournals = cache(async () => {
   return db
-    .select({ id: journals.id, name: journals.name, reputationScore: journals.reputationScore })
+    .select({
+      id: journals.id,
+      name: journals.name,
+      reputationScore: journals.reputationScore,
+    })
     .from(journals);
 });
 
 export const getJournalByEditorWallet = cache(async (editorWallet: string) => {
   return db.query.journals.findFirst({
-    where: eq(journals.editorWallet, editorWallet.toLowerCase()),
+    where: eq(sql`LOWER(${journals.editorWallet})`, editorWallet.toLowerCase()),
   });
 });
 
@@ -65,7 +76,51 @@ export const listJournalReviewerWallets = cache(async (journalId: string) => {
   });
 });
 
-export type DbJournalSubmission = Awaited<ReturnType<typeof listJournalSubmissions>>[number];
+/** Get all reviewers in a journal pool with full user info and reputation scores. */
+export const listJournalReviewersWithStatus = cache(
+  async (journalId: string) => {
+    const rows = await db
+      .select({
+        id: journalReviewers.id,
+        journalId: journalReviewers.journalId,
+        wallet: journalReviewers.reviewerWallet,
+        status: journalReviewers.status,
+        addedAt: journalReviewers.addedAt,
+        respondedAt: journalReviewers.respondedAt,
+        user: users,
+        score: reputationScores,
+      })
+      .from(journalReviewers)
+      .leftJoin(
+        users,
+        eq(
+          sql`LOWER(${users.walletAddress})`,
+          sql`LOWER(${journalReviewers.reviewerWallet})`,
+        ),
+      )
+      .leftJoin(
+        reputationScores,
+        eq(
+          sql`LOWER(${reputationScores.userWallet})`,
+          sql`LOWER(${journalReviewers.reviewerWallet})`,
+        ),
+      )
+      .where(eq(journalReviewers.journalId, journalId));
+
+    return rows;
+  },
+);
+
+export type DbJournalSubmission = Awaited<
+  ReturnType<typeof listJournalSubmissions>
+>[number];
 export type DbReviewer = Awaited<ReturnType<typeof listReviewerPool>>[number];
-export type DbReputationScore = Awaited<ReturnType<typeof listReputationScores>>[number];
-export type DbJournalIssue = Awaited<ReturnType<typeof listJournalIssues>>[number];
+export type DbReputationScore = Awaited<
+  ReturnType<typeof listReputationScores>
+>[number];
+export type DbJournalIssue = Awaited<
+  ReturnType<typeof listJournalIssues>
+>[number];
+export type DbJournalReviewerWithStatus = Awaited<
+  ReturnType<typeof listJournalReviewersWithStatus>
+>[number];
