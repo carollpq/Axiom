@@ -1,6 +1,7 @@
 'use client';
 
 import type { Recommendation } from '@/src/features/reviewer/types';
+import { FormSelect } from '@/src/shared/components/form-select.client';
 
 interface RecommendationSectionProps {
   recommendation: Recommendation | null;
@@ -14,21 +15,6 @@ const OPTIONS: Recommendation[] = [
   'Major Revisions',
   'Reject',
 ];
-
-const selectStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '10px 14px',
-  background: 'rgba(30,28,24,0.8)',
-  border: '1px solid rgba(120,110,95,0.25)',
-  borderRadius: 4,
-  color: '#d4ccc0',
-  fontFamily: "'Georgia', serif",
-  fontSize: 13,
-  outline: 'none',
-  boxSizing: 'border-box',
-  appearance: 'none',
-  cursor: 'pointer',
-};
 
 export function RecommendationSection({
   recommendation,
@@ -59,10 +45,10 @@ export function RecommendationSection({
       )}
 
       <div className="relative">
-        <select
+        <FormSelect
           value={recommendation ?? ''}
           onChange={(e) => onChange(e.target.value as Recommendation)}
-          style={selectStyle}
+          style={{ padding: '10px 14px', fontSize: 13 }}
         >
           <option value="" disabled>
             Select your recommendation...
@@ -72,7 +58,7 @@ export function RecommendationSection({
               {o}
             </option>
           ))}
-        </select>
+        </FormSelect>
         <span
           className="absolute right-3 top-1/2 -translate-y-1/2 text-xs pointer-events-none"
           style={{ color: '#6a6050' }}

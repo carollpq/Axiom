@@ -1,4 +1,5 @@
 import { FileDropzone } from '@/src/shared/components/file-dropzone.client';
+import { FormSelect } from '@/src/shared/components/form-select.client';
 import {
   STUDY_TYPE_OPTIONS,
   PAPER_LIMITS,
@@ -120,14 +121,11 @@ export function RegisterPaperForm({
       {/* Study Type */}
       <div className="mb-[18px]">
         <label className="input-label">Study Type</label>
-        <select
+        <FormSelect
           value={upload.studyType}
           onChange={(e) => upload.setStudyType(e.target.value as StudyTypeDb)}
           disabled={isFormBusy}
-          className="w-full rounded-[6px] px-3 py-2 text-[12px] font-serif text-[#d4ccc0] outline-none cursor-pointer"
           style={{
-            background: 'rgba(30,28,24,0.6)',
-            border: '1px solid rgba(120,110,95,0.2)',
             padding: '10px 14px',
             fontSize: 13,
             ...(isFormBusy ? { opacity: 0.5 } : {}),
@@ -138,7 +136,7 @@ export function RegisterPaperForm({
               {opt.label}
             </option>
           ))}
-        </select>
+        </FormSelect>
       </div>
 
       {/* Keywords */}

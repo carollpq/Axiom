@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ReviewContent, type ReviewCriterion } from './review-content';
 import { ReviewerRatingCard } from './reviewer-rating-card.client';
-import { ErrorAlert } from '@/src/shared/components/error-alert';
+import { AlertBanner } from '@/src/shared/components/alert-banner';
 import { rateReviewerAction } from '@/src/features/reviews/actions';
 import { authorResponseAction } from '@/src/features/submissions/actions';
 import { ROUTES } from '@/src/shared/lib/routes';
@@ -119,7 +119,7 @@ export function ReviewResponseClient({
         {paperTitle} &mdash; {journalName}
       </p>
 
-      {error && <ErrorAlert message={error} />}
+      {error && <AlertBanner variant="error">{error}</AlertBanner>}
 
       <p className="text-[12px] text-[#6a6050] mb-6">
         All reviews are complete. Please rate each reviewer and then accept the

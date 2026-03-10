@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { FormInput } from '@/src/shared/components/form-input.client';
+import { FormSelect } from '@/src/shared/components/form-select.client';
 import { SectionLabel } from '@/src/shared/components/section-label';
 import { Button } from '@/src/shared/components/button.client';
 import { publishCriteriaAction } from '@/src/features/submissions/actions';
@@ -140,7 +141,7 @@ export function CriteriaBuilder({
                 />
                 <span className="text-[11px] text-[#8a8070]">Required</span>
               </label>
-              <select
+              <FormSelect
                 value={c.evaluationType}
                 onChange={(e) =>
                   updateCriterion(c.id, {
@@ -148,16 +149,12 @@ export function CriteriaBuilder({
                       .value as ReviewCriterionInput['evaluationType'],
                   })
                 }
-                className="rounded text-[11px] font-serif text-[#d4ccc0] outline-none"
-                style={{
-                  padding: '4px 8px',
-                  background: 'rgba(30,28,24,0.8)',
-                  border: '1px solid rgba(120,110,95,0.25)',
-                }}
+                className="text-[11px]"
+                style={{ padding: '4px 8px', width: 'auto' }}
               >
                 <option value="yes_no_partially">Yes / No / Partially</option>
                 <option value="scale_1_5">Scale 1–5</option>
-              </select>
+              </FormSelect>
             </div>
           </div>
         ))}

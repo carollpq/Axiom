@@ -7,6 +7,7 @@ import { useUser } from '@/src/shared/context/user-context.client';
 import { sha256, canonicalJson } from '@/src/shared/lib/hashing';
 import { signContractAction } from '@/src/features/contracts/actions';
 import { getErrorMessage } from '@/src/shared/lib/errors';
+import { AlertBanner } from '@/src/shared/components/alert-banner';
 
 interface ContractContributor {
   name: string;
@@ -96,18 +97,7 @@ export function ContractsToSign({ contracts, currentWallet }: Props) {
 
   return (
     <div className="flex flex-col gap-3">
-      {error && (
-        <div
-          className="rounded-md px-4 py-3 text-[13px]"
-          style={{
-            background: 'rgba(212,100,90,0.15)',
-            color: '#d4645a',
-            border: '1px solid rgba(212,100,90,0.3)',
-          }}
-        >
-          {error}
-        </div>
-      )}
+      {error && <AlertBanner variant="error">{error}</AlertBanner>}
 
       {visibleContracts.map((contract) => (
         <div

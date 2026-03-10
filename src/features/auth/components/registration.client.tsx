@@ -9,7 +9,7 @@ import type { Role } from '@/src/features/auth/types';
 import { RoleSelector } from './role-selector.client';
 import { OrcidVerificationStep } from './orcid-verification-step.client';
 import { WalletConnectStep } from './wallet-connect-step.client';
-import { ErrorAlert } from '@/src/shared/components/error-alert';
+import { AlertBanner } from '@/src/shared/components/alert-banner';
 import { AuthHeader } from './auth-header';
 import { updateProfileAction } from '@/src/features/auth/actions';
 import { getErrorMessage } from '@/src/shared/lib/errors';
@@ -110,7 +110,7 @@ export function Registration() {
       {/* Error Alert */}
       {state.error && (
         <div className="mb-6">
-          <ErrorAlert message={state.error} />
+          <AlertBanner variant="error">{state.error}</AlertBanner>
         </div>
       )}
 

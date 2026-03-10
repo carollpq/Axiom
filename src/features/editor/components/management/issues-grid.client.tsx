@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { Plus, X } from 'lucide-react';
 import { getErrorMessage } from '@/src/shared/lib/errors';
+import { FormInput } from '@/src/shared/components/form-input.client';
 import type { JournalIssue } from '@/src/features/editor/types';
 import { ModalOverlay } from '@/src/shared/components/modal-overlay.client';
 
@@ -158,16 +159,12 @@ export function IssuesGrid({ issues, onCreateIssue }: IssuesGridProps) {
             <X size={20} />
           </button>
         </div>
-        <input
+        <FormInput
           type="text"
           value={newIssueLabel}
           onChange={(e) => setNewIssueLabel(e.target.value)}
           placeholder="Issue label (e.g. Vol. 1, Issue #3)"
-          className="w-full rounded-[6px] px-3 py-2 text-[13px] font-serif text-[#d4ccc0] outline-none mb-4"
-          style={{
-            background: 'rgba(30,28,24,0.8)',
-            border: '1px solid rgba(120,110,95,0.25)',
-          }}
+          className="rounded-[6px] px-3 py-2 text-[13px] mb-4"
           autoFocus
         />
         <div className="flex justify-end gap-2">

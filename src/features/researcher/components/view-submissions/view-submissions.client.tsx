@@ -8,6 +8,7 @@ import { getStatusColors } from '@/src/shared/lib/status-colors';
 import { authorResponseAction } from '@/src/features/submissions/actions';
 import { rateReviewerAction } from '@/src/features/reviews/actions';
 import { getErrorMessage } from '@/src/shared/lib/errors';
+import { AlertBanner } from '@/src/shared/components/alert-banner';
 import { ReviewsStatusSection } from './reviews-status-section.client';
 
 const AuthorFeedback = dynamic(
@@ -127,16 +128,9 @@ export function ViewSubmissionsClient({ submissions }: Props) {
       </p>
 
       {error && (
-        <div
-          className="rounded-md px-4 py-3 mb-4 text-[13px]"
-          style={{
-            background: 'rgba(212,100,90,0.15)',
-            color: '#d4645a',
-            border: '1px solid rgba(212,100,90,0.3)',
-          }}
-        >
+        <AlertBanner variant="error" className="mb-4">
           {error}
-        </div>
+        </AlertBanner>
       )}
 
       <div className="flex gap-6">

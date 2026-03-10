@@ -9,6 +9,7 @@ import { sha256 } from '@/src/shared/lib/hashing';
 import { uploadToIPFS } from '@/src/features/researcher/upload';
 import { registerVersionAction } from '@/src/features/papers/actions';
 import { getErrorMessage } from '@/src/shared/lib/errors';
+import { AlertBanner } from '@/src/shared/components/alert-banner';
 import { useUpload } from '@/src/features/researcher/hooks/useUpload';
 import { validateUpload } from '@/src/features/researcher/reducers/upload';
 import { PaperRow } from './paper-row';
@@ -181,16 +182,9 @@ export function PaperVersionControlClient({ papers }: Props) {
       </p>
 
       {(error || upload.error) && (
-        <div
-          className="rounded-md px-4 py-3 mb-4 text-[13px]"
-          style={{
-            background: 'rgba(212,100,90,0.15)',
-            color: '#d4645a',
-            border: '1px solid rgba(212,100,90,0.3)',
-          }}
-        >
+        <AlertBanner variant="error" className="mb-4">
           {error || upload.error}
-        </div>
+        </AlertBanner>
       )}
 
       {/* Register New Paper Section */}

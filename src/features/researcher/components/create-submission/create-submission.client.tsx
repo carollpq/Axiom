@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { ErrorAlert } from '@/src/shared/components/error-alert';
+import { AlertBanner } from '@/src/shared/components/alert-banner';
 import { FormSelectRow } from './form-select-row.client';
 import { submitPaperAction } from '@/src/features/papers/actions';
 import { ROUTES } from '@/src/shared/lib/routes';
@@ -111,7 +111,7 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
 
       {error && (
         <div className="mb-4">
-          <ErrorAlert message={error} />
+          <AlertBanner variant="error">{error}</AlertBanner>
         </div>
       )}
 

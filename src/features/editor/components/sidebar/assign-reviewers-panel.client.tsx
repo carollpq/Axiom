@@ -1,6 +1,6 @@
 'use client';
 
-import { CompactSearchInput } from '@/src/shared/components/compact-search-input.client';
+import { SearchInput } from '@/src/shared/components/search-input.client';
 import { Button } from '@/src/shared/components/button.client';
 import { SidebarSection } from '@/src/shared/components/sidebar-section';
 import { ListRow } from '@/src/shared/components/list-row';
@@ -50,7 +50,8 @@ export function AssignReviewersPanel({
           transition: 'opacity 0.2s',
         }}
       >
-        <CompactSearchInput
+        <SearchInput
+          compact
           value={search}
           onChange={onSearchChange}
           placeholder="Search reviewers..."

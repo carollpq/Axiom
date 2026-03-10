@@ -1,6 +1,7 @@
 'use client';
 
 import type { SelectHTMLAttributes } from 'react';
+import { FORM_CONTROL_CLASS, FORM_CONTROL_STYLE } from './form-styles';
 
 type FormSelectProps = SelectHTMLAttributes<HTMLSelectElement>;
 
@@ -12,10 +13,9 @@ export function FormSelect({
 }: FormSelectProps) {
   return (
     <select
-      className={`rounded-[6px] px-3 py-2 text-[12px] font-serif text-[#d4ccc0] outline-none cursor-pointer ${className}`}
+      className={`${FORM_CONTROL_CLASS} rounded-[6px] px-3 py-2 cursor-pointer ${className}`}
       style={{
-        background: 'rgba(30,28,24,0.6)',
-        border: '1px solid rgba(120,110,95,0.2)',
+        ...FORM_CONTROL_STYLE,
         appearance: 'none',
         ...style,
       }}
