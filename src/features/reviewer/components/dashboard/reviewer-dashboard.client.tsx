@@ -54,7 +54,7 @@ export function ReviewerDashboardClient({
 
   const handleCopyLink = async () => {
     if (!userProfile?.walletAddress) return;
-    const url = `${window.location.origin}/api/reviews/reputation?wallet=${userProfile.walletAddress}`;
+    const url = `${window.location.origin}/api/reviewer-reputation?wallet=${userProfile.walletAddress}`;
     await navigator.clipboard.writeText(url);
     setCopied(true);
   };

@@ -1,7 +1,7 @@
-export type UploadFolder = "papers" | "datasets" | "environments";
+export type UploadFolder = 'papers' | 'datasets' | 'environments';
 
 /**
- * Upload a file to IPFS via the /api/upload/ipfs route.
+ * Upload a file to IPFS via the /api/upload-ipfs route.
  * Returns the CID string.
  */
 export async function uploadToIPFS(
@@ -10,17 +10,17 @@ export async function uploadToIPFS(
   folder: UploadFolder,
 ): Promise<string> {
   const formData = new FormData();
-  formData.append("file", file);
-  formData.append("hash", hash);
-  formData.append("folder", folder);
+  formData.append('file', file);
+  formData.append('hash', hash);
+  formData.append('folder', folder);
 
-  const res = await fetch("/api/upload/ipfs", {
-    method: "POST",
+  const res = await fetch('/api/upload-ipfs', {
+    method: 'POST',
     body: formData,
   });
 
   if (!res.ok) {
-    const data = await res.json().catch(() => ({ error: "Upload failed" }));
+    const data = await res.json().catch(() => ({ error: 'Upload failed' }));
     throw new Error(data.error || `IPFS upload failed: ${res.status}`);
   }
 
