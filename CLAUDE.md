@@ -26,7 +26,7 @@ The codebase is a **functional full-stack application**. The researcher and edit
 - ✅ **Rebuttal phase** — Researcher-initiated → researcher responds per-review → editor resolves → HCS anchored → reputation tokens minted
 - ✅ **Timeline enforcement** — Cron job at `/api/cron/deadlines` marks overdue assignments → `review_late` reputation tokens. Smart contract cross-verification via `TimelineEnforcer.sol` on Hedera EVM (chain as source of truth).
 - ✅ **Notifications** — DB-backed with NotificationBell component, 30s polling, integrated across all pipeline stages
-- ✅ **Review transparency** — `GET /api/papers/[id]/reviews` returns anonymized reviews after final decision (confidentialEditorComments always excluded)
+- ✅ **Review transparency** — Anonymized reviews visible after final decision (confidentialEditorComments always excluded)
 - ✅ **Anonymous 5-protocol reviewer ratings** — `POST /api/reviews/[id]/rate` with 5-dimensional rating (actionable feedback, deep engagement, fair/objective, justified recommendation, appropriate expertise) + optional anonymous comment. NO author reference stored.
 - ✅ **PDF viewer** — react-pdf v10 / pdfjs-dist v5 in editor three-column views
 - ✅ **Researcher dashboard** — Real DB data + public explorer + pending actions (including rebuttal links)
@@ -310,16 +310,12 @@ src/
 │   ├── onboarding/page.tsx
 │   ├── invite/[token]/page.tsx    # Invite claim page
 │   ├── api/
-│   │   ├── auth/                  # me/ (GET + PATCH)
-│   │   ├── activity/route.ts      # GET: activity feed
 │   │   ├── contracts/             # CRUD + signing + invite + reset-signatures
-│   │   ├── papers/                # CRUD + versions + submit + content + reviews
-│   │   ├── journals/route.ts      # GET: list journals
+│   │   ├── papers/[id]/content/   # GET: binary PDF bytes
 │   │   ├── submissions/[id]/      # criteria/ + assign-reviewer/ + decision/ + view/ + accept-assignment/ + author-response/ + open-rebuttal/ (deprecated)
 │   │   ├── reviews/[id]/          # GET/POST review + rate/
 │   │   ├── reviews/reputation/    # GET: public reputation verification (DB + Mirror Node)
 │   │   ├── rebuttals/[rebuttalId]/ # respond/ + resolve/
-│   │   ├── notifications/route.ts # GET: list + PATCH: mark read
 │   │   ├── cron/deadlines/route.ts # GET: deadline enforcement cron
 │   │   └── upload/ipfs/            # IPFS upload via web3.storage
 │   ├── (protected)/
@@ -333,7 +329,7 @@ src/
 │   ├── reviewer/                  # Components, hooks, reducers (mock data still)
 │   ├── contracts/                 # DB queries + actions
 │   ├── papers/                    # DB queries + actions
-│   ├── users/                     # DB queries
+│   ├── users/                     # DB queries + actions
 │   ├── reviews/                   # DB queries + actions
 │   ├── rebuttals/                 # DB queries + actions + hooks + components
 │   ├── notifications/             # DB queries + actions + NotificationBell component

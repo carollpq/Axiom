@@ -240,14 +240,8 @@ Most mutations have been converted to server actions. The following API routes r
 |---|---|
 | `GET /api/papers/[id]/content` | Returns binary PDF bytes with custom headers |
 | `GET /api/cron/deadlines` | Called by external cron scheduler with `Authorization: Bearer` |
-| `GET/PATCH /api/notifications` | Polled every 30s via `setInterval` |
 | `GET /api/reviews/reputation` | Public endpoint used as external URL |
 | `POST /api/upload/ipfs` | Multipart `FormData` file upload |
-| `GET /api/papers/[id]/reviews` | Public unauthenticated endpoint |
-| `GET /api/users/search` | Debounced search on keystroke |
-| `GET /api/activity` | Not wired to client yet |
-| `GET /api/auth/me` | Session hydration for `UserContext` |
-| `GET /api/papers/[id]` | Public paper metadata |
 
 API routes that call mutation functions follow the same pattern — auth via `requireSession()`, then call mutations from `mutations.ts`.
 

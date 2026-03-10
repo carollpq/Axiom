@@ -250,7 +250,7 @@ Non-transferable, cross-journal reputation represented as HTS soulbound tokens. 
 
 After a paper is accepted or rejected, reviewer comments become publicly visible (anonymized). This creates accountability without compromising review-phase anonymity.
 
-**Current state:** Fully functional. `GET /api/papers/[id]/reviews` returns anonymized reviews after final decision. Confidential editor comments always excluded. Editor can view full review comments via ReviewCommentsPanel sidebar.
+**Current state:** Fully functional. Anonymized reviews are visible after final decision via `listPublicReviewsForPaper` query. Confidential editor comments always excluded. Editor can view full review comments via ReviewCommentsPanel sidebar.
 
 **Timing:** Comments are NOT public during review. They become public only after the editorial decision is final. This preserves the integrity of the review process while ensuring post-decision transparency.
 
