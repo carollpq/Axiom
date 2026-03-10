@@ -3,8 +3,7 @@
 import { createContext, use, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useActiveAccount } from 'thirdweb/react';
-import { fetchApi } from '@/src/shared/lib/api';
-import { doLogout } from '@/src/shared/lib/auth/actions';
+import { doLogout, getCurrentUser } from '@/src/shared/lib/auth/actions';
 import type { DbUser } from '@/src/shared/types/api';
 
 interface UserContextValue {
@@ -28,7 +27,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   // Restore session on mount (page refresh, SSR rehydration)
   useEffect(() => {
     let cancelled = false;
-    fetchApi<DbUser>('/api/auth/me')
+    getCurrentUser()
       .then((data) => {
         if (!cancelled) setUser(data);
       })
@@ -64,7 +63,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       if (!cancelled) setLoading(true);
     });
 
-    fetchApi<DbUser>('/api/auth/me')
+    getCurrentUser()
       .then((data) => {
         if (!cancelled) setUser(data);
       })
