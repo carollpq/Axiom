@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getSession } from '@/src/shared/lib/auth/auth';
 import { getUserRoles } from '@/src/features/users/queries';
+import { ROLE_DASHBOARD_ROUTES } from '@/src/shared/lib/routes';
 
 export default async function RootPage() {
   const wallet = await getSession();
@@ -15,16 +16,5 @@ export default async function RootPage() {
     redirect('/register');
   }
 
-  const primaryRole = roles[0];
-
-  if (primaryRole === 'reviewer') {
-    redirect('/reviewer');
-  }
-
-  if (primaryRole === 'editor' || primaryRole === 'journal') {
-    redirect('/editor');
-  }
-
-  // Default: researcher / author
-  redirect('/researcher');
+  redirect(ROLE_DASHBOARD_ROUTES[roles[0]] ?? '/researcher');
 }

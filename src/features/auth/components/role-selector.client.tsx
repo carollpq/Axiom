@@ -1,31 +1,20 @@
 'use client';
 
 import { useState } from 'react';
+import { ROLES, ROLE_META } from '@/src/features/auth/types';
 import type { Role } from '@/src/features/auth/types';
 
 interface RoleSelectorProps {
   onSelect: (role: Role) => void;
+  roles?: readonly Role[];
+  label?: string;
 }
 
-const ROLES: { id: Role; label: string; description: string }[] = [
-  {
-    id: 'researcher',
-    label: 'Researcher',
-    description: 'Submit papers and manage authorship',
-  },
-  {
-    id: 'editor',
-    label: 'Journal Editor',
-    description: 'Manage review process and criteria',
-  },
-  {
-    id: 'reviewer',
-    label: 'Peer Reviewer',
-    description: 'Evaluate papers and build reputation',
-  },
-];
-
-export function RoleSelector({ onSelect }: RoleSelectorProps) {
+export function RoleSelector({
+  onSelect,
+  roles = ROLES,
+  label = 'Join as:',
+}: RoleSelectorProps) {
   const [selected, setSelected] = useState<Role | null>(null);
   const [hovered, setHovered] = useState<Role | null>(null);
 
@@ -51,26 +40,26 @@ export function RoleSelector({ onSelect }: RoleSelectorProps) {
   return (
     <div className="space-y-3">
       <p className="text-sm mb-4" style={{ color: '#b0a898' }}>
-        Join as:
+        {label}
       </p>
 
-      {ROLES.map((role) => (
+      {roles.map((id) => (
         <button
-          key={role.id}
-          onClick={() => handleClick(role.id)}
-          onMouseEnter={() => setHovered(role.id)}
+          key={id}
+          onClick={() => handleClick(id)}
+          onMouseEnter={() => setHovered(id)}
           onMouseLeave={() => setHovered(null)}
           className="w-full p-4 rounded border-2 transition-all text-left cursor-pointer"
           style={{
-            borderColor: borderColor(role.id),
-            backgroundColor: bgColor(role.id),
+            borderColor: borderColor(id),
+            backgroundColor: bgColor(id),
           }}
         >
           <p className="font-semibold" style={{ color: '#d4ccc0' }}>
-            {role.label}
+            {ROLE_META[id].label}
           </p>
           <p className="text-xs mt-1" style={{ color: '#8a8070' }}>
-            {role.description}
+            {ROLE_META[id].description}
           </p>
         </button>
       ))}

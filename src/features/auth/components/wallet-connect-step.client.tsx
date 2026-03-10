@@ -3,10 +3,12 @@
 import { ConnectButton } from 'thirdweb/react';
 import { client } from '@/src/shared/lib/thirdweb';
 import { CONNECT_AUTH } from '@/src/shared/lib/auth/connect-auth';
+import { ROLE_META } from '@/src/features/auth/types';
+import type { Role } from '@/src/features/auth/types';
 import { CONNECT_BUTTON_STYLE } from './connect-button-style';
 
 interface WalletConnectStepProps {
-  selectedRole: string;
+  selectedRole: Role;
   hasAccount: boolean;
   onBack: () => void;
   onContinue: () => void;
@@ -25,7 +27,8 @@ export function WalletConnectStep({
         style={{ backgroundColor: 'rgba(45, 42, 38, 0.6)' }}
       >
         <p className="text-sm mb-3" style={{ color: '#b0a898' }}>
-          Connect your Web3 wallet to sign in as a {selectedRole}:
+          Connect your Web3 wallet to sign in as a{' '}
+          {ROLE_META[selectedRole].label}:
         </p>
 
         <div className="flex justify-center">

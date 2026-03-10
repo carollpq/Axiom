@@ -1,22 +1,15 @@
+import { ROLE_META } from '@/src/features/auth/types';
 import type { Role } from '@/src/features/auth/types';
 
-const ROLE_CONFIG: Record<Role, { title: string; subtitle: string }> = {
-  researcher: {
-    title: 'Researcher Dashboard',
-    subtitle: 'Manage your research, contracts, and submissions',
-  },
-  editor: {
-    title: 'Editor Dashboard',
-    subtitle: 'Manage submissions, review criteria, and publication decisions',
-  },
-  reviewer: {
-    title: 'Reviewer Dashboard',
-    subtitle: 'Track reviews, build reputation, view feedback',
-  },
+const DASHBOARD_SUBTITLES: Record<Role, string> = {
+  researcher: 'Manage your research, contracts, and submissions',
+  editor: 'Manage submissions, review criteria, and publication decisions',
+  reviewer: 'Track reviews, build reputation, view feedback',
 };
 
 export function DashboardHeader({ role }: { role: Role }) {
-  const { title, subtitle } = ROLE_CONFIG[role];
+  const title = `${ROLE_META[role].label} Dashboard`;
+  const subtitle = DASHBOARD_SUBTITLES[role];
   return (
     <div className="mb-8">
       <h1 className="text-[28px] font-normal text-[#e8e0d4] m-0 tracking-[0.5px]">

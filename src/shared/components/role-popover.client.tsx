@@ -4,9 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useActiveWallet, useDisconnect } from 'thirdweb/react';
 import { LogOut } from 'lucide-react';
 import { doLogout } from '@/src/shared/lib/auth/actions';
-import { ROLES } from '@/src/features/auth/types';
+import { ROLES, ROLE_META } from '@/src/features/auth/types';
 import { ROLE_DASHBOARD_ROUTES } from '@/src/shared/lib/routes';
-import { capitalize } from '@/src/shared/lib/format';
 import type { UserProfile } from '@/src/shared/types/shared';
 
 interface RolePopoverProps {
@@ -71,7 +70,7 @@ export function RolePopover({ user, onClose }: RolePopoverProps) {
                 e.currentTarget.style.background = 'transparent';
             }}
           >
-            {capitalize(role)}
+            {ROLE_META[role].label}
             {isActive && (
               <span className="ml-2 text-[10px]" style={{ color: '#6a6050' }}>
                 (current)
