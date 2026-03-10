@@ -28,7 +28,7 @@ export function ContractPreview() {
     setError(null);
     if (journals.length === 0) {
       try {
-        const rows = (await listJournalsAction()) as RegisteredJournal[];
+        const rows = await listJournalsAction();
         setJournals(rows ?? []);
       } catch {
         setError('Could not load journals. Please try again.');

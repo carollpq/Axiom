@@ -2,7 +2,8 @@
 
 import { cookies } from 'next/headers';
 import type { LoginPayload } from 'thirdweb/auth';
-import { auth, AUTH_COOKIE } from '@/src/shared/lib/auth/auth';
+import { auth, AUTH_COOKIE, getSession } from '@/src/shared/lib/auth/auth';
+import { getOrCreateUser } from '@/src/features/users/queries';
 import type { DbUser } from '@/src/shared/types/api';
 
 const SEVEN_DAYS = 60 * 60 * 24 * 7;
@@ -39,15 +40,12 @@ export async function doLogout() {
 }
 
 export async function isLoggedIn(address: string): Promise<boolean> {
-  const { getSession } = await import('@/src/shared/lib/auth/auth');
   const session = await getSession();
   return session === address.toLowerCase();
 }
 
 export async function getCurrentUser(): Promise<DbUser | null> {
-  const { getSession } = await import('@/src/shared/lib/auth/auth');
   const wallet = await getSession();
   if (!wallet) return null;
-  const { getOrCreateUser } = await import('@/src/features/users/queries');
   return getOrCreateUser(wallet);
 }

@@ -14,13 +14,13 @@ import {
   removeReviewerFromPool,
 } from '@/src/features/editor/mutations';
 import { createNotification } from '@/src/features/notifications/mutations';
+import { listJournals } from '@/src/features/editor/queries';
 import { db } from '@/src/shared/lib/db';
 import { journals } from '@/src/shared/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
 /** Thin wrapper so client components can call the cached query. */
 export async function listJournalsAction() {
-  const { listJournals } = await import('@/src/features/editor/queries');
   return listJournals();
 }
 

@@ -39,9 +39,7 @@ export function AuthorSearch({ onSelect, onCancel }: AuthorSearchProps) {
     timerRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const data = (await searchUsersAction(
-          value.trim(),
-        )) as UserSearchResult[];
+        const data = await searchUsersAction(value.trim());
         setResults(data ?? []);
         setOpen(true);
       } catch {

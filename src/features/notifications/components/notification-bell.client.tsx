@@ -1,9 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bell } from 'lucide-react';
 import { useClickOutside } from '@/src/shared/hooks/useClickOutside';
+import {
+  getNotificationsAction,
+  markNotificationReadAction,
+  markAllNotificationsReadAction,
+} from '@/src/features/notifications/actions';
 
 const BELL_BUTTON_STYLE = {
   background: 'transparent',
@@ -30,20 +35,15 @@ interface Notification {
 export function NotificationBell() {
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const unreadCount = useMemo(
-    () => notifications.filter((n) => !n.isRead).length,
-    [notifications],
-  );
-
   const fetchNotifications = useCallback(async () => {
     try {
-      const res = await fetch('/api/notifications');
-      if (!res.ok) return;
-      const data = (await res.json()) as { items: Notification[] };
-      setNotifications(data.items);
+      const { items, unreadCount: count } = await getNotificationsAction();
+      setNotifications(items as Notification[]);
+      setUnreadCount(count);
     } catch {
       // Silently fail — notifications are non-critical
     }
@@ -65,26 +65,28 @@ export function NotificationBell() {
   );
 
   async function handleMarkAllRead() {
-    await fetch('/api/notifications', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ markAll: true }),
-    });
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    try {
+      await markAllNotificationsReadAction();
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch {
+      // Silently fail
+    }
   }
 
   async function handleClick(n: Notification) {
     if (!n.isRead) {
-      await fetch('/api/notifications', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: n.id }),
-      });
-      setNotifications((prev) =>
-        prev.map((item) =>
-          item.id === n.id ? { ...item, isRead: true } : item,
-        ),
-      );
+      try {
+        await markNotificationReadAction(n.id);
+        setNotifications((prev) =>
+          prev.map((item) =>
+            item.id === n.id ? { ...item, isRead: true } : item,
+          ),
+        );
+        setUnreadCount((c) => Math.max(0, c - 1));
+      } catch {
+        // Silently fail
+      }
     }
     if (n.link) {
       router.push(n.link);
