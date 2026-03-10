@@ -89,6 +89,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Use this hook for all authenticated UI inside (protected)/ routes.
+ * It wraps Thirdweb's useActiveAccount() and adds:
+ *  - `user`        — DB record (role, ORCID, display name)
+ *  - `loading`     — true while the session is still rehydrating
+ *  - `isConnected` — safe wallet-connected flag (false during rehydration)
+ *
+ * Only use useActiveAccount() directly in code that runs OUTSIDE
+ * UserProvider (login, registration) or inside UserProvider itself.
+ */
 export function useUser(): UserContextValue {
   const ctx = use(UserContext);
   if (!ctx) throw new Error('useUser must be used within UserProvider');

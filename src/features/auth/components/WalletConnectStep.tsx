@@ -1,8 +1,9 @@
-"use client";
+'use client';
 
-import { ConnectButton } from "thirdweb/react";
-import { client } from "@/src/shared/lib/thirdweb";
-import { CONNECT_AUTH } from "@/src/shared/lib/auth/connect-auth";
+import { ConnectButton } from 'thirdweb/react';
+import { client } from '@/src/shared/lib/thirdweb';
+import { CONNECT_AUTH } from '@/src/shared/lib/auth/connect-auth';
+import { CONNECT_BUTTON_STYLE } from './connect-button-style';
 
 interface WalletConnectStepProps {
   selectedRole: string;
@@ -21,9 +22,9 @@ export function WalletConnectStep({
     <div className="space-y-4">
       <div
         className="p-4 rounded"
-        style={{ backgroundColor: "rgba(45, 42, 38, 0.6)" }}
+        style={{ backgroundColor: 'rgba(45, 42, 38, 0.6)' }}
       >
-        <p className="text-sm mb-3" style={{ color: "#b0a898" }}>
+        <p className="text-sm mb-3" style={{ color: '#b0a898' }}>
           Connect your Web3 wallet to sign in as a {selectedRole}:
         </p>
 
@@ -33,18 +34,8 @@ export function WalletConnectStep({
             auth={CONNECT_AUTH}
             theme="dark"
             connectButton={{
-              label: "Connect Wallet",
-              style: {
-                backgroundColor: "#c9a44a",
-                color: "#1a1816",
-                border: "none",
-                borderRadius: "6px",
-                fontSize: "13px",
-                fontFamily: "Georgia, serif",
-                padding: "8px 24px",
-                height: "38px",
-                fontWeight: "600",
-              },
+              label: 'Connect Wallet',
+              style: CONNECT_BUTTON_STYLE,
             }}
           />
         </div>
@@ -55,17 +46,17 @@ export function WalletConnectStep({
           onClick={onBack}
           className="flex-1 py-2 text-sm rounded transition-all cursor-pointer"
           style={{
-            backgroundColor: "transparent",
-            color: "#b0a898",
-            border: "1px solid #5a4a3a",
+            backgroundColor: 'transparent',
+            color: '#b0a898',
+            border: '1px solid #5a4a3a',
           }}
-          onMouseEnter={e => {
-            e.currentTarget.style.borderColor = "rgba(201, 164, 74, 0.5)";
-            e.currentTarget.style.color = "#d4ccc0";
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'rgba(201, 164, 74, 0.5)';
+            e.currentTarget.style.color = '#d4ccc0';
           }}
-          onMouseLeave={e => {
-            e.currentTarget.style.borderColor = "#5a4a3a";
-            e.currentTarget.style.color = "#b0a898";
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = '#5a4a3a';
+            e.currentTarget.style.color = '#b0a898';
           }}
         >
           Back
@@ -75,14 +66,14 @@ export function WalletConnectStep({
             onClick={onContinue}
             className="flex-1 py-2 text-sm rounded font-semibold transition-all cursor-pointer"
             style={{
-              backgroundColor: "#c9a44a",
-              color: "#1a1816",
+              backgroundColor: '#c9a44a',
+              color: '#1a1816',
             }}
-            onMouseEnter={e => {
-              e.currentTarget.style.backgroundColor = "#d4b45a";
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#d4b45a';
             }}
-            onMouseLeave={e => {
-              e.currentTarget.style.backgroundColor = "#c9a44a";
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#c9a44a';
             }}
           >
             Continue

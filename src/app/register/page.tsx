@@ -1,12 +1,12 @@
 'use client';
 
 import { AuthPageShell } from '@/src/features/auth/components/auth-page-shell.client';
-import { Login } from '@/src/features/auth/components/login.client';
+import { Registration } from '@/src/features/auth/components/registration.client';
 
-export default function LoginPage() {
+export default function RegisterPage() {
   return (
     <AuthPageShell>
-      <Login />
+      <Registration />
     </AuthPageShell>
   );
 }
