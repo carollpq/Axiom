@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { fetchApi } from '@/src/shared/lib/api';
 import { ModalOverlay } from '@/src/shared/components/modal-overlay.client';
 import { useContractContext } from '@/src/features/researcher/context/contract-context.client';
 import { submitPaperAction } from '@/src/features/papers/actions';
+import { listJournalsAction } from '@/src/features/editor/actions';
 import type { RegisteredJournal } from '@/src/features/researcher/types/paper-registration';
 
 export function ContractPreview() {
@@ -28,7 +28,7 @@ export function ContractPreview() {
     setError(null);
     if (journals.length === 0) {
       try {
-        const rows = await fetchApi<RegisteredJournal[]>('/api/journals');
+        const rows = (await listJournalsAction()) as RegisteredJournal[];
         setJournals(rows ?? []);
       } catch {
         setError('Could not load journals. Please try again.');

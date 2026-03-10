@@ -18,6 +18,12 @@ import { db } from '@/src/shared/lib/db';
 import { journals } from '@/src/shared/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
+/** Thin wrapper so client components can call the cached query. */
+export async function listJournalsAction() {
+  const { listJournals } = await import('@/src/features/editor/queries');
+  return listJournals();
+}
+
 export async function updateJournalAction(
   journalId: string,
   data: { aimsAndScope?: string; submissionCriteria?: string },
