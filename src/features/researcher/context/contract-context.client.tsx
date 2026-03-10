@@ -5,7 +5,7 @@ import type {
   Contributor,
   ExistingDraft,
 } from '@/src/features/researcher/types/contract';
-import type { UserSearchResult } from '@/src/shared/types/api';
+import type { UserSearchResult } from '@/src/shared/types/domain';
 
 interface ContractContextState {
   contributors: Contributor[];

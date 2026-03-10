@@ -4,11 +4,11 @@ import { createContext, use, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useActiveAccount } from 'thirdweb/react';
 import { doLogout, getCurrentUser } from '@/src/shared/lib/auth/actions';
-import type { DbUser } from '@/src/shared/types/api';
+import type { User } from '@/src/shared/types/domain';
 
 interface UserContextValue {
   account: ReturnType<typeof useActiveAccount>;
-  user: DbUser | null;
+  user: User | null;
   loading: boolean;
   isConnected: boolean;
 }
@@ -18,7 +18,7 @@ const UserContext = createContext<UserContextValue | null>(null);
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const account = useActiveAccount();
-  const [user, setUser] = useState<DbUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   // Track whether the wallet has resolved at least once so we don't
   // mistake the initial undefined (Thirdweb rehydrating) for a disconnect.

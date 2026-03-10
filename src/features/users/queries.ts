@@ -1,8 +1,8 @@
-import { cache } from "react";
-import { db } from "@/src/shared/lib/db";
-import { users } from "@/src/shared/lib/db/schema";
-import { eq, or, ilike } from "drizzle-orm";
-import type { UserSearchResult } from "@/src/shared/types/api";
+import { cache } from 'react';
+import { db } from '@/src/shared/lib/db';
+import { users } from '@/src/shared/lib/db/schema';
+import { eq, or, ilike } from 'drizzle-orm';
+import type { UserSearchResult } from '@/src/shared/types/domain';
 
 export const getUserByWallet = cache(async (walletAddress: string) => {
   return (
@@ -42,7 +42,7 @@ export async function getOrCreateUser(walletAddress: string) {
 }
 
 export async function searchUsers(query: string): Promise<UserSearchResult[]> {
-  const escaped = query.replace(/[%_]/g, "\\$&");
+  const escaped = query.replace(/[%_]/g, '\\$&');
   const pattern = `%${escaped}%`;
   return db
     .select({

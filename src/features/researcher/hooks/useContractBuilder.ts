@@ -11,7 +11,7 @@ import { useCurrentUser } from '@/src/shared/hooks/useCurrentUser';
 import { mockTxHash } from '@/src/shared/lib/format';
 import { hashString, canonicalJson } from '@/src/shared/lib/hashing';
 import { mapApiContributors } from '@/src/features/researcher/mappers/contract';
-import type { ApiContract, UserSearchResult } from '@/src/shared/types/api';
+import type { Contract, UserSearchResult } from '@/src/shared/types/domain';
 import {
   createContractAction,
   addContributorAction,

@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import type { LoginPayload } from 'thirdweb/auth';
 import { auth, AUTH_COOKIE, getSession } from '@/src/shared/lib/auth/auth';
 import { getOrCreateUser } from '@/src/features/users/queries';
-import type { DbUser } from '@/src/shared/types/api';
+import type { User } from '@/src/shared/types/domain';
 
 const SEVEN_DAYS = 60 * 60 * 24 * 7;
 const isProd = process.env.NODE_ENV === 'production';
@@ -44,7 +44,7 @@ export async function isLoggedIn(address: string): Promise<boolean> {
   return session === address.toLowerCase();
 }
 
-export async function getCurrentUser(): Promise<DbUser | null> {
+export async function getCurrentUser(): Promise<User | null> {
   const wallet = await getSession();
   if (!wallet) return null;
   return getOrCreateUser(wallet);

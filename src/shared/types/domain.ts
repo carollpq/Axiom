@@ -1,7 +1,7 @@
-// Shared API response types — match what route handlers actually return.
-// Import these in hooks instead of re-declaring local interfaces.
+// Domain model types — canonical shapes shared across features.
+// Import these in hooks, mappers, and pages instead of re-declaring local interfaces.
 
-export interface ApiPaperVersion {
+export interface PaperVersion {
   id: string;
   versionNumber: number;
   paperHash: string;
@@ -15,7 +15,7 @@ export interface ApiPaperVersion {
   createdAt: string;
 }
 
-export interface ApiContractContributor {
+export interface ContractContributor {
   id: string;
   contributorWallet: string;
   contributorName: string | null;
@@ -27,17 +27,17 @@ export interface ApiContractContributor {
   isCreator: boolean;
 }
 
-export interface ApiContract {
+export interface Contract {
   id: string;
   paperTitle: string;
   paperId: string | null;
   status: string;
   contractHash: string | null;
   createdAt: string;
-  contributors: ApiContractContributor[];
+  contributors: ContractContributor[];
 }
 
-export interface ApiPaper {
+export interface Paper {
   id: string;
   title: string;
   status: string;
@@ -47,10 +47,10 @@ export interface ApiPaper {
   litAccessConditionsJson?: string | null;
   createdAt: string;
   updatedAt: string;
-  versions?: ApiPaperVersion[];
+  versions?: PaperVersion[];
   contracts?: {
     contractHash?: string | null;
-    contributors?: ApiContractContributor[];
+    contributors?: ContractContributor[];
   }[];
   owner?: {
     displayName: string | null;
@@ -60,7 +60,7 @@ export interface ApiPaper {
   } | null;
 }
 
-export interface DbUser {
+export interface User {
   id: string;
   walletAddress: string;
   did: string | null;
@@ -71,4 +71,7 @@ export interface DbUser {
   researchFields: string[];
 }
 
-export type UserSearchResult = Pick<DbUser, "id" | "walletAddress" | "displayName" | "orcidId">;
+export type UserSearchResult = Pick<
+  User,
+  'id' | 'walletAddress' | 'displayName' | 'orcidId'
+>;

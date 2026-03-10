@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useClickOutside } from '@/src/shared/hooks/useClickOutside';
 import { searchUsersAction } from '@/src/features/users/actions';
-import type { UserSearchResult } from '@/src/shared/types/api';
+import type { UserSearchResult } from '@/src/shared/types/domain';
 
 interface AuthorSearchProps {
   onSelect: (result: UserSearchResult) => void;
