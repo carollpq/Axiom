@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/src/shared/components/confirm-dialog.client';
+import { acceptAssignmentAction } from '@/src/features/submissions/actions';
 import type { AssignedReviewExtended } from '@/src/features/reviewer/types';
 import {
   getUrgencyColor,
@@ -29,20 +30,7 @@ export function InviteSidebar({ paper, onRemove }: InviteSidebarProps) {
       if (!paper.submissionId || isLoading) return;
       setIsLoading(true);
       try {
-        const res = await fetch(
-          `/api/submissions/${paper.submissionId}/accept-assignment`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action }),
-          },
-        );
-        if (!res.ok) {
-          const error = await res
-            .json()
-            .catch(() => ({ error: 'Unknown error' }));
-          throw new Error(error.error || `Failed to ${action} assignment`);
-        }
+        await acceptAssignmentAction(paper.submissionId, action);
         onRemove(paper.submissionId);
         router.refresh();
         toast.success(

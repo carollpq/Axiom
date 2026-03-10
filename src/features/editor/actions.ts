@@ -1,85 +1,112 @@
-import { db } from "@/src/shared/lib/db";
-import {
-  journals,
-  journalIssues,
-  issuePapers,
-  journalReviewers,
-} from "@/src/shared/lib/db/schema";
-import { and, eq, sql } from "drizzle-orm";
+'use server';
 
-export async function updateJournalMetadata(
+import { after } from 'next/server';
+import {
+  requireAuth,
+  requireJournalEditor,
+} from '@/src/shared/lib/server-action-helpers';
+import {
+  updateJournalMetadata,
+  createJournalIssue,
+  addPaperToIssue,
+  removePaperFromIssue,
+  addReviewerToPool,
+  removeReviewerFromPool,
+} from '@/src/features/editor/mutations';
+import { createNotification } from '@/src/features/notifications/mutations';
+import { db } from '@/src/shared/lib/db';
+import { journals } from '@/src/shared/lib/db/schema';
+import { eq } from 'drizzle-orm';
+
+export async function updateJournalAction(
   journalId: string,
   data: { aimsAndScope?: string; submissionCriteria?: string },
 ) {
-  const { aimsAndScope, submissionCriteria } = data;
-  if (aimsAndScope === undefined && submissionCriteria === undefined) return;
+  const wallet = await requireAuth();
+  await requireJournalEditor(journalId, wallet);
 
-  return db
-    .update(journals)
-    .set({
-      ...(aimsAndScope !== undefined && { aimsAndScope }),
-      ...(submissionCriteria !== undefined && { submissionCriteria }),
-      updatedAt: sql`now()`,
-    })
-    .where(eq(journals.id, journalId));
+  await updateJournalMetadata(journalId, data);
+  return { ok: true };
 }
 
-export async function createJournalIssue(journalId: string, label: string) {
-  const [row] = await db
-    .insert(journalIssues)
-    .values({ journalId, label })
-    .returning();
+export async function createIssueAction(journalId: string, label: string) {
+  const wallet = await requireAuth();
+  await requireJournalEditor(journalId, wallet);
+
+  if (!label?.trim()) throw new Error('Label is required');
+
+  return createJournalIssue(journalId, label.trim());
+}
+
+export async function addReviewerToPoolAction(
+  journalId: string,
+  reviewerWallet: string,
+) {
+  const wallet = await requireAuth();
+  await requireJournalEditor(journalId, wallet);
+
+  if (!reviewerWallet) throw new Error('reviewerWallet is required');
+
+  const row = await addReviewerToPool(journalId, reviewerWallet);
+
+  // Non-blocking: notify the reviewer
+  after(async () => {
+    const [journalRow] = await db
+      .select({ name: journals.name })
+      .from(journals)
+      .where(eq(journals.id, journalId))
+      .limit(1);
+
+    if (journalRow) {
+      await createNotification({
+        userWallet: reviewerWallet,
+        type: 'pool_added',
+        title: 'Added to reviewer pool',
+        body: `You have been added to the reviewer pool for ${journalRow.name}. You may be assigned to review submissions.`,
+        link: `/reviewer`,
+      });
+    }
+  });
+
   return row;
 }
 
-export async function deleteJournalIssue(issueId: string) {
-  await db.delete(issuePapers).where(eq(issuePapers.issueId, issueId));
-  await db.delete(journalIssues).where(eq(journalIssues.id, issueId));
+export async function removeReviewerFromPoolAction(
+  journalId: string,
+  reviewerWallet: string,
+) {
+  const wallet = await requireAuth();
+  await requireJournalEditor(journalId, wallet);
+
+  if (!reviewerWallet) throw new Error('reviewerWallet is required');
+
+  await removeReviewerFromPool(journalId, reviewerWallet);
+  return { ok: true };
 }
 
-export async function addPaperToIssue(issueId: string, submissionId: string) {
-  const [row] = await db
-    .insert(issuePapers)
-    .values({ issueId, submissionId })
-    .returning();
-  return row;
-}
-
-export async function removePaperFromIssue(
+export async function addPaperToIssueAction(
+  journalId: string,
   issueId: string,
   submissionId: string,
 ) {
-  await db
-    .delete(issuePapers)
-    .where(
-      and(
-        eq(issuePapers.issueId, issueId),
-        eq(issuePapers.submissionId, submissionId),
-      ),
-    );
+  const wallet = await requireAuth();
+  await requireJournalEditor(journalId, wallet);
+
+  if (!submissionId) throw new Error('submissionId is required');
+
+  return addPaperToIssue(issueId, submissionId);
 }
 
-export async function addReviewerToPool(
+export async function removePaperFromIssueAction(
   journalId: string,
-  reviewerWallet: string,
+  issueId: string,
+  submissionId: string,
 ) {
-  const [row] = await db
-    .insert(journalReviewers)
-    .values({ journalId, reviewerWallet: reviewerWallet.toLowerCase() })
-    .returning();
-  return row;
-}
+  const wallet = await requireAuth();
+  await requireJournalEditor(journalId, wallet);
 
-export async function removeReviewerFromPool(
-  journalId: string,
-  reviewerWallet: string,
-) {
-  await db
-    .delete(journalReviewers)
-    .where(
-      and(
-        eq(journalReviewers.journalId, journalId),
-        eq(journalReviewers.reviewerWallet, reviewerWallet.toLowerCase()),
-      ),
-    );
+  if (!submissionId) throw new Error('submissionId is required');
+
+  await removePaperFromIssue(issueId, submissionId);
+  return { ok: true };
 }

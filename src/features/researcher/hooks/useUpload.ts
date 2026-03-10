@@ -3,11 +3,14 @@
 import { useReducer, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/src/shared/hooks/useCurrentUser';
-import { fetchApi } from '@/src/shared/lib/api';
 import { hashFile } from '@/src/shared/lib/hashing';
 import { isLitConfigured } from '@/src/shared/lib/lit/config';
 import { uploadToIPFS } from '@/src/shared/lib/upload';
-import type { ApiPaperVersion } from '@/src/shared/types/api';
+import {
+  createPaperAction,
+  registerVersionAction,
+  updatePaperAction,
+} from '@/src/features/papers/actions';
 import {
   uploadReducer,
   initialUploadState,
@@ -129,33 +132,25 @@ export function useUpload(
         'papers',
       );
 
-      const paper = await fetchApi<{ id: string }>('/api/papers', {
-        method: 'POST',
-        body: JSON.stringify({
-          title: state.title,
-          abstract: state.abstract,
-          studyType: state.studyType,
-          litDataToEncryptHash,
-          litAccessConditionsJson,
-        }),
+      const paper = await createPaperAction({
+        title: state.title,
+        abstract: state.abstract,
+        studyType: state.studyType,
+        litDataToEncryptHash,
+        litAccessConditionsJson,
       });
 
-      await fetchApi<ApiPaperVersion>(`/api/papers/${paper.id}/versions`, {
-        method: 'POST',
-        body: JSON.stringify({
-          paperHash: state.fileHash,
-          fileStorageKey,
-          datasetHash: null,
-          codeRepoUrl: null,
-          codeCommitHash: null,
-          envSpecHash: null,
-        }),
+      await registerVersionAction({
+        paperId: paper.id,
+        paperHash: state.fileHash,
+        fileStorageKey,
+        datasetHash: null,
+        codeRepoUrl: null,
+        codeCommitHash: null,
+        envSpecHash: null,
       });
 
-      await fetchApi(`/api/papers/${paper.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: 'registered' }),
-      });
+      await updatePaperAction(paper.id, { status: 'registered' });
 
       dispatch({ type: 'REGISTER_SUCCESS', paperId: paper.id });
       toast.success('Paper registered successfully');

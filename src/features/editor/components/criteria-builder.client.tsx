@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { FormInput } from '@/src/shared/components/form-input.client';
 import { SectionLabel } from '@/src/shared/components/section-label';
 import { Button } from '@/src/shared/components/button.client';
+import { publishCriteriaAction } from '@/src/features/submissions/actions';
 
 export interface ReviewCriterionInput {
   id: string;
@@ -64,29 +65,7 @@ export function CriteriaBuilder({
     setError(null);
 
     try {
-      const response = await fetch(
-        `/api/submissions/${submissionId}/criteria`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ criteria }),
-        },
-      );
-
-      if (!response.ok) {
-        const err = await response
-          .json()
-          .catch(() => ({ error: 'Unknown error' }));
-        setError(
-          (err as { error?: string }).error ?? 'Failed to publish criteria',
-        );
-        return;
-      }
-
-      const result = (await response.json()) as {
-        criteriaHash: string;
-        hederaTxId?: string;
-      };
+      const result = await publishCriteriaAction(submissionId, criteria);
       setPublished(true);
       onPublished?.(result.criteriaHash, result.hederaTxId);
     } catch {

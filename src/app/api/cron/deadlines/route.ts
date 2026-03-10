@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { listOverdueAssignments } from '@/src/features/reviews/queries';
-import { markAssignmentLate } from '@/src/features/reviews/actions';
-import { createNotification } from '@/src/features/notifications/actions';
+import { markAssignmentLate } from '@/src/features/reviews/mutations';
+import { createNotification } from '@/src/features/notifications/mutations';
 import { recordReputation } from '@/src/shared/lib/api-helpers';
 import { checkDeadline } from '@/src/shared/lib/hedera/timeline-enforcer';
 

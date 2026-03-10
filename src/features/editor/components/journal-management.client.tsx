@@ -7,6 +7,11 @@ import type { PoolReviewer, JournalIssue } from '@/src/features/editor/types';
 import { IssuesGrid } from './management/issues-grid.client';
 import { EditableSection } from './management/editable-section.client';
 import { ReviewerGrid } from './management/reviewer-grid.client';
+import {
+  updateJournalAction,
+  createIssueAction,
+  addReviewerToPoolAction,
+} from '@/src/features/editor/actions';
 
 interface JournalManagementProps {
   journalId: string;
@@ -29,32 +34,17 @@ export function JournalManagement({
 }: JournalManagementProps) {
   const router = useRouter();
 
-  const postAndRefresh = useCallback(
-    async (path: string, body: Record<string, unknown>, method = 'POST') => {
-      const res = await fetch(`/api/journals/${journalId}${path}`, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(err.error || 'Request failed');
-      }
-      router.refresh();
-    },
-    [journalId, router],
-  );
-
   const handleSaveAims = useCallback(
     async (value: string) => {
       if (!journalId) {
         toast.error('No journal associated with your account');
         return;
       }
-      await postAndRefresh('', { aimsAndScope: value }, 'PATCH');
+      await updateJournalAction(journalId, { aimsAndScope: value });
+      router.refresh();
       toast.success('Aims and scope saved');
     },
-    [postAndRefresh, journalId],
+    [journalId, router],
   );
 
   const handleSaveCriteria = useCallback(
@@ -63,10 +53,11 @@ export function JournalManagement({
         toast.error('No journal associated with your account');
         return;
       }
-      await postAndRefresh('', { submissionCriteria: value }, 'PATCH');
+      await updateJournalAction(journalId, { submissionCriteria: value });
+      router.refresh();
       toast.success('Submission criteria saved');
     },
-    [postAndRefresh, journalId],
+    [journalId, router],
   );
 
   const handleCreateIssue = useCallback(
@@ -75,10 +66,11 @@ export function JournalManagement({
         toast.error('No journal associated with your account');
         return;
       }
-      await postAndRefresh('/issues', { label });
+      await createIssueAction(journalId, label);
+      router.refresh();
       toast.success('Issue created');
     },
-    [postAndRefresh, journalId],
+    [journalId, router],
   );
 
   const handleAddReviewer = useCallback(
@@ -87,10 +79,11 @@ export function JournalManagement({
         toast.error('No journal associated with your account');
         return;
       }
-      await postAndRefresh('/reviewers', { reviewerWallet: wallet });
+      await addReviewerToPoolAction(journalId, wallet);
+      router.refresh();
       toast.success('Reviewer added to pool');
     },
-    [postAndRefresh, journalId],
+    [journalId, router],
   );
 
   if (!journalId) {

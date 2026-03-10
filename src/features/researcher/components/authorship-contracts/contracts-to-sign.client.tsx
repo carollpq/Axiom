@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/src/shared/hooks/useCurrentUser';
 import { hashString, canonicalJson } from '@/src/shared/lib/hashing';
+import { signContractAction } from '@/src/features/contracts/actions';
 
 interface ContractContributor {
   name: string;
@@ -26,6 +28,7 @@ interface Props {
 
 export function ContractsToSign({ contracts, currentWallet }: Props) {
   const { account } = useCurrentUser();
+  const router = useRouter();
   const [signing, setSigning] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
@@ -51,22 +54,15 @@ export function ContractsToSign({ contracts, currentWallet }: Props) {
       const contractHash = await hashString(canonicalJson(payload));
       const signature = await account.signMessage({ message: contractHash });
 
-      const res = await fetch(`/api/contracts/${contractId}/sign`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contributorWallet: currentWallet,
-          signature,
-          contractHash,
-        }),
+      await signContractAction({
+        contractId,
+        contributorWallet: currentWallet,
+        signature,
+        contractHash,
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Signing failed');
-      }
-
       setDismissed((prev) => new Set(prev).add(contractId));
+      router.refresh();
       toast.success('Contract signed successfully');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Signing failed';

@@ -1,7 +1,7 @@
-import { eq } from "drizzle-orm";
-import { db } from "@/src/shared/lib/db";
-import { users } from "@/src/shared/lib/db/schema";
-import type { Role } from "@/src/features/auth/types";
+import { eq } from 'drizzle-orm';
+import { db } from '@/src/shared/lib/db';
+import { users } from '@/src/shared/lib/db/schema';
+import type { Role } from '@/src/features/auth/types';
 
 export async function registerUserRole(
   walletAddress: string,

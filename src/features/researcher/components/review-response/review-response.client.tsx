@@ -6,6 +6,8 @@ import { toast } from 'sonner';
 import { ReviewContent, type ReviewCriterion } from './review-content';
 import { ReviewerRatingCard } from './reviewer-rating-card.client';
 import { ErrorAlert } from '@/src/shared/components/error-alert';
+import { rateReviewerAction } from '@/src/features/reviews/actions';
+import { authorResponseAction } from '@/src/features/submissions/actions';
 
 interface AnonymizedReview {
   id: string;
@@ -82,34 +84,17 @@ export function ReviewResponseClient({
         reviews.map(async (r) => {
           const body: Record<string, unknown> = { ...ratings[r.id] };
           if (comments[r.id]?.trim()) body.comment = comments[r.id].trim();
-          const res = await fetch(`/api/reviews/${r.id}/rate`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-          });
-          if (!res.ok) {
-            const data = await res.json();
-            // Ignore "already rated" — proceed with author response
-            if (res.status !== 409)
-              throw new Error(data.error || 'Failed to rate review');
-          }
+          const result = await rateReviewerAction(
+            r.id,
+            body as Parameters<typeof rateReviewerAction>[1],
+          );
+          // Ignore "already rated" — proceed with author response
+          if (result.alreadyRated) return;
         }),
       );
 
       // Submit author response
-      const res = await fetch(
-        `/api/submissions/${submissionId}/author-response`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action }),
-        },
-      );
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to submit response');
-      }
+      await authorResponseAction(submissionId, action);
 
       toast.success('Response submitted');
       router.push('/researcher');

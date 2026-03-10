@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/src/shared/hooks/useCurrentUser';
-import { fetchApi } from '@/src/shared/lib/api';
 import { hashString, canonicalJson } from '@/src/shared/lib/hashing';
+import { signContractAction } from '@/src/features/contracts/actions';
 
 interface ContractSummary {
   id: string;
@@ -57,13 +57,11 @@ export function InviteClaimClient({
       const contractHash = await hashString(canonicalJson(contractPayload));
       const signature = await account.signMessage({ message: contractHash });
 
-      await fetchApi(`/api/contracts/${contractId}/sign`, {
-        method: 'POST',
-        body: JSON.stringify({
-          contributorWallet,
-          signature,
-          contractHash,
-        }),
+      await signContractAction({
+        contractId,
+        contributorWallet,
+        signature,
+        contractHash,
       });
 
       setSigned(true);

@@ -11,6 +11,7 @@ import { OrcidVerificationStep } from './orcid-verification-step.client';
 import { WalletConnectStep } from './wallet-connect-step.client';
 import { ErrorAlert } from '@/src/shared/components/error-alert';
 import { AuthHeader } from './auth-header';
+import { updateProfileAction } from '@/src/features/auth/actions';
 
 type Step = 'role-select' | 'wallet' | 'orcid' | 'complete';
 
@@ -86,21 +87,11 @@ export function Registration() {
     dispatch({ type: 'SUBMIT_START' });
 
     try {
-      const response = await fetch('/api/auth/me', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          role: state.selectedRole,
-          orcidId,
-          displayName,
-        }),
-        credentials: 'include',
+      await updateProfileAction({
+        role: state.selectedRole!,
+        orcidId,
+        displayName,
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || data.error || 'Registration failed');
-      }
 
       dispatch({ type: 'SUBMIT_SUCCESS' });
     } catch (err) {

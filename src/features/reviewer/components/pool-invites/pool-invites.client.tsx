@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Check, X } from 'lucide-react';
 import type { DbPendingPoolInvite } from '@/src/features/reviewer/queries';
 import { displayNameOrWallet } from '@/src/shared/lib/format';
+import { respondToPoolInviteAction } from '@/src/features/reviewer/actions';
 
 interface PoolInvitesClientProps {
   initialInvites: DbPendingPoolInvite[];
@@ -24,18 +25,8 @@ export function PoolInvitesClient({
   ) => {
     setResponding(inviteId);
     try {
-      const res = await fetch(`/api/pool-invites/${inviteId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
+      await respondToPoolInviteAction(inviteId, status);
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Request failed' }));
-        throw new Error(err.error || 'Failed to respond to invitation');
-      }
-
-      // Remove the invite from the list (it's no longer pending)
       setInvites(invites.filter((i) => i.id !== inviteId));
       toast.success(
         status === 'accepted'

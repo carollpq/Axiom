@@ -1,9 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
-import { listNotifications, countUnread } from "@/src/features/notifications/queries";
-import { markAsRead, markAllAsRead } from "@/src/features/notifications/actions";
-import { requireSession } from "@/src/shared/lib/api-helpers";
+import { NextRequest, NextResponse } from 'next/server';
+import {
+  listNotifications,
+  countUnread,
+} from '@/src/features/notifications/queries';
+import {
+  markAsRead,
+  markAllAsRead,
+} from '@/src/features/notifications/mutations';
+import { requireSession } from '@/src/shared/lib/api-helpers';
 
-export const runtime = "nodejs";
+export const runtime = 'nodejs';
 
 export async function GET() {
   const wallet = await requireSession();
@@ -31,10 +37,10 @@ export async function PATCH(req: NextRequest) {
   if (body.id) {
     const updated = await markAsRead(body.id, wallet);
     if (!updated) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
     return NextResponse.json({ success: true });
   }
 
-  return NextResponse.json({ error: "Provide id or markAll" }, { status: 400 });
+  return NextResponse.json({ error: 'Provide id or markAll' }, { status: 400 });
 }

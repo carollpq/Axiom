@@ -11,6 +11,7 @@ import { useAcceptedPapers } from '@/src/features/editor/hooks/useAcceptedPapers
 import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
 import { useDecryptPaper } from '@/src/shared/hooks/useDecryptPaper';
 import { SelectionPlaceholder } from '@/src/shared/components/selection-placeholder';
+import { addPaperToIssueAction } from '@/src/features/editor/actions';
 import type {
   PaperCardData,
   ReviewerWithStatus,
@@ -73,20 +74,7 @@ export function AcceptedPapersClient({
     async (issueId: string) => {
       if (!selectedId) return;
       try {
-        const res = await fetch(
-          `/api/journals/${journalId}/issues/${issueId}/papers`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ submissionId: selectedId }),
-          },
-        );
-        if (!res.ok) {
-          const err = await res
-            .json()
-            .catch(() => ({ error: 'Unknown error' }));
-          throw new Error(err.error || 'Failed to assign paper');
-        }
+        await addPaperToIssueAction(journalId, issueId, selectedId);
         toast.success('Paper assigned to issue');
         router.refresh();
       } catch (err) {

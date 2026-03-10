@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { toast } from 'sonner';
 import { getStatusColors } from '@/src/features/researcher/constants/status-colors';
+import { authorResponseAction } from '@/src/features/submissions/actions';
+import { rateReviewerAction } from '@/src/features/reviews/actions';
 import { ReviewsStatusSection } from './reviews-status-section.client';
 
 const AuthorFeedback = dynamic(
@@ -62,18 +64,7 @@ export function ViewSubmissionsClient({ submissions }: Props) {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch(
-        `/api/submissions/${selected.id}/author-response`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'accept' }),
-        },
-      );
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to accept reviews');
-      }
+      await authorResponseAction(selected.id, 'accept');
       toast.success('Reviews accepted');
       router.refresh();
     } catch (err) {
@@ -91,21 +82,7 @@ export function ViewSubmissionsClient({ submissions }: Props) {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch(
-        `/api/submissions/${selected.id}/author-response`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'request_rebuttal',
-            comment: comment || undefined,
-          }),
-        },
-      );
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to invoke rebuttal');
-      }
+      await authorResponseAction(selected.id, 'request_rebuttal');
       toast.success('Rebuttal requested');
       router.refresh();
     } catch (err) {
@@ -128,15 +105,11 @@ export function ViewSubmissionsClient({ submissions }: Props) {
       const body: Record<string, unknown> = { ...ratings };
       if (comment.trim()) body.comment = comment.trim();
 
-      const res = await fetch(`/api/reviews/${reviewId}/rate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok && res.status !== 409) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to rate reviewer');
-      }
+      const result = await rateReviewerAction(
+        reviewId,
+        body as Parameters<typeof rateReviewerAction>[1],
+      );
+      if (result.alreadyRated) return;
       toast.success('Rating submitted');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Rating failed';

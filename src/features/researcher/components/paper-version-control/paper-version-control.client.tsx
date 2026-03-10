@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Plus, X } from 'lucide-react';
 import { hashFile } from '@/src/shared/lib/hashing';
 import { uploadToIPFS } from '@/src/shared/lib/upload';
+import { registerVersionAction } from '@/src/features/papers/actions';
 import { useUpload } from '@/src/features/researcher/hooks/useUpload';
 import { validateUpload } from '@/src/features/researcher/reducers/upload';
 import { PaperRow } from './paper-row';
@@ -80,18 +81,11 @@ export function PaperVersionControlClient({ papers }: Props) {
         const hash = await hashFile(file);
         const fileStorageKey = await uploadToIPFS(file, hash, 'papers');
 
-        const res = await fetch(`/api/papers/${paperId}/versions`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ paperHash: hash, fileStorageKey }),
+        const newVersion = await registerVersionAction({
+          paperId,
+          paperHash: hash,
+          fileStorageKey,
         });
-
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || 'Failed to upload version');
-        }
-
-        const newVersion = await res.json();
 
         setLocalPapers((prev) =>
           prev.map((p) =>

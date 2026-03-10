@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import type { ZodError } from 'zod';
+'use server';
+
 import { getSession } from '@/src/shared/lib/auth/auth';
 import { db } from '@/src/shared/lib/db';
 import {
@@ -23,76 +23,15 @@ import {
 import { createNotification } from '@/src/features/notifications/mutations';
 import { getRebuttalById } from '@/src/features/rebuttals/queries';
 
-/** Return a 400 response with structured Zod field errors. */
-export function validationError(err: ZodError): NextResponse {
-  return NextResponse.json(
-    { error: 'Validation failed', fieldErrors: err.flatten().fieldErrors },
-    { status: 400 },
-  );
-}
-
 /**
- * Auth guard — returns the lowercase wallet address or a 401 response.
- *
- * Usage:
- *   const session = await requireSession();
- *   if (session instanceof NextResponse) return session;
- *   // session is now `string` (wallet)
+ * Auth guard for server actions — throws on failure instead of returning NextResponse.
  */
-export async function requireSession(): Promise<string | NextResponse> {
+export async function requireAuth(): Promise<string> {
   const wallet = await getSession();
   if (!wallet) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    throw new Error('Unauthorized');
   }
   return wallet;
-}
-
-/**
- * Journal editor guard — verifies the journal exists and the session wallet
- * matches the editor. Returns the journal row or a 404/403 response.
- */
-export async function requireJournalEditor(journalId: string, wallet: string) {
-  const journal = await db.query.journals.findFirst({
-    where: eq(journals.id, journalId),
-  });
-
-  if (!journal) {
-    return NextResponse.json({ error: 'Journal not found' }, { status: 404 });
-  }
-
-  if (journal.editorWallet.toLowerCase() !== wallet.toLowerCase()) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
-  return journal;
-}
-
-/**
- * Editor ownership check — verifies the submission exists and the session
- * wallet matches the journal's editor. Returns the submission (with journal
- * and paper owner) or a 404/403 response.
- */
-export async function requireSubmissionEditor(
-  submissionId: string,
-  wallet: string,
-) {
-  const submission = await db.query.submissions.findFirst({
-    where: eq(submissions.id, submissionId),
-    with: { journal: true, paper: { with: { owner: true } } },
-  });
-
-  if (!submission) {
-    return NextResponse.json(
-      { error: 'Submission not found' },
-      { status: 404 },
-    );
-  }
-
-  if (submission.journal.editorWallet.toLowerCase() !== wallet.toLowerCase()) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
-  return submission;
 }
 
 type HcsTopicEnvVar =
@@ -106,7 +45,6 @@ type HcsTopicEnvVar =
 
 /**
  * Anchor a JSON payload to an HCS topic with graceful fallback.
- * Returns `{ txId, consensusTimestamp }` if successful, empty object otherwise.
  */
 export async function anchorToHcs(
   topicEnvVar: HcsTopicEnvVar,
@@ -130,7 +68,6 @@ export async function anchorToHcs(
 
 /**
  * Mint an HTS reputation token and create the corresponding reputation event.
- * Handles all error cases gracefully.
  */
 export async function recordReputation(
   wallet: string,
@@ -159,7 +96,6 @@ export async function recordReputation(
     hederaTxId: txId,
   });
 
-  // Recompute materialized reputation score
   try {
     await upsertReputationScore(wallet);
   } catch (err) {
@@ -170,15 +106,43 @@ export async function recordReputation(
 }
 
 /**
- * Compute a deadline ISO string from now + N days.
+ * Journal editor guard for server actions.
  */
-export function daysFromNow(days: number): string {
-  return new Date(Date.now() + days * 86_400_000).toISOString();
+export async function requireJournalEditor(journalId: string, wallet: string) {
+  const journal = await db.query.journals.findFirst({
+    where: eq(journals.id, journalId),
+  });
+
+  if (!journal) throw new Error('Journal not found');
+  if (journal.editorWallet.toLowerCase() !== wallet.toLowerCase()) {
+    throw new Error('Forbidden');
+  }
+
+  return journal;
 }
 
 /**
- * Rebuttal author guard — verifies the rebuttal exists and the session
- * wallet matches the author. Uses a lighter query (no responses relation).
+ * Editor ownership check for server actions.
+ */
+export async function requireSubmissionEditor(
+  submissionId: string,
+  wallet: string,
+) {
+  const submission = await db.query.submissions.findFirst({
+    where: eq(submissions.id, submissionId),
+    with: { journal: true, paper: { with: { owner: true } } },
+  });
+
+  if (!submission) throw new Error('Submission not found');
+  if (submission.journal.editorWallet.toLowerCase() !== wallet.toLowerCase()) {
+    throw new Error('Forbidden');
+  }
+
+  return submission;
+}
+
+/**
+ * Rebuttal author guard for server actions.
  */
 export async function requireRebuttalAuthor(
   rebuttalId: string,
@@ -196,21 +160,16 @@ export async function requireRebuttalAuthor(
     },
   });
 
-  if (!rebuttal) {
-    return NextResponse.json({ error: 'Rebuttal not found' }, { status: 404 });
-  }
-
+  if (!rebuttal) throw new Error('Rebuttal not found');
   if (rebuttal.authorWallet.toLowerCase() !== wallet.toLowerCase()) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    throw new Error('Forbidden');
   }
 
   return rebuttal;
 }
 
 /**
- * Rebuttal editor guard — verifies the rebuttal exists and the session
- * wallet matches the journal's editor. Returns the full rebuttal (with
- * responses) via `getRebuttalById`.
+ * Rebuttal editor guard for server actions.
  */
 export async function requireRebuttalEditor(
   rebuttalId: string,
@@ -218,30 +177,20 @@ export async function requireRebuttalEditor(
 ) {
   const rebuttal = await getRebuttalById(rebuttalId);
 
-  if (!rebuttal) {
-    return NextResponse.json({ error: 'Rebuttal not found' }, { status: 404 });
-  }
-
-  if (!rebuttal.submission?.journal) {
-    return NextResponse.json(
-      { error: 'Submission not found' },
-      { status: 404 },
-    );
-  }
-
+  if (!rebuttal) throw new Error('Rebuttal not found');
+  if (!rebuttal.submission?.journal) throw new Error('Submission not found');
   if (
     rebuttal.submission.journal.editorWallet.toLowerCase() !==
     wallet.toLowerCase()
   ) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    throw new Error('Forbidden');
   }
 
   return rebuttal;
 }
 
 /**
- * Review + paper owner guard — verifies the review exists and the session
- * wallet owns the paper. Returns the review (with submission.paper.owner) or 404/403.
+ * Review + paper owner guard for server actions.
  */
 export async function requireReviewWithPaperOwner(
   reviewId: string,
@@ -256,15 +205,12 @@ export async function requireReviewWithPaperOwner(
     },
   });
 
-  if (!review) {
-    return NextResponse.json({ error: 'Review not found' }, { status: 404 });
-  }
-
+  if (!review) throw new Error('Review not found');
   if (
     review.submission.paper.owner.walletAddress.toLowerCase() !==
     wallet.toLowerCase()
   ) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    throw new Error('Forbidden');
   }
 
   return review;
@@ -272,7 +218,6 @@ export async function requireReviewWithPaperOwner(
 
 /**
  * Anchor a payload to HCS and fire notifications in parallel.
- * Routes still own their DB mutations (those vary too much to generalize).
  */
 export async function anchorAndNotify(opts: {
   topic: HcsTopicEnvVar;

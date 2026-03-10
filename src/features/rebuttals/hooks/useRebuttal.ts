@@ -3,6 +3,7 @@
 import { useReducer, useCallback, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import type { RebuttalPositionDb } from '@/src/shared/lib/db/schema';
+import { respondToRebuttalAction } from '@/src/features/rebuttals/actions';
 
 interface ResponseDraft {
   reviewId: string;
@@ -103,25 +104,14 @@ export function useRebuttal(rebuttalId: string, reviewIds: string[]) {
     dispatch({ type: 'SUBMIT_START' });
 
     try {
-      const res = await fetch(`/api/rebuttals/${rebuttalId}/respond`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ responses }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Unknown error' }));
-        const message = err.error || 'Submission failed';
-        dispatch({ type: 'SUBMIT_ERROR', error: message });
-        toast.error(message);
-        return;
-      }
+      await respondToRebuttalAction(rebuttalId, { responses });
 
       dispatch({ type: 'SUBMIT_SUCCESS' });
       toast.success('Rebuttal submitted');
-    } catch {
-      dispatch({ type: 'SUBMIT_ERROR', error: 'Network error' });
-      toast.error('Network error');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Submission failed';
+      dispatch({ type: 'SUBMIT_ERROR', error: message });
+      toast.error(message);
     }
   }, [rebuttalId]);
 

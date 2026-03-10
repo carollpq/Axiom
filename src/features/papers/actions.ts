@@ -1,157 +1,248 @@
-import { db } from "@/src/shared/lib/db";
-import { papers, paperVersions, submissions, users } from "@/src/shared/lib/db/schema";
-import { eq } from "drizzle-orm";
-import type { PaperStatusDb, StudyTypeDb } from "@/src/shared/lib/db/schema";
+'use server';
 
-export async function updatePaperVersionHedera(
-  versionId: string,
-  hederaTxId: string,
-  hederaTimestamp: string,
+import { z } from 'zod';
+import {
+  requireAuth,
+  anchorToHcs,
+} from '@/src/shared/lib/server-action-helpers';
+import {
+  createPaper,
+  updatePaper,
+  createPaperVersion,
+  updatePaperVersionHedera,
+  createSubmission,
+  updateSubmissionHedera,
+} from '@/src/features/papers/mutations';
+import { getPaperById } from '@/src/features/papers/queries';
+import { getContractById } from '@/src/features/contracts/queries';
+import { db } from '@/src/shared/lib/db';
+import {
+  paperVersions,
+  users,
+  type PaperStatusDb,
+} from '@/src/shared/lib/db/schema';
+import { eq, desc } from 'drizzle-orm';
+import { SHA256_REGEX } from '@/src/shared/lib/validation';
+import {
+  STUDY_TYPE_VALUES,
+  PAPER_LIMITS,
+} from '@/src/features/researcher/config/upload';
+
+// ---------------------------------------------------------------------------
+// Schemas
+// ---------------------------------------------------------------------------
+
+const createPaperSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(
+      PAPER_LIMITS.title.min,
+      `Title must be at least ${PAPER_LIMITS.title.min} characters`,
+    )
+    .max(
+      PAPER_LIMITS.title.max,
+      `Title must be at most ${PAPER_LIMITS.title.max} characters`,
+    ),
+  abstract: z
+    .string()
+    .trim()
+    .min(
+      PAPER_LIMITS.abstract.min,
+      `Abstract must be at least ${PAPER_LIMITS.abstract.min} characters`,
+    )
+    .max(
+      PAPER_LIMITS.abstract.max,
+      `Abstract must be at most ${PAPER_LIMITS.abstract.max} characters`,
+    ),
+  studyType: z.enum(STUDY_TYPE_VALUES).optional(),
+  litDataToEncryptHash: z.string().nullish(),
+  litAccessConditionsJson: z.string().nullish(),
+});
+
+const createVersionSchema = z.object({
+  paperId: z.string().uuid(),
+  paperHash: z.string().regex(SHA256_REGEX, 'Invalid SHA-256 hash'),
+  datasetHash: z.string().regex(SHA256_REGEX, 'Invalid SHA-256 hash').nullish(),
+  codeRepoUrl: z.string().url().max(2000).nullish(),
+  codeCommitHash: z.string().max(200).nullish(),
+  envSpecHash: z.string().regex(SHA256_REGEX, 'Invalid SHA-256 hash').nullish(),
+  fileStorageKey: z.string().max(500).nullish(),
+});
+
+// ---------------------------------------------------------------------------
+// Actions
+// ---------------------------------------------------------------------------
+
+export async function createPaperAction(
+  input: z.infer<typeof createPaperSchema>,
 ) {
-  return (
-    (
-      await db
-        .update(paperVersions)
-        .set({ hederaTxId, hederaTimestamp })
-        .where(eq(paperVersions.id, versionId))
-        .returning()
-    )[0] ?? null
-  );
+  const wallet = await requireAuth();
+  const parsed = createPaperSchema.parse(input);
+
+  const paper = await createPaper({ ...parsed, wallet });
+  if (!paper) throw new Error('User not found');
+
+  return paper;
 }
 
-export interface CreatePaperInput {
-  title: string;
-  abstract: string;
-  studyType?: StudyTypeDb;
-  wallet: string;
-  litDataToEncryptHash?: string | null;
-  litAccessConditionsJson?: string | null;
+export async function updatePaperAction(
+  id: string,
+  input: { title?: string; abstract?: string; status?: PaperStatusDb },
+) {
+  await requireAuth();
+
+  const updated = await updatePaper(id, input);
+  if (!updated) throw new Error('Not found or no valid fields');
+
+  return updated;
 }
 
-export async function createPaper(input: CreatePaperInput) {
-  const user = (
-    await db
-      .select()
-      .from(users)
-      .where(eq(users.walletAddress, input.wallet.toLowerCase()))
-      .limit(1)
-  )[0];
+export async function registerVersionAction(
+  input: z.infer<typeof createVersionSchema>,
+) {
+  await requireAuth();
+  const parsed = createVersionSchema.parse(input);
 
-  if (!user) return null;
+  const {
+    paperId,
+    paperHash,
+    datasetHash,
+    codeRepoUrl,
+    codeCommitHash,
+    envSpecHash,
+    fileStorageKey,
+  } = parsed;
 
-  return (
-    await db
-      .insert(papers)
-      .values({
-        title: input.title,
-        abstract: input.abstract ?? null,
-        studyType: input.studyType ?? "original",
-        ownerId: user.id,
-        litDataToEncryptHash: input.litDataToEncryptHash ?? null,
-        litAccessConditionsJson: input.litAccessConditionsJson ?? null,
-      })
-      .returning()
-  )[0];
-}
+  const version = await createPaperVersion({
+    paperId,
+    paperHash,
+    datasetHash: datasetHash ?? null,
+    codeRepoUrl: codeRepoUrl ?? null,
+    codeCommitHash: codeCommitHash ?? null,
+    envSpecHash: envSpecHash ?? null,
+    fileStorageKey: fileStorageKey ?? null,
+  });
 
-export interface UpdatePaperInput {
-  title?: string;
-  abstract?: string;
-  status?: PaperStatusDb;
-}
+  if (!version) throw new Error('Paper not found');
 
-export async function updatePaper(id: string, input: UpdatePaperInput) {
-  const updates: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(input)) {
-    if (value !== undefined) updates[key] = value;
+  // Anchor on Hedera HCS
+  const { txId, consensusTimestamp } = await anchorToHcs('HCS_TOPIC_PAPERS', {
+    type: 'register',
+    paperHash,
+    paperId,
+    versionId: version.id,
+    versionNumber: version.versionNumber,
+    ...(datasetHash && { datasetHash }),
+    ...(codeCommitHash && { codeCommitHash }),
+    ...(envSpecHash && { envSpecHash }),
+    timestamp: new Date().toISOString(),
+  });
+
+  if (txId && consensusTimestamp) {
+    const updated = await updatePaperVersionHedera(
+      version.id,
+      txId,
+      consensusTimestamp,
+    );
+    return updated ?? version;
   }
 
-  if (Object.keys(updates).length === 0) return null;
-
-  updates.updatedAt = new Date().toISOString();
-
-  return (
-    (
-      await db.update(papers).set(updates).where(eq(papers.id, id)).returning()
-    )[0] ?? null
-  );
+  return version;
 }
 
-export interface CreateSubmissionInput {
+export async function submitPaperAction(input: {
   paperId: string;
   journalId: string;
-  versionId: string;
-}
+  contractId?: string;
+  versionId?: string;
+}) {
+  const session = await requireAuth();
 
-export async function createSubmission(input: CreateSubmissionInput) {
-  return (
-    await db
-      .insert(submissions)
-      .values({
-        paperId: input.paperId,
-        journalId: input.journalId,
-        versionId: input.versionId,
-      })
-      .returning()
-  )[0] ?? null;
-}
+  const { paperId, journalId, contractId, versionId } = input;
 
-export async function updateSubmissionHedera(
-  submissionId: string,
-  hederaTxId: string,
-  hederaTimestamp: string,
-) {
-  return (
-    await db
-      .update(submissions)
-      .set({ hederaTxId, hederaTimestamp })
-      .where(eq(submissions.id, submissionId))
-      .returning()
-  )[0] ?? null;
-}
+  if (!journalId) throw new Error('journalId is required');
 
-export interface CreatePaperVersionInput {
-  paperId: string;
-  paperHash: string;
-  datasetHash?: string | null;
-  codeRepoUrl?: string | null;
-  codeCommitHash?: string | null;
-  envSpecHash?: string | null;
-  fileStorageKey?: string | null;
-}
+  const paper = await getPaperById(paperId);
+  if (!paper) throw new Error('Paper not found');
 
-export async function createPaperVersion(input: CreatePaperVersionInput) {
-  const paper = (
-    await db
+  // Verify ownership via session wallet
+  const owner = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.walletAddress, session.toLowerCase()))
+    .limit(1)
+    .then((rows) => rows[0] ?? null);
+
+  if (!owner || paper.ownerId !== owner.id) {
+    throw new Error('Forbidden');
+  }
+
+  // Validate authorship contract
+  const contract = contractId
+    ? await getContractById(contractId)
+    : (paper.contracts?.[0] ?? null);
+
+  if (!contract) {
+    throw new Error(
+      'No authorship contract found. Please create and sign one first.',
+    );
+  }
+
+  if (contract.status !== 'fully_signed') {
+    const unsigned =
+      contract.contributors?.filter((c) => c.status !== 'signed') ?? [];
+    throw new Error(
+      `All co-authors must sign the authorship contract before submission. Unsigned: ${unsigned.map((c) => c.contributorName || c.contributorWallet).join(', ')}`,
+    );
+  }
+
+  if (paper.status !== 'registered') {
+    throw new Error('Paper must be registered before submitting');
+  }
+
+  // Resolve version
+  let resolvedVersionId = versionId;
+  if (!resolvedVersionId) {
+    const latestVersion = await db
       .select()
-      .from(papers)
-      .where(eq(papers.id, input.paperId))
+      .from(paperVersions)
+      .where(eq(paperVersions.paperId, paperId))
+      .orderBy(desc(paperVersions.versionNumber))
       .limit(1)
-  )[0];
+      .then((rows) => rows[0] ?? null);
 
-  if (!paper) return null;
+    if (!latestVersion) throw new Error('No paper version found');
+    resolvedVersionId = latestVersion.id;
+  }
 
-  const version = (
-    await db
-      .insert(paperVersions)
-      .values({
-        paperId: input.paperId,
-        versionNumber: paper.currentVersion,
-        paperHash: input.paperHash,
-        datasetHash: input.datasetHash ?? null,
-        codeRepoUrl: input.codeRepoUrl ?? null,
-        codeCommitHash: input.codeCommitHash ?? null,
-        envSpecHash: input.envSpecHash ?? null,
-        fileStorageKey: input.fileStorageKey ?? null,
-      })
-      .returning()
-  )[0];
+  const submission = await createSubmission({
+    paperId,
+    journalId,
+    versionId: resolvedVersionId,
+  });
 
-  // Bump the paper's current version
-  await db
-    .update(papers)
-    .set({ currentVersion: paper.currentVersion + 1, updatedAt: new Date().toISOString() })
-    .where(eq(papers.id, input.paperId));
+  if (!submission) throw new Error('Failed to create submission');
 
-  return version;
+  const { txId: hederaTxId, consensusTimestamp: hederaTimestamp } =
+    await anchorToHcs('HCS_TOPIC_SUBMISSIONS', {
+      type: 'submitted',
+      paperId,
+      journalId,
+      versionId: resolvedVersionId,
+      submissionId: submission.id,
+      submittedAt: new Date().toISOString(),
+    });
+
+  if (hederaTxId && hederaTimestamp) {
+    await updateSubmissionHedera(submission.id, hederaTxId, hederaTimestamp);
+  }
+
+  await updatePaper(paperId, { status: 'submitted' });
+
+  return {
+    submissionId: submission.id,
+    hederaTxId,
+    hederaTimestamp,
+  };
 }

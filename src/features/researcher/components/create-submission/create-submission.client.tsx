@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ErrorAlert } from '@/src/shared/components/error-alert';
 import { FormSelectRow } from './form-select-row.client';
+import { submitPaperAction } from '@/src/features/papers/actions';
 
 const FORM_CONTAINER_STYLE = {
   background: 'rgba(45,42,38,0.4)',
@@ -78,20 +79,12 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
     setError(null);
 
     try {
-      const res = await fetch(`/api/papers/${selectedPaperId}/submit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          journalId: selectedJournalId,
-          versionId: selectedVersionId,
-          contractId: selectedContractId,
-        }),
+      await submitPaperAction({
+        paperId: selectedPaperId,
+        journalId: selectedJournalId,
+        versionId: selectedVersionId,
+        contractId: selectedContractId,
       });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Submission failed');
-      }
 
       toast.success('Paper submitted successfully');
       router.push('/researcher');

@@ -4,6 +4,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useSelection } from '@/src/shared/hooks/useSelection';
+import { makeDecisionAction } from '@/src/features/submissions/actions';
+import { resolveRebuttalAction } from '@/src/features/rebuttals/actions';
 import type {
   PaperCardData,
   PoolReviewer,
@@ -72,23 +74,11 @@ export function useUnderReview({
     setIsReleasingDecision(true);
 
     try {
-      const response = await fetch(`/api/submissions/${selectedId}/decision`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          decision: decision as 'accept' | 'reject' | 'revise',
-          comment: editorComment,
-          allCriteriaMet: allReviewsComplete,
-        }),
+      await makeDecisionAction(selectedId, {
+        decision: decision as 'accept' | 'reject' | 'revise',
+        comment: editorComment,
+        allCriteriaMet: allReviewsComplete,
       });
-
-      if (!response.ok) {
-        const err = await response
-          .json()
-          .catch(() => ({ error: 'Unknown error' }));
-        console.error('[releaseToAuthor] API error:', err);
-        return false;
-      }
 
       // Success: remove paper from list, clear selection
       const releasedId = selectedId;
@@ -119,18 +109,8 @@ export function useUnderReview({
     if (!currentRebuttal) return;
     setIsResolvingRebuttal(true);
     try {
-      const res = await fetch(`/api/rebuttals/${currentRebuttal.id}/resolve`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resolution, editorNotes: notes }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('[resolveRebuttal] API error:', err);
-        toast.error(err.error || 'Failed to resolve rebuttal');
-      } else {
-        toast.success('Rebuttal resolved');
-      }
+      await resolveRebuttalAction(currentRebuttal.id, resolution, notes);
+      toast.success('Rebuttal resolved');
     } catch (err) {
       console.error('[resolveRebuttal] Unexpected error:', err);
       toast.error('Failed to resolve rebuttal');

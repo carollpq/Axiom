@@ -9,6 +9,7 @@ import type {
 } from '@/src/features/reviewer/types';
 import { canonicalJson, hashString } from '@/src/shared/lib/hashing';
 import { formatTimestampUtc } from '@/src/shared/lib/format';
+import { submitReviewAction } from '@/src/features/reviews/actions';
 import {
   reviewWorkspaceReducer,
   createInitialState,
@@ -87,46 +88,24 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
     const reviewHash = await hashString(canonicalJson(reviewPayload));
 
     try {
-      const response = await fetch(`/api/reviews/${assignment.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          criteriaEvaluations: state.evaluations,
-          strengths: state.generalComments.strengths,
-          weaknesses: state.generalComments.weaknesses,
-          questionsForAuthors: state.generalComments.questionsForAuthors,
-          confidentialEditorComments:
-            state.generalComments.confidentialEditorComments,
-          recommendation: state.recommendation,
-          reviewHash,
-        }),
+      const result = await submitReviewAction(assignment.id, {
+        criteriaEvaluations: state.evaluations,
+        strengths: state.generalComments.strengths,
+        weaknesses: state.generalComments.weaknesses,
+        questionsForAuthors: state.generalComments.questionsForAuthors,
+        confidentialEditorComments:
+          state.generalComments.confidentialEditorComments,
+        recommendation: state.recommendation as string,
+        reviewHash,
       });
-
-      if (!response.ok) {
-        const err = await response
-          .json()
-          .catch(() => ({ error: 'Unknown error' }));
-        console.error('[Review submit] API error:', err);
-        toast.error(err.error ?? 'Failed to submit review');
-        dispatch({ type: 'SUBMIT_ERROR' });
-        return;
-      }
-
-      const result = (await response.json()) as {
-        reviewId: string;
-        hederaTxId?: string;
-        hederaTimestamp?: string;
-      };
 
       toast.success('Review submitted successfully');
 
       dispatch({
         type: 'SUBMIT_SUCCESS',
         submissionResult: {
-          txHash: result.hederaTxId ?? 'pending',
-          timestamp: formatTimestampUtc(
-            result.hederaTimestamp ?? new Date().toISOString(),
-          ),
+          txHash: 'pending',
+          timestamp: formatTimestampUtc(new Date().toISOString()),
           paperHash: paper.provenance[0]?.hash.slice(0, 16) + '...',
           reviewHash: reviewHash.slice(0, 16) + '...',
           criteriaSummary: { met, partial, notMet },
