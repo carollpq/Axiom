@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/src/shared/lib/errors';
 
 interface EditableSectionProps {
   title: string;
@@ -24,7 +25,7 @@ export function EditableSection({
       try {
         await onSave(value);
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Save failed';
+        const message = getErrorMessage(err, 'Save failed');
         toast.error(message);
         setSaving(false);
         return;

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/src/shared/lib/errors';
 import type { JournalIssue } from '@/src/features/editor/types';
 import { FormSelect } from '@/src/shared/components/form-select.client';
 import { SectionLabel } from '@/src/shared/components/section-label';
@@ -27,8 +28,7 @@ export function AddToIssuePanel({
     try {
       await onAssign(selectedIssue);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to assign paper';
+      const message = getErrorMessage(err, 'Failed to assign paper');
       toast.error(message);
     } finally {
       setAssigning(false);

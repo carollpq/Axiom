@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { useUser } from '@/src/shared/context/user-context.client';
 import { sha256, canonicalJson } from '@/src/shared/lib/hashing';
 import { signContractAction } from '@/src/features/contracts/actions';
+import { getErrorMessage } from '@/src/shared/lib/errors';
 
 interface ContractContributor {
   name: string;
@@ -65,7 +66,7 @@ export function ContractsToSign({ contracts, currentWallet }: Props) {
       router.refresh();
       toast.success('Contract signed successfully');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Signing failed';
+      const message = getErrorMessage(err, 'Signing failed');
       setError(message);
       toast.error(message);
     } finally {

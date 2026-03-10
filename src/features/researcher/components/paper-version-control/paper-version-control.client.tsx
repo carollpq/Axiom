@@ -8,6 +8,7 @@ import { Plus, X } from 'lucide-react';
 import { sha256 } from '@/src/shared/lib/hashing';
 import { uploadToIPFS } from '@/src/features/researcher/upload';
 import { registerVersionAction } from '@/src/features/papers/actions';
+import { getErrorMessage } from '@/src/shared/lib/errors';
 import { useUpload } from '@/src/features/researcher/hooks/useUpload';
 import { validateUpload } from '@/src/features/researcher/reducers/upload';
 import { PaperRow } from './paper-row';
@@ -97,7 +98,7 @@ export function PaperVersionControlClient({ papers }: Props) {
         toast.success('New version uploaded');
         router.refresh();
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Upload failed';
+        const message = getErrorMessage(err, 'Upload failed');
         setError(message);
         toast.error(message);
       } finally {

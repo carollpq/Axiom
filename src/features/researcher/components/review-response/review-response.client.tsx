@@ -9,6 +9,7 @@ import { ErrorAlert } from '@/src/shared/components/error-alert';
 import { rateReviewerAction } from '@/src/features/reviews/actions';
 import { authorResponseAction } from '@/src/features/submissions/actions';
 import { ROUTES } from '@/src/shared/lib/routes';
+import { getErrorMessage } from '@/src/shared/lib/errors';
 
 interface AnonymizedReview {
   id: string;
@@ -101,8 +102,7 @@ export function ReviewResponseClient({
       router.push(ROUTES.researcher.root);
       router.refresh();
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Something went wrong';
+      const message = getErrorMessage(err);
       setError(message);
       toast.error(message);
     } finally {

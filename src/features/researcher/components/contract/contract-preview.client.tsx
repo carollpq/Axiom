@@ -7,6 +7,7 @@ import { useContractContext } from '@/src/features/researcher/context/contract-c
 import { submitPaperAction } from '@/src/features/papers/actions';
 import { listJournalsAction } from '@/src/features/editor/actions';
 import type { RegisteredJournal } from '@/src/features/researcher/types/paper-registration';
+import { getErrorMessage } from '@/src/shared/lib/errors';
 
 export function ContractPreview() {
   const { state, actions, meta } = useContractContext();
@@ -52,7 +53,7 @@ export function ContractPreview() {
       setShowModal(false);
       toast.success('Paper submitted successfully');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Submission failed.';
+      const message = getErrorMessage(err, 'Submission failed.');
       setError(message);
       toast.error(message);
     } finally {

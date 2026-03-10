@@ -1,10 +1,11 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useActiveAccount } from "thirdweb/react";
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useActiveAccount } from 'thirdweb/react';
+import { getErrorMessage } from '@/src/shared/lib/errors';
 // decryptFileWithLit is dynamically imported when actually needed
 
-type DecryptStatus = "idle" | "loading" | "success" | "error";
+type DecryptStatus = 'idle' | 'loading' | 'success' | 'error';
 
 interface UseDecryptPaperResult {
   fileUrl: string | undefined;
@@ -25,7 +26,7 @@ export function useDecryptPaper(
   autoDecrypt = false,
 ): UseDecryptPaperResult {
   const account = useActiveAccount();
-  const [status, setStatus] = useState<DecryptStatus>("idle");
+  const [status, setStatus] = useState<DecryptStatus>('idle');
   const [error, setError] = useState<string | null>(null);
   const [fileUrl, setFileUrl] = useState<string | undefined>();
   const blobUrlRef = useRef<string | null>(null);
@@ -38,7 +39,7 @@ export function useDecryptPaper(
       blobUrlRef.current = null;
     }
     setFileUrl(undefined);
-    setStatus("idle");
+    setStatus('idle');
     setError(null);
     // Invalidate any in-flight request
     requestIdRef.current += 1;
@@ -56,7 +57,7 @@ export function useDecryptPaper(
 
     const thisRequest = ++requestIdRef.current;
 
-    setStatus("loading");
+    setStatus('loading');
     setError(null);
 
     try {
@@ -78,11 +79,12 @@ export function useDecryptPaper(
         };
 
       if (!dataToEncryptHash || !accessConditionsJson) {
-        throw new Error("Missing Lit encryption metadata");
+        throw new Error('Missing Lit encryption metadata');
       }
 
       const conditions = JSON.parse(accessConditionsJson);
-      const { decryptFileWithLit } = await import("@/src/shared/lib/lit/decrypt");
+      const { decryptFileWithLit } =
+        await import('@/src/shared/lib/lit/decrypt');
       const decryptedData = await decryptFileWithLit(
         ciphertext,
         dataToEncryptHash,
@@ -100,22 +102,22 @@ export function useDecryptPaper(
       }
 
       const blob = new Blob([decryptedData.buffer as ArrayBuffer], {
-        type: "application/pdf",
+        type: 'application/pdf',
       });
       const url = URL.createObjectURL(blob);
       blobUrlRef.current = url;
       setFileUrl(url);
-      setStatus("success");
+      setStatus('success');
     } catch (err) {
       if (requestIdRef.current !== thisRequest) return;
-      setError(err instanceof Error ? err.message : "Decryption failed");
-      setStatus("error");
+      setError(getErrorMessage(err, 'Decryption failed'));
+      setStatus('error');
     }
   }, [paperId, account]);
 
   // Auto-decrypt when paperId changes (if enabled)
   useEffect(() => {
-    if (autoDecrypt && paperId && account && status === "idle") {
+    if (autoDecrypt && paperId && account && status === 'idle') {
       decrypt();
     }
   }, [autoDecrypt, paperId, account, status, decrypt]);

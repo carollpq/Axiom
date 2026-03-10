@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { getStatusColors } from '@/src/shared/lib/status-colors';
 import { authorResponseAction } from '@/src/features/submissions/actions';
 import { rateReviewerAction } from '@/src/features/reviews/actions';
+import { getErrorMessage } from '@/src/shared/lib/errors';
 import { ReviewsStatusSection } from './reviews-status-section.client';
 
 const AuthorFeedback = dynamic(
@@ -68,8 +69,7 @@ export function ViewSubmissionsClient({ submissions }: Props) {
       toast.success('Reviews accepted');
       router.refresh();
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Something went wrong';
+      const message = getErrorMessage(err);
       setError(message);
       toast.error(message);
     } finally {
@@ -86,8 +86,7 @@ export function ViewSubmissionsClient({ submissions }: Props) {
       toast.success('Rebuttal requested');
       router.refresh();
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Something went wrong';
+      const message = getErrorMessage(err);
       setError(message);
       toast.error(message);
     } finally {
@@ -112,7 +111,7 @@ export function ViewSubmissionsClient({ submissions }: Props) {
       if (result.alreadyRated) return;
       toast.success('Rating submitted');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Rating failed';
+      const message = getErrorMessage(err, 'Rating failed');
       setError(message);
       toast.error(message);
     }

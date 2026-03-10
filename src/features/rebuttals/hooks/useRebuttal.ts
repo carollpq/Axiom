@@ -4,6 +4,7 @@ import { useReducer, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import type { RebuttalPositionDb } from '@/src/shared/lib/db/schema';
 import { respondToRebuttalAction } from '@/src/features/rebuttals/actions';
+import { getErrorMessage } from '@/src/shared/lib/errors';
 
 interface ResponseDraft {
   reviewId: string;
@@ -89,8 +90,7 @@ export function useRebuttal(rebuttalId: string, reviewIds: string[]) {
         setSubmitted(true);
         toast.success('Rebuttal submitted');
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Submission failed';
+        const message = getErrorMessage(err, 'Submission failed');
         setError(message);
         toast.error(message);
       }

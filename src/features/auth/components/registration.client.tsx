@@ -12,6 +12,7 @@ import { WalletConnectStep } from './wallet-connect-step.client';
 import { ErrorAlert } from '@/src/shared/components/error-alert';
 import { AuthHeader } from './auth-header';
 import { updateProfileAction } from '@/src/features/auth/actions';
+import { getErrorMessage } from '@/src/shared/lib/errors';
 
 type Step = 'role-select' | 'wallet' | 'orcid' | 'complete';
 
@@ -97,7 +98,7 @@ export function Registration() {
     } catch (err) {
       dispatch({
         type: 'SUBMIT_ERROR',
-        error: err instanceof Error ? err.message : 'Registration failed',
+        error: getErrorMessage(err, 'Registration failed'),
       });
     }
   };

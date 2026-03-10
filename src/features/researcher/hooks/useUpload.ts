@@ -4,6 +4,7 @@ import { useReducer, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { useUser } from '@/src/shared/context/user-context.client';
 import { sha256 } from '@/src/shared/lib/hashing';
+import { getErrorMessage } from '@/src/shared/lib/errors';
 import { isLitConfigured } from '@/src/shared/lib/lit/config';
 import { uploadToIPFS } from '@/src/features/researcher/upload';
 import {
@@ -157,8 +158,7 @@ export function useUpload(
       onRegistered?.(paper.id, state.title);
     } catch (err) {
       console.error('Registration failed:', err);
-      const message =
-        err instanceof Error ? err.message : 'Registration failed';
+      const message = getErrorMessage(err, 'Registration failed');
       dispatch({ type: 'REGISTER_ERROR', error: message });
       toast.error(message);
     }

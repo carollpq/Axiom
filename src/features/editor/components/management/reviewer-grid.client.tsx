@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Plus, X } from 'lucide-react';
+import { getErrorMessage } from '@/src/shared/lib/errors';
 import type { PoolReviewer } from '@/src/features/editor/types';
 import { ModalOverlay } from '@/src/shared/components/modal-overlay.client';
 
@@ -40,8 +41,7 @@ export function ReviewerGrid({
       setShowAddModal(false);
       setSearchTerm('');
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to add reviewer';
+      const message = getErrorMessage(err, 'Failed to add reviewer');
       toast.error(message);
     } finally {
       setAdding(false);

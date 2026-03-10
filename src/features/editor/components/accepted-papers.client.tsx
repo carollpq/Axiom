@@ -12,6 +12,7 @@ import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
 import { useDecryptPaper } from '@/src/shared/hooks/useDecryptPaper';
 import { SelectionPlaceholder } from '@/src/shared/components/selection-placeholder';
 import { addPaperToIssueAction } from '@/src/features/editor/actions';
+import { getErrorMessage } from '@/src/shared/lib/errors';
 import type {
   PaperCardData,
   ReviewerWithStatus,
@@ -76,8 +77,7 @@ export function AcceptedPapersClient({
         toast.success('Paper assigned to issue');
         router.refresh();
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Failed to assign paper';
+        const message = getErrorMessage(err, 'Failed to assign paper');
         toast.error(message);
       }
     },

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Plus, X } from 'lucide-react';
+import { getErrorMessage } from '@/src/shared/lib/errors';
 import type { JournalIssue } from '@/src/features/editor/types';
 import { ModalOverlay } from '@/src/shared/components/modal-overlay.client';
 
@@ -27,8 +28,7 @@ export function IssuesGrid({ issues, onCreateIssue }: IssuesGridProps) {
       setShowAddForm(false);
       setNewIssueLabel('');
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to create issue';
+      const message = getErrorMessage(err, 'Failed to create issue');
       toast.error(message);
     } finally {
       setCreating(false);

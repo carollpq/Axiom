@@ -7,6 +7,7 @@ import { ErrorAlert } from '@/src/shared/components/error-alert';
 import { FormSelectRow } from './form-select-row.client';
 import { submitPaperAction } from '@/src/features/papers/actions';
 import { ROUTES } from '@/src/shared/lib/routes';
+import { getErrorMessage } from '@/src/shared/lib/errors';
 
 const FORM_CONTAINER_STYLE = {
   background: 'rgba(45,42,38,0.4)',
@@ -91,8 +92,7 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
       router.push(ROUTES.researcher.root);
       router.refresh();
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Something went wrong';
+      const message = getErrorMessage(err);
       setError(message);
       toast.error(message);
     } finally {
