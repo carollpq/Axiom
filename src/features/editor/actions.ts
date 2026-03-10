@@ -1,10 +1,8 @@
 'use server';
 
 import { after } from 'next/server';
-import {
-  requireAuth,
-  requireJournalEditor,
-} from '@/src/shared/lib/server-action-helpers';
+import { requireSession } from '@/src/shared/lib/auth/auth';
+import { requireJournalEditor } from '@/src/features/editor/queries';
 import { ROUTES } from '@/src/shared/lib/routes';
 import {
   updateJournalMetadata,
@@ -29,7 +27,7 @@ export async function updateJournalAction(
   journalId: string,
   data: { aimsAndScope?: string; submissionCriteria?: string },
 ) {
-  const wallet = await requireAuth();
+  const wallet = await requireSession();
   await requireJournalEditor(journalId, wallet);
 
   await updateJournalMetadata(journalId, data);
@@ -37,7 +35,7 @@ export async function updateJournalAction(
 }
 
 export async function createIssueAction(journalId: string, label: string) {
-  const wallet = await requireAuth();
+  const wallet = await requireSession();
   await requireJournalEditor(journalId, wallet);
 
   if (!label?.trim()) throw new Error('Label is required');
@@ -49,7 +47,7 @@ export async function addReviewerToPoolAction(
   journalId: string,
   reviewerWallet: string,
 ) {
-  const wallet = await requireAuth();
+  const wallet = await requireSession();
   await requireJournalEditor(journalId, wallet);
 
   if (!reviewerWallet) throw new Error('reviewerWallet is required');
@@ -82,7 +80,7 @@ export async function removeReviewerFromPoolAction(
   journalId: string,
   reviewerWallet: string,
 ) {
-  const wallet = await requireAuth();
+  const wallet = await requireSession();
   await requireJournalEditor(journalId, wallet);
 
   if (!reviewerWallet) throw new Error('reviewerWallet is required');
@@ -96,7 +94,7 @@ export async function addPaperToIssueAction(
   issueId: string,
   submissionId: string,
 ) {
-  const wallet = await requireAuth();
+  const wallet = await requireSession();
   await requireJournalEditor(journalId, wallet);
 
   if (!submissionId) throw new Error('submissionId is required');
@@ -109,7 +107,7 @@ export async function removePaperFromIssueAction(
   issueId: string,
   submissionId: string,
 ) {
-  const wallet = await requireAuth();
+  const wallet = await requireSession();
   await requireJournalEditor(journalId, wallet);
 
   if (!submissionId) throw new Error('submissionId is required');

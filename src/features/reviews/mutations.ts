@@ -7,7 +7,9 @@ import {
   reputationEvents,
   reputationScores,
 } from '@/src/shared/lib/db/schema';
+import type { ReputationEventTypeDb } from '@/src/shared/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
+import { mintReputationToken } from '@/src/shared/lib/hedera/hts';
 
 export interface CreateReviewInput {
   submissionId: string;
@@ -295,4 +297,43 @@ export async function upsertReputationScore(wallet: string) {
     publication,
     reviewCount,
   };
+}
+
+/**
+ * Mint an HTS reputation token and create the corresponding reputation event.
+ */
+export async function recordReputation(
+  wallet: string,
+  eventType: ReputationEventTypeDb,
+  scoreDelta: number,
+  details: string,
+  mintMetadata: Record<string, unknown>,
+): Promise<{ serial?: string; txId?: string }> {
+  let serial: string | undefined;
+  let txId: string | undefined;
+
+  try {
+    const result = await mintReputationToken(wallet, mintMetadata);
+    serial = result?.serial;
+    txId = result?.txId;
+  } catch (err) {
+    console.error('[HTS] Reputation token mint failed:', err);
+  }
+
+  await createReputationEvent({
+    userWallet: wallet,
+    eventType,
+    scoreDelta,
+    details,
+    htsTokenSerial: serial,
+    hederaTxId: txId,
+  });
+
+  try {
+    await upsertReputationScore(wallet);
+  } catch (err) {
+    console.error('[Reputation] Score computation failed:', err);
+  }
+
+  return { serial, txId };
 }

@@ -1,6 +1,6 @@
 'use server';
 
-import { requireAuth } from '@/src/shared/lib/server-action-helpers';
+import { requireSession } from '@/src/shared/lib/auth/auth';
 import { registerUserRole } from '@/src/features/users/mutations';
 import { ROLES, type Role } from '@/src/features/auth/types';
 
@@ -9,7 +9,7 @@ export async function updateProfileAction(input: {
   orcidId: string;
   displayName: string;
 }) {
-  const wallet = await requireAuth();
+  const wallet = await requireSession();
 
   if (!ROLES.includes(input.role as Role)) {
     throw new Error('Invalid role');

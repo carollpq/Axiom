@@ -1,6 +1,6 @@
 'use server';
 
-import { requireAuth } from '@/src/shared/lib/server-action-helpers';
+import { requireSession } from '@/src/shared/lib/auth/auth';
 import {
   listNotifications,
   countUnread,
@@ -11,7 +11,7 @@ import {
 } from '@/src/features/notifications/mutations';
 
 export async function getNotificationsAction() {
-  const wallet = await requireAuth();
+  const wallet = await requireSession();
   const [items, unreadCount] = await Promise.all([
     listNotifications(wallet),
     countUnread(wallet),
@@ -20,12 +20,12 @@ export async function getNotificationsAction() {
 }
 
 export async function markNotificationReadAction(id: string) {
-  const wallet = await requireAuth();
+  const wallet = await requireSession();
   const updated = await markAsRead(id, wallet);
   if (!updated) throw new Error('Not found');
 }
 
 export async function markAllNotificationsReadAction() {
-  const wallet = await requireAuth();
+  const wallet = await requireSession();
   await markAllAsRead(wallet);
 }

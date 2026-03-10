@@ -1,10 +1,8 @@
 'use server';
 
 import { z } from 'zod';
-import {
-  requireAuth,
-  anchorToHcs,
-} from '@/src/shared/lib/server-action-helpers';
+import { requireSession } from '@/src/shared/lib/auth/auth';
+import { anchorToHcs } from '@/src/shared/lib/hedera/hcs';
 import {
   createPaper,
   updatePaper,
@@ -77,7 +75,7 @@ const createVersionSchema = z.object({
 export async function createPaperAction(
   input: z.infer<typeof createPaperSchema>,
 ) {
-  const wallet = await requireAuth();
+  const wallet = await requireSession();
   const parsed = createPaperSchema.parse(input);
 
   const paper = await createPaper({ ...parsed, wallet });
@@ -90,7 +88,7 @@ export async function updatePaperAction(
   id: string,
   input: { title?: string; abstract?: string; status?: PaperStatusDb },
 ) {
-  await requireAuth();
+  await requireSession();
 
   const updated = await updatePaper(id, input);
   if (!updated) throw new Error('Not found or no valid fields');
@@ -101,7 +99,7 @@ export async function updatePaperAction(
 export async function registerVersionAction(
   input: z.infer<typeof createVersionSchema>,
 ) {
-  await requireAuth();
+  await requireSession();
   const parsed = createVersionSchema.parse(input);
 
   const {
@@ -157,7 +155,7 @@ export async function submitPaperAction(input: {
   contractId?: string;
   versionId?: string;
 }) {
-  const session = await requireAuth();
+  const session = await requireSession();
 
   const { paperId, journalId, contractId, versionId } = input;
 

@@ -1,10 +1,10 @@
 'use server';
 
-import { requireAuth } from '@/src/shared/lib/server-action-helpers';
+import { requireSession } from '@/src/shared/lib/auth/auth';
 import { searchUsers } from '@/src/features/users/queries';
 
 export async function searchUsersAction(query: string) {
-  await requireAuth();
+  await requireSession();
 
   const q = query?.trim();
   if (!q || q.length < 2) return [];

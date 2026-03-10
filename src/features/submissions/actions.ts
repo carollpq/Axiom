@@ -6,17 +6,10 @@ import { reviewAssignments, submissions } from '@/src/shared/lib/db/schema';
 import type { SubmissionStatusDb } from '@/src/shared/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { canonicalJson, sha256 } from '@/src/shared/lib/hashing';
-import {
-  requireAuth,
-  requireSubmissionEditor,
-  anchorAndNotify,
-  anchorToHcs,
-} from '@/src/shared/lib/server-action-helpers';
+import { requireSession } from '@/src/shared/lib/auth/auth';
+import { anchorToHcs } from '@/src/shared/lib/hedera/hcs';
+import { requireSubmissionEditor } from '@/src/features/submissions/queries';
 import { ROUTES } from '@/src/shared/lib/routes';
-
-function daysFromNow(days: number): string {
-  return new Date(Date.now() + days * 86_400_000).toISOString();
-}
 import {
   publishCriteria,
   createReviewAssignment,
@@ -24,9 +17,16 @@ import {
   updateAssignmentTimelineIndex,
 } from '@/src/features/reviews/mutations';
 import { listReviewAssignmentsForSubmission } from '@/src/features/reviews/queries';
-import { createNotification } from '@/src/features/notifications/mutations';
+import {
+  createNotification,
+  type CreateNotificationInput,
+} from '@/src/features/notifications/mutations';
 import { openRebuttal } from '@/src/features/rebuttals/mutations';
 import { registerDeadline } from '@/src/shared/lib/hedera/timeline-enforcer';
+
+function daysFromNow(days: number): string {
+  return new Date(Date.now() + days * 86_400_000).toISOString();
+}
 
 // ---------------------------------------------------------------------------
 // Criteria
@@ -44,7 +44,7 @@ export async function publishCriteriaAction(
   submissionId: string,
   criteria: ReviewCriterionInput[],
 ) {
-  const session = await requireAuth();
+  const session = await requireSession();
   const submission = await requireSubmissionEditor(submissionId, session);
 
   if (
@@ -65,26 +65,25 @@ export async function publishCriteriaAction(
 
   const authorWallet = submission.paper?.owner?.walletAddress;
 
-  const { txId: hederaTxId } = await anchorAndNotify({
-    topic: 'HCS_TOPIC_CRITERIA',
-    payload: {
+  const [{ txId: hederaTxId }] = await Promise.all([
+    anchorToHcs('HCS_TOPIC_CRITERIA', {
       type: 'criteria_published',
       submissionId,
       criteriaHash,
       timestamp: new Date().toISOString(),
-    },
-    notifications: authorWallet
+    }),
+    ...(authorWallet
       ? [
-          {
+          createNotification({
             userWallet: authorWallet,
             type: 'criteria_published',
             title: 'Review criteria published',
             body: `Review criteria have been published for "${submission.paper.title}".`,
             link: ROUTES.researcher.root,
-          },
+          }),
         ]
-      : [],
-  });
+      : []),
+  ]);
 
   const result = await publishCriteria({
     submissionId,
@@ -107,7 +106,7 @@ export async function assignReviewersAction(
   reviewerWallets: string[],
   deadlineDays?: number,
 ) {
-  const session = await requireAuth();
+  const session = await requireSession();
   const submission = await requireSubmissionEditor(submissionId, session);
 
   if (!reviewerWallets || reviewerWallets.length === 0) {
@@ -198,7 +197,7 @@ export async function makeDecisionAction(
     allCriteriaMet: boolean;
   },
 ) {
-  const session = await requireAuth();
+  const session = await requireSession();
   const submission = await requireSubmissionEditor(submissionId, session);
 
   if (!input.decision) {
@@ -232,9 +231,8 @@ export async function makeDecisionAction(
         : 'revision requested';
 
   after(async () => {
-    const { txId: hederaTxId } = await anchorAndNotify({
-      topic: 'HCS_TOPIC_DECISIONS',
-      payload: {
+    const [{ txId: hederaTxId }] = await Promise.all([
+      anchorToHcs('HCS_TOPIC_DECISIONS', {
         type: 'editorial_decision',
         submissionId,
         decision: input.decision,
@@ -244,19 +242,19 @@ export async function makeDecisionAction(
             ? input.comment
             : null,
         timestamp: new Date().toISOString(),
-      },
-      notifications: authorWallet
+      }),
+      ...(authorWallet
         ? [
-            {
+            createNotification({
               userWallet: authorWallet,
               type: 'decision_made',
               title: `Paper ${decisionLabel}`,
               body: `Your paper "${submission.paper.title}" has been ${decisionLabel}.`,
               link: ROUTES.researcher.root,
-            },
+            }),
           ]
-        : [],
-    });
+        : []),
+    ]);
 
     if (hederaTxId) {
       await updateSubmissionStatus(submissionId, newStatus, {
@@ -273,7 +271,7 @@ export async function makeDecisionAction(
 // ---------------------------------------------------------------------------
 
 export async function markViewedAction(submissionId: string) {
-  const session = await requireAuth();
+  const session = await requireSession();
   const submission = await requireSubmissionEditor(submissionId, session);
 
   if (submission.status !== 'submitted') {
@@ -285,26 +283,25 @@ export async function markViewedAction(submissionId: string) {
   const authorWallet = submission.paper.owner?.walletAddress ?? '';
 
   after(async () => {
-    await anchorAndNotify({
-      topic: 'HCS_TOPIC_SUBMISSIONS',
-      payload: {
+    await Promise.all([
+      anchorToHcs('HCS_TOPIC_SUBMISSIONS', {
         type: 'viewed_by_editor',
         submissionId,
         editorWallet: session,
         timestamp: new Date().toISOString(),
-      },
-      notifications: authorWallet
+      }),
+      ...(authorWallet
         ? [
-            {
+            createNotification({
               userWallet: authorWallet,
               type: 'submission_viewed',
               title: 'Paper viewed by editor',
               body: `Your paper "${submission.paper.title}" has been viewed by the editor.`,
               link: ROUTES.researcher.root,
-            },
+            }),
           ]
-        : [],
-    });
+        : []),
+    ]);
   });
 
   return { status: 'viewed_by_editor' };
@@ -318,7 +315,7 @@ export async function acceptAssignmentAction(
   submissionId: string,
   action: 'accept' | 'decline',
 ) {
-  const session = await requireAuth();
+  const session = await requireSession();
 
   const assignment = await db.query.reviewAssignments.findFirst({
     where: and(
@@ -345,24 +342,21 @@ export async function acceptAssignmentAction(
 
     const editorWallet = submission.journal.editorWallet;
     if (editorWallet) {
-      await anchorAndNotify({
-        topic: 'HCS_TOPIC_SUBMISSIONS',
-        payload: {
+      await Promise.all([
+        anchorToHcs('HCS_TOPIC_SUBMISSIONS', {
           type: 'assignment_declined',
           submissionId,
           reviewerWallet: session,
           timestamp: new Date().toISOString(),
-        },
-        notifications: [
-          {
-            userWallet: editorWallet,
-            type: 'assignment_declined',
-            title: 'Reviewer declined assignment',
-            body: `A reviewer has declined the assignment for "${submission.paper.title}".`,
-            link: ROUTES.editor.root,
-          },
-        ],
-      });
+        }),
+        createNotification({
+          userWallet: editorWallet,
+          type: 'assignment_declined',
+          title: 'Reviewer declined assignment',
+          body: `A reviewer has declined the assignment for "${submission.paper.title}".`,
+          link: ROUTES.editor.root,
+        }),
+      ]);
     }
 
     return { status: 'declined' };
@@ -379,8 +373,7 @@ export async function acceptAssignmentAction(
     (a) => a.status === 'accepted' || a.id === assignment.id,
   ).length;
 
-  const notifications: Parameters<typeof anchorAndNotify>[0]['notifications'] =
-    [];
+  const notifications: CreateNotificationInput[] = [];
   const editorWallet = submission.journal.editorWallet;
 
   if (editorWallet) {
@@ -412,17 +405,16 @@ export async function acceptAssignmentAction(
     }
   }
 
-  await anchorAndNotify({
-    topic: 'HCS_TOPIC_SUBMISSIONS',
-    payload: {
+  await Promise.all([
+    anchorToHcs('HCS_TOPIC_SUBMISSIONS', {
       type: 'assignment_accepted',
       submissionId,
       reviewerWallet: session,
       acceptedCount,
       timestamp: new Date().toISOString(),
-    },
-    notifications,
-  });
+    }),
+    ...notifications.map((n) => createNotification(n)),
+  ]);
 
   return { status: 'accepted', acceptedCount };
 }
@@ -435,7 +427,7 @@ export async function authorResponseAction(
   submissionId: string,
   action: 'accept' | 'request_rebuttal',
 ) {
-  const session = await requireAuth();
+  const session = await requireSession();
 
   const submission = await db.query.submissions.findFirst({
     where: eq(submissions.id, submissionId),
@@ -465,27 +457,26 @@ export async function authorResponseAction(
     });
 
     after(async () => {
-      const { txId } = await anchorAndNotify({
-        topic: 'HCS_TOPIC_SUBMISSIONS',
-        payload: {
+      const [{ txId }] = await Promise.all([
+        anchorToHcs('HCS_TOPIC_SUBMISSIONS', {
           type: 'author_response',
           submissionId,
           action: 'accept',
           authorWallet: session,
           timestamp: now,
-        },
-        notifications: editorWallet
+        }),
+        ...(editorWallet
           ? [
-              {
+              createNotification({
                 userWallet: editorWallet,
                 type: 'author_response',
                 title: 'Author accepted reviews',
                 body: `The author has accepted reviews for "${submission.paper.title}".`,
                 link: ROUTES.editor.root,
-              },
+              }),
             ]
-          : [],
-      });
+          : []),
+      ]);
 
       if (txId) {
         await updateSubmissionStatus(submissionId, 'reviews_completed', {
@@ -527,25 +518,22 @@ export async function authorResponseAction(
     }
 
     if (editorWallet) {
-      await anchorAndNotify({
-        topic: 'HCS_TOPIC_SUBMISSIONS',
-        payload: {
+      await Promise.all([
+        anchorToHcs('HCS_TOPIC_SUBMISSIONS', {
           type: 'author_response',
           submissionId,
           action: 'request_rebuttal',
           authorWallet: session,
           timestamp: now,
-        },
-        notifications: [
-          {
-            userWallet: editorWallet,
-            type: 'author_response',
-            title: 'Author requested rebuttal',
-            body: `The author has requested a rebuttal for "${submission.paper.title}".`,
-            link: ROUTES.editor.root,
-          },
-        ],
-      });
+        }),
+        createNotification({
+          userWallet: editorWallet,
+          type: 'author_response',
+          title: 'Author requested rebuttal',
+          body: `The author has requested a rebuttal for "${submission.paper.title}".`,
+          link: ROUTES.editor.root,
+        }),
+      ]);
     }
   });
 

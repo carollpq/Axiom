@@ -10,6 +10,22 @@ import {
 } from '@/src/shared/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
 
+/**
+ * Journal editor guard for server actions.
+ */
+export async function requireJournalEditor(journalId: string, wallet: string) {
+  const journal = await db.query.journals.findFirst({
+    where: eq(journals.id, journalId),
+  });
+
+  if (!journal) throw new Error('Journal not found');
+  if (journal.editorWallet.toLowerCase() !== wallet.toLowerCase()) {
+    throw new Error('Forbidden');
+  }
+
+  return journal;
+}
+
 export const listJournals = cache(async () => {
   return db
     .select({

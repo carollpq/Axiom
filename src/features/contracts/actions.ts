@@ -3,10 +3,8 @@
 import { z } from 'zod';
 import { after } from 'next/server';
 import { verifyMessage } from 'viem';
-import {
-  requireAuth,
-  anchorToHcs,
-} from '@/src/shared/lib/server-action-helpers';
+import { requireSession } from '@/src/shared/lib/auth/auth';
+import { anchorToHcs } from '@/src/shared/lib/hedera/hcs';
 import { ROUTES } from '@/src/shared/lib/routes';
 import {
   createContract,
@@ -73,7 +71,7 @@ const signSchema = z.object({
 export async function createContractAction(
   input: z.infer<typeof createContractSchema>,
 ) {
-  const wallet = await requireAuth();
+  const wallet = await requireSession();
   const parsed = createContractSchema.parse(input);
 
   const contract = await createContract({ ...parsed, wallet });
@@ -85,7 +83,7 @@ export async function createContractAction(
 export async function addContributorAction(
   input: z.infer<typeof addContributorSchema>,
 ) {
-  const wallet = await requireAuth();
+  const wallet = await requireSession();
   const parsed = addContributorSchema.parse(input);
 
   const contributor = await addContributor(parsed);
@@ -117,7 +115,7 @@ export async function removeContributorAction(
   contractId: string,
   contributorId: string,
 ) {
-  await requireAuth();
+  await requireSession();
 
   const deleted = await removeContributor(contractId, contributorId);
   if (!deleted) throw new Error('Contributor not found');
@@ -126,7 +124,7 @@ export async function removeContributorAction(
 }
 
 export async function resetSignaturesAction(contractId: string) {
-  const sessionWallet = await requireAuth();
+  const sessionWallet = await requireSession();
 
   const contract = await getContractById(contractId);
   if (!contract) throw new Error('Contract not found');
@@ -146,7 +144,7 @@ export async function generateInviteLinkAction(
   contractId: string,
   contributorId: string,
 ) {
-  const sessionWallet = await requireAuth();
+  const sessionWallet = await requireSession();
 
   const contract = await getContractById(contractId);
   if (!contract) throw new Error('Contract not found');
@@ -167,7 +165,7 @@ export async function generateInviteLinkAction(
 }
 
 export async function signContractAction(input: z.infer<typeof signSchema>) {
-  const session = await requireAuth();
+  const session = await requireSession();
   const parsed = signSchema.parse(input);
   const { contractId, contributorWallet, signature, contractHash } = parsed;
 

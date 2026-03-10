@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isStorageConfigured, uploadToIPFS } from '@/src/shared/lib/pinata';
-import { requireSession } from '@/src/shared/lib/api-helpers';
+import { getSession } from '@/src/shared/lib/auth/auth';
 import type { UploadFolder } from '@/src/shared/lib/pinata';
 
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
-  const wallet = await requireSession();
-  if (wallet instanceof NextResponse) return wallet;
+  const wallet = await getSession();
+  if (!wallet)
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   if (!isStorageConfigured()) {
     return NextResponse.json(

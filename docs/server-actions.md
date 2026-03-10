@@ -38,7 +38,7 @@ Login/logout live separately in `src/shared/lib/auth/actions.ts` since they're c
 
 These are the entry points for all client-initiated mutations. They handle:
 
-1. **Auth** — `requireAuth()` from `server-action-helpers.ts` (throws on failure)
+1. **Auth** — `requireSession()` from `auth/auth.ts` (throws on failure)
 2. **Validation** — Zod schemas for input
 3. **DB write** — calls mutation functions from `mutations.ts`
 4. **Side effects** — HCS anchoring, HTS minting, notifications (often via `after()`)
@@ -50,7 +50,7 @@ These are the entry points for all client-initiated mutations. They handle:
 'use server';
 
 import { z } from 'zod';
-import { requireAuth } from '@/src/shared/lib/server-action-helpers';
+import { requireSession } from '@/src/shared/lib/auth/auth';
 import { createPaper } from '@/src/features/papers/mutations';
 
 const createPaperSchema = z.object({
@@ -60,7 +60,7 @@ const createPaperSchema = z.object({
 });
 
 export async function createPaperAction(input: z.infer<typeof createPaperSchema>) {
-  const wallet = await requireAuth();
+  const wallet = await requireSession();
   const parsed = createPaperSchema.parse(input);
 
   const paper = await createPaper({ ...parsed, wallet });
@@ -77,13 +77,13 @@ export async function createPaperAction(input: z.infer<typeof createPaperSchema>
 
 ### Auth pattern
 
-Server actions use `requireAuth()` which throws on failure (no `NextResponse`):
+Server actions use `requireSession()` which throws on failure (no `NextResponse`):
 
 ```ts
-import { requireAuth } from '@/src/shared/lib/server-action-helpers';
+import { requireSession } from '@/src/shared/lib/auth/auth';
 
 export async function myAction(input: MyInput) {
-  const wallet = await requireAuth(); // throws if not authenticated
+  const wallet = await requireSession(); // throws if not authenticated
   // ... proceed with wallet
 }
 ```
@@ -124,11 +124,13 @@ Server actions that perform secondary work (HCS anchoring, HTS minting, notifica
 'use server';
 
 import { after } from 'next/server';
-import { requireAuth, anchorAndNotify, recordReputation } from '@/src/shared/lib/server-action-helpers';
-import { createReview } from '@/src/features/reviews/mutations';
+import { requireSession } from '@/src/shared/lib/auth/auth';
+import { anchorToHcs } from '@/src/shared/lib/hedera/hcs';
+import { createReview, recordReputation } from '@/src/features/reviews/mutations';
+import { createNotification } from '@/src/features/notifications/mutations';
 
 export async function submitReviewAction(assignmentId: string, input: ReviewInput) {
-  const session = await requireAuth();
+  const session = await requireSession();
 
   // Critical DB write — must complete before returning
   const review = await createReview({ ...input, reviewerWallet: session });
@@ -136,7 +138,10 @@ export async function submitReviewAction(assignmentId: string, input: ReviewInpu
 
   // Non-blocking: HCS anchoring, reputation, status transitions run after response
   after(async () => {
-    await anchorAndNotify({ topic: 'HCS_TOPIC_REVIEWS', payload: { ... } });
+    await Promise.all([
+      anchorToHcs('HCS_TOPIC_REVIEWS', { ... }),
+      createNotification({ ... }),
+    ]);
     await recordReputation(session, 'review_completed', 1, ...);
   });
 
@@ -249,20 +254,21 @@ API routes that call mutation functions follow the same pattern — auth via `re
 
 ## Shared Helpers
 
-`src/shared/lib/server-action-helpers.ts` provides common guards and utilities for server actions:
+`src/shared/lib/auth/auth.ts` exports `requireSession()` (auth guard — throws if no session).
 
-| Helper | Purpose |
+Domain guards and utilities live in their respective feature modules:
+
+| Helper | Location |
 |---|---|
-| `requireAuth()` | Auth guard — throws if no session |
-| `requireSubmissionEditor(id, session)` | Verifies editor owns the submission's journal |
-| `requireRebuttalAuthor(id, session)` | Verifies author owns the rebuttal's submission |
-| `requireRebuttalEditor(id, session)` | Verifies editor owns the rebuttal's journal |
-| `requireReviewWithPaperOwner(id, session)` | Verifies paper owner for rating |
-| `anchorToHcs(topic, payload)` | Submit HCS message (graceful fallback) |
-| `anchorAndNotify({ topic, payload, notifications })` | HCS + notifications in one call |
-| `recordReputation(wallet, event, delta, memo, metadata)` | Reputation event + HTS mint |
+| `anchorToHcs(topic, payload)` | `src/shared/lib/hedera/hcs.ts` |
+| `recordReputation(wallet, event, delta, memo, metadata)` | `src/features/reviews/mutations.ts` |
+| `requireJournalEditor(id, session)` | `src/features/editor/queries.ts` |
+| `requireSubmissionEditor(id, session)` | `src/features/submissions/queries.ts` |
+| `requireRebuttalAuthor(id, session)` | `src/features/rebuttals/queries.ts` |
+| `requireRebuttalEditor(id, session)` | `src/features/rebuttals/queries.ts` |
+| `requireReviewWithPaperOwner(id, session)` | `src/features/reviews/queries.ts` |
 
-These mirror the older `src/shared/lib/api-helpers.ts` but throw errors instead of returning `NextResponse`.
+These throw errors instead of returning `NextResponse`.
 
 ---
 
@@ -292,7 +298,7 @@ export async function createPaper(input: CreatePaperInput) {
 ```ts
 // DO — auth in the server action, wallet passed as input
 export async function createPaperAction(input: Input) {
-  const wallet = await requireAuth();
+  const wallet = await requireSession();
   const paper = await createPaper({ ...input, wallet });
 }
 ```

@@ -7,13 +7,14 @@ import type {
   RebuttalResolutionDb,
 } from '@/src/shared/lib/db/schema';
 import { canonicalJson, sha256 } from '@/src/shared/lib/hashing';
+import { requireSession } from '@/src/shared/lib/auth/auth';
+import { anchorToHcs } from '@/src/shared/lib/hedera/hcs';
 import {
-  requireAuth,
   requireRebuttalAuthor,
   requireRebuttalEditor,
-  anchorAndNotify,
-  recordReputation,
-} from '@/src/shared/lib/server-action-helpers';
+} from '@/src/features/rebuttals/queries';
+import { recordReputation } from '@/src/features/reviews/mutations';
+import { createNotification } from '@/src/features/notifications/mutations';
 import { ROUTES } from '@/src/shared/lib/routes';
 import {
   submitRebuttalResponses,
@@ -46,7 +47,7 @@ export async function respondToRebuttalAction(
   rebuttalId: string,
   input: z.infer<typeof respondSchema>,
 ) {
-  const session = await requireAuth();
+  const session = await requireSession();
 
   const rebuttal = await requireRebuttalAuthor(rebuttalId, session);
 
@@ -63,27 +64,26 @@ export async function respondToRebuttalAction(
 
   const editorWallet = rebuttal.submission?.journal?.editorWallet;
 
-  const { txId: hederaTxId } = await anchorAndNotify({
-    topic: 'HCS_TOPIC_DECISIONS',
-    payload: {
+  const [{ txId: hederaTxId }] = await Promise.all([
+    anchorToHcs('HCS_TOPIC_DECISIONS', {
       type: 'rebuttal_submitted',
       rebuttalId,
       submissionId: rebuttal.submissionId,
       rebuttalHash,
       timestamp: new Date().toISOString(),
-    },
-    notifications: editorWallet
+    }),
+    ...(editorWallet
       ? [
-          {
+          createNotification({
             userWallet: editorWallet,
             type: 'rebuttal_submitted',
             title: 'Rebuttal response submitted',
             body: `The author has responded to the rebuttal for "${rebuttal.submission.paper?.title}".`,
             link: ROUTES.editor.underReview,
-          },
+          }),
         ]
-      : [],
-  });
+      : []),
+  ]);
 
   const responses = parsed.responses.map((r) => ({
     ...r,
@@ -109,7 +109,7 @@ export async function resolveRebuttalAction(
   resolution: RebuttalResolutionDb,
   editorNotes: string,
 ) {
-  const session = await requireAuth();
+  const session = await requireSession();
 
   const rebuttal = await requireRebuttalEditor(rebuttalId, session);
 
@@ -117,27 +117,26 @@ export async function resolveRebuttalAction(
     throw new Error('Rebuttal must be submitted before resolving');
   }
 
-  const { txId: hederaTxId } = await anchorAndNotify({
-    topic: 'HCS_TOPIC_DECISIONS',
-    payload: {
+  const [{ txId: hederaTxId }] = await Promise.all([
+    anchorToHcs('HCS_TOPIC_DECISIONS', {
       type: 'rebuttal_resolved',
       rebuttalId,
       submissionId: rebuttal.submissionId,
       resolution,
       timestamp: new Date().toISOString(),
-    },
-    notifications: rebuttal.authorWallet
+    }),
+    ...(rebuttal.authorWallet
       ? [
-          {
+          createNotification({
             userWallet: rebuttal.authorWallet,
             type: 'rebuttal_resolved',
             title: 'Rebuttal resolved',
             body: `Your rebuttal has been resolved: ${resolution}. ${editorNotes || ''}`.trim(),
             link: ROUTES.researcher.rebuttal(rebuttal.submissionId),
-          },
+          }),
         ]
-      : [],
-  });
+      : []),
+  ]);
 
   await resolveRebuttal({
     rebuttalId,

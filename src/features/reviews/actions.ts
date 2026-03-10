@@ -6,13 +6,9 @@ import { db } from '@/src/shared/lib/db';
 import { paperVersions, reviewerRatings } from '@/src/shared/lib/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { canonicalJson, sha256 } from '@/src/shared/lib/hashing';
-import {
-  requireAuth,
-  requireReviewWithPaperOwner,
-  anchorAndNotify,
-  anchorToHcs,
-  recordReputation,
-} from '@/src/shared/lib/server-action-helpers';
+import { requireSession } from '@/src/shared/lib/auth/auth';
+import { anchorToHcs } from '@/src/shared/lib/hedera/hcs';
+import { requireReviewWithPaperOwner } from '@/src/features/reviews/queries';
 import { ROUTES } from '@/src/shared/lib/routes';
 import {
   getReviewAssignment,
@@ -22,6 +18,7 @@ import {
   createReview,
   updateReviewHedera,
   updateSubmissionStatus,
+  recordReputation,
 } from '@/src/features/reviews/mutations';
 import { createNotification } from '@/src/features/notifications/mutations';
 import { markDeadlineCompleted } from '@/src/shared/lib/hedera/timeline-enforcer';
@@ -42,7 +39,7 @@ export async function submitReviewAction(
     reviewHash: string;
   },
 ) {
-  const session = await requireAuth();
+  const session = await requireSession();
 
   const assignment = await getReviewAssignment(assignmentId, session);
   if (!assignment) {
@@ -86,28 +83,27 @@ export async function submitReviewAction(
   const editorWallet = assignment.submission.journal?.editorWallet;
 
   after(async () => {
-    const { txId: hederaTxId } = await anchorAndNotify({
-      topic: 'HCS_TOPIC_REVIEWS',
-      payload: {
+    const [{ txId: hederaTxId }] = await Promise.all([
+      anchorToHcs('HCS_TOPIC_REVIEWS', {
         type: 'review_submitted',
         reviewHash: input.reviewHash,
         reviewerWallet: session,
         submissionId: assignment.submissionId,
         paperHash: latestVersion?.paperHash ?? null,
         timestamp: new Date().toISOString(),
-      },
-      notifications: editorWallet
+      }),
+      ...(editorWallet
         ? [
-            {
+            createNotification({
               userWallet: editorWallet,
               type: 'review_submitted',
               title: 'Review submitted',
               body: `A reviewer has submitted their review for "${assignment.submission.paper.title}".`,
               link: ROUTES.editor.underReview,
-            },
+            }),
           ]
-        : [],
-    });
+        : []),
+    ]);
 
     if (hederaTxId) {
       await updateReviewHedera(review.id, hederaTxId);
@@ -189,7 +185,7 @@ export async function rateReviewerAction(
   reviewId: string,
   input: z.infer<typeof ratingSchema>,
 ) {
-  const session = await requireAuth();
+  const session = await requireSession();
 
   const review = await requireReviewWithPaperOwner(reviewId, session);
   const parsed = ratingSchema.parse(input);
