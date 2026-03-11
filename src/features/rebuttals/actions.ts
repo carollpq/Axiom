@@ -44,6 +44,7 @@ const respondSchema = z.object({
     .max(50),
 });
 
+/** Author submits per-review agree/disagree responses. Validates deadline hasn't passed. */
 export async function respondToRebuttalAction(
   rebuttalId: string,
   input: z.infer<typeof respondSchema>,
@@ -101,6 +102,7 @@ export async function respondToRebuttalAction(
 // Resolve Rebuttal
 // ---------------------------------------------------------------------------
 
+/** Editor resolves rebuttal. Upheld/overturned mints reputation tokens; partial skips minting. */
 export async function resolveRebuttalAction(
   rebuttalId: string,
   resolution: RebuttalResolutionDb,

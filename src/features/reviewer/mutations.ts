@@ -3,6 +3,7 @@ import { journalReviewers } from '@/src/shared/lib/db/schema';
 import { and, eq, sql } from 'drizzle-orm';
 import type { PoolInviteStatusDb } from '@/src/shared/lib/db/schema';
 
+/** Updates pool invite status and sets respondedAt. No auth — caller must authorize. */
 export async function respondToPoolInvite(
   journalReviewerId: string,
   reviewerWallet: string,

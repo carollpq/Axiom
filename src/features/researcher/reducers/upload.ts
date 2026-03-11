@@ -1,5 +1,5 @@
-import type { StudyTypeDb } from "@/src/shared/lib/db/schema";
-import { PAPER_LIMITS } from "@/src/features/researcher/config/upload";
+import type { StudyTypeDb } from '@/src/shared/lib/db/schema';
+import { PAPER_LIMITS } from '@/src/features/researcher/config/upload';
 
 export interface UploadState {
   title: string;
@@ -17,14 +17,14 @@ export interface UploadState {
 }
 
 export const initialUploadState: UploadState = {
-  title: "",
-  abstract: "",
-  fileName: "",
-  fileHash: "",
+  title: '',
+  abstract: '',
+  fileName: '',
+  fileHash: '',
   isHashing: false,
-  studyType: "original",
+  studyType: 'original',
   keywords: [],
-  keywordInput: "",
+  keywordInput: '',
   registering: false,
   registered: false,
   paperId: null,
@@ -32,57 +32,79 @@ export const initialUploadState: UploadState = {
 };
 
 export type UploadAction =
-  | { type: "SET_TITLE"; title: string }
-  | { type: "SET_ABSTRACT"; abstract: string }
-  | { type: "FILE_UPLOAD_START"; fileName: string }
-  | { type: "FILE_UPLOAD_COMPLETE"; fileHash: string }
-  | { type: "FILE_UPLOAD_ERROR" }
-  | { type: "REMOVE_FILE" }
-  | { type: "SET_STUDY_TYPE"; studyType: StudyTypeDb }
-  | { type: "SET_KEYWORD_INPUT"; keywordInput: string }
-  | { type: "ADD_KEYWORD" }
-  | { type: "REMOVE_KEYWORD"; index: number }
-  | { type: "REGISTER_START" }
-  | { type: "REGISTER_SUCCESS"; paperId: string }
-  | { type: "REGISTER_ERROR"; error: string }
-  | { type: "RESET" };
+  | { type: 'SET_TITLE'; title: string }
+  | { type: 'SET_ABSTRACT'; abstract: string }
+  | { type: 'FILE_UPLOAD_START'; fileName: string }
+  | { type: 'FILE_UPLOAD_COMPLETE'; fileHash: string }
+  | { type: 'FILE_UPLOAD_ERROR' }
+  | { type: 'REMOVE_FILE' }
+  | { type: 'SET_STUDY_TYPE'; studyType: StudyTypeDb }
+  | { type: 'SET_KEYWORD_INPUT'; keywordInput: string }
+  | { type: 'ADD_KEYWORD' }
+  | { type: 'REMOVE_KEYWORD'; index: number }
+  | { type: 'REGISTER_START' }
+  | { type: 'REGISTER_SUCCESS'; paperId: string }
+  | { type: 'REGISTER_ERROR'; error: string }
+  | { type: 'RESET' };
 
-export function uploadReducer(state: UploadState, action: UploadAction): UploadState {
+export function uploadReducer(
+  state: UploadState,
+  action: UploadAction,
+): UploadState {
   switch (action.type) {
-    case "SET_TITLE":
+    case 'SET_TITLE':
       return { ...state, title: action.title };
-    case "SET_ABSTRACT":
+    case 'SET_ABSTRACT':
       return { ...state, abstract: action.abstract };
 
-    case "FILE_UPLOAD_START":
-      return { ...state, fileName: action.fileName, fileHash: "", isHashing: true, error: null };
-    case "FILE_UPLOAD_COMPLETE":
+    case 'FILE_UPLOAD_START':
+      return {
+        ...state,
+        fileName: action.fileName,
+        fileHash: '',
+        isHashing: true,
+        error: null,
+      };
+    case 'FILE_UPLOAD_COMPLETE':
       return { ...state, fileHash: action.fileHash, isHashing: false };
-    case "FILE_UPLOAD_ERROR":
-      return { ...state, isHashing: false, error: "Failed to hash file" };
-    case "REMOVE_FILE":
-      return { ...state, fileName: "", fileHash: "" };
+    case 'FILE_UPLOAD_ERROR':
+      return { ...state, isHashing: false, error: 'Failed to hash file' };
+    case 'REMOVE_FILE':
+      return { ...state, fileName: '', fileHash: '' };
 
-    case "SET_STUDY_TYPE":
+    case 'SET_STUDY_TYPE':
       return { ...state, studyType: action.studyType };
 
-    case "SET_KEYWORD_INPUT":
+    case 'SET_KEYWORD_INPUT':
       return { ...state, keywordInput: action.keywordInput };
-    case "ADD_KEYWORD":
-      return state.keywordInput.trim() && state.keywords.length < PAPER_LIMITS.keywords.max
-        ? { ...state, keywords: [...state.keywords, state.keywordInput.trim()], keywordInput: "" }
+    case 'ADD_KEYWORD':
+      return state.keywordInput.trim() &&
+        state.keywords.length < PAPER_LIMITS.keywords.max
+        ? {
+            ...state,
+            keywords: [...state.keywords, state.keywordInput.trim()],
+            keywordInput: '',
+          }
         : state;
-    case "REMOVE_KEYWORD":
-      return { ...state, keywords: state.keywords.filter((_, j) => j !== action.index) };
+    case 'REMOVE_KEYWORD':
+      return {
+        ...state,
+        keywords: state.keywords.filter((_, j) => j !== action.index),
+      };
 
-    case "REGISTER_START":
+    case 'REGISTER_START':
       return { ...state, registering: true, error: null };
-    case "REGISTER_SUCCESS":
-      return { ...state, registering: false, registered: true, paperId: action.paperId };
-    case "REGISTER_ERROR":
+    case 'REGISTER_SUCCESS':
+      return {
+        ...state,
+        registering: false,
+        registered: true,
+        paperId: action.paperId,
+      };
+    case 'REGISTER_ERROR':
       return { ...state, registering: false, error: action.error };
 
-    case "RESET":
+    case 'RESET':
       return initialUploadState;
 
     default:
@@ -96,20 +118,25 @@ export interface UploadValidationErrors {
   file?: string;
 }
 
+/** Validates title, abstract, and file presence against PAPER_LIMITS. */
 export function validateUpload(state: UploadState): UploadValidationErrors {
   const errors: UploadValidationErrors = {};
 
   const title = state.title.trim();
-  if (!title) errors.title = "Title is required";
-  else if (title.length < PAPER_LIMITS.title.min) errors.title = `Title must be at least ${PAPER_LIMITS.title.min} characters`;
-  else if (title.length > PAPER_LIMITS.title.max) errors.title = `Title must be at most ${PAPER_LIMITS.title.max} characters`;
+  if (!title) errors.title = 'Title is required';
+  else if (title.length < PAPER_LIMITS.title.min)
+    errors.title = `Title must be at least ${PAPER_LIMITS.title.min} characters`;
+  else if (title.length > PAPER_LIMITS.title.max)
+    errors.title = `Title must be at most ${PAPER_LIMITS.title.max} characters`;
 
   const abstract = state.abstract.trim();
-  if (!abstract) errors.abstract = "Abstract is required";
-  else if (abstract.length < PAPER_LIMITS.abstract.min) errors.abstract = `Abstract must be at least ${PAPER_LIMITS.abstract.min} characters`;
-  else if (abstract.length > PAPER_LIMITS.abstract.max) errors.abstract = `Abstract must be at most ${PAPER_LIMITS.abstract.max} characters`;
+  if (!abstract) errors.abstract = 'Abstract is required';
+  else if (abstract.length < PAPER_LIMITS.abstract.min)
+    errors.abstract = `Abstract must be at least ${PAPER_LIMITS.abstract.min} characters`;
+  else if (abstract.length > PAPER_LIMITS.abstract.max)
+    errors.abstract = `Abstract must be at most ${PAPER_LIMITS.abstract.max} characters`;
 
-  if (!state.fileHash) errors.file = "Please upload a PDF file";
+  if (!state.fileHash) errors.file = 'Please upload a PDF file';
 
   return errors;
 }

@@ -49,6 +49,7 @@ export type ContractBuilderAction =
       contributorDbIds: (string | undefined)[];
     };
 
+/** Editing any field when signatures exist invalidates all signatures (cascade reset). */
 export function contractBuilderReducer(
   state: ContractBuilderState,
   action: ContractBuilderAction,
@@ -166,6 +167,7 @@ export function selectTotalPct(state: ContractBuilderState): number {
   return state.contributors.reduce((s, c) => s + (Number(c.pct) || 0), 0);
 }
 
+/** Valid when contribution percentages sum to exactly 100. */
 export function selectIsValid(state: ContractBuilderState): boolean {
   return selectTotalPct(state) === 100;
 }

@@ -58,6 +58,7 @@ function reducer(state: State, action: Action): State {
   }
 }
 
+/** Manages per-review agree/disagree drafts and submits all responses in one action. */
 export function useRebuttal(rebuttalId: string, reviewIds: string[]) {
   const [state, dispatch] = useReducer(reducer, {
     responses: Object.fromEntries(

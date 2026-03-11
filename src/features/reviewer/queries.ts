@@ -11,6 +11,7 @@ import { eq, and, or, inArray } from 'drizzle-orm';
 import { displayNameOrWallet } from '@/src/features/users/lib';
 import type { EditorNameMap } from '@/src/features/reviewer/lib/dashboard';
 
+/** Active assignments (assigned + accepted), ordered by nearest deadline. */
 export const listAssignedReviews = cache(async (reviewerWallet: string) => {
   return db.query.reviewAssignments.findMany({
     where: and(
@@ -118,6 +119,7 @@ export const listCompletedReviewsExtended = cache(
   },
 );
 
+/** Returns the materialized reputation score row, or undefined if none yet. */
 export const getReviewerReputation = cache(async (reviewerWallet: string) => {
   return db.query.reputationScores.findFirst({
     where: eq(reputationScores.userWallet, reviewerWallet.toLowerCase()),

@@ -99,6 +99,7 @@ export function reviewWorkspaceReducer(
   }
 }
 
+/** Number of criteria with a rating selected. */
 export function selectCompletedCount(state: ReviewWorkspaceState): number {
   return Object.values(state.evaluations).filter((e) => e.rating !== null)
     .length;
@@ -108,6 +109,7 @@ export function selectAllCriteriaMet(state: ReviewWorkspaceState): boolean {
   return Object.values(state.evaluations).every((e) => e.rating === 'Yes');
 }
 
+/** All criteria rated + recommendation set + strengths non-empty. */
 export function selectCanSubmit(state: ReviewWorkspaceState): boolean {
   return (
     Object.values(state.evaluations).every((e) => e.rating !== null) &&

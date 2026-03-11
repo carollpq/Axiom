@@ -9,6 +9,7 @@ import { ROUTES } from '@/src/shared/lib/routes';
 import { respondToPoolInvite } from '@/src/features/reviewer/mutations';
 import { createNotification } from '@/src/features/notifications/mutations';
 
+/** Accept or reject a journal reviewer pool invite. Notifies the editor asynchronously. */
 export async function respondToPoolInviteAction(
   inviteId: string,
   status: 'accepted' | 'rejected',

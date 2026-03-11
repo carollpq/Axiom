@@ -28,6 +28,7 @@ import {
   selectCurrentUserHasSigned,
 } from '@/src/features/researcher/reducers/contract-builder';
 
+/** Manages the authorship contract builder: contributor CRUD, wallet signing, and invite links. */
 export function useContractBuilder(initialDrafts: ExistingDraft[]) {
   const { user, account } = useUser();
   const router = useRouter();

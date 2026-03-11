@@ -45,6 +45,7 @@ export interface ContractContextValue {
 
 export const ContractContext = createContext<ContractContextValue | null>(null);
 
+/** Throws if used outside ContractContext.Provider. */
 export function useContractContext(): ContractContextValue {
   const ctx = use(ContractContext);
   if (!ctx)

@@ -30,6 +30,7 @@ import {
 } from '@/src/features/reviewer/lib/workspace';
 import type { ReviewAssignmentLike } from '@/src/features/reviewer/lib/workspace';
 
+/** Manages the full review form: per-criterion evaluations, comments, recommendation, and submission. */
 export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
   const paper = useMemo(() => mapAssignmentToPaper(assignment), [assignment]);
 

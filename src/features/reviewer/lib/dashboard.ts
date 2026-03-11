@@ -68,6 +68,7 @@ function reviewStatus(
   return 'Pending';
 }
 
+/** Maps DB row to dashboard list item. Computes daysLeft and display status. */
 export function mapDbToAssignedReview(
   a: DbAssignedReview,
   index: number,
@@ -86,6 +87,7 @@ export function mapDbToAssignedReview(
   };
 }
 
+/** Maps DB row to completed review item. Truncates paper hash for display. */
 export function mapDbToCompletedReview(
   a: DbCompletedReview,
   index: number,
@@ -106,6 +108,7 @@ export function mapDbToCompletedReview(
   };
 }
 
+/** Converts 0–100 DB scores to 0–5 display scale. */
 export function mapDbToReputationScores(
   row: DbReputationRow,
 ): ReputationScores {
@@ -146,6 +149,7 @@ export function mapDbToReputationBreakdown(
   ];
 }
 
+/** Extended mapping that includes review content, author response, and rebuttal info. */
 export function mapDbToCompletedReviewExtended(
   a: DbCompletedReviewExtended,
   index: number,

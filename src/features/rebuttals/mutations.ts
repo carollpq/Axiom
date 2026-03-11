@@ -13,6 +13,7 @@ export interface OpenRebuttalInput {
   hederaTxId?: string;
 }
 
+/** Creates a new rebuttal row with `open` status and a deadline. */
 export async function openRebuttal(input: OpenRebuttalInput) {
   return (
     (
@@ -37,6 +38,7 @@ export interface RebuttalResponseInput {
   evidence?: string;
 }
 
+/** Inserts per-review responses and transitions rebuttal to `submitted`. */
 export async function submitRebuttalResponses(
   rebuttalId: string,
   responses: RebuttalResponseInput[],
@@ -64,6 +66,7 @@ export async function submitRebuttalResponses(
   );
 }
 
+/** Backfills HCS transaction ID after async anchoring. */
 export async function updateRebuttalHedera(
   rebuttalId: string,
   hederaTxId: string,
@@ -80,6 +83,7 @@ export interface ResolveRebuttalInput {
   editorNotes: string;
 }
 
+/** Sets resolution + editor notes and transitions rebuttal to `resolved`. */
 export async function resolveRebuttal(input: ResolveRebuttalInput) {
   return (
     (

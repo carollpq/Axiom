@@ -10,6 +10,7 @@ import type {
 } from '@/src/shared/types/domain';
 import { formatDate } from '@/src/shared/lib/format';
 
+/** Maps DB contributors to the client-side Contributor shape. */
 export function mapApiContributors(
   dbContribs: ContractContributor[],
 ): Contributor[] {
@@ -29,6 +30,7 @@ export function mapApiContributors(
   }));
 }
 
+/** Filters to draft/registered/contract_pending papers and pairs each with its contract. */
 export function mapApiPapersToDrafts(
   papers: Paper[],
   contracts: Contract[],
@@ -68,6 +70,7 @@ function mapContributorSummary(cc: ContractContributor) {
   };
 }
 
+/** Contracts where the current user is a contributor (not the creator) and needs to sign. */
 export function mapContractsToSign(
   contracts: Awaited<
     ReturnType<
@@ -88,6 +91,7 @@ export function mapContractsToSign(
     }));
 }
 
+/** Summarizes owned contracts with pending count and fully-signed status. */
 export function mapOwnedContractsForStatus(contracts: Contract[]) {
   return contracts.map((c) => {
     const pendingCount = c.contributors.filter(
@@ -103,6 +107,7 @@ export function mapOwnedContractsForStatus(contracts: Contract[]) {
   });
 }
 
+/** Flattens contract + contributors into a single display row for the signed contracts table. */
 export function mapDbContractToSigned(c: Contract): SignedContract {
   const contribSummary = c.contributors
     .map((cc) => `${cc.contributorName ?? 'Unknown'} (${cc.contributionPct}%)`)

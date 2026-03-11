@@ -3,6 +3,7 @@ import { db } from '@/src/shared/lib/db';
 import { rebuttals } from '@/src/shared/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 
+/** Returns the most recent rebuttal for a submission, with per-review responses. */
 export const getRebuttalBySubmission = cache(async (submissionId: string) => {
   return db.query.rebuttals.findFirst({
     where: eq(rebuttals.submissionId, submissionId),
@@ -15,6 +16,7 @@ export const getRebuttalBySubmission = cache(async (submissionId: string) => {
   });
 });
 
+/** Full rebuttal with submission tree (paper, journal, owner) and responses. */
 export async function getRebuttalById(rebuttalId: string) {
   return db.query.rebuttals.findFirst({
     where: eq(rebuttals.id, rebuttalId),
@@ -32,6 +34,7 @@ export async function getRebuttalById(rebuttalId: string) {
   });
 }
 
+/** Open rebuttals owned by this wallet — used for pending actions on researcher dashboard. */
 export async function listRebuttalSubmissionsForAuthor(walletAddress: string) {
   const openRebuttals = await db.query.rebuttals.findMany({
     where: and(
@@ -53,9 +56,7 @@ export async function listRebuttalSubmissionsForAuthor(walletAddress: string) {
   }));
 }
 
-/**
- * Rebuttal author guard for server actions.
- */
+/** Verifies the caller is the rebuttal author. Throws if not found or forbidden. */
 export async function requireRebuttalAuthor(
   rebuttalId: string,
   wallet: string,
@@ -70,9 +71,7 @@ export async function requireRebuttalAuthor(
   return rebuttal;
 }
 
-/**
- * Rebuttal editor guard for server actions.
- */
+/** Verifies the caller is the journal editor for this rebuttal's submission. */
 export async function requireRebuttalEditor(
   rebuttalId: string,
   wallet: string,

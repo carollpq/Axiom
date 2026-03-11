@@ -19,6 +19,7 @@ import {
 } from '@/src/features/researcher/reducers/upload';
 import type { StudyTypeDb } from '@/src/shared/lib/db/schema';
 
+/** Lit-encrypts the file if configured; otherwise passes through unchanged. */
 async function encryptFileIfConfigured(
   file: File,
   fileHash: string,
@@ -74,6 +75,7 @@ async function encryptFileIfConfigured(
 
 export type UseUploadReturn = ReturnType<typeof useUpload>;
 
+/** Manages paper registration: file hashing, optional Lit encryption, IPFS upload, and DB creation. */
 export function useUpload(
   onRegistered?: (paperId: string, title: string) => void,
 ) {

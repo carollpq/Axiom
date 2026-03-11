@@ -64,6 +64,7 @@ interface DbCriterion {
   required: boolean;
 }
 
+/** Builds paper view model from assignment. Extracts provenance from latest version. */
 export function mapAssignmentToPaper(
   assignment: ReviewAssignmentLike,
 ): PaperUnderReview {
@@ -121,6 +122,7 @@ export function mapAssignmentToPaper(
   };
 }
 
+/** Parses published criteria JSON into display items. Falls back to hardcoded defaults. */
 export function mapAssignmentToCriteria(
   assignment: ReviewAssignmentLike,
 ): ReviewCriterion[] {
