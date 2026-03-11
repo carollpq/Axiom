@@ -56,6 +56,43 @@ export async function updateCriteriaTxId(
   ]);
 }
 
+export interface CreateSubmissionInput {
+  paperId: string;
+  journalId: string;
+  versionId: string;
+}
+
+export async function createSubmission(input: CreateSubmissionInput) {
+  return (
+    (
+      await db
+        .insert(submissions)
+        .values({
+          paperId: input.paperId,
+          journalId: input.journalId,
+          versionId: input.versionId,
+        })
+        .returning()
+    )[0] ?? null
+  );
+}
+
+export async function updateSubmissionHedera(
+  submissionId: string,
+  hederaTxId: string,
+  hederaTimestamp: string,
+) {
+  return (
+    (
+      await db
+        .update(submissions)
+        .set({ hederaTxId, hederaTimestamp })
+        .where(eq(submissions.id, submissionId))
+        .returning()
+    )[0] ?? null
+  );
+}
+
 export interface CreateAssignmentInput {
   submissionId: string;
   reviewerWallet: string;

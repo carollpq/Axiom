@@ -1,5 +1,5 @@
 import { db } from '@/src/shared/lib/db';
-import { papers, paperVersions, submissions } from '@/src/shared/lib/db/schema';
+import { papers, paperVersions } from '@/src/shared/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { getUserByWallet } from '@/src/features/users/queries';
 import type { PaperStatusDb, StudyTypeDb } from '@/src/shared/lib/db/schema';
@@ -56,54 +56,19 @@ export interface UpdatePaperInput {
 }
 
 export async function updatePaper(id: string, input: UpdatePaperInput) {
-  const updates: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(input)) {
-    if (value !== undefined) updates[key] = value;
-  }
+  if (
+    input.title === undefined &&
+    input.abstract === undefined &&
+    input.status === undefined
+  )
+    return null;
 
-  if (Object.keys(updates).length === 0) return null;
-
-  updates.updatedAt = new Date().toISOString();
-
-  return (
-    (
-      await db.update(papers).set(updates).where(eq(papers.id, id)).returning()
-    )[0] ?? null
-  );
-}
-
-export interface CreateSubmissionInput {
-  paperId: string;
-  journalId: string;
-  versionId: string;
-}
-
-export async function createSubmission(input: CreateSubmissionInput) {
   return (
     (
       await db
-        .insert(submissions)
-        .values({
-          paperId: input.paperId,
-          journalId: input.journalId,
-          versionId: input.versionId,
-        })
-        .returning()
-    )[0] ?? null
-  );
-}
-
-export async function updateSubmissionHedera(
-  submissionId: string,
-  hederaTxId: string,
-  hederaTimestamp: string,
-) {
-  return (
-    (
-      await db
-        .update(submissions)
-        .set({ hederaTxId, hederaTimestamp })
-        .where(eq(submissions.id, submissionId))
+        .update(papers)
+        .set({ ...input, updatedAt: new Date().toISOString() })
+        .where(eq(papers.id, id))
         .returning()
     )[0] ?? null
   );
@@ -120,36 +85,41 @@ export interface CreatePaperVersionInput {
 }
 
 export async function createPaperVersion(input: CreatePaperVersionInput) {
-  const paper = (
-    await db.select().from(papers).where(eq(papers.id, input.paperId)).limit(1)
-  )[0];
+  return db.transaction(async (tx) => {
+    const paper = (
+      await tx
+        .select()
+        .from(papers)
+        .where(eq(papers.id, input.paperId))
+        .limit(1)
+    )[0];
 
-  if (!paper) return null;
+    if (!paper) return null;
 
-  const version = (
-    await db
-      .insert(paperVersions)
-      .values({
-        paperId: input.paperId,
-        versionNumber: paper.currentVersion,
-        paperHash: input.paperHash,
-        datasetHash: input.datasetHash ?? null,
-        codeRepoUrl: input.codeRepoUrl ?? null,
-        codeCommitHash: input.codeCommitHash ?? null,
-        envSpecHash: input.envSpecHash ?? null,
-        fileStorageKey: input.fileStorageKey ?? null,
+    const version = (
+      await tx
+        .insert(paperVersions)
+        .values({
+          paperId: input.paperId,
+          versionNumber: paper.currentVersion,
+          paperHash: input.paperHash,
+          datasetHash: input.datasetHash ?? null,
+          codeRepoUrl: input.codeRepoUrl ?? null,
+          codeCommitHash: input.codeCommitHash ?? null,
+          envSpecHash: input.envSpecHash ?? null,
+          fileStorageKey: input.fileStorageKey ?? null,
+        })
+        .returning()
+    )[0];
+
+    await tx
+      .update(papers)
+      .set({
+        currentVersion: paper.currentVersion + 1,
+        updatedAt: new Date().toISOString(),
       })
-      .returning()
-  )[0];
+      .where(eq(papers.id, input.paperId));
 
-  // Bump the paper's current version
-  await db
-    .update(papers)
-    .set({
-      currentVersion: paper.currentVersion + 1,
-      updatedAt: new Date().toISOString(),
-    })
-    .where(eq(papers.id, input.paperId));
-
-  return version;
+    return version;
+  });
 }

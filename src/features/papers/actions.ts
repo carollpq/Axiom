@@ -1,6 +1,7 @@
 'use server';
 
 import { z } from 'zod';
+import { after } from 'next/server';
 import { requireSession } from '@/src/shared/lib/auth/auth';
 import { anchorToHcs } from '@/src/shared/lib/hedera/hcs';
 import {
@@ -8,9 +9,11 @@ import {
   updatePaper,
   createPaperVersion,
   updatePaperVersionHedera,
+} from '@/src/features/papers/mutations';
+import {
   createSubmission,
   updateSubmissionHedera,
-} from '@/src/features/papers/mutations';
+} from '@/src/features/submissions/mutations';
 import { getPaperById } from '@/src/features/papers/queries';
 import { getContractById } from '@/src/features/contracts/queries';
 import { getUserByWallet } from '@/src/features/users/queries';
@@ -65,6 +68,13 @@ const createVersionSchema = z.object({
   fileStorageKey: z.string().max(500).nullish(),
 });
 
+const submitPaperSchema = z.object({
+  paperId: z.string().uuid(),
+  journalId: z.string().uuid(),
+  contractId: z.string().uuid().optional(),
+  versionId: z.string().uuid().optional(),
+});
+
 // ---------------------------------------------------------------------------
 // Actions
 // ---------------------------------------------------------------------------
@@ -99,38 +109,19 @@ export async function registerVersionAction(
   await requireSession();
   const parsed = createVersionSchema.parse(input);
 
-  const {
-    paperId,
-    paperHash,
-    datasetHash,
-    codeRepoUrl,
-    codeCommitHash,
-    envSpecHash,
-    fileStorageKey,
-  } = parsed;
-
-  const version = await createPaperVersion({
-    paperId,
-    paperHash,
-    datasetHash: datasetHash ?? null,
-    codeRepoUrl: codeRepoUrl ?? null,
-    codeCommitHash: codeCommitHash ?? null,
-    envSpecHash: envSpecHash ?? null,
-    fileStorageKey: fileStorageKey ?? null,
-  });
-
+  const version = await createPaperVersion(parsed);
   if (!version) throw new Error('Paper not found');
 
   // Anchor on Hedera HCS
   const { txId, consensusTimestamp } = await anchorToHcs('HCS_TOPIC_PAPERS', {
     type: 'register',
-    paperHash,
-    paperId,
+    paperHash: parsed.paperHash,
+    paperId: parsed.paperId,
     versionId: version.id,
     versionNumber: version.versionNumber,
-    ...(datasetHash && { datasetHash }),
-    ...(codeCommitHash && { codeCommitHash }),
-    ...(envSpecHash && { envSpecHash }),
+    ...(parsed.datasetHash && { datasetHash: parsed.datasetHash }),
+    ...(parsed.codeCommitHash && { codeCommitHash: parsed.codeCommitHash }),
+    ...(parsed.envSpecHash && { envSpecHash: parsed.envSpecHash }),
     timestamp: new Date().toISOString(),
   });
 
@@ -146,17 +137,12 @@ export async function registerVersionAction(
   return version;
 }
 
-export async function submitPaperAction(input: {
-  paperId: string;
-  journalId: string;
-  contractId?: string;
-  versionId?: string;
-}) {
+export async function submitPaperAction(
+  input: z.infer<typeof submitPaperSchema>,
+) {
   const session = await requireSession();
-
-  const { paperId, journalId, contractId, versionId } = input;
-
-  if (!journalId) throw new Error('journalId is required');
+  const { paperId, journalId, contractId, versionId } =
+    submitPaperSchema.parse(input);
 
   const paper = await getPaperById(paperId);
   if (!paper) throw new Error('Paper not found');
@@ -206,6 +192,7 @@ export async function submitPaperAction(input: {
     resolvedVersionId = latestVersion.id;
   }
 
+  // Critical DB writes
   const submission = await createSubmission({
     paperId,
     journalId,
@@ -214,25 +201,27 @@ export async function submitPaperAction(input: {
 
   if (!submission) throw new Error('Failed to create submission');
 
-  const { txId: hederaTxId, consensusTimestamp: hederaTimestamp } =
-    await anchorToHcs('HCS_TOPIC_SUBMISSIONS', {
-      type: 'submitted',
-      paperId,
-      journalId,
-      versionId: resolvedVersionId,
-      submissionId: submission.id,
-      submittedAt: new Date().toISOString(),
-    });
-
-  if (hederaTxId && hederaTimestamp) {
-    await updateSubmissionHedera(submission.id, hederaTxId, hederaTimestamp);
-  }
-
   await updatePaper(paperId, { status: 'submitted' });
 
-  return {
-    submissionId: submission.id,
-    hederaTxId,
-    hederaTimestamp,
-  };
+  // Defer HCS anchoring after response
+  const submissionId = submission.id;
+  after(async () => {
+    const { txId, consensusTimestamp } = await anchorToHcs(
+      'HCS_TOPIC_SUBMISSIONS',
+      {
+        type: 'submitted',
+        paperId,
+        journalId,
+        versionId: resolvedVersionId,
+        submissionId,
+        submittedAt: new Date().toISOString(),
+      },
+    );
+
+    if (txId && consensusTimestamp) {
+      await updateSubmissionHedera(submissionId, txId, consensusTimestamp);
+    }
+  });
+
+  return { submissionId };
 }
