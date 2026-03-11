@@ -43,11 +43,6 @@ export interface PoolReviewer {
   poolInviteStatus?: 'pending' | 'accepted' | 'rejected';
 }
 
-export interface CriterionTemplate {
-  label: string;
-  type: string;
-}
-
 export type { BadgeColorConfig } from '@/src/shared/types/shared';
 export type { StatCardProps as JournalStatCardData } from '@/src/shared/types/shared';
 

@@ -1,12 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { toast } from 'sonner';
-import { Plus, X } from 'lucide-react';
-import { getErrorMessage } from '@/src/shared/lib/errors';
-import { FormInput } from '@/src/shared/components/form-input.client';
+import { Plus } from 'lucide-react';
 import type { JournalIssue } from '@/src/features/editor/types';
-import { ModalOverlay } from '@/src/shared/components/modal-overlay.client';
+import { IssueCreateForm } from './issue-create-form.client';
 
 interface IssuesGridProps {
   issues: JournalIssue[];
@@ -18,23 +15,6 @@ export function IssuesGrid({ issues, onCreateIssue }: IssuesGridProps) {
     issues.length > 0 ? issues[0] : null,
   );
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newIssueLabel, setNewIssueLabel] = useState('');
-  const [creating, setCreating] = useState(false);
-
-  const handleCreate = async () => {
-    if (!newIssueLabel.trim() || !onCreateIssue) return;
-    setCreating(true);
-    try {
-      await onCreateIssue(newIssueLabel.trim());
-      setShowAddForm(false);
-      setNewIssueLabel('');
-    } catch (err) {
-      const message = getErrorMessage(err, 'Failed to create issue');
-      toast.error(message);
-    } finally {
-      setCreating(false);
-    }
-  };
 
   return (
     <div className="mb-12">
@@ -145,57 +125,13 @@ export function IssuesGrid({ issues, onCreateIssue }: IssuesGridProps) {
         </div>
       </div>
 
-      <ModalOverlay
-        isOpen={showAddForm}
-        onClose={() => setShowAddForm(false)}
-        maxWidth="384px"
-      >
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-serif text-[16px] text-[#e8e0d4]">New Issue</h3>
-          <button
-            onClick={() => setShowAddForm(false)}
-            className="text-[#6a6050] hover:text-[#d4ccc0] text-xl cursor-pointer"
-          >
-            <X size={20} />
-          </button>
-        </div>
-        <FormInput
-          type="text"
-          value={newIssueLabel}
-          onChange={(e) => setNewIssueLabel(e.target.value)}
-          placeholder="Issue label (e.g. Vol. 1, Issue #3)"
-          className="rounded-[6px] px-3 py-2 text-[13px] mb-4"
-          autoFocus
+      {onCreateIssue && (
+        <IssueCreateForm
+          isOpen={showAddForm}
+          onClose={() => setShowAddForm(false)}
+          onCreateIssue={onCreateIssue}
         />
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={() => {
-              setShowAddForm(false);
-              setNewIssueLabel('');
-            }}
-            className="px-4 py-1.5 rounded text-[12px] font-serif cursor-pointer"
-            style={{
-              color: '#8a8070',
-              border: '1px solid rgba(120,110,95,0.25)',
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleCreate}
-            disabled={creating || !newIssueLabel.trim()}
-            className="px-4 py-1.5 rounded text-[12px] font-serif cursor-pointer"
-            style={{
-              background:
-                'linear-gradient(135deg, rgba(180,160,120,0.2), rgba(160,140,100,0.1))',
-              border: '1px solid rgba(180,160,120,0.4)',
-              color: '#d4c8a8',
-            }}
-          >
-            {creating ? 'Creating...' : 'Create'}
-          </button>
-        </div>
-      </ModalOverlay>
+      )}
     </div>
   );
 }

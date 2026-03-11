@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { LazyFallback } from './lazy-fallback';
 import { ThreeColumnLayout } from '@/src/shared/components/three-column-layout';
 import { DynamicPdfViewer as PdfViewer } from '@/src/shared/components/dynamic-pdf-viewer.client';
 import { PaperList } from '@/src/shared/components/paper-list.client';
@@ -24,39 +25,21 @@ const FinalDecisionPanel = dynamic(
     import('./sidebar/final-decision-panel.client').then((m) => ({
       default: m.FinalDecisionPanel,
     })),
-  {
-    loading: () => (
-      <div className="p-6 text-[13px] text-[#6a6050]">
-        Loading decision panel...
-      </div>
-    ),
-  },
+  { loading: LazyFallback },
 );
 const ResolveRebuttalPanel = dynamic(
   () =>
     import('./sidebar/resolve-rebuttal-panel.client').then((m) => ({
       default: m.ResolveRebuttalPanel,
     })),
-  {
-    loading: () => (
-      <div className="p-6 text-[13px] text-[#6a6050]">
-        Loading rebuttal panel...
-      </div>
-    ),
-  },
+  { loading: LazyFallback },
 );
 const AssignReviewersPanel = dynamic(
   () =>
     import('./sidebar/assign-reviewers-panel.client').then((m) => ({
       default: m.AssignReviewersPanel,
     })),
-  {
-    loading: () => (
-      <div className="p-6 text-[13px] text-[#6a6050]">
-        Loading reviewer panel...
-      </div>
-    ),
-  },
+  { loading: LazyFallback },
 );
 
 const DECISION_LABELS: Record<string, string> = {
@@ -86,28 +69,28 @@ export function UnderReviewClient({
     selectedId,
     setSelectedId,
     selected,
-    currentReviewers,
-    allReviewsComplete,
-    currentAuthorResponseStatus,
-    canMakeDecision,
-    editorComment,
-    setEditorComment,
-    decision,
-    setDecision,
-    releaseToAuthor,
-    confirmRelease,
     additionalAssigned,
     assignReviewer,
     removeReviewer,
     reviewerSearch,
     setReviewerSearch,
     timelineDays,
-    isReleasingDecision,
-    showDecisionConfirm,
-    setShowDecisionConfirm,
-    currentRebuttal,
-    resolveRebuttal,
-    isResolvingRebuttal,
+    decisionFlow: {
+      currentReviewers,
+      allReviewsComplete,
+      currentAuthorResponseStatus,
+      canMakeDecision,
+      editorComment,
+      setEditorComment,
+      decision,
+      setDecision,
+      releaseToAuthor,
+      confirmRelease,
+      isReleasingDecision,
+      showDecisionConfirm,
+      setShowDecisionConfirm,
+    },
+    rebuttalFlow: { currentRebuttal, resolveRebuttal, isResolvingRebuttal },
   } = useUnderReview({
     initialPapers,
     initialReviewerPool: reviewerPool,

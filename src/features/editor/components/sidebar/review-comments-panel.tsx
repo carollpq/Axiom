@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { FORM_CONTROL_STYLE } from '@/src/shared/components/form-styles';
 import type { ReviewerWithStatus } from '@/src/features/editor/types';
 import { SidebarSection } from '@/src/shared/components/sidebar-section';
 import { ListRow } from '@/src/shared/components/list-row';
@@ -45,10 +46,7 @@ export function ReviewCommentsPanel({ reviewers }: ReviewCommentsPanelProps) {
               {expandedId === r.id && r.reviewContent && (
                 <div
                   className="mt-1 rounded px-3 py-2.5 space-y-2"
-                  style={{
-                    background: 'rgba(30,28,24,0.6)',
-                    border: '1px solid rgba(120,110,95,0.15)',
-                  }}
+                  style={FORM_CONTROL_STYLE}
                 >
                   {r.reviewContent.strengths && (
                     <div>

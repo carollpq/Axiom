@@ -14,9 +14,60 @@ import type {
   DbJournalIssue,
   DbJournalReviewerWithStatus,
 } from '../queries';
+import type { StatCardProps } from '@/src/shared/types/shared';
 import { formatDate, truncate } from '@/src/shared/lib/format';
 import { displayNameOrWallet } from '@/src/features/users/lib';
 import { toFivePointScale } from '@/src/features/reviews/lib';
+
+export function computeSubmissionStats(
+  subs: DbJournalSubmission[],
+): StatCardProps[] {
+  let newSubmissions = 0,
+    awaitingAssignment = 0,
+    underReview = 0,
+    accepted = 0,
+    rejected = 0;
+
+  for (const s of subs) {
+    switch (s.status) {
+      case 'submitted':
+      case 'viewed_by_editor':
+        newSubmissions++;
+        break;
+      case 'criteria_published':
+      case 'reviewers_assigned': {
+        const acceptedCount = (s.reviewAssignments ?? []).filter(
+          (a: { status: string }) =>
+            a.status === 'accepted' || a.status === 'submitted',
+        ).length;
+        if (s.status === 'reviewers_assigned' && acceptedCount >= 2)
+          underReview++;
+        else awaitingAssignment++;
+        break;
+      }
+      case 'under_review':
+      case 'reviews_completed':
+      case 'rebuttal_open':
+        underReview++;
+        break;
+      case 'accepted':
+      case 'published':
+        accepted++;
+        break;
+      case 'rejected':
+        rejected++;
+        break;
+    }
+  }
+
+  return [
+    { label: 'New Submissions', value: newSubmissions },
+    { label: 'Awaiting Assignment', value: awaitingAssignment },
+    { label: 'Under Review', value: underReview },
+    { label: 'Accepted Papers', value: accepted },
+    { label: 'Rejected Papers', value: rejected, alert: true },
+  ];
+}
 
 export function deriveStage(
   status: string,

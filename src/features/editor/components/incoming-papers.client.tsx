@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { LazyFallback } from './lazy-fallback';
 import { ThreeColumnLayout } from '@/src/shared/components/three-column-layout';
 import { DynamicPdfViewer as PdfViewer } from '@/src/shared/components/dynamic-pdf-viewer.client';
 import { PaperList } from '@/src/shared/components/paper-list.client';
@@ -17,37 +18,21 @@ const CriteriaBuilder = dynamic(
     import('./criteria-builder.client').then((m) => ({
       default: m.CriteriaBuilder,
     })),
-  {
-    loading: () => (
-      <div className="p-6 text-[13px] text-[#6a6050]">
-        Loading criteria builder...
-      </div>
-    ),
-  },
+  { loading: LazyFallback },
 );
 const AssignReviewersPanel = dynamic(
   () =>
     import('./sidebar/assign-reviewers-panel.client').then((m) => ({
       default: m.AssignReviewersPanel,
     })),
-  {
-    loading: () => (
-      <div className="p-6 text-[13px] text-[#6a6050]">
-        Loading reviewer panel...
-      </div>
-    ),
-  },
+  { loading: LazyFallback },
 );
 const DeskRejectPanel = dynamic(
   () =>
     import('./sidebar/desk-reject-panel.client').then((m) => ({
       default: m.DeskRejectPanel,
     })),
-  {
-    loading: () => (
-      <div className="p-6 text-[13px] text-[#6a6050]">Loading...</div>
-    ),
-  },
+  { loading: LazyFallback },
 );
 
 interface IncomingPapersProps {

@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/src/shared/lib/errors';
 import type { PoolReviewer, JournalIssue } from '@/src/features/editor/types';
 import { IssuesGrid } from './management/issues-grid.client';
 import { EditableSection } from './management/editable-section.client';
@@ -23,6 +23,27 @@ interface JournalManagementProps {
   allReviewers: PoolReviewer[];
 }
 
+function makeJournalHandler<A extends unknown[]>(
+  journalId: string,
+  router: ReturnType<typeof useRouter>,
+  action: (journalId: string, ...args: A) => Promise<unknown>,
+  successMsg: string,
+) {
+  return async (...args: A) => {
+    if (!journalId) {
+      toast.error('No journal associated with your account');
+      return;
+    }
+    try {
+      await action(journalId, ...args);
+      router.refresh();
+      toast.success(successMsg);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Operation failed'));
+    }
+  };
+}
+
 export function JournalManagement({
   journalId,
   journalName,
@@ -34,56 +55,33 @@ export function JournalManagement({
 }: JournalManagementProps) {
   const router = useRouter();
 
-  const handleSaveAims = useCallback(
-    async (value: string) => {
-      if (!journalId) {
-        toast.error('No journal associated with your account');
-        return;
-      }
-      await updateJournalAction(journalId, { aimsAndScope: value });
-      router.refresh();
-      toast.success('Aims and scope saved');
-    },
-    [journalId, router],
+  const handleSaveAims = makeJournalHandler(
+    journalId,
+    router,
+    (id, value: string) => updateJournalAction(id, { aimsAndScope: value }),
+    'Aims and scope saved',
   );
 
-  const handleSaveCriteria = useCallback(
-    async (value: string) => {
-      if (!journalId) {
-        toast.error('No journal associated with your account');
-        return;
-      }
-      await updateJournalAction(journalId, { submissionCriteria: value });
-      router.refresh();
-      toast.success('Submission criteria saved');
-    },
-    [journalId, router],
+  const handleSaveCriteria = makeJournalHandler(
+    journalId,
+    router,
+    (id, value: string) =>
+      updateJournalAction(id, { submissionCriteria: value }),
+    'Submission criteria saved',
   );
 
-  const handleCreateIssue = useCallback(
-    async (label: string) => {
-      if (!journalId) {
-        toast.error('No journal associated with your account');
-        return;
-      }
-      await createIssueAction(journalId, label);
-      router.refresh();
-      toast.success('Issue created');
-    },
-    [journalId, router],
+  const handleCreateIssue = makeJournalHandler(
+    journalId,
+    router,
+    createIssueAction,
+    'Issue created',
   );
 
-  const handleAddReviewer = useCallback(
-    async (wallet: string) => {
-      if (!journalId) {
-        toast.error('No journal associated with your account');
-        return;
-      }
-      await addReviewerToPoolAction(journalId, wallet);
-      router.refresh();
-      toast.success('Reviewer added to pool');
-    },
-    [journalId, router],
+  const handleAddReviewer = makeJournalHandler(
+    journalId,
+    router,
+    addReviewerToPoolAction,
+    'Reviewer added to pool',
   );
 
   if (!journalId) {

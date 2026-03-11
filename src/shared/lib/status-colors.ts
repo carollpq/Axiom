@@ -221,6 +221,14 @@ export function getStatusColors(status: string): BadgeColorConfig {
 /* ── Shared label maps (DB enum → display string) ────────────────────── */
 
 import type { AuthorResponseStatusDb } from '@/src/shared/lib/db/schema';
+import type { AssignmentDisplayStatus } from '@/src/features/editor/types';
+
+export const reviewAssignmentLabels: Record<AssignmentDisplayStatus, string> = {
+  complete: 'Complete',
+  in_progress: 'In Progress',
+  rejected: 'Rejected',
+  pending: 'Pending',
+};
 
 export const authorStatusLabels: Record<AuthorResponseStatusDb, string> = {
   pending: 'Pending',

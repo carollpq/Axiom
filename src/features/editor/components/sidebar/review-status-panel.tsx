@@ -1,17 +1,10 @@
-import type {
-  ReviewerWithStatus,
-  AssignmentDisplayStatus,
-} from '@/src/features/editor/types';
-import { getStatusColors } from '@/src/shared/lib/status-colors';
+import type { ReviewerWithStatus } from '@/src/features/editor/types';
+import {
+  getStatusColors,
+  reviewAssignmentLabels,
+} from '@/src/shared/lib/status-colors';
 import { SidebarSection } from '@/src/shared/components/sidebar-section';
 import { ListRow } from '@/src/shared/components/list-row';
-
-const statusLabels: Record<AssignmentDisplayStatus, string> = {
-  complete: 'Complete',
-  in_progress: 'In Progress',
-  rejected: 'Rejected',
-  pending: 'Pending',
-};
 
 interface ReviewStatusPanelProps {
   reviewers: ReviewerWithStatus[];
@@ -22,7 +15,7 @@ export function ReviewStatusPanel({ reviewers }: ReviewStatusPanelProps) {
     <SidebarSection title="Review Status">
       <div className="space-y-2">
         {reviewers.map((r) => {
-          const label = statusLabels[r.status];
+          const label = reviewAssignmentLabels[r.status];
           const c = getStatusColors(label);
           return (
             <ListRow key={r.id}>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { FORM_CONTROL_STYLE } from '@/src/shared/components/form-styles';
 import { FormInput } from '@/src/shared/components/form-input.client';
 import { FormSelect } from '@/src/shared/components/form-select.client';
 import { SectionLabel } from '@/src/shared/components/section-label';
@@ -95,10 +96,7 @@ export function CriteriaBuilder({
           <div
             key={c.id}
             className="rounded px-3 py-2.5"
-            style={{
-              background: 'rgba(30,28,24,0.6)',
-              border: '1px solid rgba(120,110,95,0.15)',
-            }}
+            style={FORM_CONTROL_STYLE}
           >
             <div className="flex items-center gap-2 mb-2">
               <span className="text-[10px] text-[#6a6050] shrink-0">

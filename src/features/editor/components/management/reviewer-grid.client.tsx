@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
-import { Plus, X } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { getErrorMessage } from '@/src/shared/lib/errors';
 import type { PoolReviewer } from '@/src/features/editor/types';
-import { ModalOverlay } from '@/src/shared/components/modal-overlay.client';
+import { getInitials } from '@/src/shared/lib/format';
+import { ReviewerSearchModal } from './reviewer-search-modal.client';
 
 interface ReviewerGridProps {
   reviewers: PoolReviewer[];
@@ -19,32 +20,35 @@ export function ReviewerGrid({
   onAddReviewer,
 }: ReviewerGridProps) {
   const [showAddModal, setShowAddModal] = useState(false);
-  const [adding, setAdding] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const availableToAdd = (allReviewers ?? []).filter(
-    (r) => !reviewers.some((existing) => existing.id === r.id),
+  const poolIds = useMemo(
+    () => new Set(reviewers.map((r) => r.id)),
+    [reviewers],
   );
 
-  const filteredAvailable = availableToAdd.filter(
-    (r) =>
-      r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.field.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.institution.toLowerCase().includes(searchTerm.toLowerCase()),
+  const availableToAdd = useMemo(
+    () => (allReviewers ?? []).filter((r) => !poolIds.has(r.id)),
+    [allReviewers, poolIds],
   );
+
+  const closeModal = () => {
+    setShowAddModal(false);
+    setSearchTerm('');
+  };
 
   const handleAdd = async (wallet: string) => {
     if (!onAddReviewer) return;
-    setAdding(true);
+    setIsLoading(true);
     try {
       await onAddReviewer(wallet);
-      setShowAddModal(false);
-      setSearchTerm('');
+      closeModal();
     } catch (err) {
       const message = getErrorMessage(err, 'Failed to add reviewer');
       toast.error(message);
     } finally {
-      setAdding(false);
+      setIsLoading(false);
     }
   };
 
@@ -137,11 +141,7 @@ export function ReviewerGrid({
                             fontSize: '11px',
                           }}
                         >
-                          {r.name
-                            .split(' ')
-                            .filter((_, i, a) => i === 0 || i === a.length - 1)
-                            .map((w) => w[0])
-                            .join('')}
+                          {getInitials(r.name)}
                         </div>
                         <div className="font-serif text-[#e8e0d4]">
                           {r.name}
@@ -199,115 +199,14 @@ export function ReviewerGrid({
         )}
       </div>
 
-      <ModalOverlay
+      <ReviewerSearchModal
         isOpen={showAddModal}
-        onClose={() => {
-          setShowAddModal(false);
-          setSearchTerm('');
-        }}
-        maxWidth="512px"
-      >
-        <div className="flex justify-between items-center mb-5">
-          <h3 className="font-serif text-[16px] text-[#e8e0d4]">
-            Add Reviewer to Pool
-          </h3>
-          <button
-            onClick={() => {
-              setShowAddModal(false);
-              setSearchTerm('');
-            }}
-            className="text-[#6a6050] hover:text-[#d4ccc0] cursor-pointer"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        {availableToAdd.length > 0 ? (
-          <>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by name, field, or institution..."
-              className="w-full rounded-[6px] px-3 py-2 text-[12px] font-serif text-[#d4ccc0] outline-none mb-4"
-              style={{
-                background: 'rgba(30,28,24,0.8)',
-                border: '1px solid rgba(120,110,95,0.25)',
-              }}
-              autoFocus
-            />
-
-            <div
-              className="space-y-2 max-h-64 overflow-y-auto"
-              style={{
-                background: 'rgba(30,28,24,0.4)',
-                border: '1px solid rgba(120,110,95,0.15)',
-                borderRadius: '6px',
-              }}
-            >
-              {filteredAvailable.length === 0 ? (
-                <div className="py-6 text-center text-[12px] text-[#6a6050] italic">
-                  No reviewers match your search.
-                </div>
-              ) : (
-                filteredAvailable.map((r) => (
-                  <button
-                    key={r.id}
-                    className="w-full text-left px-4 py-3 transition-colors"
-                    style={{
-                      borderBottom: '1px solid rgba(120,110,95,0.1)',
-                      background: 'rgba(30,28,24,0.2)',
-                    }}
-                    onClick={() => handleAdd(r.wallet)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="rounded-full flex items-center justify-center font-serif shrink-0"
-                        style={{
-                          width: 32,
-                          height: 32,
-                          background:
-                            'linear-gradient(135deg, rgba(120,110,95,0.3), rgba(80,72,60,0.3))',
-                          border: '1px solid rgba(120,110,95,0.3)',
-                          color: '#c9b89e',
-                          fontSize: '11px',
-                        }}
-                      >
-                        {r.name
-                          .split(' ')
-                          .filter((_, i, a) => i === 0 || i === a.length - 1)
-                          .map((w) => w[0])
-                          .join('')}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-serif text-[12px] text-[#e8e0d4]">
-                          {r.name}
-                        </div>
-                        <div className="text-[11px] text-[#8a8070]">
-                          {r.field} • {r.institution}
-                        </div>
-                      </div>
-                      <div
-                        className="px-2 py-1 rounded-[4px] text-[11px] font-serif shrink-0"
-                        style={{
-                          background: 'rgba(143, 188, 143, 0.15)',
-                          color: '#8fbc8f',
-                        }}
-                      >
-                        {r.score.toFixed(1)}
-                      </div>
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
-          </>
-        ) : (
-          <div className="py-6 text-center text-[12px] text-[#6a6050] italic">
-            All reviewers are already in the pool.
-          </div>
-        )}
-      </ModalOverlay>
+        onClose={closeModal}
+        available={availableToAdd}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        onAdd={handleAdd}
+      />
     </div>
   );
 }
