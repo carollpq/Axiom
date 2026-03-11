@@ -4,6 +4,7 @@ import { users } from '@/src/shared/lib/db/schema';
 import type { Role } from '@/src/features/auth/types';
 import { getUserByWallet } from '@/src/features/users/queries';
 
+/** Upserts user with role, ORCID, and display name. Appends role if new. */
 export async function registerUserRole(
   walletAddress: string,
   role: Role,

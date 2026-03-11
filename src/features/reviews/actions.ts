@@ -30,6 +30,8 @@ import { markDeadlineCompleted } from '@/src/shared/lib/hedera/timeline-enforcer
 // Submit Review
 // ---------------------------------------------------------------------------
 
+/** Creates review, marks assignment submitted, mints reputation token.
+ *  Auto-transitions to `reviews_completed` when all active reviewers are done. */
 export async function submitReviewAction(
   assignmentId: string,
   input: {
@@ -179,6 +181,7 @@ const PROTOCOL_KEYS = [
   'appropriateExpertise',
 ] as const;
 
+/** Anonymous 5-protocol rating by the paper author. Idempotent (skips if already rated). */
 export async function rateReviewerAction(
   reviewId: string,
   input: z.infer<typeof ratingSchema>,

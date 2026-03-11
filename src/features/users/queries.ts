@@ -4,6 +4,7 @@ import { users } from '@/src/shared/lib/db/schema';
 import { eq, or, ilike } from 'drizzle-orm';
 import type { UserSearchResult } from '@/src/shared/types/domain';
 
+/** React `cache()`-wrapped — safe to call multiple times per request. */
 export const getUserByWallet = cache(async (walletAddress: string) => {
   return (
     (
@@ -16,6 +17,7 @@ export const getUserByWallet = cache(async (walletAddress: string) => {
   );
 });
 
+/** Returns existing user or inserts a skeleton row (no role yet). */
 export async function getOrCreateUser(walletAddress: string) {
   const normalized = walletAddress.toLowerCase();
   const existing = await getUserByWallet(normalized);
@@ -32,6 +34,7 @@ export async function getOrCreateUser(walletAddress: string) {
   )[0];
 }
 
+/** Case-insensitive search across displayName, orcidId, and wallet. Max 10. */
 export async function searchUsers(query: string): Promise<UserSearchResult[]> {
   const escaped = query.replace(/[%_]/g, '\\$&');
   const pattern = `%${escaped}%`;

@@ -1,3 +1,5 @@
+// DB mutations for submissions. No auth — callers must authorize.
+
 import { db } from '@/src/shared/lib/db';
 import {
   reviewAssignments,
@@ -13,6 +15,7 @@ export interface PublishCriteriaInput {
   criteriaHash: string;
 }
 
+/** Inserts criteria and transitions submission to `criteria_published`. */
 export async function publishCriteria(input: PublishCriteriaInput) {
   const criteria =
     (
@@ -39,7 +42,7 @@ export async function publishCriteria(input: PublishCriteriaInput) {
   return criteria;
 }
 
-/** Backfill HCS transaction ID after async anchoring. */
+/** Backfills HCS tx ID on both submissions and reviewCriteria rows. */
 export async function updateCriteriaTxId(
   submissionId: string,
   hederaTxId: string,
@@ -77,6 +80,7 @@ export async function createSubmission(input: CreateSubmissionInput) {
   );
 }
 
+/** Sets HCS tx ID and consensus timestamp on a submission. */
 export async function updateSubmissionHedera(
   submissionId: string,
   hederaTxId: string,
@@ -115,6 +119,7 @@ export async function createReviewAssignment(input: CreateAssignmentInput) {
   );
 }
 
+/** Updates status and optionally merges extra columns (e.g. `decidedAt`). */
 export async function updateSubmissionStatus(
   submissionId: string,
   status: SubmissionStatusDb,
@@ -131,7 +136,7 @@ export async function updateSubmissionStatus(
   );
 }
 
-/** Backfill a Hedera transaction ID on a submission column. */
+/** Backfills a Hedera tx ID on a dynamic submission column. */
 export async function updateSubmissionTxId(
   submissionId: string,
   field: 'decisionTxId' | 'authorResponseTxId' | 'hederaTxId',
@@ -143,6 +148,7 @@ export async function updateSubmissionTxId(
     .where(eq(submissions.id, submissionId));
 }
 
+/** Stores the on-chain TimelineEnforcer index for cron cross-verification. */
 export async function updateAssignmentTimelineIndex(
   assignmentId: string,
   index: number,

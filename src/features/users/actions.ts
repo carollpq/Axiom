@@ -3,6 +3,7 @@
 import { requireSession } from '@/src/shared/lib/auth/auth';
 import { searchUsers } from '@/src/features/users/queries';
 
+/** Authenticated wrapper around searchUsers. Requires min 2 chars. */
 export async function searchUsersAction(query: string) {
   await requireSession();
 

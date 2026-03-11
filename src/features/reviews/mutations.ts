@@ -22,6 +22,7 @@ export interface CreateReviewInput {
   recommendation: string;
 }
 
+/** Inserts review and marks the assignment as `submitted`. */
 export async function createReview(input: CreateReviewInput) {
   const review =
     (
@@ -82,11 +83,7 @@ const EDITOR_TYPES = [
 const AUTHOR_TYPES = ['author_rating'];
 const PUBLICATION_TYPES = ['paper_published', 'paper_retracted'];
 
-/**
- * Compute and upsert the reputation score for a reviewer wallet.
- * Weighted formula: 0.30 timeliness + 0.25 editor + 0.25 author + 0.20 publication
- * Uses SQL aggregation (GROUP BY event_type) — returns at most ~8 rows regardless of event count.
- */
+/** Recomputes weighted reputation score via SQL aggregation and upserts it. */
 export async function upsertReputationScore(wallet: string) {
   const normalizedWallet = wallet.toLowerCase();
 
@@ -179,9 +176,7 @@ export async function upsertReputationScore(wallet: string) {
   };
 }
 
-/**
- * Mint an HTS reputation token and create the corresponding reputation event.
- */
+/** Mints HTS soulbound token, logs reputation event, recomputes score. */
 export async function recordReputation(
   wallet: string,
   eventType: ReputationEventTypeDb,

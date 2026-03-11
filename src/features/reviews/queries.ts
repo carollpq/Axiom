@@ -8,6 +8,7 @@ import {
 } from '@/src/shared/lib/db/schema';
 import { eq, and, inArray, lt, isNotNull } from 'drizzle-orm';
 
+/** Fetches assignment with full submission tree (paper, journal, criteria). */
 export async function getReviewAssignment(
   assignmentId: string,
   reviewerWallet: string,
@@ -81,6 +82,7 @@ export const getPublishedCriteria = cache(async (submissionId: string) => {
   });
 });
 
+/** Assignments past deadline that are still assigned/accepted (not submitted). */
 export async function listOverdueAssignments() {
   const now = new Date().toISOString();
   return db.query.reviewAssignments.findMany({
@@ -97,10 +99,7 @@ export async function listOverdueAssignments() {
   });
 }
 
-/**
- * Public reviews for a paper after a final decision has been made.
- * Excludes confidentialEditorComments — those are NEVER public.
- */
+/** Anonymized reviews after final decision. Excludes confidentialEditorComments. */
 export async function listPublicReviewsForPaper(paperId: string) {
   // Only fetch submissions that have a decision (filter in DB, not JS)
   const subs = await db.query.submissions.findMany({
@@ -131,10 +130,7 @@ export async function listPublicReviewsForPaper(paperId: string) {
   return publicReviews;
 }
 
-/**
- * List all ratings for a reviewer's reviews (anonymized — no author reference).
- * Returns 5-protocol breakdowns + comment.
- */
+/** All 5-protocol ratings for a reviewer. Anonymized — no author reference. */
 export async function listRatingsForReviewer(reviewerWallet: string) {
   const reviewerReviews = await db.query.reviews.findMany({
     where: eq(reviews.reviewerWallet, reviewerWallet.toLowerCase()),
@@ -160,9 +156,7 @@ export async function listRatingsForReviewer(reviewerWallet: string) {
     }));
 }
 
-/**
- * Review + paper owner guard for server actions.
- */
+/** Verifies the caller owns the reviewed paper. Returns the review. */
 export async function requireReviewWithPaperOwner(
   reviewId: string,
   wallet: string,

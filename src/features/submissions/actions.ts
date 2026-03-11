@@ -1,3 +1,5 @@
+// Server actions for the submission pipeline.
+// Pattern: auth → DB write → defer HCS anchoring + notifications via after().
 'use server';
 
 import { after } from 'next/server';
@@ -40,6 +42,7 @@ function daysFromNow(days: number): string {
 // Criteria
 // ---------------------------------------------------------------------------
 
+/** Hash criteria, store in DB, anchor on HCS. Transitions to `criteria_published`. */
 export async function publishCriteriaAction(
   submissionId: string,
   criteria: ReviewCriterionInput[],
@@ -101,6 +104,7 @@ export async function publishCriteriaAction(
 // Assign Reviewers
 // ---------------------------------------------------------------------------
 
+/** Create assignments (default 21-day deadline), register on TimelineEnforcer. */
 export async function assignReviewersAction(
   submissionId: string,
   reviewerWallets: string[],
@@ -182,6 +186,7 @@ const STATUS_MAP: Record<Decision, SubmissionStatusDb> = {
   revise: 'revision_requested',
 };
 
+/** Reject + allCriteriaMet requires a public justification (anchored on-chain). */
 export async function makeDecisionAction(
   submissionId: string,
   input: {
@@ -256,6 +261,7 @@ export async function makeDecisionAction(
 // View (mark as viewed by editor)
 // ---------------------------------------------------------------------------
 
+/** Idempotent — no-ops if already past `submitted`. */
 export async function markViewedAction(submissionId: string) {
   const session = await requireSession();
   const submission = await requireSubmissionEditor(submissionId, session);
@@ -292,6 +298,7 @@ export async function markViewedAction(submissionId: string) {
 // Accept/Decline Assignment
 // ---------------------------------------------------------------------------
 
+/** Auto-transitions to `under_review` once 2+ reviewers have accepted. */
 export async function acceptAssignmentAction(
   submissionId: string,
   action: 'accept' | 'decline',
@@ -406,6 +413,7 @@ export async function acceptAssignmentAction(
 // Author Response
 // ---------------------------------------------------------------------------
 
+/** Author accepts reviews or requests rebuttal (opens 14-day rebuttal window). */
 export async function authorResponseAction(
   submissionId: string,
   action: 'accept' | 'request_rebuttal',
