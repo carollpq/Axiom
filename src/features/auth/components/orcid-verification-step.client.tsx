@@ -1,7 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { ORCID_REGEX } from '@/src/shared/lib/validation';
+import { validateOrcidId } from '@/src/shared/lib/validation';
+import {
+  AUTH_COLORS,
+  INPUT_STYLE,
+  INPUT_STYLE_ERROR,
+  SECONDARY_BTN_STYLE,
+  secondaryBtnHover,
+  PRIMARY_BTN_STYLE,
+  primaryBtnHover,
+} from './auth-styles';
 
 interface OrcidVerificationStepProps {
   onVerified: (orcidId: string, displayName: string) => void;
@@ -26,12 +35,9 @@ export function OrcidVerificationStep({
       setNameError('Display name is required');
       return false;
     }
-    if (!orcidId.trim()) {
-      setOrcidError('ORCID ID is required');
-      return false;
-    }
-    if (!ORCID_REGEX.test(orcidId)) {
-      setOrcidError('Invalid ORCID format. Expected: XXXX-XXXX-XXXX-XXXX');
+    const orcidErr = validateOrcidId(orcidId);
+    if (orcidErr) {
+      setOrcidError(orcidErr);
       return false;
     }
     return true;
@@ -44,18 +50,17 @@ export function OrcidVerificationStep({
     }
   };
 
-  const inputBase = { backgroundColor: '#1a1816', color: '#d4ccc0' };
-  const borderOk = '1px solid #5a4a3a';
-  const borderErr = '1px solid #d4645a';
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div
         className="p-4 rounded space-y-4"
-        style={{ backgroundColor: 'rgba(45, 42, 38, 0.6)' }}
+        style={{ backgroundColor: AUTH_COLORS.bg.card }}
       >
         <div>
-          <p className="text-sm mb-2" style={{ color: '#b0a898' }}>
+          <p
+            className="text-sm mb-2"
+            style={{ color: AUTH_COLORS.text.secondary }}
+          >
             Display name
           </p>
           <input
@@ -68,27 +73,30 @@ export function OrcidVerificationStep({
             }}
             disabled={loading}
             className="w-full px-3 py-2 rounded text-sm"
-            style={{ ...inputBase, border: nameError ? borderErr : borderOk }}
+            style={nameError ? INPUT_STYLE_ERROR : INPUT_STYLE}
           />
           {nameError && (
-            <p className="text-xs mt-1" style={{ color: '#d4645a' }}>
+            <p className="text-xs mt-1" style={{ color: AUTH_COLORS.error }}>
               {nameError}
             </p>
           )}
         </div>
 
         <div>
-          <p className="text-sm mb-2" style={{ color: '#b0a898' }}>
+          <p
+            className="text-sm mb-2"
+            style={{ color: AUTH_COLORS.text.secondary }}
+          >
             ORCID iD
           </p>
-          <p className="text-xs mb-2" style={{ color: '#8a8070' }}>
+          <p className="text-xs mb-2" style={{ color: AUTH_COLORS.text.muted }}>
             A unique identifier for your research career. Create one at{' '}
             <a
               href="https://orcid.org/register"
               target="_blank"
               rel="noopener noreferrer"
               className="underline"
-              style={{ color: '#c9a44a' }}
+              style={{ color: AUTH_COLORS.accent.gold }}
             >
               orcid.org/register
             </a>
@@ -102,18 +110,17 @@ export function OrcidVerificationStep({
               setOrcidError(undefined);
             }}
             onBlur={() => {
-              if (orcidId && !ORCID_REGEX.test(orcidId)) {
-                setOrcidError(
-                  'Invalid ORCID format. Expected: XXXX-XXXX-XXXX-XXXX',
-                );
+              if (orcidId) {
+                const err = validateOrcidId(orcidId, { allowEmpty: true });
+                if (err) setOrcidError(err);
               }
             }}
             disabled={loading}
             className="w-full px-3 py-2 rounded text-sm font-mono"
-            style={{ ...inputBase, border: orcidError ? borderErr : borderOk }}
+            style={orcidError ? INPUT_STYLE_ERROR : INPUT_STYLE}
           />
           {orcidError && (
-            <p className="text-xs mt-1" style={{ color: '#d4645a' }}>
+            <p className="text-xs mt-1" style={{ color: AUTH_COLORS.error }}>
               {orcidError}
             </p>
           )}
@@ -126,19 +133,8 @@ export function OrcidVerificationStep({
           onClick={onBack}
           disabled={loading}
           className="flex-1 py-2 text-sm rounded transition-all cursor-pointer hover:brightness-110"
-          style={{
-            backgroundColor: 'transparent',
-            color: '#b0a898',
-            border: '1px solid #5a4a3a',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(201, 164, 74, 0.5)';
-            e.currentTarget.style.color = '#d4ccc0';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = '#5a4a3a';
-            e.currentTarget.style.color = '#b0a898';
-          }}
+          style={SECONDARY_BTN_STYLE}
+          {...secondaryBtnHover}
         >
           Back
         </button>
@@ -147,17 +143,8 @@ export function OrcidVerificationStep({
           type="submit"
           disabled={loading || !orcidId || !displayName.trim()}
           className="flex-1 py-2 text-sm rounded font-semibold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{
-            backgroundColor: '#c9a44a',
-            color: '#1a1816',
-          }}
-          onMouseEnter={(e) => {
-            if (!e.currentTarget.disabled)
-              e.currentTarget.style.backgroundColor = '#d4b45a';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#c9a44a';
-          }}
+          style={PRIMARY_BTN_STYLE}
+          {...primaryBtnHover}
         >
           {loading ? 'Verifying...' : 'Continue'}
         </button>

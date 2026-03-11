@@ -11,6 +11,7 @@ import type { Role } from '@/src/features/auth/types';
 import { AuthHeader } from './auth-header';
 import { CONNECT_BUTTON_STYLE } from './connect-button-style';
 import { RoleSelector } from './role-selector.client';
+import { AUTH_COLORS } from './auth-styles';
 
 export function Login() {
   const router = useRouter();
@@ -37,7 +38,7 @@ export function Login() {
 
       <div
         className="p-4 rounded space-y-4"
-        style={{ backgroundColor: 'rgba(45, 42, 38, 0.6)' }}
+        style={{ backgroundColor: AUTH_COLORS.bg.card }}
       >
         {showRolePicker ? (
           <RoleSelector
@@ -47,7 +48,10 @@ export function Login() {
           />
         ) : (
           <>
-            <p className="text-sm text-center" style={{ color: '#b0a898' }}>
+            <p
+              className="text-sm text-center"
+              style={{ color: AUTH_COLORS.text.secondary }}
+            >
               Connect your wallet to sign in:
             </p>
             <div className="flex justify-center">
@@ -66,12 +70,15 @@ export function Login() {
       </div>
 
       {!showRolePicker && (
-        <p className="text-center text-sm mt-6" style={{ color: '#8a8070' }}>
+        <p
+          className="text-center text-sm mt-6"
+          style={{ color: AUTH_COLORS.text.muted }}
+        >
           New here?{' '}
           <a
             href={ROUTES.register}
             className="underline"
-            style={{ color: '#c9a44a' }}
+            style={{ color: AUTH_COLORS.accent.gold }}
           >
             Register
           </a>

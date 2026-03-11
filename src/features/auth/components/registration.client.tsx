@@ -13,6 +13,7 @@ import { AlertBanner } from '@/src/shared/components/alert-banner';
 import { AuthHeader } from './auth-header';
 import { updateProfileAction } from '@/src/features/auth/actions';
 import { getErrorMessage } from '@/src/shared/lib/errors';
+import { AUTH_COLORS } from './auth-styles';
 
 type Step = 'role-select' | 'wallet' | 'orcid' | 'complete';
 
@@ -107,14 +108,12 @@ export function Registration() {
     <div className="w-full max-w-md mx-auto">
       <AuthHeader subtitle="Create your account" />
 
-      {/* Error Alert */}
       {state.error && (
         <div className="mb-6">
           <AlertBanner variant="error">{state.error}</AlertBanner>
         </div>
       )}
 
-      {/* Step Content */}
       {state.step === 'role-select' && (
         <RoleSelector
           onSelect={(role) => dispatch({ type: 'SELECT_ROLE', role })}
@@ -141,23 +140,27 @@ export function Registration() {
       {state.step === 'complete' && (
         <div
           className="text-center p-6 rounded"
-          style={{ backgroundColor: 'rgba(45, 42, 38, 0.6)' }}
+          style={{ backgroundColor: AUTH_COLORS.bg.card }}
         >
-          <div className="text-lg mb-4" style={{ color: '#8fbc8f' }}>
+          <div className="text-lg mb-4" style={{ color: AUTH_COLORS.success }}>
             Registration successful
           </div>
-          <p style={{ color: '#b0a898' }}>Redirecting to dashboard...</p>
+          <p style={{ color: AUTH_COLORS.text.secondary }}>
+            Redirecting to dashboard...
+          </p>
         </div>
       )}
 
-      {/* Link to login */}
       {state.step !== 'complete' && (
-        <p className="text-center text-sm mt-6" style={{ color: '#8a8070' }}>
+        <p
+          className="text-center text-sm mt-6"
+          style={{ color: AUTH_COLORS.text.muted }}
+        >
           Already have an account?{' '}
           <a
             href={ROUTES.login}
             className="underline"
-            style={{ color: '#c9a44a' }}
+            style={{ color: AUTH_COLORS.accent.gold }}
           >
             Log in
           </a>

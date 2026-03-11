@@ -6,6 +6,13 @@ import { CONNECT_AUTH } from '@/src/shared/lib/auth/connect-auth';
 import { ROLE_META } from '@/src/features/auth/types';
 import type { Role } from '@/src/features/auth/types';
 import { CONNECT_BUTTON_STYLE } from './connect-button-style';
+import {
+  AUTH_COLORS,
+  SECONDARY_BTN_STYLE,
+  secondaryBtnHover,
+  PRIMARY_BTN_STYLE,
+  primaryBtnHover,
+} from './auth-styles';
 
 interface WalletConnectStepProps {
   selectedRole: Role;
@@ -24,9 +31,12 @@ export function WalletConnectStep({
     <div className="space-y-4">
       <div
         className="p-4 rounded"
-        style={{ backgroundColor: 'rgba(45, 42, 38, 0.6)' }}
+        style={{ backgroundColor: AUTH_COLORS.bg.card }}
       >
-        <p className="text-sm mb-3" style={{ color: '#b0a898' }}>
+        <p
+          className="text-sm mb-3"
+          style={{ color: AUTH_COLORS.text.secondary }}
+        >
           Connect your Web3 wallet to sign in as a{' '}
           {ROLE_META[selectedRole].label}:
         </p>
@@ -48,19 +58,8 @@ export function WalletConnectStep({
         <button
           onClick={onBack}
           className="flex-1 py-2 text-sm rounded transition-all cursor-pointer"
-          style={{
-            backgroundColor: 'transparent',
-            color: '#b0a898',
-            border: '1px solid #5a4a3a',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(201, 164, 74, 0.5)';
-            e.currentTarget.style.color = '#d4ccc0';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = '#5a4a3a';
-            e.currentTarget.style.color = '#b0a898';
-          }}
+          style={SECONDARY_BTN_STYLE}
+          {...secondaryBtnHover}
         >
           Back
         </button>
@@ -68,16 +67,8 @@ export function WalletConnectStep({
           <button
             onClick={onContinue}
             className="flex-1 py-2 text-sm rounded font-semibold transition-all cursor-pointer"
-            style={{
-              backgroundColor: '#c9a44a',
-              color: '#1a1816',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#d4b45a';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#c9a44a';
-            }}
+            style={PRIMARY_BTN_STYLE}
+            {...primaryBtnHover}
           >
             Continue
           </button>

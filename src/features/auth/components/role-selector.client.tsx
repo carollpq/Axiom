@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ROLES, ROLE_META } from '@/src/features/auth/types';
 import type { Role } from '@/src/features/auth/types';
+import { AUTH_COLORS } from './auth-styles';
 
 interface RoleSelectorProps {
   onSelect: (role: Role) => void;
@@ -25,21 +26,21 @@ export function RoleSelector({
 
   const borderColor = (id: Role) =>
     selected === id
-      ? '#c9a44a'
+      ? AUTH_COLORS.accent.gold
       : hovered === id
-        ? 'rgba(201, 164, 74, 0.5)'
-        : '#5a4a3a';
+        ? AUTH_COLORS.border.hoverGold
+        : AUTH_COLORS.border.base;
 
   const bgColor = (id: Role) =>
     selected === id
-      ? 'rgba(201, 164, 74, 0.1)'
+      ? AUTH_COLORS.accent.goldSubtle
       : hovered === id
-        ? 'rgba(201, 164, 74, 0.05)'
+        ? AUTH_COLORS.accent.goldFaint
         : 'transparent';
 
   return (
     <div className="space-y-3">
-      <p className="text-sm mb-4" style={{ color: '#b0a898' }}>
+      <p className="text-sm mb-4" style={{ color: AUTH_COLORS.text.secondary }}>
         {label}
       </p>
 
@@ -55,10 +56,13 @@ export function RoleSelector({
             backgroundColor: bgColor(id),
           }}
         >
-          <p className="font-semibold" style={{ color: '#d4ccc0' }}>
+          <p
+            className="font-semibold"
+            style={{ color: AUTH_COLORS.text.primary }}
+          >
             {ROLE_META[id].label}
           </p>
-          <p className="text-xs mt-1" style={{ color: '#8a8070' }}>
+          <p className="text-xs mt-1" style={{ color: AUTH_COLORS.text.muted }}>
             {ROLE_META[id].description}
           </p>
         </button>
