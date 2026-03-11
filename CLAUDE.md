@@ -105,7 +105,7 @@ src/app/{role}/error.tsx                             # 'use client' error bounda
 src/features/{domain}/components/{Name}.client.tsx   # 'use client' boundary — accepts initialData
 src/features/{domain}/hooks/use{Domain}.ts           # 'use client' hook — UI state only
 src/features/{domain}/components/                    # Presentational components
-src/features/{domain}/mappers/{domain}.ts            # Pure mapping functions
+src/features/{domain}/lib/{domain}.ts                # Pure mapping / utility functions
 ```
 
 **The split:** server fetches, client interacts.
@@ -140,14 +140,17 @@ src/features/researcher/components/dashboard/papers-table.client.tsx
 
 ```
 src/features/{domain}/
-├── index.ts       # Re-exports
 ├── queries.ts     # Drizzle read queries
 ├── actions.ts     # Drizzle write mutations
+├── mutations.ts   # Drizzle write helpers (called by actions or API routes)
 ├── types.ts       # All types for this feature domain
+├── lib.ts         # Pure mapping / utility functions (or lib/ directory for larger modules)
 ├── hooks/         # Thin hooks (useReducer + side effects only)
 ├── reducers/      # Pure state machines (testable without React)
 └── config/        # Step definitions, constants
 ```
+
+**No barrel `index.ts` files.** Feature modules must not have barrel re-exports (see Feature Import Rule).
 
 #### Feature Import Rule
 
@@ -324,13 +327,13 @@ src/
 │   │   └── reviewer/              # Dashboard, assigned (inline review sidebar)
 ├── features/
 │   ├── auth/                      # Login flow components
-│   ├── researcher/                # Components, hooks, reducers, config, constants, mappers, queries, types, nav
-│   ├── editor/                    # Components, hooks, queries, actions, mappers, types (fully DB-backed, three-column layouts, sidebar panels)
-│   ├── reviewer/                  # Components, hooks, reducers (mock data still)
+│   ├── researcher/                # Components, hooks, reducers, config, constants, lib, queries, types, nav
+│   ├── editor/                    # Components, hooks, queries, actions, lib, types (fully DB-backed, three-column layouts, sidebar panels)
+│   ├── reviewer/                  # Components, hooks, lib, reducers (mock data still)
 │   ├── contracts/                 # DB queries + actions
 │   ├── papers/                    # DB queries + actions
-│   ├── users/                     # DB queries + actions
-│   ├── reviews/                   # DB queries + actions
+│   ├── users/                     # DB queries + actions + lib
+│   ├── reviews/                   # DB queries + actions + lib
 │   ├── rebuttals/                 # DB queries + actions + hooks + components
 │   ├── notifications/             # DB queries + actions + NotificationBell component
 └── shared/
@@ -352,6 +355,7 @@ src/
 - **TypeScript strict mode** throughout.
 - **Server Components** by default. `'use client'` only for browser APIs / interactivity.
 - **Imports:** `@/` path alias. Import from sub-files, not feature barrels (see Feature Import Rule).
+- **User lookups:** Always use `getUserByWallet()` from `@/src/features/users/queries` (React `cache()`-wrapped). Never inline `db.select().from(users).where(...)`.
 - **File naming:** Components: PascalCase. Client boundaries: `.client.tsx`. Hooks: camelCase. Types/mock: kebab-case.
 - **Dynamic routes:** `[id]` not `[paperId]`.
 - **No localStorage/sessionStorage.** React context + httpOnly cookies.
