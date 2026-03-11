@@ -11,6 +11,7 @@ import {
 } from '@/src/features/submissions/actions';
 import type { PaperCardData, PoolReviewer } from '@/src/features/editor/types';
 
+/** Manages incoming papers: auto-marks viewed on selection, reviewer assignment, and desk reject. */
 export function useIncomingPapers(
   initialPapers: PaperCardData[],
   initialReviewerPool: PoolReviewer[],

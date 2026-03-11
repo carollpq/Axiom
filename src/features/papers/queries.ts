@@ -18,6 +18,7 @@ export type DbPaperWithOwner = NonNullable<
   Awaited<ReturnType<typeof getPaperById>>
 >;
 
+/** Returns papers owned by wallet OR where wallet is a contract contributor. */
 export const listUserPapers = cache(async (walletAddress: string) => {
   const wallet = walletAddress.toLowerCase();
 

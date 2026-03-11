@@ -10,9 +10,7 @@ import {
 } from '@/src/shared/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
 
-/**
- * Journal editor guard for server actions.
- */
+/** Throws if wallet is not the editor of this journal. */
 export async function requireJournalEditor(journalId: string, wallet: string) {
   const journal = await db.query.journals.findFirst({
     where: eq(journals.id, journalId),
@@ -61,6 +59,7 @@ export const listJournalSubmissions = cache(async (journalId?: string) => {
   });
 });
 
+/** All users with the "reviewer" role — uses JSONB @> for SQL-level filtering. */
 export const listReviewerPool = cache(async () => {
   return db.query.users.findMany({
     where: sql`${users.roles}::jsonb @> '["reviewer"]'::jsonb`,
@@ -92,7 +91,7 @@ export const listJournalReviewerWallets = cache(async (journalId: string) => {
   });
 });
 
-/** Get all reviewers in a journal pool with full user info and reputation scores. */
+/** Joins journal_reviewers → users → reputation_scores in one query. */
 export const listJournalReviewersWithStatus = cache(
   async (journalId: string) => {
     const rows = await db

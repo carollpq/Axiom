@@ -43,6 +43,7 @@ export async function createIssueAction(journalId: string, label: string) {
   return createJournalIssue(journalId, label.trim());
 }
 
+/** Adds reviewer to pool and sends a non-blocking notification via after(). */
 export async function addReviewerToPoolAction(
   journalId: string,
   reviewerWallet: string,

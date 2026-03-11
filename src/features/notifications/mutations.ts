@@ -11,6 +11,7 @@ export interface CreateNotificationInput {
   link?: string;
 }
 
+/** No-ops silently if wallet is null/undefined — safe to call unconditionally. */
 export async function notifyIfWallet(
   wallet: string | null | undefined,
   input: Omit<CreateNotificationInput, 'userWallet'>,
@@ -29,6 +30,7 @@ export async function createNotification(input: CreateNotificationInput) {
   });
 }
 
+/** Scoped to userWallet — prevents marking another user's notification as read. */
 export async function markAsRead(id: string, userWallet: string) {
   return (
     (
@@ -46,6 +48,7 @@ export async function markAsRead(id: string, userWallet: string) {
   );
 }
 
+/** Only touches unread rows — idempotent if called repeatedly. */
 export async function markAllAsRead(userWallet: string) {
   return db
     .update(notifications)

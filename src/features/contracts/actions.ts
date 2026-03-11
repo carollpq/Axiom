@@ -79,6 +79,7 @@ export async function createContractAction(
   return contract;
 }
 
+/** Adds contributor row and notifies them (non-blocking) unless they're the caller. */
 export async function addContributorAction(
   input: z.infer<typeof addContributorSchema>,
 ) {
@@ -132,6 +133,7 @@ export async function resetSignaturesAction(contractId: string) {
   return updated;
 }
 
+/** Generates a 7-day invite link. Only the contract creator can call this. */
 export async function generateInviteLinkAction(
   contractId: string,
   contributorId: string,
@@ -149,6 +151,7 @@ export async function generateInviteLinkAction(
   return { inviteLink, expiresAt: result.expiresAt };
 }
 
+/** Verifies signature via viem, records sign, and defers HCS anchoring + Scheduled Transaction if fully signed. */
 export async function signContractAction(input: z.infer<typeof signSchema>) {
   const session = await requireSession();
   const parsed = signSchema.parse(input);

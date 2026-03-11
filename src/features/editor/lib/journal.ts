@@ -19,6 +19,7 @@ import { formatDate, truncate } from '@/src/shared/lib/format';
 import { displayNameOrWallet } from '@/src/features/users/lib';
 import { toFivePointScale } from '@/src/features/reviews/lib';
 
+/** Buckets submissions into 5 stat cards by pipeline status. */
 export function computeSubmissionStats(
   subs: DbJournalSubmission[],
 ): StatCardProps[] {
@@ -69,6 +70,7 @@ export function computeSubmissionStats(
   ];
 }
 
+/** Maps DB status + criteria/reviewer/decision state to a display stage. */
 export function deriveStage(
   status: string,
   criteriaHash: string | null,
@@ -135,6 +137,7 @@ export function mapDbToPoolReviewer(
   };
 }
 
+/** Truncates abstract and resolves file URL (skips Lit-encrypted papers). */
 export function mapDbToPaperCardData(s: DbJournalSubmission): PaperCardData {
   const abstract = s.paper.abstract ?? '';
   const submittedDate = s.submittedAt ? formatDate(String(s.submittedAt)) : '—';
@@ -160,6 +163,7 @@ export function mapDbToPaperCardData(s: DbJournalSubmission): PaperCardData {
   };
 }
 
+/** Joins reviewers with their reputation scores by wallet address. */
 export function buildReviewerPool(
   reviewers: DbReviewer[],
   scores: DbReputationScore[],
@@ -197,6 +201,7 @@ export function mapDbToEditorProfile(
   };
 }
 
+/** Maps assignment DB status (assigned/accepted/submitted/declined) to display status. */
 export function mapDbToReviewerWithStatus(
   assignment: { id: string; reviewerWallet: string; status: string },
   nameByWallet?: Record<string, string>,
@@ -232,6 +237,7 @@ export function mapDbToJournalIssue(dbIssue: DbJournalIssue): JournalIssue {
   };
 }
 
+/** Splits the global reviewer list into pool members vs non-members for this journal. */
 export function filterPoolByJournal(
   allReviewers: PoolReviewer[],
   poolWalletSet: Set<string>,
@@ -248,6 +254,7 @@ export function filterPoolByJournal(
   return { poolReviewers, nonPoolReviewers };
 }
 
+/** Maps DB rows (reviewer + user + score joins) to PoolReviewer display objects. */
 export function buildPoolReviewersWithStatus(
   reviewerRows: DbJournalReviewerWithStatus[],
 ): PoolReviewer[] {

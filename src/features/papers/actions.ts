@@ -103,6 +103,7 @@ export async function updatePaperAction(
   return updated;
 }
 
+/** Creates a paper version row and synchronously anchors the hash on HCS. */
 export async function registerVersionAction(
   input: z.infer<typeof createVersionSchema>,
 ) {
@@ -137,6 +138,7 @@ export async function registerVersionAction(
   return version;
 }
 
+/** Validates contract is fully signed, creates submission, and defers HCS anchoring via after(). */
 export async function submitPaperAction(
   input: z.infer<typeof submitPaperSchema>,
 ) {

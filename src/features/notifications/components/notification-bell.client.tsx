@@ -46,6 +46,7 @@ const DATE_FMT = new Intl.DateTimeFormat('en-US', {
   minute: '2-digit',
 });
 
+/** Polls every 30s (only when tab visible). Optimistically updates read state. */
 export function NotificationBell() {
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);

@@ -10,6 +10,7 @@ interface UseRebuttalFlowOptions {
   rebuttalsBySubmission?: Record<string, RebuttalInfo>;
 }
 
+/** Manages editor-side rebuttal resolution (upheld/rejected/partial). */
 export function useRebuttalFlow({
   selectedId,
   rebuttalsBySubmission,

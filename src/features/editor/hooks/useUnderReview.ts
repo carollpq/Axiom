@@ -20,6 +20,7 @@ interface UseUnderReviewOptions {
   rebuttalsBySubmission?: Record<string, RebuttalInfo>;
 }
 
+/** Composes useDecisionFlow + useRebuttalFlow for the under-review three-column view. */
 export function useUnderReview({
   initialPapers,
   initialReviewerPool,

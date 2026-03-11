@@ -4,6 +4,7 @@ import { requireSession } from '@/src/shared/lib/auth/auth';
 import { registerUserRole } from '@/src/features/users/mutations';
 import { ROLES, type Role } from '@/src/features/auth/types';
 
+/** Validates ORCID ID against the public API before persisting role + profile. */
 export async function updateProfileAction(input: {
   role: string;
   orcidId: string;

@@ -13,6 +13,7 @@ interface UseDecisionFlowOptions {
   onDecisionReleased: (submissionId: string) => void;
 }
 
+/** Manages editorial decision: gated by all reviews complete + author response received. */
 export function useDecisionFlow({
   selectedId,
   reviewStatuses,

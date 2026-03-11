@@ -14,6 +14,7 @@ export interface CreateContractInput {
   wallet: string;
 }
 
+/** Resolves wallet → user, then inserts the contract. Returns null if user not found. */
 export async function createContract(input: CreateContractInput) {
   const user = await getUserByWallet(input.wallet);
 
@@ -95,6 +96,7 @@ export async function updateContractHedera(
   );
 }
 
+/** Creates a UUID invite token with 7-day expiry. */
 export async function generateInviteToken(
   contractId: string,
   contributorId: string,
@@ -121,6 +123,7 @@ export async function generateInviteToken(
   return { token, expiresAt };
 }
 
+/** Clears all contributor signatures and resets contract to pending_signatures. */
 export async function resetContractSignatures(contractId: string) {
   const now = new Date().toISOString();
 
@@ -175,6 +178,7 @@ export async function updateContractSchedule(
   );
 }
 
+/** Records signature on contributor row, then auto-advances contract to fully_signed if all signed. */
 export async function signContributor(input: SignContributorInput) {
   const now = new Date().toISOString();
 

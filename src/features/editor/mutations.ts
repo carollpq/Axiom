@@ -7,6 +7,7 @@ import {
 } from '@/src/shared/lib/db/schema';
 import { and, eq, sql } from 'drizzle-orm';
 
+/** No-ops if no fields provided. Auto-bumps updatedAt. */
 export async function updateJournalMetadata(
   journalId: string,
   data: { aimsAndScope?: string; submissionCriteria?: string },
@@ -32,6 +33,7 @@ export async function createJournalIssue(journalId: string, label: string) {
   return row;
 }
 
+/** Cascades: deletes associated issue_papers rows first. */
 export async function deleteJournalIssue(issueId: string) {
   await db.delete(issuePapers).where(eq(issuePapers.issueId, issueId));
   await db.delete(journalIssues).where(eq(journalIssues.id, issueId));

@@ -19,6 +19,7 @@ export const listUserContracts = cache(async (walletAddress: string) => {
   });
 });
 
+/** Validates token hasn't expired, then returns contributor + full contract. */
 export async function getContributorByInviteToken(token: string) {
   const now = new Date().toISOString();
 
@@ -47,6 +48,7 @@ export async function getContributorByInviteToken(token: string) {
   return { contributor, contract };
 }
 
+/** Contracts where this wallet has a pending (unsigned) contributor row. */
 export const listContractsToSign = cache(async (walletAddress: string) => {
   const pendingIds = db
     .selectDistinct({ id: contractContributors.contractId })
@@ -64,6 +66,7 @@ export const listContractsToSign = cache(async (walletAddress: string) => {
   });
 });
 
+/** Throws if wallet is not the contract creator. */
 export async function requireContractOwner(contractId: string, wallet: string) {
   const contract = await getContractById(contractId);
   if (!contract) throw new Error('Contract not found');
