@@ -1,7 +1,7 @@
 import type {
   PaperUnderReview,
   ReviewCriterion,
-} from '@/src/features/reviewer/types';
+} from '@/src/features/reviewer/types/workspace';
 
 /** Common shape accepted by workspace mappers — both DbReviewAssignment and DbAssignedReview satisfy this. */
 export interface ReviewAssignmentLike {

@@ -10,7 +10,7 @@ import type {
   ReputationBreakdownItem,
   UserProfile,
   ResearcherInsight,
-} from '@/src/features/reviewer/types';
+} from '@/src/features/reviewer/types/dashboard';
 import { PerformanceMetrics } from '../../reviewer-dashboard/performance-metrics';
 import { ResearchersInsights } from '../../reviewer-dashboard/researchers-insights';
 

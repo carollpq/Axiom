@@ -1,6 +1,6 @@
 'use client';
 
-import type { CompletedReviewExtended } from '@/src/features/reviewer/types';
+import type { CompletedReviewExtended } from '@/src/features/reviewer/types/dashboard';
 import type { AuthorResponseStatusDb } from '@/src/shared/lib/db/schema';
 import {
   getStatusColors,

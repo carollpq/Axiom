@@ -6,10 +6,9 @@ import { SelectionPlaceholder } from '@/src/shared/components/selection-placehol
 import { PaperList } from '@/src/shared/components/paper-list.client';
 import { DynamicPdfViewer } from '@/src/shared/components/dynamic-pdf-viewer.client';
 import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
-import type { CompletedReviewExtended } from '@/src/features/reviewer/types';
+import type { CompletedReviewExtended } from '@/src/features/reviewer/types/dashboard';
 import { toReviewerPaperListItems } from '@/src/features/reviewer/lib/dashboard';
 import { CompletedReviewSidebar } from './completed-review-sidebar.client';
-import { CoursesCarousel } from './courses-carousel';
 
 interface Props {
   initialCompleted: CompletedReviewExtended[];
@@ -30,10 +29,6 @@ export function CompletedPapersClient({ initialCompleted }: Props) {
 
   return (
     <>
-      <div className="px-5 pt-4">
-        <CoursesCarousel />
-      </div>
-
       <ThreeColumnLayout
         title="Completed Reviews"
         countLabel={`${initialCompleted.length} review${initialCompleted.length !== 1 ? 's' : ''}`}

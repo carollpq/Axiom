@@ -7,7 +7,7 @@ import type {
   ReviewerDisplayStatus,
   ReputationScores,
   ReputationBreakdownItem,
-} from '@/src/features/reviewer/types';
+} from '@/src/features/reviewer/types/dashboard';
 import type {
   DbAssignedReview,
   DbCompletedReview,

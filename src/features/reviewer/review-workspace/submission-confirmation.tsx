@@ -1,4 +1,4 @@
-import type { SubmissionResult } from '@/src/features/reviewer/types';
+import type { SubmissionResult } from '@/src/features/reviewer/types/workspace';
 
 interface SubmissionConfirmationProps {
   result: SubmissionResult;

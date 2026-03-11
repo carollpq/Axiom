@@ -4,7 +4,7 @@ import type {
   GeneralComments,
   Recommendation,
   ReviewCriterion,
-} from '@/src/features/reviewer/types';
+} from '@/src/features/reviewer/types/workspace';
 
 export interface ReviewWorkspaceState {
   evaluations: Record<number, CriterionEvaluation>;

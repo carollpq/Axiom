@@ -13,7 +13,7 @@ import {
 import { ReviewerDashboardClient } from '@/src/features/reviewer/components/dashboard/reviewer-dashboard.client';
 import { getUserByWallet } from '@/src/features/users/queries';
 import { listRatingsForReviewer } from '@/src/features/reviews/queries';
-import type { ResearcherInsight } from '@/src/features/reviewer/types';
+import type { ResearcherInsight } from '@/src/features/reviewer/types/dashboard';
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 

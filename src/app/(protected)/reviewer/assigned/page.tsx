@@ -8,7 +8,11 @@ import { PapersUnderReviewClient } from '@/src/features/reviewer/components/assi
 export default async function PapersUnderReviewPage() {
   const wallet = (await getSession())!;
   const rawAssigned = await listAssignedReviews(wallet);
-  const editorNames = await buildEditorNameMap(rawAssigned);
+  const editorNames = await buildEditorNameMap(
+    rawAssigned
+      .map((a) => a.submission.journal?.editorWallet)
+      .filter((w): w is string => !!w),
+  );
 
   return (
     <PapersUnderReviewClient

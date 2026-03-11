@@ -13,7 +13,7 @@ import type {
   GeneralComments,
   Recommendation,
   SubmissionResult,
-} from '@/src/features/reviewer/types';
+} from '@/src/features/reviewer/types/workspace';
 import { canonicalJson, sha256 } from '@/src/shared/lib/hashing';
 import { formatDate, truncate } from '@/src/shared/lib/format';
 import { submitReviewAction } from '@/src/features/reviews/actions';

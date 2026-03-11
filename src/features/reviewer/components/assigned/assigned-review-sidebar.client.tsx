@@ -1,6 +1,6 @@
 'use client';
 
-import type { AssignedReviewExtended } from '@/src/features/reviewer/types';
+import type { AssignedReviewExtended } from '@/src/features/reviewer/types/dashboard';
 import type { DbAssignedReview } from '@/src/features/reviewer/queries';
 import { useReviewWorkspace } from '@/src/features/reviewer/hooks/useReviewWorkspace';
 import { CriteriaEvaluationSection } from '@/src/features/reviewer/review-workspace/criteria-evaluation-section';

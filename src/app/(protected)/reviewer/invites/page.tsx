@@ -8,7 +8,11 @@ import { IncomingInvitesClient } from '@/src/features/reviewer/components/invite
 export default async function IncomingInvitesPage() {
   const wallet = (await getSession())!;
   const rawAssigned = await listPendingInvites(wallet);
-  const editorNames = await buildEditorNameMap(rawAssigned);
+  const editorNames = await buildEditorNameMap(
+    rawAssigned
+      .map((a) => a.submission.journal?.editorWallet)
+      .filter((w): w is string => !!w),
+  );
 
   return (
     <IncomingInvitesClient initialRaw={rawAssigned} editorNames={editorNames} />

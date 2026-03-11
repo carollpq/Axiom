@@ -1,6 +1,6 @@
 'use client';
 
-import type { Recommendation } from '@/src/features/reviewer/types';
+import type { Recommendation } from '@/src/features/reviewer/types/workspace';
 import { FormSelect } from '@/src/shared/components/form-select.client';
 
 interface RecommendationSectionProps {

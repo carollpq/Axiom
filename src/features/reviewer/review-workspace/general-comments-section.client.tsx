@@ -1,6 +1,6 @@
 'use client';
 
-import type { GeneralComments } from '@/src/features/reviewer/types';
+import type { GeneralComments } from '@/src/features/reviewer/types/workspace';
 
 interface GeneralCommentsSectionProps {
   comments: GeneralComments;

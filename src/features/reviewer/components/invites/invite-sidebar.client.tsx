@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/src/shared/components/confirm-dialog.client';
 import { acceptAssignmentAction } from '@/src/features/submissions/actions';
-import type { AssignedReviewExtended } from '@/src/features/reviewer/types';
+import type { AssignedReviewExtended } from '@/src/features/reviewer/types/dashboard';
 import {
   getUrgencyColor,
   formatDaysLeft,

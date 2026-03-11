@@ -2,7 +2,7 @@ import type {
   ReviewCriterion,
   CriterionRating,
   CriterionEvaluation as CriterionEvalType,
-} from '@/src/features/reviewer/types';
+} from '@/src/features/reviewer/types/workspace';
 import { CriterionEvaluation } from './criterion-evaluation.client';
 
 interface CriteriaEvaluationSectionProps {

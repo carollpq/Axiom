@@ -9,7 +9,11 @@ import { CompletedPapersClient } from '@/src/features/reviewer/components/comple
 export default async function CompletedPapersPage() {
   const wallet = (await getSession())!;
   const rawCompleted = await listCompletedReviewsExtended(wallet);
-  const editorNames = await buildEditorNameMap(rawCompleted);
+  const editorNames = await buildEditorNameMap(
+    rawCompleted
+      .map((a) => a.submission.journal?.editorWallet)
+      .filter((w): w is string => !!w),
+  );
 
   return (
     <CompletedPapersClient
