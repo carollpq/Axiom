@@ -1,5 +1,5 @@
 import { listUserPapers } from '@/src/features/papers/queries';
-import { mapPapersToSubmissionCards } from '@/src/features/researcher/mappers/dashboard';
+import { mapPapersToSubmissionCards } from '@/src/features/researcher/lib/dashboard';
 import { SubmissionCarousel } from './submission-carousel.client';
 
 interface Props {

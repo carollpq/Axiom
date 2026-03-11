@@ -8,8 +8,8 @@ import {
   journals,
 } from '@/src/shared/lib/db/schema';
 import { eq, and, or, inArray } from 'drizzle-orm';
-import { displayNameOrWallet } from '@/src/features/users/mappers';
-import type { EditorNameMap } from '@/src/features/reviewer/mappers/dashboard';
+import { displayNameOrWallet } from '@/src/features/users/lib';
+import type { EditorNameMap } from '@/src/features/reviewer/lib/dashboard';
 
 export const listAssignedReviews = cache(async (reviewerWallet: string) => {
   return db.query.reviewAssignments.findMany({

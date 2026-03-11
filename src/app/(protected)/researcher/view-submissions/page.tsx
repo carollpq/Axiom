@@ -4,7 +4,7 @@ import { db } from '@/src/shared/lib/db';
 import { reviewAssignments, reviews } from '@/src/shared/lib/db/schema';
 import { inArray } from 'drizzle-orm';
 import { ViewSubmissionsClient } from '@/src/features/researcher/components/view-submissions/view-submissions.client';
-import { deriveSubmissionDisplayStatus } from '@/src/features/researcher/mappers/dashboard';
+import { deriveSubmissionDisplayStatus } from '@/src/features/researcher/lib/dashboard';
 
 export default async function ViewSubmissionsPage() {
   const wallet = (await getSession())!;

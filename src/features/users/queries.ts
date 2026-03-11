@@ -16,15 +16,6 @@ export const getUserByWallet = cache(async (walletAddress: string) => {
   );
 });
 
-export async function getUserRoles(walletAddress: string): Promise<string[]> {
-  const result = await db
-    .select({ roles: users.roles })
-    .from(users)
-    .where(eq(users.walletAddress, walletAddress.toLowerCase()))
-    .limit(1);
-  return result[0]?.roles ?? [];
-}
-
 export async function getOrCreateUser(walletAddress: string) {
   const normalized = walletAddress.toLowerCase();
   const existing = await getUserByWallet(normalized);

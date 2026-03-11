@@ -8,7 +8,7 @@ import {
   mapApiPapersToDrafts,
   mapContractsToSign,
   mapOwnedContractsForStatus,
-} from '@/src/features/researcher/mappers/contract';
+} from '@/src/features/researcher/lib/contract';
 import { AuthorshipContractsTabs } from '@/src/features/researcher/components/authorship-contracts/authorship-contracts-tabs.client';
 import type { Paper, Contract } from '@/src/shared/types/domain';
 

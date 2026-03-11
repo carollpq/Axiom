@@ -1,16 +1,14 @@
-import { cache } from "react";
-import { db } from "@/src/shared/lib/db";
-import { authorshipContracts, contractContributors, users } from "@/src/shared/lib/db/schema";
-import { and, eq, gt, inArray } from "drizzle-orm";
+import { cache } from 'react';
+import { db } from '@/src/shared/lib/db';
+import {
+  authorshipContracts,
+  contractContributors,
+} from '@/src/shared/lib/db/schema';
+import { and, eq, gt, inArray } from 'drizzle-orm';
+import { getUserByWallet } from '@/src/features/users/queries';
 
 export const listUserContracts = cache(async (walletAddress: string) => {
-  const user = (
-    await db
-      .select()
-      .from(users)
-      .where(eq(users.walletAddress, walletAddress.toLowerCase()))
-      .limit(1)
-  )[0];
+  const user = await getUserByWallet(walletAddress);
 
   if (!user) return [];
 
@@ -56,7 +54,7 @@ export const listContractsToSign = cache(async (walletAddress: string) => {
     .where(
       and(
         eq(contractContributors.contributorWallet, walletAddress.toLowerCase()),
-        eq(contractContributors.status, "pending"),
+        eq(contractContributors.status, 'pending'),
       ),
     );
 

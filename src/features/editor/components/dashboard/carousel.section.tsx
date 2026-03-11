@@ -1,4 +1,4 @@
-import { deriveStage } from '@/src/features/editor/mappers/journal';
+import { deriveStage } from '@/src/features/editor/lib/journal';
 import { formatDate } from '@/src/shared/lib/format';
 import { SubmissionCarousel } from './submission-carousel.client';
 import type { EditorCarouselCard } from './submission-carousel.client';

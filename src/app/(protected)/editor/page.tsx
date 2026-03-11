@@ -5,7 +5,7 @@ import {
   getJournalByEditorWallet,
   listJournalSubmissions,
 } from '@/src/features/editor/queries';
-import { mapDbToEditorProfile } from '@/src/features/editor/mappers/journal';
+import { mapDbToEditorProfile } from '@/src/features/editor/lib/journal';
 import { getInitials } from '@/src/shared/lib/format';
 import { EditorDashboardClient } from '@/src/features/editor/components/dashboard/editor-dashboard.client';
 import { DashboardSkeleton } from '@/src/features/editor/components/skeletons';

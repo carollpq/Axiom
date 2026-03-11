@@ -13,12 +13,9 @@ import {
 } from '@/src/features/papers/mutations';
 import { getPaperById } from '@/src/features/papers/queries';
 import { getContractById } from '@/src/features/contracts/queries';
+import { getUserByWallet } from '@/src/features/users/queries';
 import { db } from '@/src/shared/lib/db';
-import {
-  paperVersions,
-  users,
-  type PaperStatusDb,
-} from '@/src/shared/lib/db/schema';
+import { paperVersions, type PaperStatusDb } from '@/src/shared/lib/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { SHA256_REGEX } from '@/src/shared/lib/validation';
 import {
@@ -165,12 +162,7 @@ export async function submitPaperAction(input: {
   if (!paper) throw new Error('Paper not found');
 
   // Verify ownership via session wallet
-  const owner = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.walletAddress, session.toLowerCase()))
-    .limit(1)
-    .then((rows) => rows[0] ?? null);
+  const owner = await getUserByWallet(session);
 
   if (!owner || paper.ownerId !== owner.id) {
     throw new Error('Forbidden');

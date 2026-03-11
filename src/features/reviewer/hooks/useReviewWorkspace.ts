@@ -27,8 +27,8 @@ import {
 import {
   mapAssignmentToPaper,
   mapAssignmentToCriteria,
-} from '@/src/features/reviewer/mappers/workspace';
-import type { ReviewAssignmentLike } from '@/src/features/reviewer/mappers/workspace';
+} from '@/src/features/reviewer/lib/workspace';
+import type { ReviewAssignmentLike } from '@/src/features/reviewer/lib/workspace';
 
 export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
   const paper = useMemo(() => mapAssignmentToPaper(assignment), [assignment]);

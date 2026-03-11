@@ -11,7 +11,7 @@ import {
   mapDbToAssignedReviewExtended,
   toReviewerPaperListItems,
   type EditorNameMap,
-} from '@/src/features/reviewer/mappers/dashboard';
+} from '@/src/features/reviewer/lib/dashboard';
 import { InviteSidebar } from './invite-sidebar.client';
 
 interface Props {

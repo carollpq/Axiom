@@ -22,7 +22,7 @@ import {
 } from '@/src/features/contracts/queries';
 import { getUserByWallet } from '@/src/features/users/queries';
 import { createNotification } from '@/src/features/notifications/mutations';
-import { displayNameOrWallet } from '@/src/features/users/mappers';
+import { displayNameOrWallet } from '@/src/features/users/lib';
 import {
   createContractSchedule,
   signScheduleAsOperator,

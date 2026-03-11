@@ -12,7 +12,7 @@ import {
   buildReviewerPool,
   mapDbToJournalIssue,
   buildPoolReviewersWithStatus,
-} from '@/src/features/editor/mappers/journal';
+} from '@/src/features/editor/lib/journal';
 import ManagementLoading from './loading';
 
 const DEFAULT_AIMS_AND_SCOPE =

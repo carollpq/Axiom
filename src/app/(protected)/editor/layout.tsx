@@ -3,7 +3,7 @@ import { RoleShell } from '@/src/shared/components';
 import { getSession } from '@/src/shared/lib/auth/auth';
 import { getUserByWallet } from '@/src/features/users/queries';
 import { journalNavItems } from '@/src/features/editor/nav';
-import { buildUserProfile } from '@/src/features/users/mappers';
+import { buildUserProfile } from '@/src/features/users/lib';
 import { ROUTES, ROLE_DASHBOARD_ROUTES } from '@/src/shared/lib/routes';
 
 export default async function JournalLayout({

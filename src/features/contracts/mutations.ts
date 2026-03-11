@@ -2,11 +2,11 @@ import { db } from '@/src/shared/lib/db';
 import {
   authorshipContracts,
   contractContributors,
-  users,
   type ContractStatusDb,
   type ContributorStatusDb,
 } from '@/src/shared/lib/db/schema';
 import { and, eq } from 'drizzle-orm';
+import { getUserByWallet } from '@/src/features/users/queries';
 
 export interface CreateContractInput {
   paperTitle: string;
@@ -15,13 +15,7 @@ export interface CreateContractInput {
 }
 
 export async function createContract(input: CreateContractInput) {
-  const user = (
-    await db
-      .select()
-      .from(users)
-      .where(eq(users.walletAddress, input.wallet.toLowerCase()))
-      .limit(1)
-  )[0];
+  const user = await getUserByWallet(input.wallet);
 
   if (!user) return null;
 

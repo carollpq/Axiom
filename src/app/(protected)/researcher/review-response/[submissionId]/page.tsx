@@ -1,7 +1,8 @@
 import { getSession } from '@/src/shared/lib/auth/auth';
 import { db } from '@/src/shared/lib/db';
-import { submissions, users } from '@/src/shared/lib/db/schema';
+import { submissions } from '@/src/shared/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { getUserByWallet } from '@/src/features/users/queries';
 import { redirect } from 'next/navigation';
 import { ROUTES } from '@/src/shared/lib/routes';
 import {
@@ -29,12 +30,7 @@ export default async function ReviewResponsePage({
   if (!submission) redirect(ROUTES.researcher.root);
 
   // Verify ownership
-  const user = await db
-    .select()
-    .from(users)
-    .where(eq(users.walletAddress, wallet.toLowerCase()))
-    .limit(1)
-    .then((rows) => rows[0] ?? null);
+  const user = await getUserByWallet(wallet);
 
   if (!user || submission.paper.ownerId !== user.id)
     redirect(ROUTES.researcher.root);

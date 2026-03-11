@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getSession } from '@/src/shared/lib/auth/auth';
-import { getUserRoles } from '@/src/features/users/queries';
+import { getUserByWallet } from '@/src/features/users/queries';
 import { ROUTES, ROLE_DASHBOARD_ROUTES } from '@/src/shared/lib/routes';
 
 export default async function RootPage() {
@@ -10,11 +10,11 @@ export default async function RootPage() {
     redirect(ROUTES.login);
   }
 
-  const roles = await getUserRoles(wallet);
+  const user = await getUserByWallet(wallet);
 
-  if (roles.length === 0) {
+  if (!user?.roles?.length) {
     redirect(ROUTES.register);
   }
 
-  redirect(ROLE_DASHBOARD_ROUTES[roles[0]] ?? ROUTES.researcher.root);
+  redirect(ROLE_DASHBOARD_ROUTES[user.roles[0]] ?? ROUTES.researcher.root);
 }

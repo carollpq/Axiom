@@ -7,7 +7,7 @@ import { PaperList } from '@/src/shared/components/paper-list.client';
 import { DynamicPdfViewer } from '@/src/shared/components/dynamic-pdf-viewer.client';
 import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
 import type { CompletedReviewExtended } from '@/src/features/reviewer/types';
-import { toReviewerPaperListItems } from '@/src/features/reviewer/mappers/dashboard';
+import { toReviewerPaperListItems } from '@/src/features/reviewer/lib/dashboard';
 import { CompletedReviewSidebar } from './completed-review-sidebar.client';
 import { CoursesCarousel } from './courses-carousel';
 

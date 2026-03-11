@@ -15,8 +15,8 @@ import type {
   DbJournalReviewerWithStatus,
 } from '../queries';
 import { formatDate, truncate } from '@/src/shared/lib/format';
-import { displayNameOrWallet } from '@/src/features/users/mappers';
-import { toFivePointScale } from '@/src/features/reviews/mappers';
+import { displayNameOrWallet } from '@/src/features/users/lib';
+import { toFivePointScale } from '@/src/features/reviews/lib';
 
 export function deriveStage(
   status: string,

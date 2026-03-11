@@ -1,34 +1,53 @@
-import { cache } from "react";
-import { db } from "@/src/shared/lib/db";
-import { papers, users, authorshipContracts, contractContributors } from "@/src/shared/lib/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { cache } from 'react';
+import { db } from '@/src/shared/lib/db';
+import {
+  papers,
+  authorshipContracts,
+  contractContributors,
+} from '@/src/shared/lib/db/schema';
+import { eq, inArray } from 'drizzle-orm';
+import { getUserByWallet } from '@/src/features/users/queries';
 
 /** Drizzle return type for papers with versions + contracts (no owner). */
-export type DbPaperWithRelations = Awaited<ReturnType<typeof listUserPapers>>[number];
+export type DbPaperWithRelations = Awaited<
+  ReturnType<typeof listUserPapers>
+>[number];
 
 /** Drizzle return type for papers with versions + contracts + owner. */
-export type DbPaperWithOwner = NonNullable<Awaited<ReturnType<typeof getPaperById>>>;
+export type DbPaperWithOwner = NonNullable<
+  Awaited<ReturnType<typeof getPaperById>>
+>;
 
 export const listUserPapers = cache(async (walletAddress: string) => {
   const wallet = walletAddress.toLowerCase();
 
   // Run both lookups in parallel — they're independent
   const [user, contributorRows] = await Promise.all([
-    db.select().from(users).where(eq(users.walletAddress, wallet)).limit(1).then(r => r[0]),
+    getUserByWallet(wallet),
     db
       .select({ paperId: authorshipContracts.paperId })
       .from(contractContributors)
-      .innerJoin(authorshipContracts, eq(contractContributors.contractId, authorshipContracts.id))
+      .innerJoin(
+        authorshipContracts,
+        eq(contractContributors.contractId, authorshipContracts.id),
+      )
       .where(eq(contractContributors.contributorWallet, wallet)),
   ]);
 
   // Papers owned by user
   const ownedIds = user
-    ? (await db.select({ id: papers.id }).from(papers).where(eq(papers.ownerId, user.id))).map(r => r.id)
+    ? (
+        await db
+          .select({ id: papers.id })
+          .from(papers)
+          .where(eq(papers.ownerId, user.id))
+      ).map((r) => r.id)
     : [];
 
   // Papers where wallet is a contributor on any authorship contract
-  const contributorIds = contributorRows.map(r => r.paperId).filter((id): id is string => id !== null);
+  const contributorIds = contributorRows
+    .map((r) => r.paperId)
+    .filter((id): id is string => id !== null);
 
   const allIds = [...new Set([...ownedIds, ...contributorIds])];
   if (allIds.length === 0) return [];

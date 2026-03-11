@@ -1,10 +1,10 @@
-import { listUserPapers } from "@/src/features/papers/queries";
+import { listUserPapers } from '@/src/features/papers/queries';
 import {
   mapPapersToSubmissionCards,
   computeStats,
   statsToCards,
-} from "@/src/features/researcher/mappers/dashboard";
-import { StatCard } from "@/src/shared/components";
+} from '@/src/features/researcher/lib/dashboard';
+import { StatCard } from '@/src/shared/components';
 
 interface Props {
   papersPromise: ReturnType<typeof listUserPapers>;

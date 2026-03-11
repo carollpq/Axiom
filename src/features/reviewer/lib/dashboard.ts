@@ -15,7 +15,7 @@ import type {
   DbReputationRow,
 } from '../queries';
 import { formatDate, truncate } from '@/src/shared/lib/format';
-import { toFivePointScale } from '@/src/features/reviews/mappers';
+import { toFivePointScale } from '@/src/features/reviews/lib';
 
 /** Wallet address → display name lookup, built at the server page level. */
 export type EditorNameMap = Record<string, string>;

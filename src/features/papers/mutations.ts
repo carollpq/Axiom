@@ -1,11 +1,7 @@
 import { db } from '@/src/shared/lib/db';
-import {
-  papers,
-  paperVersions,
-  submissions,
-  users,
-} from '@/src/shared/lib/db/schema';
+import { papers, paperVersions, submissions } from '@/src/shared/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { getUserByWallet } from '@/src/features/users/queries';
 import type { PaperStatusDb, StudyTypeDb } from '@/src/shared/lib/db/schema';
 
 export async function updatePaperVersionHedera(
@@ -34,13 +30,7 @@ export interface CreatePaperInput {
 }
 
 export async function createPaper(input: CreatePaperInput) {
-  const user = (
-    await db
-      .select()
-      .from(users)
-      .where(eq(users.walletAddress, input.wallet.toLowerCase()))
-      .limit(1)
-  )[0];
+  const user = await getUserByWallet(input.wallet);
 
   if (!user) return null;
 

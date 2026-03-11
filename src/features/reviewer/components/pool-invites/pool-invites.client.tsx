@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { Check, X } from 'lucide-react';
 import { getErrorMessage } from '@/src/shared/lib/errors';
 import type { DbPendingPoolInvite } from '@/src/features/reviewer/queries';
-import { displayNameOrWallet } from '@/src/features/users/mappers';
+import { displayNameOrWallet } from '@/src/features/users/lib';
 import { respondToPoolInviteAction } from '@/src/features/reviewer/actions';
 
 interface PoolInvitesClientProps {

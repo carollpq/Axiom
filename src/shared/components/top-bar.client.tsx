@@ -5,7 +5,7 @@ import { NotificationBell } from '@/src/features/notifications/components/notifi
 import { WalletSection } from './wallet-section.client';
 import { useSidebar } from '@/src/shared/context/sidebar-context.client';
 import { useUser } from '@/src/shared/context/user-context.client';
-import { buildUserProfile } from '@/src/features/users/mappers';
+import { buildUserProfile } from '@/src/features/users/lib';
 import { type Role } from '@/src/features/auth/types';
 
 export function TopBar() {

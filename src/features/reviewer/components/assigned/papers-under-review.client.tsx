@@ -11,7 +11,7 @@ import {
   mapDbToAssignedReviewExtended,
   toReviewerPaperListItems,
   type EditorNameMap,
-} from '@/src/features/reviewer/mappers/dashboard';
+} from '@/src/features/reviewer/lib/dashboard';
 import { AssignedReviewSidebar } from './assigned-review-sidebar.client';
 
 interface Props {

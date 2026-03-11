@@ -9,7 +9,7 @@ import {
   mapDbToCompletedReview,
   mapDbToReputationScores,
   mapDbToReputationBreakdown,
-} from '@/src/features/reviewer/mappers/dashboard';
+} from '@/src/features/reviewer/lib/dashboard';
 import { ReviewerDashboardClient } from '@/src/features/reviewer/components/dashboard/reviewer-dashboard.client';
 import { getUserByWallet } from '@/src/features/users/queries';
 import { listRatingsForReviewer } from '@/src/features/reviews/queries';
