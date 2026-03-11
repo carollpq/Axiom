@@ -16,21 +16,24 @@ import { AUTH_COLORS } from './auth-styles';
 export function Login() {
   const router = useRouter();
   const account = useActiveAccount();
-  const { user, isConnected } = useUser();
+  const { user, loading, isConnected } = useUser();
 
   const userRoles = useMemo(() => (user?.roles ?? []) as Role[], [user?.roles]);
   const showRolePicker =
     isConnected && !!account?.address && userRoles.length > 1;
 
+  // Redirect once user data is loaded after wallet connection.
+  // Wait for loading to finish — getCurrentUser() may still be in-flight
+  // when useActiveAccount() first returns (cookie not yet committed).
   useEffect(() => {
-    if (!isConnected || !account?.address || !user) return;
+    if (loading || !isConnected || !account?.address || !user) return;
 
     if (userRoles.length === 0) {
       router.push(ROUTES.register);
     } else if (userRoles.length === 1) {
       router.push(ROLE_DASHBOARD_ROUTES[userRoles[0]]);
     }
-  }, [isConnected, account?.address, user, router, userRoles]);
+  }, [loading, isConnected, account?.address, user, router, userRoles]);
 
   return (
     <div className="w-full max-w-md mx-auto">

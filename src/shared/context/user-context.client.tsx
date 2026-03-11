@@ -43,7 +43,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // React to wallet connect/disconnect
+  // React to wallet connect/disconnect.
+  // On fresh login, Thirdweb may update useActiveAccount() before doLogin()
+  // finishes setting the JWT cookie. If getCurrentUser() returns null while
+  // a wallet is connected, retry once after a short delay so the cookie has
+  // time to be committed.
   useEffect(() => {
     if (!account?.address) {
       // Still waiting for Thirdweb to rehydrate the wallet — don't log out yet.
@@ -66,13 +70,33 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     getCurrentUser()
       .then((data) => {
-        if (!cancelled) setUser(data);
+        if (!cancelled) {
+          if (data) {
+            setUser(data);
+            setLoading(false);
+          } else {
+            // Cookie may not be committed yet — retry once after a short delay
+            setTimeout(() => {
+              if (cancelled) return;
+              getCurrentUser()
+                .then((retryData) => {
+                  if (!cancelled) setUser(retryData);
+                })
+                .catch(() => {
+                  if (!cancelled) setUser(null);
+                })
+                .finally(() => {
+                  if (!cancelled) setLoading(false);
+                });
+            }, 500);
+          }
+        }
       })
       .catch(() => {
-        if (!cancelled) setUser(null);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setUser(null);
+          setLoading(false);
+        }
       });
 
     return () => {
