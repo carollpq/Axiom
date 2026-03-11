@@ -24,12 +24,9 @@ export async function GET(req: NextRequest) {
   }
 
   const overdue = await listOverdueAssignments();
-  let processed = 0;
 
-  for (const assignment of overdue) {
-    await markAssignmentLate(assignment.id);
-    processed++;
-  }
+  await Promise.all(overdue.map((a) => markAssignmentLate(a.id)));
+  const processed = overdue.length;
 
   // Non-blocking: reputation minting + notifications run after response
   after(async () => {

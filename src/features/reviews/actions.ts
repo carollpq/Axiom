@@ -8,18 +8,18 @@ import { eq, desc } from 'drizzle-orm';
 import { canonicalJson, sha256 } from '@/src/shared/lib/hashing';
 import { requireSession } from '@/src/shared/lib/auth/auth';
 import { anchorToHcs } from '@/src/shared/lib/hedera/hcs';
-import { requireReviewWithPaperOwner } from '@/src/features/reviews/queries';
-import { ROUTES } from '@/src/shared/lib/routes';
 import {
+  requireReviewWithPaperOwner,
   getReviewAssignment,
   listReviewAssignmentsForSubmission,
 } from '@/src/features/reviews/queries';
+import { ROUTES } from '@/src/shared/lib/routes';
 import {
   createReview,
   updateReviewHedera,
-  updateSubmissionStatus,
   recordReputation,
 } from '@/src/features/reviews/mutations';
+import { updateSubmissionStatus } from '@/src/features/submissions/mutations';
 import {
   createNotification,
   notifyIfWallet,
@@ -74,10 +74,10 @@ export async function submitReviewAction(
     reviewerWallet: session,
     reviewHash: input.reviewHash,
     criteriaEvaluations: canonicalJson(input.criteriaEvaluations),
-    strengths: input.strengths ?? '',
-    weaknesses: input.weaknesses ?? '',
-    questionsForAuthors: input.questionsForAuthors ?? '',
-    confidentialEditorComments: input.confidentialEditorComments ?? '',
+    strengths: input.strengths,
+    weaknesses: input.weaknesses,
+    questionsForAuthors: input.questionsForAuthors,
+    confidentialEditorComments: input.confidentialEditorComments,
     recommendation: input.recommendation,
   });
 

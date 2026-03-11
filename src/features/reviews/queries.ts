@@ -4,7 +4,6 @@ import {
   reviewAssignments,
   reviewCriteria,
   reviews,
-  reviewerRatings,
   submissions,
 } from '@/src/shared/lib/db/schema';
 import { eq, and, inArray, lt, isNotNull } from 'drizzle-orm';

@@ -2,8 +2,10 @@
 
 import { after } from 'next/server';
 import { db } from '@/src/shared/lib/db';
-import { reviewAssignments, submissions } from '@/src/shared/lib/db/schema';
-import type { SubmissionStatusDb } from '@/src/shared/lib/db/schema';
+import {
+  reviewAssignments,
+  type SubmissionStatusDb,
+} from '@/src/shared/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { canonicalJson, sha256 } from '@/src/shared/lib/hashing';
 import { requireSession } from '@/src/shared/lib/auth/auth';
@@ -18,8 +20,9 @@ import {
   updateCriteriaTxId,
   createReviewAssignment,
   updateSubmissionStatus,
+  updateSubmissionTxId,
   updateAssignmentTimelineIndex,
-} from '@/src/features/reviews/mutations';
+} from '@/src/features/submissions/mutations';
 import { listReviewAssignmentsForSubmission } from '@/src/features/reviews/queries';
 import {
   createNotification,
@@ -124,9 +127,10 @@ export async function assignReviewersAction(
     ),
   );
 
-  await updateSubmissionStatus(submissionId, 'reviewers_assigned');
-
-  const allAssignments = await listReviewAssignmentsForSubmission(submissionId);
+  const [, allAssignments] = await Promise.all([
+    updateSubmissionStatus(submissionId, 'reviewers_assigned'),
+    listReviewAssignmentsForSubmission(submissionId),
+  ]);
 
   const authorWallet = submission.paper?.owner?.walletAddress;
 
@@ -241,10 +245,7 @@ export async function makeDecisionAction(
     ]);
 
     if (hederaTxId) {
-      await db
-        .update(submissions)
-        .set({ decisionTxId: hederaTxId })
-        .where(eq(submissions.id, submissionId));
+      await updateSubmissionTxId(submissionId, 'decisionTxId', hederaTxId);
     }
   });
 
@@ -443,10 +444,7 @@ export async function authorResponseAction(
       ]);
 
       if (txId) {
-        await db
-          .update(submissions)
-          .set({ authorResponseTxId: txId })
-          .where(eq(submissions.id, submissionId));
+        await updateSubmissionTxId(submissionId, 'authorResponseTxId', txId);
       }
     });
 
@@ -492,10 +490,11 @@ export async function authorResponseAction(
     ]);
 
     if (hederaTxId) {
-      await db
-        .update(submissions)
-        .set({ authorResponseTxId: hederaTxId })
-        .where(eq(submissions.id, submissionId));
+      await updateSubmissionTxId(
+        submissionId,
+        'authorResponseTxId',
+        hederaTxId,
+      );
     }
   });
 
