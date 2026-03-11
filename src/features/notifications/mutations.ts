@@ -11,6 +11,14 @@ export interface CreateNotificationInput {
   link?: string;
 }
 
+export function notifyIfWallet(
+  wallet: string | null | undefined,
+  input: Omit<CreateNotificationInput, 'userWallet'>,
+): Promise<void> {
+  if (!wallet) return Promise.resolve();
+  return createNotification({ userWallet: wallet, ...input }).then(() => {});
+}
+
 export async function createNotification(input: CreateNotificationInput) {
   return (
     (

@@ -20,7 +20,10 @@ import {
   updateSubmissionStatus,
   recordReputation,
 } from '@/src/features/reviews/mutations';
-import { createNotification } from '@/src/features/notifications/mutations';
+import {
+  createNotification,
+  notifyIfWallet,
+} from '@/src/features/notifications/mutations';
 import { markDeadlineCompleted } from '@/src/shared/lib/hedera/timeline-enforcer';
 
 // ---------------------------------------------------------------------------
@@ -92,17 +95,12 @@ export async function submitReviewAction(
         paperHash: latestVersion?.paperHash ?? null,
         timestamp: new Date().toISOString(),
       }),
-      ...(editorWallet
-        ? [
-            createNotification({
-              userWallet: editorWallet,
-              type: 'review_submitted',
-              title: 'Review submitted',
-              body: `A reviewer has submitted their review for "${assignment.submission.paper.title}".`,
-              link: ROUTES.editor.underReview,
-            }),
-          ]
-        : []),
+      notifyIfWallet(editorWallet, {
+        type: 'review_submitted',
+        title: 'Review submitted',
+        body: `A reviewer has submitted their review for "${assignment.submission.paper.title}".`,
+        link: ROUTES.editor.underReview,
+      }),
     ]);
 
     if (hederaTxId) {

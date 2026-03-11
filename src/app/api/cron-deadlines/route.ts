@@ -4,7 +4,10 @@ import {
   markAssignmentLate,
   recordReputation,
 } from '@/src/features/reviews/mutations';
-import { createNotification } from '@/src/features/notifications/mutations';
+import {
+  createNotification,
+  notifyIfWallet,
+} from '@/src/features/notifications/mutations';
 import { checkDeadline } from '@/src/shared/lib/hedera/timeline-enforcer';
 import { ROUTES } from '@/src/shared/lib/routes';
 
@@ -64,17 +67,12 @@ export async function GET(req: NextRequest) {
           body: `Your review for "${assignment.submission.paper.title}" is past deadline.`,
           link: ROUTES.reviewer.root,
         }),
-        ...(assignment.submission.journal?.editorWallet
-          ? [
-              createNotification({
-                userWallet: assignment.submission.journal.editorWallet,
-                type: 'review_late',
-                title: 'Reviewer overdue',
-                body: `A reviewer is past deadline for "${assignment.submission.paper.title}".`,
-                link: ROUTES.editor.underReview,
-              }),
-            ]
-          : []),
+        notifyIfWallet(assignment.submission.journal?.editorWallet, {
+          type: 'review_late',
+          title: 'Reviewer overdue',
+          body: `A reviewer is past deadline for "${assignment.submission.paper.title}".`,
+          link: ROUTES.editor.underReview,
+        }),
       ]);
     }
   });

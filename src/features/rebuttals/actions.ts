@@ -14,7 +14,7 @@ import {
   requireRebuttalEditor,
 } from '@/src/features/rebuttals/queries';
 import { recordReputation } from '@/src/features/reviews/mutations';
-import { createNotification } from '@/src/features/notifications/mutations';
+import { notifyIfWallet } from '@/src/features/notifications/mutations';
 import { ROUTES } from '@/src/shared/lib/routes';
 import {
   submitRebuttalResponses,
@@ -72,17 +72,12 @@ export async function respondToRebuttalAction(
       rebuttalHash,
       timestamp: new Date().toISOString(),
     }),
-    ...(editorWallet
-      ? [
-          createNotification({
-            userWallet: editorWallet,
-            type: 'rebuttal_submitted',
-            title: 'Rebuttal response submitted',
-            body: `The author has responded to the rebuttal for "${rebuttal.submission.paper?.title}".`,
-            link: ROUTES.editor.underReview,
-          }),
-        ]
-      : []),
+    notifyIfWallet(editorWallet, {
+      type: 'rebuttal_submitted',
+      title: 'Rebuttal response submitted',
+      body: `The author has responded to the rebuttal for "${rebuttal.submission.paper?.title}".`,
+      link: ROUTES.editor.underReview,
+    }),
   ]);
 
   const responses = parsed.responses.map((r) => ({
@@ -125,17 +120,12 @@ export async function resolveRebuttalAction(
       resolution,
       timestamp: new Date().toISOString(),
     }),
-    ...(rebuttal.authorWallet
-      ? [
-          createNotification({
-            userWallet: rebuttal.authorWallet,
-            type: 'rebuttal_resolved',
-            title: 'Rebuttal resolved',
-            body: `Your rebuttal has been resolved: ${resolution}. ${editorNotes || ''}`.trim(),
-            link: ROUTES.researcher.rebuttal(rebuttal.submissionId),
-          }),
-        ]
-      : []),
+    notifyIfWallet(rebuttal.authorWallet, {
+      type: 'rebuttal_resolved',
+      title: 'Rebuttal resolved',
+      body: `Your rebuttal has been resolved: ${resolution}. ${editorNotes || ''}`.trim(),
+      link: ROUTES.researcher.rebuttal(rebuttal.submissionId),
+    }),
   ]);
 
   await resolveRebuttal({

@@ -70,7 +70,6 @@ export interface PublishCriteriaInput {
   submissionId: string;
   criteriaJson: string;
   criteriaHash: string;
-  hederaTxId?: string;
 }
 
 export async function publishCriteria(input: PublishCriteriaInput) {
@@ -82,7 +81,6 @@ export async function publishCriteria(input: PublishCriteriaInput) {
           submissionId: input.submissionId,
           criteriaJson: input.criteriaJson,
           criteriaHash: input.criteriaHash,
-          hederaTxId: input.hederaTxId ?? null,
         })
         .returning()
     )[0] ?? null;
@@ -93,12 +91,28 @@ export async function publishCriteria(input: PublishCriteriaInput) {
       .set({
         status: 'criteria_published',
         criteriaHash: input.criteriaHash,
-        criteriaTxId: input.hederaTxId ?? null,
       })
       .where(eq(submissions.id, input.submissionId));
   }
 
   return criteria;
+}
+
+/** Backfill HCS transaction ID after async anchoring. */
+export async function updateCriteriaTxId(
+  submissionId: string,
+  hederaTxId: string,
+) {
+  await Promise.all([
+    db
+      .update(submissions)
+      .set({ criteriaTxId: hederaTxId })
+      .where(eq(submissions.id, submissionId)),
+    db
+      .update(reviewCriteria)
+      .set({ hederaTxId })
+      .where(eq(reviewCriteria.submissionId, submissionId)),
+  ]);
 }
 
 export async function markAssignmentLate(assignmentId: string) {

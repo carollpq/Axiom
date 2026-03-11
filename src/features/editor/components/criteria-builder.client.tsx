@@ -6,18 +6,11 @@ import { FormSelect } from '@/src/shared/components/form-select.client';
 import { SectionLabel } from '@/src/shared/components/section-label';
 import { Button } from '@/src/shared/components/button.client';
 import { publishCriteriaAction } from '@/src/features/submissions/actions';
-
-export interface ReviewCriterionInput {
-  id: string;
-  label: string;
-  evaluationType: 'yes_no_partially' | 'scale_1_5';
-  description?: string;
-  required: boolean;
-}
+import type { ReviewCriterionInput } from '@/src/features/submissions/types';
 
 interface CriteriaBuilderProps {
   submissionId: string;
-  onPublished?: (criteriaHash: string, hederaTxId?: string) => void;
+  onPublished?: (criteriaHash: string) => void;
 }
 
 function newCriterion(): ReviewCriterionInput {
@@ -68,7 +61,7 @@ export function CriteriaBuilder({
     try {
       const result = await publishCriteriaAction(submissionId, criteria);
       setPublished(true);
-      onPublished?.(result.criteriaHash, result.hederaTxId);
+      onPublished?.(result.criteriaHash);
     } catch {
       setError('Network error — please try again');
     } finally {
