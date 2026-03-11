@@ -18,9 +18,8 @@ import {
 } from '@/src/features/contracts/mutations';
 import {
   getContractById,
-  listUserContracts,
+  requireContractOwner,
 } from '@/src/features/contracts/queries';
-import { getUserByWallet } from '@/src/features/users/queries';
 import { createNotification } from '@/src/features/notifications/mutations';
 import { displayNameOrWallet } from '@/src/features/users/lib';
 import {
@@ -125,14 +124,7 @@ export async function removeContributorAction(
 
 export async function resetSignaturesAction(contractId: string) {
   const sessionWallet = await requireSession();
-
-  const contract = await getContractById(contractId);
-  if (!contract) throw new Error('Contract not found');
-
-  const user = await getUserByWallet(sessionWallet);
-  if (!user || contract.creatorId !== user.id) {
-    throw new Error('Only the contract creator can reset signatures');
-  }
+  await requireContractOwner(contractId, sessionWallet);
 
   const updated = await resetContractSignatures(contractId);
   if (!updated) throw new Error('Reset failed');
@@ -145,14 +137,7 @@ export async function generateInviteLinkAction(
   contributorId: string,
 ) {
   const sessionWallet = await requireSession();
-
-  const contract = await getContractById(contractId);
-  if (!contract) throw new Error('Contract not found');
-
-  const user = await getUserByWallet(sessionWallet);
-  if (!user || contract.creatorId !== user.id) {
-    throw new Error('Only the contract creator can generate invite links');
-  }
+  await requireContractOwner(contractId, sessionWallet);
 
   const result = await generateInviteToken(contractId, contributorId);
   if (!result) throw new Error('Contributor not found');

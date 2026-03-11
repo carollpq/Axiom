@@ -64,6 +64,18 @@ export const listContractsToSign = cache(async (walletAddress: string) => {
   });
 });
 
+export async function requireContractOwner(contractId: string, wallet: string) {
+  const contract = await getContractById(contractId);
+  if (!contract) throw new Error('Contract not found');
+
+  const user = await getUserByWallet(wallet);
+  if (!user || contract.creatorId !== user.id) {
+    throw new Error('Only the contract creator can perform this action');
+  }
+
+  return contract;
+}
+
 export async function getContractById(id: string) {
   return (
     (await db.query.authorshipContracts.findFirst({

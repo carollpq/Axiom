@@ -175,21 +175,6 @@ export async function updateContractSchedule(
   );
 }
 
-export async function updateContributorScheduleSign(
-  contributorId: string,
-  scheduleTxId: string,
-) {
-  return (
-    (
-      await db
-        .update(contractContributors)
-        .set({ hederaScheduleSignTxId: scheduleTxId })
-        .where(eq(contractContributors.id, contributorId))
-        .returning()
-    )[0] ?? null
-  );
-}
-
 export async function signContributor(input: SignContributorInput) {
   const now = new Date().toISOString();
 
