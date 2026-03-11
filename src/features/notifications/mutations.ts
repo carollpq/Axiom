@@ -11,29 +11,22 @@ export interface CreateNotificationInput {
   link?: string;
 }
 
-export function notifyIfWallet(
+export async function notifyIfWallet(
   wallet: string | null | undefined,
   input: Omit<CreateNotificationInput, 'userWallet'>,
 ): Promise<void> {
-  if (!wallet) return Promise.resolve();
-  return createNotification({ userWallet: wallet, ...input }).then(() => {});
+  if (!wallet) return;
+  await createNotification({ userWallet: wallet, ...input });
 }
 
 export async function createNotification(input: CreateNotificationInput) {
-  return (
-    (
-      await db
-        .insert(notifications)
-        .values({
-          userWallet: input.userWallet.toLowerCase(),
-          type: input.type,
-          title: input.title,
-          body: input.body,
-          link: input.link ?? null,
-        })
-        .returning()
-    )[0] ?? null
-  );
+  await db.insert(notifications).values({
+    userWallet: input.userWallet.toLowerCase(),
+    type: input.type,
+    title: input.title,
+    body: input.body,
+    link: input.link ?? null,
+  });
 }
 
 export async function markAsRead(id: string, userWallet: string) {
@@ -57,5 +50,10 @@ export async function markAllAsRead(userWallet: string) {
   return db
     .update(notifications)
     .set({ isRead: true })
-    .where(eq(notifications.userWallet, userWallet.toLowerCase()));
+    .where(
+      and(
+        eq(notifications.userWallet, userWallet.toLowerCase()),
+        eq(notifications.isRead, false),
+      ),
+    );
 }

@@ -9,6 +9,9 @@ import {
   markNotificationReadAction,
   markAllNotificationsReadAction,
 } from '@/src/features/notifications/actions';
+import type { notifications } from '@/src/shared/lib/db/schema';
+
+type Notification = typeof notifications.$inferSelect;
 
 const BELL_BUTTON_STYLE = {
   background: 'transparent',
@@ -22,15 +25,26 @@ const DROPDOWN_STYLE = {
   boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
 } as const;
 
-interface Notification {
-  id: string;
-  type: string;
-  title: string;
-  body: string;
-  link?: string | null;
-  isRead: boolean;
-  createdAt: string;
-}
+const ITEM_STYLE_BASE = {
+  border: 'none',
+  borderBlockEnd: '1px solid rgba(120,110,95,0.08)',
+} as const;
+
+const ITEM_STYLE_READ = {
+  ...ITEM_STYLE_BASE,
+  background: 'transparent',
+} as const;
+const ITEM_STYLE_UNREAD = {
+  ...ITEM_STYLE_BASE,
+  background: 'rgba(201,164,74,0.04)',
+} as const;
+
+const DATE_FMT = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+});
 
 export function NotificationBell() {
   const router = useRouter();
@@ -50,7 +64,7 @@ export function NotificationBell() {
   }, []);
 
   useEffect(() => {
-    // Schedule initial fetch as microtask to avoid synchronous setState in effect body
+    // Deferred to satisfy react-hooks/set-state-in-effect (fetchNotifications calls setState)
     void Promise.resolve().then(fetchNotifications);
     const interval = setInterval(() => {
       if (document.visibilityState === 'visible') fetchNotifications();
@@ -145,14 +159,7 @@ export function NotificationBell() {
                 key={n.id}
                 onClick={() => handleClick(n)}
                 className="w-full text-left px-4 py-3 cursor-pointer block"
-                style={{
-                  background: n.isRead
-                    ? 'transparent'
-                    : 'rgba(201,164,74,0.04)',
-                  borderBottom: '1px solid rgba(120,110,95,0.08)',
-                  border: 'none',
-                  borderBlockEnd: '1px solid rgba(120,110,95,0.08)',
-                }}
+                style={n.isRead ? ITEM_STYLE_READ : ITEM_STYLE_UNREAD}
               >
                 <div className="flex items-start gap-2">
                   {!n.isRead && (
@@ -169,12 +176,7 @@ export function NotificationBell() {
                       {n.body}
                     </div>
                     <div className="text-[10px] text-[#4a4030] font-serif mt-1">
-                      {new Date(n.createdAt).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                      })}
+                      {DATE_FMT.format(new Date(n.createdAt))}
                     </div>
                   </div>
                 </div>
