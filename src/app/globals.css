@@ -198,4 +198,22 @@ body {
     height: 1px;
     background-color: var(--border-default);
   }
+
+  /* Rebuttal panels */
+  .rebuttal-panel-left,
+  .rebuttal-panel-right {
+    background: rgba(30, 28, 24, 0.3);
+  }
+
+  .rebuttal-panel-left {
+    border-right: 1px solid rgba(120, 110, 95, 0.15);
+  }
+
+  .rebuttal-panel-right {
+    border-left: 1px solid rgba(120, 110, 95, 0.15);
+  }
+
+  .rebuttal-divider {
+    border-top: 1px solid rgba(120, 110, 95, 0.1);
+  }
 }

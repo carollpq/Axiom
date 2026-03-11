@@ -1,23 +1,18 @@
 'use client';
 
 import { useRebuttal } from '@/src/features/rebuttals/hooks/useRebuttal';
+import type { ReviewForRebuttal } from '@/src/features/rebuttals/types';
+import type {
+  RebuttalStatusDb,
+  RebuttalResolutionDb,
+} from '@/src/shared/lib/db/schema';
 import { ReviewListPanel } from './review-list-panel.client';
 import { ReviewDetailPanel } from './review-detail-panel';
 import { ResponseFormPanel } from './response-form-panel.client';
 
-interface ReviewForRebuttal {
-  id: string;
-  anonymousLabel: string;
-  criteriaEvaluations: string | null;
-  strengths: string | null;
-  weaknesses: string | null;
-  questionsForAuthors: string | null;
-  recommendation: string | null;
-}
-
 interface RebuttalWorkspaceProps {
   rebuttalId: string;
-  rebuttalStatus: string;
+  rebuttalStatus: RebuttalStatusDb;
   deadline: string;
   reviews: ReviewForRebuttal[];
   existingResponses?: {
@@ -25,7 +20,7 @@ interface RebuttalWorkspaceProps {
     position: string;
     justification: string;
   }[];
-  resolution?: string | null;
+  resolution?: RebuttalResolutionDb | null;
   editorNotes?: string | null;
 }
 
@@ -34,7 +29,6 @@ export function RebuttalWorkspace({
   rebuttalStatus,
   deadline,
   reviews,
-  existingResponses,
   resolution,
   editorNotes,
 }: RebuttalWorkspaceProps) {
@@ -54,8 +48,7 @@ export function RebuttalWorkspace({
   );
 
   const selectedReview = reviews.find((r) => r.id === selectedReviewId);
-  const deadlineDate = new Date(deadline);
-  const isPastDeadline = deadlineDate < new Date();
+  const isPastDeadline = new Date(deadline) < new Date();
   const isReadOnly = rebuttalStatus !== 'open' || isPastDeadline || submitted;
 
   return (
@@ -66,6 +59,7 @@ export function RebuttalWorkspace({
         selectedReviewId={selectedReviewId}
         onSelect={selectReview}
         deadline={deadline}
+        isPastDeadline={isPastDeadline}
       />
 
       <ReviewDetailPanel review={selectedReview} />
@@ -77,10 +71,10 @@ export function RebuttalWorkspace({
         submitted={submitted}
         selectedReviewId={selectedReviewId}
         isReadOnly={isReadOnly}
+        isPastDeadline={isPastDeadline}
         responses={responses}
         isSubmitting={isSubmitting}
         error={error}
-        existingResponses={existingResponses}
         onSetPosition={setPosition}
         onSetJustification={setJustification}
         onSubmit={submitRebuttal}

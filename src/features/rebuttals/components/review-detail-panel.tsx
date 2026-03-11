@@ -1,14 +1,16 @@
 import { SectionLabel } from '@/src/shared/components/section-label';
 import { ReviewField } from '@/src/shared/components/review-field';
+import type { ReviewForRebuttal } from '@/src/features/rebuttals/types';
 
-interface ReviewDetail {
-  anonymousLabel: string;
-  recommendation: string | null;
-  strengths: string | null;
-  weaknesses: string | null;
-  questionsForAuthors: string | null;
-  criteriaEvaluations: string | null;
-}
+type ReviewDetail = Pick<
+  ReviewForRebuttal,
+  | 'anonymousLabel'
+  | 'recommendation'
+  | 'strengths'
+  | 'weaknesses'
+  | 'questionsForAuthors'
+  | 'criteriaEvaluations'
+>;
 
 interface ReviewDetailPanelProps {
   review: ReviewDetail | undefined;

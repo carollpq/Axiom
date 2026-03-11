@@ -1,11 +1,7 @@
 'use client';
 
 import { SectionLabel } from '@/src/shared/components/section-label';
-
-interface ReviewListItem {
-  id: string;
-  anonymousLabel: string;
-}
+import type { ReviewForRebuttal } from '@/src/features/rebuttals/types';
 
 interface ReviewResponse {
   position?: string;
@@ -13,11 +9,12 @@ interface ReviewResponse {
 }
 
 interface ReviewListPanelProps {
-  reviews: ReviewListItem[];
+  reviews: Pick<ReviewForRebuttal, 'id' | 'anonymousLabel'>[];
   responses: Record<string, ReviewResponse>;
   selectedReviewId: string | null;
   onSelect: (id: string) => void;
   deadline: string;
+  isPastDeadline: boolean;
 }
 
 export function ReviewListPanel({
@@ -26,18 +23,12 @@ export function ReviewListPanel({
   selectedReviewId,
   onSelect,
   deadline,
+  isPastDeadline,
 }: ReviewListPanelProps) {
   const deadlineDate = new Date(deadline);
-  const isPastDeadline = deadlineDate < new Date();
 
   return (
-    <div
-      className="w-[220px] shrink-0 overflow-y-auto"
-      style={{
-        borderRight: '1px solid rgba(120,110,95,0.15)',
-        background: 'rgba(30,28,24,0.3)',
-      }}
-    >
+    <div className="w-[220px] shrink-0 overflow-y-auto rebuttal-panel-left">
       <div className="p-4">
         <SectionLabel className="mb-3">Reviews to Address</SectionLabel>
         <div className="space-y-1">
@@ -77,10 +68,7 @@ export function ReviewListPanel({
       </div>
 
       {/* Deadline info */}
-      <div
-        className="p-4"
-        style={{ borderTop: '1px solid rgba(120,110,95,0.1)' }}
-      >
+      <div className="p-4 rebuttal-divider">
         <SectionLabel className="mb-1">Deadline</SectionLabel>
         <div
           className="text-[12px] font-serif"

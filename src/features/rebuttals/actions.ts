@@ -19,6 +19,7 @@ import { ROUTES } from '@/src/shared/lib/routes';
 import {
   submitRebuttalResponses,
   resolveRebuttal,
+  updateRebuttalHedera,
 } from '@/src/features/rebuttals/mutations';
 
 // ---------------------------------------------------------------------------
@@ -62,37 +63,38 @@ export async function respondToRebuttalAction(
   const parsed = respondSchema.parse(input);
   const rebuttalHash = await sha256(canonicalJson(parsed.responses));
 
-  const editorWallet = rebuttal.submission?.journal?.editorWallet;
-
-  const [{ txId: hederaTxId }] = await Promise.all([
-    anchorToHcs('HCS_TOPIC_DECISIONS', {
-      type: 'rebuttal_submitted',
-      rebuttalId,
-      submissionId: rebuttal.submissionId,
-      rebuttalHash,
-      timestamp: new Date().toISOString(),
-    }),
-    notifyIfWallet(editorWallet, {
-      type: 'rebuttal_submitted',
-      title: 'Rebuttal response submitted',
-      body: `The author has responded to the rebuttal for "${rebuttal.submission.paper?.title}".`,
-      link: ROUTES.editor.underReview,
-    }),
-  ]);
-
   const responses = parsed.responses.map((r) => ({
     ...r,
     rebuttalId,
   }));
 
-  await submitRebuttalResponses(
-    rebuttalId,
-    responses,
-    rebuttalHash,
-    hederaTxId,
-  );
+  await submitRebuttalResponses(rebuttalId, responses, rebuttalHash);
 
-  return { rebuttalHash, hederaTxId };
+  const editorWallet = rebuttal.submission?.journal?.editorWallet;
+
+  after(async () => {
+    const [{ txId: hederaTxId }] = await Promise.all([
+      anchorToHcs('HCS_TOPIC_DECISIONS', {
+        type: 'rebuttal_submitted',
+        rebuttalId,
+        submissionId: rebuttal.submissionId,
+        rebuttalHash,
+        timestamp: new Date().toISOString(),
+      }),
+      notifyIfWallet(editorWallet, {
+        type: 'rebuttal_submitted',
+        title: 'Rebuttal response submitted',
+        body: `The author has responded to the rebuttal for "${rebuttal.submission.paper?.title}".`,
+        link: ROUTES.editor.underReview,
+      }),
+    ]);
+
+    if (hederaTxId) {
+      await updateRebuttalHedera(rebuttalId, hederaTxId);
+    }
+  });
+
+  return { rebuttalHash };
 }
 
 // ---------------------------------------------------------------------------
@@ -112,31 +114,32 @@ export async function resolveRebuttalAction(
     throw new Error('Rebuttal must be submitted before resolving');
   }
 
-  const [{ txId: hederaTxId }] = await Promise.all([
-    anchorToHcs('HCS_TOPIC_DECISIONS', {
-      type: 'rebuttal_resolved',
-      rebuttalId,
-      submissionId: rebuttal.submissionId,
-      resolution,
-      timestamp: new Date().toISOString(),
-    }),
-    notifyIfWallet(rebuttal.authorWallet, {
-      type: 'rebuttal_resolved',
-      title: 'Rebuttal resolved',
-      body: `Your rebuttal has been resolved: ${resolution}. ${editorNotes || ''}`.trim(),
-      link: ROUTES.researcher.rebuttal(rebuttal.submissionId),
-    }),
-  ]);
+  await resolveRebuttal({ rebuttalId, resolution, editorNotes });
 
-  await resolveRebuttal({
-    rebuttalId,
-    resolution,
-    editorNotes,
-    hederaTxId,
-  });
-
-  // Non-blocking: reputation minting
   after(async () => {
+    const [{ txId: hederaTxId }] = await Promise.all([
+      anchorToHcs('HCS_TOPIC_DECISIONS', {
+        type: 'rebuttal_resolved',
+        rebuttalId,
+        submissionId: rebuttal.submissionId,
+        resolution,
+        timestamp: new Date().toISOString(),
+      }),
+      notifyIfWallet(rebuttal.authorWallet, {
+        type: 'rebuttal_resolved',
+        title: 'Rebuttal resolved',
+        body: `Your rebuttal has been resolved: ${resolution}. ${editorNotes || ''}`.trim(),
+        link: ROUTES.researcher.rebuttal(rebuttal.submissionId),
+      }),
+    ]);
+
+    if (hederaTxId) {
+      await updateRebuttalHedera(rebuttalId, hederaTxId);
+    }
+
+    // Skip reputation minting for partial resolutions (score is 0, no token needed)
+    if (resolution === 'partial') return;
+
     const reviewerWallets = new Set(
       rebuttal.responses.map((r) => r.review.reviewerWallet),
     );
@@ -145,8 +148,7 @@ export async function resolveRebuttalAction(
       resolution === 'upheld'
         ? ('rebuttal_upheld' as const)
         : ('rebuttal_overturned' as const);
-    const scoreDelta =
-      resolution === 'upheld' ? -2 : resolution === 'rejected' ? 1 : 0;
+    const scoreDelta = resolution === 'upheld' ? -2 : 1;
 
     await Promise.all(
       [...reviewerWallets].map((reviewerWallet) =>
@@ -161,5 +163,5 @@ export async function resolveRebuttalAction(
     );
   });
 
-  return { resolution, hederaTxId };
+  return { resolution };
 }

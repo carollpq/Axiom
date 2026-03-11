@@ -3,25 +3,25 @@
 import { SectionLabel } from '@/src/shared/components/section-label';
 import { FormTextarea } from '@/src/shared/components/form-textarea.client';
 import { Button } from '@/src/shared/components/button.client';
+import type {
+  RebuttalStatusDb,
+  RebuttalResolutionDb,
+} from '@/src/shared/lib/db/schema';
 import { ResolutionBanner } from './resolution-banner';
 import { SubmittedConfirmation } from './submitted-confirmation';
 import { AgreeDisagreeToggle } from './agree-disagree-toggle.client';
 
 interface ResponseFormPanelProps {
-  rebuttalStatus: string;
-  resolution?: string | null;
+  rebuttalStatus: RebuttalStatusDb;
+  resolution?: RebuttalResolutionDb | null;
   editorNotes?: string | null;
   submitted: boolean;
   selectedReviewId: string | null;
   isReadOnly: boolean;
+  isPastDeadline: boolean;
   responses: Record<string, { position?: string; justification?: string }>;
   isSubmitting: boolean;
   error: string | null;
-  existingResponses?: {
-    reviewId: string;
-    position: string;
-    justification: string;
-  }[];
   onSetPosition: (reviewId: string, position: 'agree' | 'disagree') => void;
   onSetJustification: (reviewId: string, justification: string) => void;
   onSubmit: () => void;
@@ -34,22 +34,16 @@ export function ResponseFormPanel({
   submitted,
   selectedReviewId,
   isReadOnly,
+  isPastDeadline,
   responses,
   isSubmitting,
   error,
-  existingResponses,
   onSetPosition,
   onSetJustification,
   onSubmit,
 }: ResponseFormPanelProps) {
   return (
-    <div
-      className="w-[300px] shrink-0 overflow-y-auto"
-      style={{
-        borderLeft: '1px solid rgba(120,110,95,0.15)',
-        background: 'rgba(30,28,24,0.3)',
-      }}
-    >
+    <div className="w-[300px] shrink-0 overflow-y-auto rebuttal-panel-right">
       {/* Resolution result (if resolved) */}
       {rebuttalStatus === 'resolved' && resolution && (
         <ResolutionBanner resolution={resolution} editorNotes={editorNotes} />
@@ -97,20 +91,15 @@ export function ResponseFormPanel({
         </div>
       )}
 
-      {/* Show existing responses (read-only view for submitted/resolved) */}
-      {isReadOnly &&
-        existingResponses &&
-        existingResponses.length > 0 &&
-        !resolution &&
-        rebuttalStatus !== 'submitted' &&
-        !submitted && (
-          <div className="p-4">
-            <SectionLabel className="mb-3">Past Deadline</SectionLabel>
-            <div className="text-[12px] text-[#d4645a] font-serif">
-              The rebuttal deadline has passed.
-            </div>
+      {/* Past deadline notice */}
+      {isReadOnly && isPastDeadline && rebuttalStatus === 'open' && (
+        <div className="p-4">
+          <SectionLabel className="mb-3">Past Deadline</SectionLabel>
+          <div className="text-[12px] text-[#d4645a] font-serif">
+            The rebuttal deadline has passed.
           </div>
-        )}
+        </div>
+      )}
     </div>
   );
 }

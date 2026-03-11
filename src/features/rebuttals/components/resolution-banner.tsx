@@ -1,7 +1,8 @@
 import { SectionLabel } from '@/src/shared/components/section-label';
+import type { RebuttalResolutionDb } from '@/src/shared/lib/db/schema';
 
 interface ResolutionBannerProps {
-  resolution: string;
+  resolution: RebuttalResolutionDb;
   editorNotes?: string | null;
 }
 

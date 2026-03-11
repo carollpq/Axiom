@@ -22,40 +22,39 @@ type Action =
   | { type: 'SET_POSITION'; reviewId: string; position: RebuttalPositionDb }
   | { type: 'SET_JUSTIFICATION'; reviewId: string; justification: string };
 
+function defaultDraft(reviewId: string): ResponseDraft {
+  return { reviewId, position: 'agree', justification: '' };
+}
+
+function updateResponse(
+  state: State,
+  reviewId: string,
+  updates: Partial<ResponseDraft>,
+): State {
+  return {
+    ...state,
+    responses: {
+      ...state.responses,
+      [reviewId]: {
+        ...(state.responses[reviewId] ?? defaultDraft(reviewId)),
+        ...updates,
+      },
+    },
+  };
+}
+
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'SELECT_REVIEW':
       return { ...state, selectedReviewId: action.reviewId };
     case 'SET_POSITION':
-      return {
-        ...state,
-        responses: {
-          ...state.responses,
-          [action.reviewId]: {
-            ...(state.responses[action.reviewId] ?? {
-              reviewId: action.reviewId,
-              position: 'agree',
-              justification: '',
-            }),
-            position: action.position,
-          },
-        },
-      };
+      return updateResponse(state, action.reviewId, {
+        position: action.position,
+      });
     case 'SET_JUSTIFICATION':
-      return {
-        ...state,
-        responses: {
-          ...state.responses,
-          [action.reviewId]: {
-            ...(state.responses[action.reviewId] ?? {
-              reviewId: action.reviewId,
-              position: 'agree',
-              justification: '',
-            }),
-            justification: action.justification,
-          },
-        },
-      };
+      return updateResponse(state, action.reviewId, {
+        justification: action.justification,
+      });
   }
 }
 

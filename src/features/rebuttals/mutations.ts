@@ -30,7 +30,6 @@ export async function openRebuttal(input: OpenRebuttalInput) {
 }
 
 export interface RebuttalResponseInput {
-  rebuttalId: string;
   reviewId: string;
   criterionId?: string;
   position: RebuttalPositionDb;
@@ -42,10 +41,9 @@ export async function submitRebuttalResponses(
   rebuttalId: string,
   responses: RebuttalResponseInput[],
   rebuttalHash: string,
-  hederaTxId?: string,
 ) {
   const rows = responses.map((r) => ({
-    rebuttalId: r.rebuttalId,
+    rebuttalId,
     reviewId: r.reviewId,
     criterionId: r.criterionId ?? null,
     position: r.position,
@@ -59,22 +57,27 @@ export async function submitRebuttalResponses(
     (
       await db
         .update(rebuttals)
-        .set({
-          status: 'submitted',
-          rebuttalHash,
-          hederaTxId: hederaTxId ?? null,
-        })
+        .set({ status: 'submitted', rebuttalHash })
         .where(eq(rebuttals.id, rebuttalId))
         .returning()
     )[0] ?? null
   );
 }
 
+export async function updateRebuttalHedera(
+  rebuttalId: string,
+  hederaTxId: string,
+) {
+  await db
+    .update(rebuttals)
+    .set({ hederaTxId })
+    .where(eq(rebuttals.id, rebuttalId));
+}
+
 export interface ResolveRebuttalInput {
   rebuttalId: string;
   resolution: RebuttalResolutionDb;
   editorNotes: string;
-  hederaTxId?: string;
 }
 
 export async function resolveRebuttal(input: ResolveRebuttalInput) {
@@ -86,7 +89,6 @@ export async function resolveRebuttal(input: ResolveRebuttalInput) {
           status: 'resolved',
           resolution: input.resolution,
           editorNotes: input.editorNotes,
-          hederaTxId: input.hederaTxId ?? null,
           resolvedAt: new Date().toISOString(),
         })
         .where(eq(rebuttals.id, input.rebuttalId))
