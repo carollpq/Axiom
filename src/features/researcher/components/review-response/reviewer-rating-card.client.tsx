@@ -1,22 +1,8 @@
 'use client';
 
 import { ProtocolRatingRow } from './protocol-rating-row.client';
-
-interface ProtocolRatings {
-  actionableFeedback: number;
-  deepEngagement: number;
-  fairObjective: number;
-  justifiedRecommendation: number;
-  appropriateExpertise: number;
-}
-
-const PROTOCOL_LABELS: { key: keyof ProtocolRatings; label: string }[] = [
-  { key: 'actionableFeedback', label: 'Actionable Feedback' },
-  { key: 'deepEngagement', label: 'Deep Engagement' },
-  { key: 'fairObjective', label: 'Fair & Objective' },
-  { key: 'justifiedRecommendation', label: 'Justified Recommendation' },
-  { key: 'appropriateExpertise', label: 'Appropriate Expertise' },
-];
+import type { ProtocolRatings } from '@/src/features/researcher/types/review';
+import { PROTOCOL_SHORT_LABELS } from '@/src/features/researcher/config/review';
 
 interface ReviewerRatingCardProps {
   reviewId: string;
@@ -45,7 +31,7 @@ export function ReviewerRatingCard({
         Rate This Reviewer
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 mb-3">
-        {PROTOCOL_LABELS.map(({ key, label }) => (
+        {PROTOCOL_SHORT_LABELS.map(({ key, label }) => (
           <ProtocolRatingRow
             key={key}
             label={label}

@@ -10,6 +10,10 @@ import { rateReviewerAction } from '@/src/features/reviews/actions';
 import { getErrorMessage } from '@/src/shared/lib/errors';
 import { AlertBanner } from '@/src/shared/components/alert-banner';
 import { ReviewsStatusSection } from './reviews-status-section.client';
+import type {
+  AnonymizedReview,
+  ReviewerInfo,
+} from '@/src/features/researcher/types/review';
 
 const AuthorFeedback = dynamic(
   () => import('./author-feedback-section.client'),
@@ -17,23 +21,6 @@ const AuthorFeedback = dynamic(
 const ReviewerFeedback = dynamic(
   () => import('./reviewer-feedback-section.client'),
 );
-
-interface ReviewerInfo {
-  assignmentId: string;
-  label: string;
-  status: 'in_progress' | 'complete';
-  reviewId?: string;
-}
-
-interface AnonymizedReview {
-  id: string;
-  label: string;
-  criteriaEvaluations: string | null;
-  strengths: string | null;
-  weaknesses: string | null;
-  questionsForAuthors: string | null;
-  recommendation: string | null;
-}
 
 interface SubmissionData {
   id: string;

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { SearchInput } from '@/src/shared/components/search-input.client';
-import { StatusBadge } from './status-badge';
+import { StatusBadge } from '@/src/shared/components';
 import type { PaperStatus } from '@/src/shared/lib/status-map';
 
 const PAPER_STATUSES: PaperStatus[] = [

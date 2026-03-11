@@ -103,7 +103,7 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
 
   const updateContributor = (
     id: number,
-    field: string,
+    field: 'pct' | 'role',
     value: string | number,
   ) => {
     const wasSignedBefore = hasSigned;

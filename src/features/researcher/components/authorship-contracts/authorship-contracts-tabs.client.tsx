@@ -2,7 +2,10 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import type { ExistingDraft } from '@/src/features/researcher/types/contract';
+import type {
+  ExistingDraft,
+  ContractContributorView,
+} from '@/src/features/researcher/types/contract';
 import { ContractsStatus } from './contracts-status';
 
 const ContractBuilder = dynamic(
@@ -27,13 +30,7 @@ type Tab = 'build' | 'sign' | 'status';
 interface ContractForSigning {
   id: string;
   paperTitle: string;
-  contributors: {
-    name: string;
-    role: string;
-    pct: number;
-    status: string;
-    wallet: string;
-  }[];
+  contributors: (ContractContributorView & { wallet: string })[];
 }
 
 interface ContractWithStatus {
@@ -41,12 +38,7 @@ interface ContractWithStatus {
   paperTitle: string;
   allSigned: boolean;
   pendingCount: number;
-  contributors: {
-    name: string;
-    role: string;
-    pct: number;
-    status: string;
-  }[];
+  contributors: ContractContributorView[];
 }
 
 interface Props {

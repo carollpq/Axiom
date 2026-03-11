@@ -10,39 +10,17 @@ import { rateReviewerAction } from '@/src/features/reviews/actions';
 import { authorResponseAction } from '@/src/features/submissions/actions';
 import { ROUTES } from '@/src/shared/lib/routes';
 import { getErrorMessage } from '@/src/shared/lib/errors';
-
-interface AnonymizedReview {
-  id: string;
-  label: string;
-  criteriaEvaluations: string | null;
-  strengths: string | null;
-  weaknesses: string | null;
-  questionsForAuthors: string | null;
-  recommendation: string | null;
-  submittedAt: string;
-}
-
-interface ProtocolRatings {
-  actionableFeedback: number;
-  deepEngagement: number;
-  fairObjective: number;
-  justifiedRecommendation: number;
-  appropriateExpertise: number;
-}
-
-const DEFAULT_RATINGS: ProtocolRatings = {
-  actionableFeedback: 3,
-  deepEngagement: 3,
-  fairObjective: 3,
-  justifiedRecommendation: 3,
-  appropriateExpertise: 3,
-};
+import type {
+  AnonymizedReview,
+  ProtocolRatings,
+} from '@/src/features/researcher/types/review';
+import { DEFAULT_RATINGS } from '@/src/features/researcher/config/review';
 
 interface Props {
   submissionId: string;
   paperTitle: string;
   journalName: string;
-  reviews: AnonymizedReview[];
+  reviews: (AnonymizedReview & { submittedAt: string })[];
   criteria: ReviewCriterion[];
 }
 

@@ -1,16 +1,11 @@
-interface ContractContributor {
-  name: string;
-  role: string;
-  pct: number;
-  status: string;
-}
+import type { ContractContributorView } from '@/src/features/researcher/types/contract';
 
 interface ContractWithStatus {
   id: string;
   paperTitle: string;
   allSigned: boolean;
   pendingCount: number;
-  contributors: ContractContributor[];
+  contributors: ContractContributorView[];
 }
 
 interface Props {

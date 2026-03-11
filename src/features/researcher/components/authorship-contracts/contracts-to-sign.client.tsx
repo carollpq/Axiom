@@ -8,19 +8,12 @@ import { sha256, canonicalJson } from '@/src/shared/lib/hashing';
 import { signContractAction } from '@/src/features/contracts/actions';
 import { getErrorMessage } from '@/src/shared/lib/errors';
 import { AlertBanner } from '@/src/shared/components/alert-banner';
-
-interface ContractContributor {
-  name: string;
-  role: string;
-  pct: number;
-  status: string;
-  wallet: string;
-}
+import type { ContractContributorView } from '@/src/features/researcher/types/contract';
 
 interface ContractForSigning {
   id: string;
   paperTitle: string;
-  contributors: ContractContributor[];
+  contributors: ContractContributorView[];
 }
 
 interface Props {

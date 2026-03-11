@@ -30,11 +30,10 @@ export type ContractBuilderAction =
       selectedContractId: string | null;
     }
   | { type: 'SET_NEW_TITLE'; newTitle: string }
-  | { type: 'SET_CONTRIBUTORS'; contributors: Contributor[] }
   | {
       type: 'UPDATE_CONTRIBUTOR';
       id: number;
-      field: string;
+      field: 'pct' | 'role';
       value: string | number;
     }
   | { type: 'REMOVE_CONTRIBUTOR'; id: number }
@@ -68,10 +67,20 @@ export function contractBuilderReducer(
     case 'SET_NEW_TITLE':
       return { ...state, newTitle: action.newTitle };
 
-    case 'SET_CONTRIBUTORS':
-      return { ...state, contributors: action.contributors };
-
     case 'UPDATE_CONTRIBUTOR': {
+      const target = state.contributors.find((c) => c.id === action.id);
+      if (!target) return state;
+
+      const newValue =
+        action.field === 'pct'
+          ? action.value === ''
+            ? ''
+            : Number(action.value)
+          : action.value;
+
+      // No-op if value hasn't actually changed
+      if (target[action.field] === newValue) return state;
+
       const hasSigned = state.contributors.some((c) => c.status === 'signed');
       return {
         ...state,
@@ -89,12 +98,7 @@ export function contractBuilderReducer(
           }
           return {
             ...c,
-            [action.field]:
-              action.field === 'pct'
-                ? action.value === ''
-                  ? ''
-                  : Number(action.value)
-                : action.value,
+            [action.field]: newValue,
             ...(hasSigned && c.status === 'signed'
               ? { status: 'pending' as const, txHash: null, signedAt: null }
               : {}),

@@ -1,33 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-
-interface AnonymizedReview {
-  id: string;
-  label: string;
-}
-
-const PROTOCOL_LABELS = [
-  {
-    key: 'actionableFeedback',
-    label: 'The review provides clear, actionable feedback.',
-  },
-  { key: 'fairObjective', label: 'The review was fair and objective.' },
-  {
-    key: 'deepEngagement',
-    label: 'The reviewer demonstrated deep engagement with the manuscript.',
-  },
-  {
-    key: 'justifiedRecommendation',
-    label: 'The recommendation was clearly justified.',
-  },
-  {
-    key: 'appropriateExpertise',
-    label: 'The reviewer demonstrated appropriate expertise.',
-  },
-] as const;
-
-type RatingKey = (typeof PROTOCOL_LABELS)[number]['key'];
+import type {
+  AnonymizedReview,
+  ProtocolRatings,
+} from '@/src/features/researcher/types/review';
+import {
+  PROTOCOL_FULL_LABELS,
+  DEFAULT_RATINGS,
+} from '@/src/features/researcher/config/review';
 
 interface Props {
   reviews: AnonymizedReview[];
@@ -42,12 +23,8 @@ export function ReviewerFeedbackSection({ reviews, onRate }: Props) {
   const [selectedReviewId, setSelectedReviewId] = useState(
     reviews[0]?.id ?? '',
   );
-  const [ratings, setRatings] = useState<Record<RatingKey, number>>({
-    actionableFeedback: 3,
-    fairObjective: 3,
-    deepEngagement: 3,
-    justifiedRecommendation: 3,
-    appropriateExpertise: 3,
+  const [ratings, setRatings] = useState<ProtocolRatings>({
+    ...DEFAULT_RATINGS,
   });
   const [comment, setComment] = useState('');
   const [applying, setApplying] = useState(false);
@@ -56,7 +33,7 @@ export function ReviewerFeedbackSection({ reviews, onRate }: Props) {
   const handleApply = async () => {
     if (!selectedReviewId) return;
     setApplying(true);
-    await onRate(selectedReviewId, ratings, comment);
+    await onRate(selectedReviewId, { ...ratings }, comment);
     setApplying(false);
     setApplied(true);
     setTimeout(() => setApplied(false), 2000);
@@ -103,7 +80,7 @@ export function ReviewerFeedbackSection({ reviews, onRate }: Props) {
 
       {/* 5-protocol ratings */}
       <div className="flex flex-col gap-3 mb-4">
-        {PROTOCOL_LABELS.map(({ key, label }) => (
+        {PROTOCOL_FULL_LABELS.map(({ key, label }) => (
           <div
             key={key}
             className="flex items-center justify-between gap-4 px-3 py-2 rounded"

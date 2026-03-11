@@ -2,23 +2,10 @@
 
 import { useState } from 'react';
 import { Eye } from 'lucide-react';
-
-interface ReviewerInfo {
-  assignmentId: string;
-  label: string;
-  status: 'in_progress' | 'complete';
-  reviewId?: string;
-}
-
-interface AnonymizedReview {
-  id: string;
-  label: string;
-  criteriaEvaluations: string | null;
-  strengths: string | null;
-  weaknesses: string | null;
-  questionsForAuthors: string | null;
-  recommendation: string | null;
-}
+import type {
+  AnonymizedReview,
+  ReviewerInfo,
+} from '@/src/features/researcher/types/review';
 
 interface Props {
   reviewers: ReviewerInfo[];
