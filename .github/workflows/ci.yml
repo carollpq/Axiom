@@ -84,7 +84,7 @@ jobs:
 
   build:
     name: Build
-    needs: [typecheck, lint]
+    needs: install
     runs-on: ubuntu-latest
     env:
       NEXT_PUBLIC_THIRDWEB_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_THIRDWEB_CLIENT_ID }}
