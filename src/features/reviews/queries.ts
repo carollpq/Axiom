@@ -82,6 +82,38 @@ export const getPublishedCriteria = cache(async (submissionId: string) => {
   });
 });
 
+/** Fetch all assignments and reviews for a set of submission IDs (bulk). */
+export async function listAssignmentsAndReviewsBySubmissionIds(
+  submissionIds: string[],
+) {
+  if (submissionIds.length === 0)
+    return { assignments: [], reviews: [] } as const;
+
+  const [assignmentRows, reviewRows] = await Promise.all([
+    db
+      .select()
+      .from(reviewAssignments)
+      .where(inArray(reviewAssignments.submissionId, submissionIds)),
+    db
+      .select()
+      .from(reviews)
+      .where(inArray(reviews.submissionId, submissionIds)),
+  ]);
+
+  return { assignments: assignmentRows, reviews: reviewRows } as const;
+}
+
+/** Fetch a submission with paper (+ owner) and journal relations. */
+export async function getSubmissionWithPaperAndJournal(submissionId: string) {
+  return db.query.submissions.findFirst({
+    where: eq(submissions.id, submissionId),
+    with: {
+      paper: { with: { owner: true } },
+      journal: true,
+    },
+  });
+}
+
 /** Assignments past deadline that are still assigned/accepted (not submitted). */
 export async function listOverdueAssignments() {
   const now = new Date().toISOString();

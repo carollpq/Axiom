@@ -310,6 +310,52 @@ export function ViewSubmissionsSkeleton() {
   );
 }
 
+/** Review response: heading + 3 review cards */
+export function ReviewResponseSkeleton() {
+  return (
+    <div className="max-w-[1200px] mx-auto px-10 py-8">
+      <PulseBlock className="h-8 w-64 mb-4" />
+      <PulseBlock className="h-4 w-96 mb-8" />
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="rounded-md p-6 mb-4"
+          style={{ background: 'rgba(45,42,38,0.3)' }}
+        >
+          <PulseBlock className="h-5 w-32 mb-3" />
+          <PulseBlock className="h-3 w-full mb-2" />
+          <PulseBlock className="h-3 w-3/4" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Rebuttal page: heading + subtitle + 2 review response cards */
+export function RebuttalSkeleton() {
+  return (
+    <div className="max-w-[1200px] mx-auto px-10 py-8">
+      <PulseBlock className="h-7 w-52 mb-2" />
+      <PulseBlock className="h-3 w-72 mb-8" />
+      {[0, 1].map((i) => (
+        <div
+          key={i}
+          className="rounded-md p-6 mb-4"
+          style={{
+            background: 'rgba(45,42,38,0.3)',
+            border: '1px solid rgba(120,110,95,0.15)',
+          }}
+        >
+          <PulseBlock className="h-5 w-28 mb-3" />
+          <PulseBlock className="h-3 w-full mb-2" />
+          <PulseBlock className="h-3 w-5/6 mb-4" />
+          <PulseBlock className="h-10 w-full rounded" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** Paper registration: heading + 4-step indicator + content block */
 export function PaperRegistrationSkeleton() {
   return (

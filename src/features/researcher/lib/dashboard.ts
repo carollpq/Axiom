@@ -5,6 +5,7 @@ import type {
 } from '@/src/features/researcher/types/dashboard';
 import type { DbPaperWithRelations } from '@/src/features/papers/queries';
 import { formatDate } from '@/src/shared/lib/format';
+import { extractAuthors } from '@/src/features/researcher/lib/paper-utils';
 
 /**
  * Derives a user-friendly submission status from the DB submission status,
@@ -56,12 +57,7 @@ export function mapPapersToSubmissionCards(
   for (const p of papers) {
     if (!p.submissions || p.submissions.length === 0) continue;
 
-    const authors =
-      p.contracts
-        ?.flatMap((c) => c.contributors ?? [])
-        .map((c) => c.contributorName)
-        .filter(Boolean)
-        .join(', ') || '\u2014';
+    const authors = extractAuthors(p);
 
     for (const sub of p.submissions) {
       // These relations are included by the enriched listUserPapers query

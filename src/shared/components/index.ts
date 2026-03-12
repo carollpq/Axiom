@@ -33,3 +33,5 @@ export { ReviewField } from './review-field';
 export { SectionLabel } from './section-label';
 export { ConfirmDialog } from './confirm-dialog.client';
 export { ModalOverlay } from './modal-overlay.client';
+export { ErrorFallback } from './error-fallback.client';
+export { PageContainer } from './page-container';

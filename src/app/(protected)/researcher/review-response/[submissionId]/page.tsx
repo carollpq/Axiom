@@ -1,15 +1,15 @@
 import { getSession } from '@/src/shared/lib/auth/auth';
-import { db } from '@/src/shared/lib/db';
-import { submissions } from '@/src/shared/lib/db/schema';
-import { eq } from 'drizzle-orm';
 import { getUserByWallet } from '@/src/features/users/queries';
 import { redirect } from 'next/navigation';
 import { ROUTES } from '@/src/shared/lib/routes';
 import {
   listReviewsForSubmission,
   getPublishedCriteria,
+  getSubmissionWithPaperAndJournal,
 } from '@/src/features/reviews/queries';
 import { ReviewResponseClient } from '@/src/features/researcher/components/review-response/review-response.client';
+import { anonymizeReviews } from '@/src/features/researcher/lib/review';
+import { PageContainer } from '@/src/shared/components/page-container';
 
 export default async function ReviewResponsePage({
   params,
@@ -19,23 +19,14 @@ export default async function ReviewResponsePage({
   const wallet = (await getSession())!;
   const { submissionId } = await params;
 
-  const submission = await db.query.submissions.findFirst({
-    where: eq(submissions.id, submissionId),
-    with: {
-      paper: { with: { owner: true } },
-      journal: true,
-    },
-  });
+  const [submission, user] = await Promise.all([
+    getSubmissionWithPaperAndJournal(submissionId),
+    getUserByWallet(wallet),
+  ]);
 
   if (!submission) redirect(ROUTES.researcher.root);
-
-  // Verify ownership
-  const user = await getUserByWallet(wallet);
-
   if (!user || submission.paper.ownerId !== user.id)
     redirect(ROUTES.researcher.root);
-
-  // Only allow access if reviews are completed
   if (submission.status !== 'reviews_completed')
     redirect(ROUTES.researcher.root);
 
@@ -44,24 +35,14 @@ export default async function ReviewResponsePage({
     getPublishedCriteria(submissionId),
   ]);
 
-  // Anonymize reviews (strip wallet, add labels)
-  const anonymizedReviews = reviews.map((r, idx) => ({
-    id: r.id,
-    label: `Reviewer ${String.fromCharCode(65 + idx)}`,
-    criteriaEvaluations: r.criteriaEvaluations,
-    strengths: r.strengths,
-    weaknesses: r.weaknesses,
-    questionsForAuthors: r.questionsForAuthors,
-    recommendation: r.recommendation,
-    submittedAt: r.submittedAt,
-  }));
+  const anonymizedReviews = anonymizeReviews(reviews);
 
   const criteriaList = criteria?.criteriaJson
     ? JSON.parse(criteria.criteriaJson)
     : [];
 
   return (
-    <div className="max-w-[1200px] mx-auto px-10 py-8">
+    <PageContainer>
       <ReviewResponseClient
         submissionId={submissionId}
         paperTitle={submission.paper.title}
@@ -69,6 +50,6 @@ export default async function ReviewResponsePage({
         reviews={anonymizedReviews}
         criteria={criteriaList}
       />
-    </div>
+    </PageContainer>
   );
 }

@@ -20,7 +20,7 @@ interface Props {
   submissionId: string;
   paperTitle: string;
   journalName: string;
-  reviews: (AnonymizedReview & { submittedAt: string })[];
+  reviews: AnonymizedReview[];
   criteria: ReviewCriterion[];
 }
 
