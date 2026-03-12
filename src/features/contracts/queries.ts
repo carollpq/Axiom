@@ -1,16 +1,14 @@
-import { cache } from "react";
-import { db } from "@/src/shared/lib/db";
-import { authorshipContracts, contractContributors, users } from "@/src/shared/lib/db/schema";
-import { and, eq, gt, inArray } from "drizzle-orm";
+import { cache } from 'react';
+import { db } from '@/src/shared/lib/db';
+import {
+  authorshipContracts,
+  contractContributors,
+} from '@/src/shared/lib/db/schema';
+import { and, eq, gt, inArray } from 'drizzle-orm';
+import { getUserByWallet } from '@/src/features/users/queries';
 
 export const listUserContracts = cache(async (walletAddress: string) => {
-  const user = (
-    await db
-      .select()
-      .from(users)
-      .where(eq(users.walletAddress, walletAddress.toLowerCase()))
-      .limit(1)
-  )[0];
+  const user = await getUserByWallet(walletAddress);
 
   if (!user) return [];
 
@@ -21,6 +19,7 @@ export const listUserContracts = cache(async (walletAddress: string) => {
   });
 });
 
+/** Validates token hasn't expired, then returns contributor + full contract. */
 export async function getContributorByInviteToken(token: string) {
   const now = new Date().toISOString();
 
@@ -49,6 +48,7 @@ export async function getContributorByInviteToken(token: string) {
   return { contributor, contract };
 }
 
+/** Contracts where this wallet has a pending (unsigned) contributor row. */
 export const listContractsToSign = cache(async (walletAddress: string) => {
   const pendingIds = db
     .selectDistinct({ id: contractContributors.contractId })
@@ -56,7 +56,7 @@ export const listContractsToSign = cache(async (walletAddress: string) => {
     .where(
       and(
         eq(contractContributors.contributorWallet, walletAddress.toLowerCase()),
-        eq(contractContributors.status, "pending"),
+        eq(contractContributors.status, 'pending'),
       ),
     );
 
@@ -65,6 +65,19 @@ export const listContractsToSign = cache(async (walletAddress: string) => {
     with: { contributors: true, creator: true },
   });
 });
+
+/** Throws if wallet is not the contract creator. */
+export async function requireContractOwner(contractId: string, wallet: string) {
+  const contract = await getContractById(contractId);
+  if (!contract) throw new Error('Contract not found');
+
+  const user = await getUserByWallet(wallet);
+  if (!user || contract.creatorId !== user.id) {
+    throw new Error('Only the contract creator can perform this action');
+  }
+
+  return contract;
+}
 
 export async function getContractById(id: string) {
   return (

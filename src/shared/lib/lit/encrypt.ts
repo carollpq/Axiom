@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { getLitClient } from "./client";
-import type { ConditionList } from "./access-control";
-import type { AccessControlConditions } from "@lit-protocol/types";
+import { getLitClient } from './client';
+import type { ConditionList } from './access-control';
+import type { AccessControlConditions } from '@lit-protocol/types';
 
 export interface LitEncryptResult {
   /**

@@ -20,7 +20,7 @@ We use **async Server Components** with **granular Suspense boundaries**. This m
 - **Independent loading** — a slow papers query doesn't block the stats cards from rendering
 - **No client waterfall** — data is fetched on the server before HTML is sent; no loading spinner on initial render
 - **Simpler hooks** — hooks become pure UI state machines (tabs, filters, hover) with no fetch logic
-- **Non-blocking side effects** — API routes use `after()` from `next/server` to defer HCS anchoring and notifications after the response is sent
+- **Non-blocking side effects** — Server actions use `after()` from `next/server` to defer HCS anchoring and notifications after the response is sent
 
 ---
 
@@ -141,7 +141,7 @@ async Server Component     — fetches, transforms, passes initialX prop
 'use client' Component     — useState(initialX), handles tabs/search/hover
 ```
 
-The client component must **not** re-fetch on mount. The `initialX` prop is the source of truth for first render. Subsequent mutations (sign, upload, etc.) call API routes directly and can call a `refetch` pattern if needed.
+The client component must **not** re-fetch on mount. The `initialX` prop is the source of truth for first render. Subsequent mutations (sign, upload, etc.) call server actions directly, then `router.refresh()` to revalidate.
 
 ---
 

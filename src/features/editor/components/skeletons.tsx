@@ -1,7 +1,12 @@
-// Loading skeleton components for editor dashboard.
+// Loading skeleton components for editor pages.
+// DashboardSkeleton: main dashboard (stats + carousel grid).
+// ThreeColumnSkeleton: content pages (incoming, under-review, accepted) with
+//   paper list | PDF viewer | sidebar layout.
 
-import { PulseBlock } from '@/src/shared/components/PulseBlock';
-import { DashboardCard } from '@/src/shared/components/DashboardCard';
+import { PulseBlock } from '@/src/shared/components/pulse-block';
+import { DashboardCard } from '@/src/shared/components/dashboard-card';
+import { CarouselSkeleton } from '@/src/shared/components/carousel-skeleton';
+import { ProfileSkeleton } from '@/src/shared/components/profile-skeleton';
 
 /** 5 stat cards matching reviewer-style dimensions */
 export function StatsSkeleton() {
@@ -20,46 +25,70 @@ export function StatsSkeleton() {
   );
 }
 
-/** 3 submission card placeholders */
-export function CarouselSkeleton() {
+// Hoisted style constants for ThreeColumnSkeleton (avoid re-creation per render).
+const headerStyle = {
+  height: 44,
+  borderBottom: '1px solid rgba(120,110,95,0.15)',
+} as const;
+const bodyStyle = { height: 'calc(100vh - 56px - 44px)' } as const;
+const listColStyle = {
+  width: 360,
+  borderRight: '1px solid rgba(120,110,95,0.15)',
+} as const;
+const sidebarColStyle = {
+  width: 320,
+  borderLeft: '1px solid rgba(120,110,95,0.15)',
+} as const;
+const sidebarHeaderStyle = {
+  borderBottom: '1px solid rgba(120,110,95,0.12)',
+} as const;
+
+/** Three-column skeleton for content pages: paper list | PDF viewer | sidebar.
+ *  Used by incoming, under-review, and accepted loading states. */
+export function ThreeColumnSkeleton({
+  paperCount = 3,
+  sidebarBlocks = ['180px', '150px'],
+}: {
+  paperCount?: number;
+  sidebarBlocks?: string[];
+} = {}) {
   return (
     <div>
-      <PulseBlock className="h-6 w-44 mb-6" />
-      <div className="flex gap-4 overflow-hidden">
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            className="min-w-[280px] rounded-md p-5"
-            style={{
-              backgroundColor: 'rgba(100,90,75,0.2)',
-              border: '1px solid rgba(180,160,130,0.4)',
-            }}
-          >
-            <PulseBlock className="h-4 w-3/4 mb-3" />
-            <PulseBlock className="h-3 w-1/2 mb-2" />
-            <PulseBlock className="h-3 w-2/3 mb-2" />
-            <PulseBlock className="h-3 w-1/3 mb-3" />
-            <PulseBlock className="h-6 w-28 rounded" />
+      {/* Header strip skeleton */}
+      <div
+        className="flex items-center justify-between px-5"
+        style={headerStyle}
+      >
+        <PulseBlock className="h-3 w-28" />
+        <PulseBlock className="h-3 w-16" />
+      </div>
+
+      <div className="flex" style={bodyStyle}>
+        {/* Paper list column */}
+        <div style={listColStyle} className="p-4 space-y-3">
+          {Array.from({ length: paperCount }).map((_, i) => (
+            <PulseBlock key={i} className="h-[100px]" />
+          ))}
+        </div>
+        {/* PDF viewer column */}
+        <div className="flex-1 p-8">
+          <PulseBlock className="h-full" />
+        </div>
+        {/* Sidebar column */}
+        <div style={sidebarColStyle}>
+          <div className="px-4 py-3" style={sidebarHeaderStyle}>
+            <PulseBlock className="h-2.5 w-16" />
           </div>
-        ))}
+          <div className="p-4 space-y-3">
+            {sidebarBlocks.map((h, i) => (
+              <div key={i} style={{ height: h }}>
+                <PulseBlock className="h-full" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
-  );
-}
-
-/** Profile card placeholder for the right column */
-function ProfileSkeleton() {
-  return (
-    <DashboardCard className="text-center space-y-6">
-      <div className="flex justify-center">
-        <PulseBlock className="w-24 h-24 rounded-full" />
-      </div>
-      <div className="space-y-2">
-        <PulseBlock className="h-5 w-32 mx-auto" />
-        <PulseBlock className="h-3 w-24 mx-auto" />
-        <PulseBlock className="h-3 w-28 mx-auto" />
-      </div>
-    </DashboardCard>
   );
 }
 

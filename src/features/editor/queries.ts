@@ -1,5 +1,6 @@
 import { cache } from 'react';
 import { db } from '@/src/shared/lib/db';
+import { getSession } from '@/src/shared/lib/auth/auth';
 import {
   journals,
   submissions,
@@ -9,6 +10,20 @@ import {
   users,
 } from '@/src/shared/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
+
+/** Throws if wallet is not the editor of this journal. */
+export async function requireJournalEditor(journalId: string, wallet: string) {
+  const journal = await db.query.journals.findFirst({
+    where: eq(journals.id, journalId),
+  });
+
+  if (!journal) throw new Error('Journal not found');
+  if (journal.editorWallet.toLowerCase() !== wallet.toLowerCase()) {
+    throw new Error('Forbidden');
+  }
+
+  return journal;
+}
 
 export const listJournals = cache(async () => {
   return db
@@ -45,6 +60,7 @@ export const listJournalSubmissions = cache(async (journalId?: string) => {
   });
 });
 
+/** All users with the "reviewer" role — uses JSONB @> for SQL-level filtering. */
 export const listReviewerPool = cache(async () => {
   return db.query.users.findMany({
     where: sql`${users.roles}::jsonb @> '["reviewer"]'::jsonb`,
@@ -76,7 +92,7 @@ export const listJournalReviewerWallets = cache(async (journalId: string) => {
   });
 });
 
-/** Get all reviewers in a journal pool with full user info and reputation scores. */
+/** Joins journal_reviewers → users → reputation_scores in one query. */
 export const listJournalReviewersWithStatus = cache(
   async (journalId: string) => {
     const rows = await db
@@ -124,3 +140,10 @@ export type DbJournalIssue = Awaited<
 export type DbJournalReviewerWithStatus = Awaited<
   ReturnType<typeof listJournalReviewersWithStatus>
 >[number];
+
+/** Resolves session wallet + journal in one call. Shared across editor content pages. */
+export async function fetchEditorPageData() {
+  const wallet = (await getSession())!;
+  const journal = await getJournalByEditorWallet(wallet);
+  return { journal };
+}

@@ -1,15 +1,16 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { ThreeColumnLayout } from '@/src/shared/components/ThreeColumnLayout';
-import { DynamicPdfViewer as PdfViewer } from '@/src/shared/components/DynamicPdfViewer';
-import { PaperList } from '@/src/shared/components/PaperList';
-import { ReviewStatusPanel } from './sidebar/ReviewStatusPanel';
+import { LazyFallback } from './lazy-fallback';
+import { ThreeColumnLayout } from '@/src/shared/components/three-column-layout';
+import { DynamicPdfViewer as PdfViewer } from '@/src/shared/components/dynamic-pdf-viewer.client';
+import { PaperList } from '@/src/shared/components/paper-list.client';
+import { ReviewStatusPanel } from './sidebar/review-status-panel';
 import { useUnderReview } from '@/src/features/editor/hooks/useUnderReview';
 import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
 import { useDecryptPaper } from '@/src/shared/hooks/useDecryptPaper';
-import { SelectionPlaceholder } from '@/src/shared/components/SelectionPlaceholder';
-import { ConfirmDialog } from '@/src/shared/components/ConfirmDialog';
+import { SelectionPlaceholder } from '@/src/shared/components/selection-placeholder';
+import { ConfirmDialog } from '@/src/shared/components/confirm-dialog.client';
 import { toast } from 'sonner';
 import type {
   PaperCardData,
@@ -21,42 +22,24 @@ import type { AuthorResponseStatusDb } from '@/src/shared/lib/db/schema';
 
 const FinalDecisionPanel = dynamic(
   () =>
-    import('./sidebar/FinalDecisionPanel').then((m) => ({
+    import('./sidebar/final-decision-panel.client').then((m) => ({
       default: m.FinalDecisionPanel,
     })),
-  {
-    loading: () => (
-      <div className="p-6 text-[13px] text-[#6a6050]">
-        Loading decision panel...
-      </div>
-    ),
-  },
+  { loading: LazyFallback },
 );
 const ResolveRebuttalPanel = dynamic(
   () =>
-    import('./sidebar/ResolveRebuttalPanel').then((m) => ({
+    import('./sidebar/resolve-rebuttal-panel.client').then((m) => ({
       default: m.ResolveRebuttalPanel,
     })),
-  {
-    loading: () => (
-      <div className="p-6 text-[13px] text-[#6a6050]">
-        Loading rebuttal panel...
-      </div>
-    ),
-  },
+  { loading: LazyFallback },
 );
 const AssignReviewersPanel = dynamic(
   () =>
-    import('./sidebar/AssignReviewersPanel').then((m) => ({
+    import('./sidebar/assign-reviewers-panel.client').then((m) => ({
       default: m.AssignReviewersPanel,
     })),
-  {
-    loading: () => (
-      <div className="p-6 text-[13px] text-[#6a6050]">
-        Loading reviewer panel...
-      </div>
-    ),
-  },
+  { loading: LazyFallback },
 );
 
 const DECISION_LABELS: Record<string, string> = {
@@ -86,28 +69,28 @@ export function UnderReviewClient({
     selectedId,
     setSelectedId,
     selected,
-    currentReviewers,
-    allReviewsComplete,
-    currentAuthorResponseStatus,
-    canMakeDecision,
-    editorComment,
-    setEditorComment,
-    decision,
-    setDecision,
-    releaseToAuthor,
-    confirmRelease,
     additionalAssigned,
     assignReviewer,
     removeReviewer,
     reviewerSearch,
     setReviewerSearch,
     timelineDays,
-    isReleasingDecision,
-    showDecisionConfirm,
-    setShowDecisionConfirm,
-    currentRebuttal,
-    resolveRebuttal,
-    isResolvingRebuttal,
+    decisionFlow: {
+      currentReviewers,
+      allReviewsComplete,
+      currentAuthorResponseStatus,
+      canMakeDecision,
+      editorComment,
+      setEditorComment,
+      decision,
+      setDecision,
+      releaseToAuthor,
+      confirmRelease,
+      isReleasingDecision,
+      showDecisionConfirm,
+      setShowDecisionConfirm,
+    },
+    rebuttalFlow: { currentRebuttal, resolveRebuttal, isResolvingRebuttal },
   } = useUnderReview({
     initialPapers,
     initialReviewerPool: reviewerPool,

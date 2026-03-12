@@ -1,9 +1,10 @@
-import { cache } from "react";
-import { db } from "@/src/shared/lib/db";
-import { users } from "@/src/shared/lib/db/schema";
-import { eq, or, ilike } from "drizzle-orm";
-import type { UserSearchResult } from "@/src/shared/types/api";
+import { cache } from 'react';
+import { db } from '@/src/shared/lib/db';
+import { users } from '@/src/shared/lib/db/schema';
+import { eq, or, ilike } from 'drizzle-orm';
+import type { UserSearchResult } from '@/src/shared/types/domain';
 
+/** React `cache()`-wrapped — safe to call multiple times per request. */
 export const getUserByWallet = cache(async (walletAddress: string) => {
   return (
     (
@@ -16,15 +17,7 @@ export const getUserByWallet = cache(async (walletAddress: string) => {
   );
 });
 
-export async function getUserRoles(walletAddress: string): Promise<string[]> {
-  const result = await db
-    .select({ roles: users.roles })
-    .from(users)
-    .where(eq(users.walletAddress, walletAddress.toLowerCase()))
-    .limit(1);
-  return result[0]?.roles ?? [];
-}
-
+/** Returns existing user or inserts a skeleton row (no role yet). */
 export async function getOrCreateUser(walletAddress: string) {
   const normalized = walletAddress.toLowerCase();
   const existing = await getUserByWallet(normalized);
@@ -41,8 +34,9 @@ export async function getOrCreateUser(walletAddress: string) {
   )[0];
 }
 
+/** Case-insensitive search across displayName, orcidId, and wallet. Max 10. */
 export async function searchUsers(query: string): Promise<UserSearchResult[]> {
-  const escaped = query.replace(/[%_]/g, "\\$&");
+  const escaped = query.replace(/[%_]/g, '\\$&');
   const pattern = `%${escaped}%`;
   return db
     .select({

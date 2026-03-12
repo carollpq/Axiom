@@ -1,17 +1,17 @@
-import { cache } from "react";
-import { createAuth } from "thirdweb/auth";
-import { privateKeyToAccount } from "thirdweb/wallets";
-import { client } from "@/src/shared/lib/thirdweb";
-import { cookies } from "next/headers";
+import { cache } from 'react';
+import { createAuth } from 'thirdweb/auth';
+import { privateKeyToAccount } from 'thirdweb/wallets';
+import { client } from '@/src/shared/lib/thirdweb';
+import { cookies } from 'next/headers';
 
-export const AUTH_COOKIE = "tw_auth_token";
+export const AUTH_COOKIE = 'tw_auth_token';
 
 export const auth = createAuth({
-  domain: process.env.NEXT_PUBLIC_APP_DOMAIN ?? "localhost:3000",
+  domain: process.env.NEXT_PUBLIC_APP_DOMAIN ?? 'localhost:3000',
   client,
   adminAccount: privateKeyToAccount({
     client,
-    privateKey: process.env.AUTH_PRIVATE_KEY ?? "",
+    privateKey: process.env.AUTH_PRIVATE_KEY ?? '',
   }),
 });
 
@@ -31,3 +31,12 @@ export const getSession = cache(async (): Promise<string | null> => {
   }
 });
 
+/**
+ * Auth guard — returns the lowercase wallet address or throws.
+ * Use in server actions and server components that require auth.
+ */
+export async function requireSession(): Promise<string> {
+  const wallet = await getSession();
+  if (!wallet) throw new Error('Unauthorized');
+  return wallet;
+}

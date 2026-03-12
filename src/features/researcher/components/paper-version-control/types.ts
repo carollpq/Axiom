@@ -1,10 +1,13 @@
-import type { ApiPaper, ApiPaperVersion } from "@/src/shared/types/api";
+import type {
+  Paper,
+  PaperVersion as DomainPaperVersion,
+} from '@/src/shared/types/domain';
 
 export type PaperVersion = Pick<
-  ApiPaperVersion,
-  "id" | "versionNumber" | "paperHash" | "fileStorageKey" | "createdAt"
+  DomainPaperVersion,
+  'id' | 'versionNumber' | 'paperHash' | 'fileStorageKey' | 'createdAt'
 >;
 
-export type PaperWithVersions = Pick<ApiPaper, "id" | "title"> & {
+export type PaperWithVersions = Pick<Paper, 'id' | 'title'> & {
   versions: PaperVersion[];
 };

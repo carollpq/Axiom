@@ -1,8 +1,8 @@
 'use client';
 
-import { DashboardGridLayout } from '@/src/shared/components/DashboardGridLayout';
-import { ProfileCard } from '@/src/shared/components/ProfileCard';
-import { DashboardCard } from '@/src/shared/components/DashboardCard';
+import { DashboardGridLayout } from '@/src/shared/components/dashboard-grid-layout';
+import { ProfileCard } from '@/src/shared/components/profile-card';
+import { DashboardCard } from '@/src/shared/components/dashboard-card';
 import { StatsSection } from './stats.section';
 import { CarouselSection } from './carousel.section';
 import type { EditorProfile } from '@/src/features/editor/types';

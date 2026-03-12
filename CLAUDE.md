@@ -15,19 +15,18 @@ The codebase is a **functional full-stack application**. The researcher and edit
 **What's working end-to-end:**
 - ✅ **User authentication** — Multi-step login: role selector → wallet connect → ORCID verification → DB save → role-based dashboard routing
 - ✅ **Paper registration** — Client-side SHA-256 hashing → IPFS upload (web3.storage) → Lit encryption → DB storage → Hedera HCS anchoring
-- ✅ **Authorship contracts** — Creation + wallet signing (verified via viem `verifyMessage`) → HCS anchoring per signature. Modification → signature invalidation.
+- ✅ **Authorship contracts** — Creation + wallet signing (verified via viem `verifyMessage`) → HCS anchoring per signature. Fully-signed contracts use Hedera Scheduled Transactions (wrapping HCS message). Modification → signature invalidation.
 - ✅ **Paper submission** — `POST /api/papers/[id]/submit` → `submissions` row → HCS anchor → status `submitted`
 - ✅ **Editor dashboard** — DB-backed submission pipeline (incoming → criteria published → reviewers assigned → under review → rebuttal → decision). Five pages: dashboard (stats + carousel), incoming papers, under review, accepted papers, journal management. All use three-column layout (paper list → PDF viewer → contextual sidebar panels). Sidebar panels: criteria builder, reviewer assignment, review status, review comments, final decision, desk reject, rebuttal resolution, add-to-issue.
 - ✅ **Journal management** — Editor can update journal aims/scope and submission criteria, create/delete issues, assign papers to issues, and manage a reviewer pool (add/remove reviewers)
 - ✅ **Review criteria publishing** — `POST /api/submissions/[id]/criteria` → canonical JSON hash → HCS anchor → immutable criteria
-- ✅ **Reviewer assignment** — `POST /api/submissions/[id]/assign-reviewer` → `reviewAssignments` row with deadline tracking
-- ✅ **Review submission** — `POST /api/reviews/[id]` → per-criterion evaluations → hash → HCS anchor → reputation token minting
+- ✅ **Reviewer assignment** — `POST /api/submissions/[id]/assign-reviewer` → `reviewAssignments` row with deadline tracking + on-chain deadline registration via TimelineEnforcer smart contract
+- ✅ **Review submission** — `POST /api/reviews/[id]` → per-criterion evaluations → hash → HCS anchor → reputation token minting → TimelineEnforcer `markCompleted` → reputation score recomputation
 - ✅ **Editorial decision** — `POST /api/submissions/[id]/decision` → `allCriteriaMet` computation → HCS anchor → reputation events
 - ✅ **Rebuttal phase** — Researcher-initiated → researcher responds per-review → editor resolves → HCS anchored → reputation tokens minted
-- ✅ **Timeline enforcement** — Cron job at `/api/cron/deadlines` marks overdue assignments → `review_late` reputation tokens
+- ✅ **Timeline enforcement** — Cron job at `/api/cron/deadlines` marks overdue assignments → `review_late` reputation tokens. Smart contract cross-verification via `TimelineEnforcer.sol` on Hedera EVM (chain as source of truth).
 - ✅ **Notifications** — DB-backed with NotificationBell component, 30s polling, integrated across all pipeline stages
-- ✅ **`/verify` page** — Public PDF upload → client-side hash → DB lookup → verification result
-- ✅ **Review transparency** — `GET /api/papers/[id]/reviews` returns anonymized reviews after final decision (confidentialEditorComments always excluded)
+- ✅ **Review transparency** — Anonymized reviews visible after final decision (confidentialEditorComments always excluded)
 - ✅ **Anonymous 5-protocol reviewer ratings** — `POST /api/reviews/[id]/rate` with 5-dimensional rating (actionable feedback, deep engagement, fair/objective, justified recommendation, appropriate expertise) + optional anonymous comment. NO author reference stored.
 - ✅ **PDF viewer** — react-pdf v10 / pdfjs-dist v5 in editor three-column views
 - ✅ **Researcher dashboard** — Real DB data + public explorer + pending actions (including rebuttal links)
@@ -37,6 +36,10 @@ The codebase is a **functional full-stack application**. The researcher and edit
 - ✅ **Author review response** — `POST /api/submissions/[id]/author-response` → researcher accepts reviews or requests rebuttal → HCS anchored
 - ✅ **Review-response page** — Researcher views anonymized reviews, rates each (5-protocol), and accepts or requests rebuttal in a single flow
 - ✅ **Backend contract validation** — `POST /api/papers/[id]/submit` validates authorship contract is fully signed before submission
+- ✅ **TimelineEnforcer smart contract** — `contracts/contracts/TimelineEnforcer.sol` deployed to Hedera EVM. Deadlines registered on-chain at reviewer assignment, marked completed on review submission, cross-verified in cron job. Integrated via ethers v6 wrapper at `src/shared/lib/hedera/timeline-enforcer.ts`.
+- ✅ **Mirror Node reads** — `src/shared/lib/hedera/mirror.ts` queries Hedera Mirror Node for NFT data, account lookups, and on-chain reputation verification. `GET /api/reviews/reputation?wallet=0x...` returns DB score + recent events + on-chain NFT data.
+- ✅ **Reputation score computation** — `upsertReputationScore()` computes weighted score (0.30 timeliness + 0.25 editor + 0.25 author + 0.20 publication) via SQL aggregation. Auto-recomputed after every reputation event. Stored in `reputationScores` table.
+- ✅ **Scheduled Transactions** — Fully-signed authorship contracts use `ScheduleCreateTransaction` wrapping HCS message. Operator signs immediately to trigger execution. Schedule ID stored for verification.
 
 **What still uses mock data:**
 - Reviewer dashboard UI (`(reviewer)/`) — API routes exist but dashboard components not yet wired
@@ -44,9 +47,8 @@ The codebase is a **functional full-stack application**. The researcher and edit
 **What is not yet implemented:**
 - Lit Protocol decryption (encrypt works; decrypt not wired into UI)
 - Reviewer search by reputation score in assignment UI
-- Hedera mirror node lookups
 
-**Current stack:** Next.js 16 (App Router, Turbopack) · React 19.2 · Tailwind CSS v4 · Thirdweb v5 · TypeScript strict mode · Neon PostgreSQL/Drizzle ORM · Hedera SDK (HCS + HTS) · Lit Protocol SDK (encrypt only, dynamically imported) · web3.storage (IPFS + Filecoin) · react-pdf v10 (pdfjs-dist v5)
+**Current stack:** Next.js 16 (App Router, Turbopack) · React 19.2 · Tailwind CSS v4 · Thirdweb v5 · TypeScript strict mode · Neon PostgreSQL/Drizzle ORM · Hedera SDK (HCS + HTS + Smart Contracts + Mirror Node + Scheduled Transactions) · ethers v6 (EVM contract interaction) · Lit Protocol SDK (encrypt only, dynamically imported) · web3.storage (IPFS + Filecoin) · react-pdf v10 (pdfjs-dist v5)
 
 ## Common Commands
 
@@ -103,7 +105,7 @@ src/app/{role}/error.tsx                             # 'use client' error bounda
 src/features/{domain}/components/{Name}.client.tsx   # 'use client' boundary — accepts initialData
 src/features/{domain}/hooks/use{Domain}.ts           # 'use client' hook — UI state only
 src/features/{domain}/components/                    # Presentational components
-src/features/{domain}/mappers/{domain}.ts            # Pure mapping functions
+src/features/{domain}/lib/{domain}.ts                # Pure mapping / utility functions
 ```
 
 **The split:** server fetches, client interacts.
@@ -138,14 +140,17 @@ src/features/researcher/components/dashboard/papers-table.client.tsx
 
 ```
 src/features/{domain}/
-├── index.ts       # Re-exports
 ├── queries.ts     # Drizzle read queries
 ├── actions.ts     # Drizzle write mutations
+├── mutations.ts   # Drizzle write helpers (called by actions or API routes)
 ├── types.ts       # All types for this feature domain
+├── lib.ts         # Pure mapping / utility functions (or lib/ directory for larger modules)
 ├── hooks/         # Thin hooks (useReducer + side effects only)
 ├── reducers/      # Pure state machines (testable without React)
 └── config/        # Step definitions, constants
 ```
+
+**No barrel `index.ts` files.** Feature modules must not have barrel re-exports (see Feature Import Rule).
 
 #### Feature Import Rule
 
@@ -197,7 +202,6 @@ Each role group has its own layout using `RoleShell` from `src/shared/components
 - ✅ Rebuttal phase (open → respond → resolve, with HCS anchoring + reputation tokens)
 - ✅ Timeline enforcement (cron job checks overdue, mints `review_late` tokens)
 - ✅ Notifications (DB-backed, polling, integrated across all pipeline stages)
-- ✅ `/verify` page (public PDF hash verification)
 - ✅ Review transparency (anonymized reviews public after decision)
 - ✅ Anonymous reviewer ratings (no author reference stored)
 
@@ -205,12 +209,10 @@ Each role group has its own layout using `RoleShell` from `src/shared/components
 1. **Reviewer dashboard: wire to real data** — Dashboard components exist but still use mock data. API routes are complete.
 2. **Wire Lit decrypt into explorer** — Researchers reading their own private papers.
 3. **Reviewer search by reputation** — Editor searches reviewers filtered by score, field, timeliness.
-4. **Hedera mirror node lookups** — Verify on-chain data from mirror node.
 
 ### Stretch
-5. **Timeline enforcement smart contract** (Solidity on Hedera EVM)
-6. **HTS minting via System Contracts** (hybrid HTS + EVM)
-7. **Real ORCID OAuth flow**
+4. **HTS minting via System Contracts** (hybrid HTS + EVM)
+5. **Real ORCID OAuth flow**
 
 ## Key Architecture Decisions
 
@@ -278,7 +280,7 @@ Score: `0.30 × Timeliness + 0.25 × Editor Rating + 0.25 × Author Feedback + 0
 | Rebuttal response | 14 days from opening |
 | Rebuttal resolution | 7 days from submission |
 
-Overdue: reviewer gets `review_late` HTS token. Editor overdue: journal timeline score drops. Researcher notified at each transition.
+Overdue: reviewer gets `review_late` HTS token. Editor overdue: journal timeline score drops. Researcher notified at each transition. Cron job cross-verifies with TimelineEnforcer smart contract (chain as source of truth — if contract says not overdue, skip penalty).
 
 ### Lit Protocol — Review Phase Only
 
@@ -309,19 +311,14 @@ src/
 │   ├── globals.css                # Tailwind v4 import
 │   ├── login/page.tsx
 │   ├── onboarding/page.tsx
-│   ├── verify/page.tsx            # Public hash verification page
 │   ├── invite/[token]/page.tsx    # Invite claim page
 │   ├── api/
-│   │   ├── auth/                  # me/ (GET + PATCH)
-│   │   ├── activity/route.ts      # GET: activity feed
 │   │   ├── contracts/             # CRUD + signing + invite + reset-signatures
-│   │   ├── papers/                # CRUD + versions + submit + content + reviews
-│   │   ├── journals/route.ts      # GET: list journals
+│   │   ├── papers/[id]/content/   # GET: binary PDF bytes
 │   │   ├── submissions/[id]/      # criteria/ + assign-reviewer/ + decision/ + view/ + accept-assignment/ + author-response/ + open-rebuttal/ (deprecated)
 │   │   ├── reviews/[id]/          # GET/POST review + rate/
+│   │   ├── reviews/reputation/    # GET: public reputation verification (DB + Mirror Node)
 │   │   ├── rebuttals/[rebuttalId]/ # respond/ + resolve/
-│   │   ├── notifications/route.ts # GET: list + PATCH: mark read
-│   │   ├── verify/route.ts        # POST: hash verification (no auth)
 │   │   ├── cron/deadlines/route.ts # GET: deadline enforcement cron
 │   │   └── upload/ipfs/            # IPFS upload via web3.storage
 │   ├── (protected)/
@@ -330,16 +327,15 @@ src/
 │   │   └── reviewer/              # Dashboard, assigned (inline review sidebar)
 ├── features/
 │   ├── auth/                      # Login flow components
-│   ├── researcher/                # Components, hooks, reducers, config, constants, mappers, queries, types, nav
-│   ├── editor/                    # Components, hooks, queries, actions, mappers, types (fully DB-backed, three-column layouts, sidebar panels)
-│   ├── reviewer/                  # Components, hooks, reducers (mock data still)
+│   ├── researcher/                # Components, hooks, reducers, config, constants, lib, queries, types, nav
+│   ├── editor/                    # Components, hooks, queries, actions, lib, types (fully DB-backed, three-column layouts, sidebar panels)
+│   ├── reviewer/                  # Components, hooks, lib, reducers (mock data still)
 │   ├── contracts/                 # DB queries + actions
 │   ├── papers/                    # DB queries + actions
-│   ├── users/                     # DB queries
-│   ├── reviews/                   # DB queries + actions
+│   ├── users/                     # DB queries + actions + lib
+│   ├── reviews/                   # DB queries + actions + lib
 │   ├── rebuttals/                 # DB queries + actions + hooks + components
 │   ├── notifications/             # DB queries + actions + NotificationBell component
-│   └── verify/                    # VerifyClient component
 └── shared/
     ├── components/                # TopBar, Footer, RoleShell, DashboardHeader, PdfViewer, etc.
     ├── context/UserContext.tsx     # Wallet + session
@@ -347,7 +343,7 @@ src/
     ├── lib/
     │   ├── auth/                  # JWT
     │   ├── db/schema.ts           # Drizzle schema (16 tables)
-    │   ├── hedera/client.ts + hcs.ts + hts.ts  # HCS + HTS
+    │   ├── hedera/client.ts + hcs.ts + hts.ts + mirror.ts + schedule.ts + timeline-enforcer.ts  # HCS + HTS + Mirror Node + Scheduled Txs + Smart Contract
     │   ├── lit/                   # Encrypt (decrypt not wired)
     │   ├── hashing.ts             # SHA-256 + canonical JSON
     │   └── storage.ts             # IPFS (web3.storage)
@@ -359,6 +355,7 @@ src/
 - **TypeScript strict mode** throughout.
 - **Server Components** by default. `'use client'` only for browser APIs / interactivity.
 - **Imports:** `@/` path alias. Import from sub-files, not feature barrels (see Feature Import Rule).
+- **User lookups:** Always use `getUserByWallet()` from `@/src/features/users/queries` (React `cache()`-wrapped). Never inline `db.select().from(users).where(...)`.
 - **File naming:** Components: PascalCase. Client boundaries: `.client.tsx`. Hooks: camelCase. Types/mock: kebab-case.
 - **Dynamic routes:** `[id]` not `[paperId]`.
 - **No localStorage/sessionStorage.** React context + httpOnly cookies.
@@ -377,12 +374,12 @@ Drizzle ORM. Neon PostgreSQL (dev and prod). Schema in `src/shared/lib/db/schema
 - `users` — wallet, ORCID, role, research fields
 - `papers` — title, status, study type, visibility
 - `paperVersions` — versions with hashes + Hedera anchoring
-- `authorshipContracts` — authorship contracts with status tracking
-- `contractContributors` — contributors per contract with signatures + invite tokens
+- `authorshipContracts` — authorship contracts with status tracking + Hedera schedule ID/tx
+- `contractContributors` — contributors per contract with signatures + invite tokens + schedule sign tx
 - `journals` — journal metadata (name, editor wallet, reputation)
 - `submissions` — paper → journal submissions with status pipeline
 - `reviewCriteria` — per-submission criteria (JSONB + hash + HCS tx, immutable)
-- `reviewAssignments` — reviewer ↔ submission link with deadline tracking
+- `reviewAssignments` — reviewer ↔ submission link with deadline tracking + TimelineEnforcer on-chain index
 - `reviews` — structured criteria evaluations + recommendation + HCS tx
 - `rebuttals` — per-submission rebuttal with status/deadline/resolution
 - `rebuttalResponses` — per-review responses (agree/disagree + justification)
@@ -418,9 +415,11 @@ DATABASE_URL
 
 # Hedera (optional — graceful fallback)
 HEDERA_NETWORK, HEDERA_OPERATOR_ID, HEDERA_OPERATOR_KEY
+HEDERA_EVM_PRIVATE_KEY                    # ECDSA key for EVM transactions (TimelineEnforcer)
 HCS_TOPIC_PAPERS, HCS_TOPIC_CONTRACTS, HCS_TOPIC_SUBMISSIONS
 HCS_TOPIC_CRITERIA, HCS_TOPIC_REVIEWS, HCS_TOPIC_DECISIONS, HCS_TOPIC_RETRACTIONS
 HTS_REPUTATION_TOKEN_ID
+TIMELINE_ENFORCER_ADDRESS                 # Deployed TimelineEnforcer contract address
 
 # Cron (optional — for deadline enforcement)
 CRON_SECRET
@@ -442,6 +441,9 @@ NEXT_PUBLIC_LIT_NETWORK
 - **Node.js runtime only.** `export const runtime = 'nodejs'` on all Hedera-using routes.
 - **HCS message limit:** ~6KB. Hashes + metadata only.
 - **HTS soulbound:** No native soulbound flag. Enforce via custom fee schedule or admin-only transfer. Test early.
+- **TimelineEnforcer contract:** Uses ethers v6 via Hashio JSON-RPC (`testnet.hashio.io/api`). Contract instance is cached at module scope. Requires `TIMELINE_ENFORCER_ADDRESS` + `HEDERA_EVM_PRIVATE_KEY`.
+- **Mirror Node:** Public read-only API, no auth needed. Defaults to testnet like other Hedera modules. Limited to 100 NFTs per query (sufficient for demo).
+- **Scheduled Transactions:** Used for fully-signed authorship contracts. Operator creates schedule wrapping HCS message, then signs immediately to trigger execution. Falls back to direct HCS anchor if schedule fails.
 - **System Contracts (stretch):** HTS precompiles at specific addresses documented in Hedera docs.
 
 ### Review Pipeline

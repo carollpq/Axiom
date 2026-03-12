@@ -2,7 +2,7 @@
 ## Axiom — Blockchain-Backed Review Fairness for Academic Publishing
 
 **Version:** 3.0  
-**Stack:** Next.js 16 · React 19.2 · Hedera (HCS + HTS + Smart Contracts + DID) · Lit Protocol · Vercel  
+**Stack:** Next.js 16 · React 19.2 · Hedera (HCS + HTS + Smart Contracts + Mirror Node + Scheduled Transactions + DID) · ethers v6 · Lit Protocol · Vercel
 **Date:** February 2026  
 **Hackathon:** Hedera Hello Future: Apex
 
@@ -143,7 +143,9 @@ Journals join (free, no revenue impact)
 | **File Storage** | IPFS via web3.storage (Filecoin archival) | Lit-encrypted paper PDFs, datasets, environment specs |
 | **Blockchain (Consensus)** | Hedera HCS | Immutable audit logs: papers, contracts, reviews, criteria, decisions |
 | **Blockchain (Tokens)** | Hedera HTS | Soulbound reputation NFTs for reviewers |
-| **Blockchain (Contracts)** | Hedera Smart Contracts (EVM) | Timeline enforcement, deadline penalties |
+| **Blockchain (Contracts)** | Hedera Smart Contracts (EVM) + ethers v6 | TimelineEnforcer: deadline registration, completion, cross-verification |
+| **Blockchain (Scheduling)** | Hedera Scheduled Transactions | Atomic multi-party authorship contract anchoring |
+| **Blockchain (Reads)** | Hedera Mirror Node | Public NFT queries, reputation verification, account lookups |
 | **Blockchain (Identity)** | Hedera DID + ORCID | Decentralized academic identity |
 | **Encryption** | Lit Protocol | Decentralized access control during review phase |
 | **Wallets** | Thirdweb v5 (HashPack, MetaMask) | Authentication, message signing |
@@ -165,7 +167,8 @@ Journals join (free, no revenue impact)
 │                    │  │  HCS Topics (7)  │  │              │
 │  Business Logic    │  │  HTS Tokens      │  │  Threshold   │
 │  Review Workflow   │  │  Smart Contracts │  │  MPC Keys    │
-│  Timeline Mgmt    │  │  DID Service     │  │  Access Ctrl │
+│  Timeline Mgmt    │  │  Mirror Node     │  │  Access Ctrl │
+│                    │  │  Scheduled Txs   │  │              │
 └────────┬───────────┘  └──────────────────┘  └──────────────┘
          │
          ▼
@@ -183,7 +186,7 @@ Journals join (free, no revenue impact)
 
 Authors formally define contribution percentages, all co-authors cryptographically sign, and the contract is recorded immutably on HCS.
 
-**Current state:** Fully functional. Contract creation → contributor management → wallet signing (verified via viem `verifyMessage`) → HCS anchoring → signature invalidation on modification.
+**Current state:** Fully functional. Contract creation → contributor management → wallet signing (verified via viem `verifyMessage`) → HCS anchoring → signature invalidation on modification. Fully-signed contracts are now anchored via Hedera Scheduled Transactions (wrapping HCS message), with direct HCS fallback.
 
 **Key constraints:**
 - Contribution percentages must sum to exactly 100%
@@ -241,13 +244,13 @@ interface ReviewCriterion {
 
 Non-transferable, cross-journal reputation represented as HTS soulbound tokens. Detailed in §6.
 
-**Current state:** Fully functional. HTS tokens minted on review completion, late reviews, editorial decisions, author ratings, and rebuttal resolutions. Reputation scores computed and stored in `reputationScores` table. Editor can view reviewer reputation scores when assigning reviewers.
+**Current state:** Fully functional. HTS tokens minted on review completion, late reviews, editorial decisions, author ratings, and rebuttal resolutions. Reputation scores auto-recomputed after every event via `upsertReputationScore()` (SQL aggregation) and stored in `reputationScores` table. Public verification via `GET /api/reviews/reputation?wallet=` combining DB scores with Mirror Node on-chain NFT data. Editor can view reviewer reputation scores when assigning reviewers.
 
 ### 4.6 Reviewer Feedback Transparency (FR-6) ✅ Implemented
 
 After a paper is accepted or rejected, reviewer comments become publicly visible (anonymized). This creates accountability without compromising review-phase anonymity.
 
-**Current state:** Fully functional. `GET /api/papers/[id]/reviews` returns anonymized reviews after final decision. Confidential editor comments always excluded. Editor can view full review comments via ReviewCommentsPanel sidebar.
+**Current state:** Fully functional. Anonymized reviews are visible after final decision via `listPublicReviewsForPaper` query. Confidential editor comments always excluded. Editor can view full review comments via ReviewCommentsPanel sidebar.
 
 **Timing:** Comments are NOT public during review. They become public only after the editorial decision is final. This preserves the integrity of the review process while ensuring post-decision transparency.
 
@@ -276,12 +279,6 @@ Authors receive notifications at every stage:
 
 Papers can be tagged as `original`, `negative_result`, `replication`, `replication_failed`, or `meta_analysis` at registration time. Study type is recorded on-chain and is immutable.
 
-### 4.10 External Paper Verification Tool ✅ Implemented
-
-Public page (`/verify`) where anyone uploads a PDF and the system checks the hash against all on-chain registrations. No auth required. Great demo moment.
-
-**Current state:** Fully functional. Client-side SHA-256 hash → `POST /api/verify` (no auth) → DB lookup → verification result.
-
 ---
 
 ## 5. Hedera Integration Architecture
@@ -292,9 +289,10 @@ Public page (`/verify`) where anyone uploads a PDF and the system checks the has
 |---|---|
 | **HCS** | 7 domain topics for immutable audit logs |
 | **HTS** | Soulbound reputation NFTs for reviewers |
-| **Smart Contracts (EVM)** | Timeline enforcement deadlines (stretch goal) |
+| **Smart Contracts (EVM)** | TimelineEnforcer contract — on-chain deadline registration, completion tracking, cross-verification ✅ Implemented |
+| **Mirror Node** | Query treasury NFTs, decode reputation metadata, verify on-chain token counts ✅ Implemented |
+| **Scheduled Transactions** | Atomic fully-signed authorship contract anchoring via ScheduleCreateTransaction ✅ Implemented |
 | **DID** | Decentralized identity for all users |
-| **Mirror Node** | Query tokens, verify transactions, read reputation history |
 
 ### 5.2 HCS Topic Strategy
 
@@ -406,7 +404,7 @@ For `author_rating` events, metadata now includes 5-dimensional quality data:
 
 ### 6.4 Reputation Score Computation
 
-Computed off-chain (hourly cron), reads HTS token metadata from mirror node:
+Computed on every reputation event via `upsertReputationScore()` (SQL aggregation by event type). Also verifiable via Mirror Node at `GET /api/reviews/reputation?wallet=`:
 
 ```
 Overall Score = (
@@ -670,37 +668,32 @@ Each journal has a timeline performance score computed from:
 
 This score is publicly visible. Researchers can factor it into their journal selection.
 
-### 9.5 Smart Contract Enforcement (Stretch Goal)
+### 9.5 Smart Contract Enforcement ✅ Implemented
 
-For stronger enforcement, deadlines can be managed via a Hedera smart contract:
+Deadlines are managed on-chain via `TimelineEnforcer.sol` deployed to Hedera EVM (testnet). The contract is at `contracts/contracts/TimelineEnforcer.sol` and integrated via `src/shared/lib/hedera/timeline-enforcer.ts` (ethers v6).
+
+**Integration points:**
+- **Reviewer assignment** (`assign-reviewer/route.ts`): Calls `registerDeadline()` in `after()` block, stores on-chain index in `reviewAssignments.timelineEnforcerIndex`
+- **Review submission** (`reviews/[id]/route.ts`): Calls `markCompleted()` when review submitted on time
+- **Cron deadline check** (`cron/deadlines/route.ts`): Cross-verifies with `checkDeadline()` — if contract says NOT overdue, skips reputation penalty (chain as source of truth)
 
 ```solidity
 contract TimelineEnforcer {
     struct Deadline {
-        bytes32 submissionHash;
-        uint256 deadline;
-        address responsible;       // Reviewer or editor wallet
+        uint256 dueTimestamp;
+        address responsible;
         bool completed;
     }
 
     mapping(bytes32 => Deadline[]) public deadlines;
 
-    function registerDeadline(
-        bytes32 submissionHash,
-        uint256 deadline,
-        address responsible
-    ) external onlyPlatform { ... }
-
-    function checkDeadline(bytes32 submissionHash, uint256 index)
-        external view returns (bool isOverdue)
-    {
-        Deadline storage d = deadlines[submissionHash][index];
-        return !d.completed && block.timestamp > d.deadline;
-    }
+    function registerDeadline(bytes32 submissionHash, uint256 dueTimestamp, address responsible) external onlyPlatform;
+    function markCompleted(bytes32 submissionHash, uint256 index) external onlyPlatform;
+    function checkDeadline(bytes32 submissionHash, uint256 index) external view returns (bool isOverdue, uint256 dueTimestamp, address responsible);
 }
 ```
 
-This is a stretch goal for the hackathon. The MVP uses off-chain deadline tracking with HCS anchoring.
+Uses Hashio JSON-RPC (`testnet.hashio.io/api`). Contract instance cached at module scope. Graceful fallback if not configured.
 
 ---
 
@@ -1052,7 +1045,7 @@ app/api/
 │   └── [id]/
 │       ├── route.ts                   # GET/PATCH ✅
 │       ├── contributors/route.ts      # POST ✅
-│       ├── sign/route.ts              # POST → HCS ✅
+│       ├── sign/route.ts              # POST → Scheduled Tx (fully signed) / HCS (individual) ✅
 │       ├── invite/route.ts            # POST 🔲
 │       └── reset-signatures/route.ts  # PATCH ✅
 ├── submissions/
@@ -1066,15 +1059,15 @@ app/api/
 │       └── decision/route.ts          # POST: accept/reject → HCS ✅
 ├── reviews/
 │   ├── route.ts                       # GET: reviewer's assigned reviews ✅
-│   ├── [id]/route.ts                  # GET/POST: review detail / submit → HCS ✅
-│   └── [id]/rate/route.ts             # POST: 5-protocol rating + comment → HCS ✅
+│   ├── [id]/route.ts                  # GET/POST: review detail / submit → HCS + TimelineEnforcer ✅
+│   ├── [id]/rate/route.ts             # POST: 5-protocol rating + comment → HCS ✅
+│   └── reputation/route.ts            # GET: public reputation verification (DB + Mirror Node) ✅
 ├── rebuttals/
 │   ├── [rebuttalId]/respond/route.ts  # POST: author responds per-review ✅
 │   └── [rebuttalId]/resolve/route.ts  # POST: editor resolves ✅
 ├── journals/
 │   └── route.ts                       # GET: list journals ✅
 ├── notifications/route.ts             # GET/PATCH: list + mark read ✅
-├── verify/route.ts                    # POST: hash verification (no auth) ✅
 ├── upload/
 │   └── ipfs/route.ts                 # POST ✅
 ├── activity/route.ts                  # GET ✅
@@ -1202,7 +1195,6 @@ src/app/
 ├── page.tsx                          # Landing page
 ├── login/page.tsx                    # Wallet connect
 ├── onboarding/page.tsx            # Role selection + ORCID (placeholder)
-├── verify/page.tsx                # Public paper verification tool ✅
 ├── (protected)/
 │   ├── researcher/
 │   │   ├── page.tsx                   # Researcher dashboard ✅
@@ -1397,7 +1389,7 @@ Vercel Project
 - Scientific fraud insurance markets (FR-9)
 - Commercial IP tagging (FR-10)
 - Post-publication commentary system
-- Cross-platform interoperability (verify external papers)
+- Cross-platform interoperability
 - Retraction management (FR-7, write operations)
 
 ---
@@ -1413,7 +1405,7 @@ Vercel Project
 | 3 | **Review comment visibility timing** | Public only after final decision (including rebuttal resolution). |
 | 4 | **Rebuttal deadline** | 14 days. Configurable per journal in v2. |
 | 5 | **Criteria format** | Start with yes/no/partially. Scale 1–5 as option. |
-| 6 | **Timeline enforcement: on-chain or off-chain?** | Off-chain (DB + cron) for MVP. Smart contract as stretch goal. |
+| 6 | **Timeline enforcement: on-chain or off-chain?** | ✅ RESOLVED: Hybrid — DB + cron for detection, TimelineEnforcer smart contract for on-chain registration + cross-verification. Chain is source of truth. |
 
 ### 19.2 Key Risks
 
@@ -1424,7 +1416,7 @@ Vercel Project
 | **Rebuttal abuse** | Authors rebut everything | Editor has final authority. Frivolous rebuttals waste author's reputation. |
 | **Journal reluctance to publish criteria** | Adoption blocked | Start with progressive journals. Criteria can be broad. |
 | **Canonical JSON across wallets** | Broken signatures | Use `json-canonicalize` (RFC 8785). Test with Thirdweb. |
-| **Hackathon timeline** | Can't finish | Priority: (1) Journal dashboard + review pipeline, (2) HTS reputation, (3) Rebuttal, (4) Lit decrypt, (5) Verify page. |
+| **Hackathon timeline** | Can't finish | Priority: (1) Journal dashboard + review pipeline, (2) HTS reputation, (3) Rebuttal, (4) Lit decrypt. |
 
 ---
 
@@ -1432,12 +1424,13 @@ Vercel Project
 
 | Service | How We Use It | Hackathon Concepts |
 |---|---|---|
-| **HCS** | 7 domain topics for immutable audit logs | Consensus messaging |
-| **HTS** | Soulbound reviewer reputation NFTs | Token creation, NFT minting, non-transferability |
-| **Smart Contracts** | Timeline enforcement (stretch) | Solidity on Hedera EVM |
-| **System Contracts** | Mint HTS from Solidity (stretch) | Hybrid HTS + EVM |
-| **DID** | User identity (wallet-based for MVP) | Decentralized identity |
-| **Mirror Node** | Query tokens, verify transactions | Off-chain reads |
+| **HCS** | 7 domain topics for immutable audit logs | Consensus messaging | ✅ |
+| **HTS** | Soulbound reviewer reputation NFTs | Token creation, NFT minting, non-transferability | ✅ |
+| **Smart Contracts** | TimelineEnforcer — deadline registration, completion, cross-verification | Solidity on Hedera EVM via ethers v6 | ✅ |
+| **Mirror Node** | Query treasury NFTs, decode reputation metadata, verify on-chain token counts | Public REST API reads | ✅ |
+| **Scheduled Transactions** | Atomic fully-signed authorship contract anchoring | ScheduleCreateTransaction + ScheduleSignTransaction | ✅ |
+| **System Contracts** | Mint HTS from Solidity (stretch) | Hybrid HTS + EVM | 🔲 |
+| **DID** | User identity (wallet-based for MVP) | Decentralized identity | ✅ |
 
 ## Appendix B: Feature Scope
 
@@ -1454,8 +1447,13 @@ Vercel Project
 - ✅ Negative result / replication tagging
 - ✅ External paper verification tool
 
-**Stretch Goals:**
-- Timeline enforcement via smart contract
+**Stretch Goals (completed):**
+- ✅ Timeline enforcement via smart contract (TimelineEnforcer.sol on Hedera EVM)
+- ✅ Mirror Node integration for on-chain reputation verification
+- ✅ Scheduled Transactions for atomic contract anchoring
+- ✅ Reputation score computation (SQL aggregation, auto-recomputed)
+
+**Remaining Stretch Goals:**
 - HTS minting via System Contracts (hybrid approach)
 - Full Lit decrypt wired into UI
 

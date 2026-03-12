@@ -1,12 +1,17 @@
 'use client';
 
-import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/src/shared/lib/errors';
 import type { PoolReviewer, JournalIssue } from '@/src/features/editor/types';
-import { IssuesGrid } from './management/IssuesGrid';
-import { EditableSection } from './management/EditableSection';
-import { ReviewerGrid } from './management/ReviewerGrid';
+import { IssuesGrid } from './management/issues-grid.client';
+import { EditableSection } from './management/editable-section.client';
+import { ReviewerGrid } from './management/reviewer-grid.client';
+import {
+  updateJournalAction,
+  createIssueAction,
+  addReviewerToPoolAction,
+} from '@/src/features/editor/actions';
 
 interface JournalManagementProps {
   journalId: string;
@@ -16,6 +21,27 @@ interface JournalManagementProps {
   submissionCriteria: string;
   reviewers: PoolReviewer[];
   allReviewers: PoolReviewer[];
+}
+
+function makeJournalHandler<A extends unknown[]>(
+  journalId: string,
+  router: ReturnType<typeof useRouter>,
+  action: (journalId: string, ...args: A) => Promise<unknown>,
+  successMsg: string,
+) {
+  return async (...args: A) => {
+    if (!journalId) {
+      toast.error('No journal associated with your account');
+      return;
+    }
+    try {
+      await action(journalId, ...args);
+      router.refresh();
+      toast.success(successMsg);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Operation failed'));
+    }
+  };
 }
 
 export function JournalManagement({
@@ -29,68 +55,33 @@ export function JournalManagement({
 }: JournalManagementProps) {
   const router = useRouter();
 
-  const postAndRefresh = useCallback(
-    async (path: string, body: Record<string, unknown>, method = 'POST') => {
-      const res = await fetch(`/api/journals/${journalId}${path}`, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(err.error || 'Request failed');
-      }
-      router.refresh();
-    },
-    [journalId, router],
+  const handleSaveAims = makeJournalHandler(
+    journalId,
+    router,
+    (id, value: string) => updateJournalAction(id, { aimsAndScope: value }),
+    'Aims and scope saved',
   );
 
-  const handleSaveAims = useCallback(
-    async (value: string) => {
-      if (!journalId) {
-        toast.error('No journal associated with your account');
-        return;
-      }
-      await postAndRefresh('', { aimsAndScope: value }, 'PATCH');
-      toast.success('Aims and scope saved');
-    },
-    [postAndRefresh, journalId],
+  const handleSaveCriteria = makeJournalHandler(
+    journalId,
+    router,
+    (id, value: string) =>
+      updateJournalAction(id, { submissionCriteria: value }),
+    'Submission criteria saved',
   );
 
-  const handleSaveCriteria = useCallback(
-    async (value: string) => {
-      if (!journalId) {
-        toast.error('No journal associated with your account');
-        return;
-      }
-      await postAndRefresh('', { submissionCriteria: value }, 'PATCH');
-      toast.success('Submission criteria saved');
-    },
-    [postAndRefresh, journalId],
+  const handleCreateIssue = makeJournalHandler(
+    journalId,
+    router,
+    createIssueAction,
+    'Issue created',
   );
 
-  const handleCreateIssue = useCallback(
-    async (label: string) => {
-      if (!journalId) {
-        toast.error('No journal associated with your account');
-        return;
-      }
-      await postAndRefresh('/issues', { label });
-      toast.success('Issue created');
-    },
-    [postAndRefresh, journalId],
-  );
-
-  const handleAddReviewer = useCallback(
-    async (wallet: string) => {
-      if (!journalId) {
-        toast.error('No journal associated with your account');
-        return;
-      }
-      await postAndRefresh('/reviewers', { reviewerWallet: wallet });
-      toast.success('Reviewer added to pool');
-    },
-    [postAndRefresh, journalId],
+  const handleAddReviewer = makeJournalHandler(
+    journalId,
+    router,
+    addReviewerToPoolAction,
+    'Reviewer added to pool',
   );
 
   if (!journalId) {

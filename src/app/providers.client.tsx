@@ -1,7 +1,7 @@
 'use client';
 
 import { ThirdwebProvider } from 'thirdweb/react';
-import { UserProvider } from '@/src/shared/context/UserContext';
+import { UserProvider } from '@/src/shared/context/user-context.client';
 import { Toaster } from 'sonner';
 
 export function Providers({ children }: { children: React.ReactNode }) {

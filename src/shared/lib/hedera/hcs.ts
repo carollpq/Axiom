@@ -1,5 +1,6 @@
-import { TopicMessageSubmitTransaction, TopicId } from "@hashgraph/sdk";
-import { getHederaClient } from "./client";
+import { TopicMessageSubmitTransaction, TopicId } from '@hashgraph/sdk';
+import { getHederaClient, isHederaConfigured } from './client';
+import { canonicalJson } from '@/src/shared/lib/hashing';
 
 export interface HcsReceipt {
   txId: string;
@@ -16,7 +17,7 @@ export async function submitHcsMessage(
   payload: object,
 ): Promise<HcsReceipt> {
   const client = getHederaClient();
-  const message = JSON.stringify(payload);
+  const message = canonicalJson(payload);
 
   const submitTx = await new TopicMessageSubmitTransaction()
     .setTopicId(TopicId.fromString(topicId))
@@ -28,11 +29,46 @@ export async function submitHcsMessage(
 
   const txId = submitTx.transactionId.toString();
 
-  // The transaction ID encodes the valid-start time: "0.0.XXXXX@SECONDS.NANOS"
-  // Use it as an approximate consensus timestamp (actual consensus is slightly later).
+  // Extract valid-start time from the tx ID ("0.0.XXXXX@SECONDS.NANOS").
+  // This is an approximation — the actual consensus timestamp is only on
+  // TransactionRecord, which costs an extra network query.
   const match = txId.match(/@(\d+)\./);
-  const epochSeconds = match ? parseInt(match[1], 10) : Math.floor(Date.now() / 1000);
+  const epochSeconds = match
+    ? parseInt(match[1], 10)
+    : Math.floor(Date.now() / 1000);
   const consensusTimestamp = new Date(epochSeconds * 1000).toISOString();
 
   return { txId, consensusTimestamp };
+}
+
+export type HcsTopicEnvVar =
+  | 'HCS_TOPIC_PAPERS'
+  | 'HCS_TOPIC_CONTRACTS'
+  | 'HCS_TOPIC_SUBMISSIONS'
+  | 'HCS_TOPIC_CRITERIA'
+  | 'HCS_TOPIC_REVIEWS'
+  | 'HCS_TOPIC_DECISIONS'
+  | 'HCS_TOPIC_RETRACTIONS';
+
+/**
+ * Anchor a JSON payload to an HCS topic with graceful fallback.
+ */
+export async function anchorToHcs(
+  topicEnvVar: HcsTopicEnvVar,
+  payload: Record<string, unknown>,
+  label = 'HCS',
+): Promise<{ txId?: string; consensusTimestamp?: string }> {
+  const topicId = process.env[topicEnvVar];
+  if (!isHederaConfigured() || !topicId) return {};
+
+  try {
+    const { txId, consensusTimestamp } = await submitHcsMessage(
+      topicId,
+      payload,
+    );
+    return { txId, consensusTimestamp };
+  } catch (err) {
+    console.error(`[${label}] Anchor failed:`, err);
+    return {};
+  }
 }

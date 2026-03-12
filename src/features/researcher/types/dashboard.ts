@@ -1,4 +1,15 @@
-export type SubmissionDisplayStatus = string;
+export type SubmissionDisplayStatus =
+  | 'Paper Submitted'
+  | 'Viewed By Editor'
+  | 'Rejected'
+  | 'Desk Reject'
+  | 'All Reviews Completed'
+  | 'Reviews Sent to Editor'
+  | 'Rebuttal Phase'
+  | 'Accepted'
+  | `Assigned ${number} Reviewer`
+  | `Assigned ${number} Reviewers`
+  | `${number}/${number} Reviews Completed`;
 
 export interface SubmissionCard {
   id: string;
@@ -21,12 +32,4 @@ export interface DashboardStats {
   rejected: number;
 }
 
-import type { LucideIcon } from "lucide-react";
-
-export interface StatCardData {
-  label: string;
-  value: string;
-  icon: LucideIcon;
-}
-
-export type { NavItemData, UserProfile } from "@/src/shared/types/shared";
+export type { NavItemData, UserProfile } from '@/src/shared/types/shared';

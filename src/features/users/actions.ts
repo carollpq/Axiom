@@ -1,45 +1,14 @@
-import { eq } from "drizzle-orm";
-import { db } from "@/src/shared/lib/db";
-import { users } from "@/src/shared/lib/db/schema";
-import type { Role } from "@/src/features/auth/types";
+'use server';
 
-export async function registerUserRole(
-  walletAddress: string,
-  role: Role,
-  orcidId: string,
-  displayName: string,
-) {
-  const walletLower = walletAddress.toLowerCase();
+import { requireSession } from '@/src/shared/lib/auth/auth';
+import { searchUsers } from '@/src/features/users/queries';
 
-  const existing = await db
-    .select()
-    .from(users)
-    .where(eq(users.walletAddress, walletLower))
-    .limit(1);
+/** Authenticated wrapper around searchUsers. Requires min 2 chars. */
+export async function searchUsersAction(query: string) {
+  await requireSession();
 
-  if (existing.length > 0) {
-    const currentRoles = (existing[0].roles as string[]) || [];
-    const updatedRoles = currentRoles.includes(role)
-      ? currentRoles
-      : [...currentRoles, role];
+  const q = query?.trim();
+  if (!q || q.length < 2) return [];
 
-    await db
-      .update(users)
-      .set({
-        roles: updatedRoles,
-        orcidId,
-        displayName,
-        updatedAt: new Date().toISOString(),
-      })
-      .where(eq(users.walletAddress, walletLower));
-  } else {
-    await db.insert(users).values({
-      walletAddress: walletLower,
-      roles: [role],
-      orcidId,
-      displayName,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-  }
+  return searchUsers(q);
 }

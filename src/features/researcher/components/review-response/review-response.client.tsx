@@ -3,36 +3,18 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { ReviewContent, type ReviewCriterion } from './ReviewContent';
-import { ReviewerRatingCard } from './ReviewerRatingCard';
-import { ErrorAlert } from '@/src/shared/components/ErrorAlert';
-
-interface AnonymizedReview {
-  id: string;
-  label: string;
-  criteriaEvaluations: string | null;
-  strengths: string | null;
-  weaknesses: string | null;
-  questionsForAuthors: string | null;
-  recommendation: string | null;
-  submittedAt: string;
-}
-
-interface ProtocolRatings {
-  actionableFeedback: number;
-  deepEngagement: number;
-  fairObjective: number;
-  justifiedRecommendation: number;
-  appropriateExpertise: number;
-}
-
-const DEFAULT_RATINGS: ProtocolRatings = {
-  actionableFeedback: 3,
-  deepEngagement: 3,
-  fairObjective: 3,
-  justifiedRecommendation: 3,
-  appropriateExpertise: 3,
-};
+import { ReviewContent, type ReviewCriterion } from './review-content';
+import { ReviewerRatingCard } from './reviewer-rating-card.client';
+import { AlertBanner } from '@/src/shared/components/alert-banner';
+import { rateReviewerAction } from '@/src/features/reviews/actions';
+import { authorResponseAction } from '@/src/features/submissions/actions';
+import { ROUTES } from '@/src/shared/lib/routes';
+import { getErrorMessage } from '@/src/shared/lib/errors';
+import type {
+  AnonymizedReview,
+  ProtocolRatings,
+} from '@/src/features/researcher/types/review';
+import { DEFAULT_RATINGS } from '@/src/features/researcher/config/review';
 
 interface Props {
   submissionId: string;
@@ -82,41 +64,23 @@ export function ReviewResponseClient({
         reviews.map(async (r) => {
           const body: Record<string, unknown> = { ...ratings[r.id] };
           if (comments[r.id]?.trim()) body.comment = comments[r.id].trim();
-          const res = await fetch(`/api/reviews/${r.id}/rate`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-          });
-          if (!res.ok) {
-            const data = await res.json();
-            // Ignore "already rated" — proceed with author response
-            if (res.status !== 409)
-              throw new Error(data.error || 'Failed to rate review');
-          }
+          const result = await rateReviewerAction(
+            r.id,
+            body as Parameters<typeof rateReviewerAction>[1],
+          );
+          // Ignore "already rated" — proceed with author response
+          if (result.alreadyRated) return;
         }),
       );
 
       // Submit author response
-      const res = await fetch(
-        `/api/submissions/${submissionId}/author-response`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action }),
-        },
-      );
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to submit response');
-      }
+      await authorResponseAction(submissionId, action);
 
       toast.success('Response submitted');
-      router.push('/researcher');
+      router.push(ROUTES.researcher.root);
       router.refresh();
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Something went wrong';
+      const message = getErrorMessage(err);
       setError(message);
       toast.error(message);
     } finally {
@@ -133,7 +97,7 @@ export function ReviewResponseClient({
         {paperTitle} &mdash; {journalName}
       </p>
 
-      {error && <ErrorAlert message={error} />}
+      {error && <AlertBanner variant="error">{error}</AlertBanner>}
 
       <p className="text-[12px] text-[#6a6050] mb-6">
         All reviews are complete. Please rate each reviewer and then accept the

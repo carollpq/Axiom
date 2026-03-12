@@ -8,9 +8,10 @@ import {
   journals,
 } from '@/src/shared/lib/db/schema';
 import { eq, and, or, inArray } from 'drizzle-orm';
-import { displayNameOrWallet } from '@/src/shared/lib/format';
-import type { EditorNameMap } from '@/src/features/reviewer/mappers/dashboard';
+import { displayNameOrWallet } from '@/src/features/users/lib';
+import type { EditorNameMap } from '@/src/features/reviewer/lib/dashboard';
 
+/** Active assignments (assigned + accepted), ordered by nearest deadline. */
 export const listAssignedReviews = cache(async (reviewerWallet: string) => {
   return db.query.reviewAssignments.findMany({
     where: and(
@@ -118,26 +119,21 @@ export const listCompletedReviewsExtended = cache(
   },
 );
 
+/** Returns the materialized reputation score row, or undefined if none yet. */
 export const getReviewerReputation = cache(async (reviewerWallet: string) => {
   return db.query.reputationScores.findFirst({
     where: eq(reputationScores.userWallet, reviewerWallet.toLowerCase()),
   });
 });
 
-/** Build a wallet→displayName map for editor wallets found in assignments. */
+/** Build a wallet→displayName map from an array of wallet addresses. */
 export async function buildEditorNameMap(
-  assignments: Array<{
-    submission: { journal?: { editorWallet?: string } | null };
-  }>,
+  wallets: string[],
 ): Promise<EditorNameMap> {
-  const wallets = [
-    ...new Set(
-      assignments
-        .map((a) => a.submission.journal?.editorWallet?.toLowerCase())
-        .filter((w): w is string => !!w),
-    ),
+  const unique = [
+    ...new Set(wallets.map((w) => w.toLowerCase()).filter(Boolean)),
   ];
-  if (wallets.length === 0) return {};
+  if (unique.length === 0) return {};
 
   const rows = await db
     .select({
@@ -145,7 +141,7 @@ export async function buildEditorNameMap(
       displayName: users.displayName,
     })
     .from(users)
-    .where(inArray(users.walletAddress, wallets));
+    .where(inArray(users.walletAddress, unique));
 
   const map: EditorNameMap = {};
   for (const row of rows) {
@@ -201,34 +197,3 @@ export type DbCompletedReviewExtended = Awaited<
 export type DbReputationRow = NonNullable<
   Awaited<ReturnType<typeof getReviewerReputation>>
 >;
-
-/** Build editor wallet → displayName map from pool invites. */
-export async function buildEditorNameMapFromPoolInvites(
-  invites: Array<{ journal?: { editorWallet?: string } | null }>,
-): Promise<Record<string, string>> {
-  const wallets = [
-    ...new Set(
-      invites
-        .map((i) => i.journal?.editorWallet?.toLowerCase())
-        .filter((w): w is string => !!w),
-    ),
-  ];
-  if (wallets.length === 0) return {};
-
-  const rows = await db
-    .select({
-      walletAddress: users.walletAddress,
-      displayName: users.displayName,
-    })
-    .from(users)
-    .where(inArray(users.walletAddress, wallets));
-
-  const map: Record<string, string> = {};
-  for (const row of rows) {
-    map[row.walletAddress.toLowerCase()] = displayNameOrWallet(
-      row.displayName,
-      row.walletAddress,
-    );
-  }
-  return map;
-}

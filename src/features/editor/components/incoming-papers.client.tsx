@@ -1,51 +1,38 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { ThreeColumnLayout } from '@/src/shared/components/ThreeColumnLayout';
-import { DynamicPdfViewer as PdfViewer } from '@/src/shared/components/DynamicPdfViewer';
-import { PaperList } from '@/src/shared/components/PaperList';
+import { LazyFallback } from './lazy-fallback';
+import { ThreeColumnLayout } from '@/src/shared/components/three-column-layout';
+import { DynamicPdfViewer as PdfViewer } from '@/src/shared/components/dynamic-pdf-viewer.client';
+import { PaperList } from '@/src/shared/components/paper-list.client';
 import { useIncomingPapers } from '@/src/features/editor/hooks/useIncomingPapers';
 import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
 import { useDecryptPaper } from '@/src/shared/hooks/useDecryptPaper';
-import { SelectionPlaceholder } from '@/src/shared/components/SelectionPlaceholder';
-import { ConfirmDialog } from '@/src/shared/components/ConfirmDialog';
+import { SelectionPlaceholder } from '@/src/shared/components/selection-placeholder';
+import { ConfirmDialog } from '@/src/shared/components/confirm-dialog.client';
 import { toast } from 'sonner';
 import type { PaperCardData, PoolReviewer } from '@/src/features/editor/types';
 
 const CriteriaBuilder = dynamic(
   () =>
-    import('./CriteriaBuilder').then((m) => ({ default: m.CriteriaBuilder })),
-  {
-    loading: () => (
-      <div className="p-6 text-[13px] text-[#6a6050]">
-        Loading criteria builder...
-      </div>
-    ),
-  },
+    import('./criteria-builder.client').then((m) => ({
+      default: m.CriteriaBuilder,
+    })),
+  { loading: LazyFallback },
 );
 const AssignReviewersPanel = dynamic(
   () =>
-    import('./sidebar/AssignReviewersPanel').then((m) => ({
+    import('./sidebar/assign-reviewers-panel.client').then((m) => ({
       default: m.AssignReviewersPanel,
     })),
-  {
-    loading: () => (
-      <div className="p-6 text-[13px] text-[#6a6050]">
-        Loading reviewer panel...
-      </div>
-    ),
-  },
+  { loading: LazyFallback },
 );
 const DeskRejectPanel = dynamic(
   () =>
-    import('./sidebar/DeskRejectPanel').then((m) => ({
+    import('./sidebar/desk-reject-panel.client').then((m) => ({
       default: m.DeskRejectPanel,
     })),
-  {
-    loading: () => (
-      <div className="p-6 text-[13px] text-[#6a6050]">Loading...</div>
-    ),
-  },
+  { loading: LazyFallback },
 );
 
 interface IncomingPapersProps {

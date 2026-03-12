@@ -1,193 +1,299 @@
-import { db } from "@/src/shared/lib/db";
+'use server';
+
+import { z } from 'zod';
+import { after } from 'next/server';
+import { verifyMessage } from 'viem';
+import { requireSession } from '@/src/shared/lib/auth/auth';
+import { anchorToHcs } from '@/src/shared/lib/hedera/hcs';
+import { ROUTES } from '@/src/shared/lib/routes';
 import {
-  authorshipContracts,
-  contractContributors,
-  users,
-  type ContractStatusDb,
-  type ContributorStatusDb,
-} from "@/src/shared/lib/db/schema";
-import { and, eq } from "drizzle-orm";
+  createContract,
+  addContributor,
+  removeContributor,
+  signContributor,
+  resetContractSignatures,
+  generateInviteToken,
+  updateContractHedera,
+  updateContractSchedule,
+} from '@/src/features/contracts/mutations';
+import {
+  getContractById,
+  requireContractOwner,
+} from '@/src/features/contracts/queries';
+import { createNotification } from '@/src/features/notifications/mutations';
+import { displayNameOrWallet } from '@/src/features/users/lib';
+import {
+  createContractSchedule,
+  signScheduleAsOperator,
+} from '@/src/shared/lib/hedera/schedule';
+import {
+  EVM_ADDRESS_REGEX,
+  HEX_SIGNATURE_REGEX,
+} from '@/src/shared/lib/validation';
+import { db } from '@/src/shared/lib/db';
+import { authorshipContracts } from '@/src/shared/lib/db/schema';
+import { eq } from 'drizzle-orm';
 
-export interface CreateContractInput {
-  paperTitle: string;
-  paperId?: string | null;
-  wallet: string;
-}
+// ---------------------------------------------------------------------------
+// Schemas
+// ---------------------------------------------------------------------------
 
-export async function createContract(input: CreateContractInput) {
-  const user = (
-    await db
-      .select()
-      .from(users)
-      .where(eq(users.walletAddress, input.wallet.toLowerCase()))
-      .limit(1)
-  )[0];
+const createContractSchema = z.object({
+  paperTitle: z.string().trim().min(1).max(500),
+  paperId: z.string().uuid().nullish(),
+});
 
-  if (!user) return null;
+const addContributorSchema = z.object({
+  contractId: z.string().uuid(),
+  contributorWallet: z
+    .string()
+    .regex(EVM_ADDRESS_REGEX, 'Invalid wallet address'),
+  contributionPct: z.number().int().min(0).max(100),
+  contributorName: z.string().trim().max(200).nullish(),
+  roleDescription: z.string().trim().max(500).nullish(),
+  isCreator: z.boolean().optional(),
+});
 
-  return (
-    await db
-      .insert(authorshipContracts)
-      .values({
-        paperTitle: input.paperTitle,
-        paperId: input.paperId ?? null,
-        creatorId: user.id,
-      })
-      .returning()
-  )[0];
-}
+const signSchema = z.object({
+  contractId: z.string().uuid(),
+  contributorWallet: z
+    .string()
+    .regex(EVM_ADDRESS_REGEX, 'Invalid wallet address'),
+  signature: z.string().regex(HEX_SIGNATURE_REGEX, 'Invalid signature format'),
+  contractHash: z.string().optional(),
+});
 
-export interface AddContributorInput {
-  contractId: string;
-  contributorWallet: string;
-  contributorName?: string | null;
-  contributionPct: number;
-  roleDescription?: string | null;
-  isCreator?: boolean;
-}
+// ---------------------------------------------------------------------------
+// Actions
+// ---------------------------------------------------------------------------
 
-export async function addContributor(input: AddContributorInput) {
-  return (
-    await db
-      .insert(contractContributors)
-      .values({
-        contractId: input.contractId,
-        contributorWallet: input.contributorWallet.toLowerCase(),
-        contributorName: input.contributorName ?? null,
-        contributionPct: input.contributionPct,
-        roleDescription: input.roleDescription ?? null,
-        isCreator: input.isCreator ?? false,
-      })
-      .returning()
-  )[0];
-}
-
-export async function removeContributor(contractId: string, contributorId: string) {
-  return (
-    (
-      await db
-        .delete(contractContributors)
-        .where(
-          and(
-            eq(contractContributors.id, contributorId),
-            eq(contractContributors.contractId, contractId),
-          ),
-        )
-        .returning()
-    )[0] ?? null
-  );
-}
-
-export async function updateContractHedera(
-  contractId: string,
-  hederaTxId: string,
-  hederaTimestamp: string,
+export async function createContractAction(
+  input: z.infer<typeof createContractSchema>,
 ) {
-  return (
-    (
-      await db
-        .update(authorshipContracts)
-        .set({ hederaTxId, hederaTimestamp, updatedAt: new Date().toISOString() })
-        .where(eq(authorshipContracts.id, contractId))
-        .returning()
-    )[0] ?? null
-  );
+  const wallet = await requireSession();
+  const parsed = createContractSchema.parse(input);
+
+  const contract = await createContract({ ...parsed, wallet });
+  if (!contract) throw new Error('User not found');
+
+  return contract;
 }
 
-export async function generateInviteToken(contractId: string, contributorId: string) {
-  const token = crypto.randomUUID();
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+/** Adds contributor row and notifies them (non-blocking) unless they're the caller. */
+export async function addContributorAction(
+  input: z.infer<typeof addContributorSchema>,
+) {
+  const wallet = await requireSession();
+  const parsed = addContributorSchema.parse(input);
 
-  const updated = (
-    await db
-      .update(contractContributors)
-      .set({ inviteToken: token, inviteExpiresAt: expiresAt })
-      .where(
-        and(
-          eq(contractContributors.id, contributorId),
-          eq(contractContributors.contractId, contractId),
-        ),
-      )
-      .returning()
-  )[0];
+  const contributor = await addContributor(parsed);
 
-  if (!updated) return null;
-  return { token, expiresAt };
+  // Non-blocking: notify the added contributor
+  if (parsed.contributorWallet.toLowerCase() !== wallet.toLowerCase()) {
+    after(async () => {
+      const [row] = await db
+        .select({ paperTitle: authorshipContracts.paperTitle })
+        .from(authorshipContracts)
+        .where(eq(authorshipContracts.id, parsed.contractId))
+        .limit(1);
+
+      const paperTitle = row?.paperTitle ?? 'Untitled';
+      await createNotification({
+        userWallet: parsed.contributorWallet,
+        type: 'contributor_added',
+        title: 'Added to authorship contract',
+        body: `You have been added as a contributor on "${paperTitle}". Please review and sign the contract.`,
+        link: ROUTES.researcher.contracts,
+      });
+    });
+  }
+
+  return contributor;
 }
 
-export async function resetContractSignatures(contractId: string) {
-  const now = new Date().toISOString();
+export async function removeContributorAction(
+  contractId: string,
+  contributorId: string,
+) {
+  await requireSession();
 
-  await db
-    .update(contractContributors)
-    .set({ status: "pending" as ContributorStatusDb, signature: null, signedAt: null })
-    .where(eq(contractContributors.contractId, contractId));
+  const deleted = await removeContributor(contractId, contributorId);
+  if (!deleted) throw new Error('Contributor not found');
 
-  return (
-    (
-      await db
-        .update(authorshipContracts)
-        .set({
-          status: "pending_signatures" as ContractStatusDb,
-          contractHash: null,
-          updatedAt: now,
-        })
-        .where(eq(authorshipContracts.id, contractId))
-        .returning()
-    )[0] ?? null
-  );
+  return { ok: true };
 }
 
-export interface SignContributorInput {
-  contractId: string;
-  contributorWallet: string;
-  signature: string;
-  contractHash?: string;
-}
+export async function resetSignaturesAction(contractId: string) {
+  const sessionWallet = await requireSession();
+  await requireContractOwner(contractId, sessionWallet);
 
-export async function signContributor(input: SignContributorInput) {
-  const now = new Date().toISOString();
-
-  const updated = (
-    await db
-      .update(contractContributors)
-      .set({
-        signature: input.signature,
-        status: "signed" as ContributorStatusDb,
-        signedAt: now,
-      })
-      .where(
-        and(
-          eq(contractContributors.contractId, input.contractId),
-          eq(
-            contractContributors.contributorWallet,
-            input.contributorWallet.toLowerCase(),
-          ),
-        ),
-      )
-      .returning()
-  )[0];
-
-  if (!updated) return null;
-
-  // Check if all contributors are now signed — auto-advance contract status
-  const allContribs = await db
-    .select()
-    .from(contractContributors)
-    .where(eq(contractContributors.contractId, input.contractId));
-
-  const allSigned = allContribs.every((c) => c.status === "signed");
-
-  await db
-    .update(authorshipContracts)
-    .set({
-      status: (allSigned
-        ? "fully_signed"
-        : "pending_signatures") as ContractStatusDb,
-      contractHash: allSigned ? (input.contractHash ?? null) : undefined,
-      updatedAt: now,
-    })
-    .where(eq(authorshipContracts.id, input.contractId));
+  const updated = await resetContractSignatures(contractId);
+  if (!updated) throw new Error('Reset failed');
 
   return updated;
+}
+
+/** Generates a 7-day invite link. Only the contract creator can call this. */
+export async function generateInviteLinkAction(
+  contractId: string,
+  contributorId: string,
+) {
+  const sessionWallet = await requireSession();
+  await requireContractOwner(contractId, sessionWallet);
+
+  const result = await generateInviteToken(contractId, contributorId);
+  if (!result) throw new Error('Contributor not found');
+
+  const domain = process.env.NEXT_PUBLIC_APP_DOMAIN ?? 'localhost:3000';
+  const protocol = domain.startsWith('localhost') ? 'http' : 'https';
+  const inviteLink = `${protocol}://${domain}/invite/${result.token}`;
+
+  return { inviteLink, expiresAt: result.expiresAt };
+}
+
+/** Verifies signature via viem, records sign, and defers HCS anchoring + Scheduled Transaction if fully signed. */
+export async function signContractAction(input: z.infer<typeof signSchema>) {
+  const session = await requireSession();
+  const parsed = signSchema.parse(input);
+  const { contractId, contributorWallet, signature, contractHash } = parsed;
+
+  if (contributorWallet.toLowerCase() !== session) {
+    throw new Error('Session wallet does not match contributor wallet');
+  }
+
+  if (contractHash) {
+    try {
+      const isValid = await verifyMessage({
+        address: contributorWallet as `0x${string}`,
+        message: contractHash,
+        signature: signature as `0x${string}`,
+      });
+      if (!isValid) throw new Error('Invalid signature');
+    } catch {
+      throw new Error('Invalid signature');
+    }
+  }
+
+  const result = await signContributor({
+    contractId,
+    contributorWallet,
+    signature,
+    contractHash,
+  });
+
+  if (!result) {
+    throw new Error('Contributor not found or wallet mismatch');
+  }
+
+  const contract = await getContractById(contractId);
+  if (!contract) throw new Error('Contract not found');
+  const isFullySigned = contract.status === 'fully_signed';
+
+  // Non-blocking: Hedera anchoring + notifications run after response
+  after(async () => {
+    if (isFullySigned) {
+      const hcsPayload = {
+        type: 'fullySigned' as const,
+        contractId,
+        contractHash: contractHash ?? contract.contractHash ?? null,
+        signers: contract.contributors
+          .filter((c) => c.status === 'signed')
+          .map((c) => c.contributorWallet),
+        timestamp: new Date().toISOString(),
+      };
+
+      const topicId = process.env.HCS_TOPIC_CONTRACTS;
+      let txId: string | undefined;
+      let consensusTimestamp: string | undefined;
+
+      if (topicId) {
+        const scheduleResult = await createContractSchedule(
+          topicId,
+          hcsPayload,
+          `Axiom contract ${contractId} fully signed`,
+        );
+
+        if (scheduleResult) {
+          await updateContractSchedule(
+            contractId,
+            scheduleResult.scheduleId,
+            scheduleResult.txId,
+          );
+          const signResult = await signScheduleAsOperator(
+            scheduleResult.scheduleId,
+          );
+          if (signResult) {
+            txId = signResult.txId;
+          }
+        }
+      }
+
+      // Fallback: if schedule failed, anchor directly
+      if (!txId) {
+        const hcsResult = await anchorToHcs('HCS_TOPIC_CONTRACTS', hcsPayload);
+        txId = hcsResult.txId;
+        consensusTimestamp = hcsResult.consensusTimestamp;
+      }
+
+      if (txId) {
+        await updateContractHedera(
+          contractId,
+          txId,
+          consensusTimestamp ?? new Date().toISOString(),
+        );
+      }
+    } else {
+      await anchorToHcs('HCS_TOPIC_CONTRACTS', {
+        type: 'signed',
+        contractId,
+        contractHash: contractHash ?? null,
+        signerWallet: contributorWallet,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Notifications
+    const signerName = displayNameOrWallet(
+      contract.contributors.find(
+        (c) =>
+          c.contributorWallet?.toLowerCase() ===
+          contributorWallet.toLowerCase(),
+      )?.contributorName,
+      contributorWallet,
+    );
+
+    const contractLink = `${ROUTES.researcher.contracts}?id=${contractId}`;
+
+    if (isFullySigned) {
+      await Promise.all(
+        contract.contributors
+          .filter((c) => c.contributorWallet)
+          .map((c) =>
+            createNotification({
+              userWallet: c.contributorWallet!,
+              type: 'contract_fully_signed',
+              title: 'Authorship contract fully signed',
+              body: `All authors have signed the contract for "${contract.paperTitle}".`,
+              link: contractLink,
+            }),
+          ),
+      );
+    } else {
+      const ownerWallet = contract.creator?.walletAddress;
+      if (
+        ownerWallet &&
+        ownerWallet.toLowerCase() !== contributorWallet.toLowerCase()
+      ) {
+        await createNotification({
+          userWallet: ownerWallet,
+          type: 'contract_signed',
+          title: 'Co-author signed contract',
+          body: `${signerName} signed the authorship contract for "${contract.paperTitle}".`,
+          link: contractLink,
+        });
+      }
+    }
+  });
+
+  return result;
 }

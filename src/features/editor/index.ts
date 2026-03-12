@@ -1,1 +1,0 @@
-export { StageBadge } from "./StageBadge";

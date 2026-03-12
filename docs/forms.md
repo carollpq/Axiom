@@ -10,7 +10,7 @@ We use real `<form>` elements with `useActionState` for validation feedback. Thi
 - Automatic pending state
 - Type-safe validation errors
 
-**Reference code**: `app/actions/auth.ts`, `src/features/researcher/components/paper-version-control/PaperDetailsStep.tsx`
+**Reference code**: `src/shared/lib/auth/actions.ts`, `src/features/researcher/components/paper-version-control/PaperDetailsStep.tsx`
 
 ---
 
@@ -30,7 +30,7 @@ Used for simple, self-contained mutations. The `<form action={action}>` sends `F
 
 **When to use:** Single-purpose forms where server-side validation is the main concern (e.g. profile updates, role selection, ORCID connection).
 
-**Reference:** `app/actions/auth.ts` — `doLogin`, `doLogout` are the existing Server Actions.
+**Reference:** `src/shared/lib/auth/actions.ts` — `doLogin`, `doLogout` are the existing Server Actions.
 
 ---
 
@@ -40,7 +40,7 @@ Used for simple, self-contained mutations. The `<form action={action}>` sends `F
 'use client';
 
 import { useActionState } from 'react';
-import { updateProfile, type State } from '@/src/app/actions/profile';
+import { updateProfile, type State } from '@/src/features/auth/actions';
 
 export function UpdateProfileForm() {
   const [state, action, pending] = useActionState<State, FormData>(
@@ -111,7 +111,7 @@ export function UpdateProfileForm() {
 The matching Server Action:
 
 ```ts
-// app/actions/profile.ts
+// src/features/auth/actions.ts
 'use server';
 
 import { z } from 'zod';
@@ -132,7 +132,7 @@ export async function updateProfile(prevState: State, formData: FormData): Promi
     return { errors: result.error.flatten().fieldErrors, message: null };
   }
 
-  // ... write to DB via features/users/actions.ts
+  // ... write to DB via features/users/mutations.ts
 
   return { errors: {}, message: null };
 }

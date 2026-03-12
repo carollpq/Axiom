@@ -30,11 +30,10 @@ export type ContractBuilderAction =
       selectedContractId: string | null;
     }
   | { type: 'SET_NEW_TITLE'; newTitle: string }
-  | { type: 'SET_CONTRIBUTORS'; contributors: Contributor[] }
   | {
       type: 'UPDATE_CONTRIBUTOR';
       id: number;
-      field: string;
+      field: 'pct' | 'role';
       value: string | number;
     }
   | { type: 'REMOVE_CONTRIBUTOR'; id: number }
@@ -50,6 +49,7 @@ export type ContractBuilderAction =
       contributorDbIds: (string | undefined)[];
     };
 
+/** Editing any field when signatures exist invalidates all signatures (cascade reset). */
 export function contractBuilderReducer(
   state: ContractBuilderState,
   action: ContractBuilderAction,
@@ -68,10 +68,20 @@ export function contractBuilderReducer(
     case 'SET_NEW_TITLE':
       return { ...state, newTitle: action.newTitle };
 
-    case 'SET_CONTRIBUTORS':
-      return { ...state, contributors: action.contributors };
-
     case 'UPDATE_CONTRIBUTOR': {
+      const target = state.contributors.find((c) => c.id === action.id);
+      if (!target) return state;
+
+      const newValue =
+        action.field === 'pct'
+          ? action.value === ''
+            ? ''
+            : Number(action.value)
+          : action.value;
+
+      // No-op if value hasn't actually changed
+      if (target[action.field] === newValue) return state;
+
       const hasSigned = state.contributors.some((c) => c.status === 'signed');
       return {
         ...state,
@@ -89,12 +99,7 @@ export function contractBuilderReducer(
           }
           return {
             ...c,
-            [action.field]:
-              action.field === 'pct'
-                ? action.value === ''
-                  ? ''
-                  : Number(action.value)
-                : action.value,
+            [action.field]: newValue,
             ...(hasSigned && c.status === 'signed'
               ? { status: 'pending' as const, txHash: null, signedAt: null }
               : {}),
@@ -162,6 +167,7 @@ export function selectTotalPct(state: ContractBuilderState): number {
   return state.contributors.reduce((s, c) => s + (Number(c.pct) || 0), 0);
 }
 
+/** Valid when contribution percentages sum to exactly 100. */
 export function selectIsValid(state: ContractBuilderState): boolean {
   return selectTotalPct(state) === 100;
 }

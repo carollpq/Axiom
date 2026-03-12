@@ -1,4 +1,5 @@
-import { Client, AccountId, PrivateKey } from "@hashgraph/sdk";
+import { Client, AccountId, PrivateKey } from '@hashgraph/sdk';
+import { HEDERA_NETWORK } from './network';
 
 /** Parse a private key string — supports DER, ED25519 hex, and ECDSA hex. */
 function parsePrivateKey(keyStr: string): PrivateKey {
@@ -18,18 +19,17 @@ let _client: Client | null = null;
 export function getHederaClient(): Client {
   if (_client) return _client;
 
-  const network = process.env.HEDERA_NETWORK ?? "testnet";
   const operatorId = process.env.HEDERA_OPERATOR_ID;
   const operatorKey = process.env.HEDERA_OPERATOR_KEY;
 
   if (!operatorId || !operatorKey) {
     throw new Error(
-      "HEDERA_OPERATOR_ID and HEDERA_OPERATOR_KEY env vars must be set",
+      'HEDERA_OPERATOR_ID and HEDERA_OPERATOR_KEY env vars must be set',
     );
   }
 
   _client =
-    network === "mainnet" ? Client.forMainnet() : Client.forTestnet();
+    HEDERA_NETWORK === 'mainnet' ? Client.forMainnet() : Client.forTestnet();
 
   _client.setOperator(
     AccountId.fromString(operatorId),
