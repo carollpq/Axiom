@@ -1,7 +1,6 @@
 'use client';
 
-import { CurrentUserContributorRow } from './current-user-contributor-row.client';
-import { ExternalContributorRow } from './external-contributor-row.client';
+import { ContributorRow } from './contributor-row.client';
 import { PercentageBar } from './percentage-bar';
 import { SignatureProgress } from './signature-progress';
 import { AuthorSearch } from './author-search.client';
@@ -9,14 +8,7 @@ import { useContractContext } from '@/src/features/researcher/context/contract-c
 
 export function ContributorTable() {
   const { state, actions } = useContractContext();
-  const {
-    contributors,
-    totalPct,
-    isValid,
-    signedCount,
-    showAddRow,
-    currentUserWallet,
-  } = state;
+  const { contributors, totalPct, isValid, signedCount, showAddRow } = state;
 
   return (
     <div
@@ -78,18 +70,13 @@ export function ContributorTable() {
       </div>
 
       {/* Rows */}
-      {contributors.map((c, i) => {
-        const isLast = i === contributors.length - 1;
-        return c.wallet === currentUserWallet ? (
-          <CurrentUserContributorRow
-            key={c.id}
-            contributor={c}
-            isLast={isLast}
-          />
-        ) : (
-          <ExternalContributorRow key={c.id} contributor={c} isLast={isLast} />
-        );
-      })}
+      {contributors.map((c, i) => (
+        <ContributorRow
+          key={c.id}
+          contributor={c}
+          isLast={i === contributors.length - 1}
+        />
+      ))}
 
       {/* Add contributor */}
       {showAddRow ? (

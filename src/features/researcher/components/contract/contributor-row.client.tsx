@@ -3,16 +3,25 @@
 import type { Contributor } from '@/src/features/researcher/types/contract';
 import { useContractContext } from '@/src/features/researcher/context/contract-context.client';
 
-interface ExternalContributorRowProps {
+interface ContributorRowProps {
   contributor: Contributor;
   isLast: boolean;
 }
 
-export function ExternalContributorRow({
+const inputStyle = {
+  background: 'rgba(30,28,24,0.6)',
+  border: '1px solid rgba(120,110,95,0.2)',
+} as const;
+
+const creatorBadgeStyle = { background: 'rgba(180,160,120,0.15)' } as const;
+
+export function ContributorRow({
   contributor: c,
   isLast,
-}: ExternalContributorRowProps) {
+}: ContributorRowProps) {
   const { state, actions } = useContractContext();
+  const isCurrentUser = c.wallet === state.currentUserWallet;
+  const canSign = state.isValid && !state.disabled;
 
   return (
     <div
@@ -33,7 +42,7 @@ export function ExternalContributorRow({
           {c.isCreator && (
             <span
               className="text-[9px] text-[#c9b89e] px-1.5 py-px rounded-sm"
-              style={{ background: 'rgba(180,160,120,0.15)' }}
+              style={creatorBadgeStyle}
             >
               Creator
             </span>
@@ -53,10 +62,7 @@ export function ExternalContributorRow({
         onChange={(e) => actions.onUpdate(c.id, 'pct', e.target.value)}
         disabled={state.disabled}
         className="w-full py-1.5 px-2 rounded-sm text-[#d4ccc0] font-sans text-[13px] outline-none text-center box-border disabled:opacity-50 disabled:cursor-not-allowed"
-        style={{
-          background: 'rgba(30,28,24,0.6)',
-          border: '1px solid rgba(120,110,95,0.2)',
-        }}
+        style={inputStyle}
       />
 
       {/* Task */}
@@ -67,10 +73,7 @@ export function ExternalContributorRow({
         onChange={(e) => actions.onUpdate(c.id, 'role', e.target.value)}
         disabled={state.disabled}
         className="w-full py-1.5 px-2 rounded-sm text-[#b0a898] font-serif text-[13px] outline-none box-border disabled:opacity-50 disabled:cursor-not-allowed"
-        style={{
-          background: 'rgba(30,28,24,0.6)',
-          border: '1px solid rgba(120,110,95,0.2)',
-        }}
+        style={inputStyle}
       />
 
       {/* Signature status */}
@@ -90,6 +93,24 @@ export function ExternalContributorRow({
             <span className="text-[#d4645a] text-[13px]">{'\u2715'}</span>
             <span className="text-[11px] text-[#d4645a]">Declined</span>
           </div>
+        ) : isCurrentUser ? (
+          <button
+            onClick={() => actions.onSign(c.id)}
+            disabled={!canSign}
+            className="rounded-sm py-1 px-3 text-[11px] font-serif"
+            style={{
+              background: canSign
+                ? 'linear-gradient(135deg, rgba(180,160,120,0.25), rgba(160,140,100,0.15))'
+                : 'rgba(120,110,95,0.1)',
+              border:
+                '1px solid ' +
+                (canSign ? 'rgba(180,160,120,0.4)' : 'rgba(120,110,95,0.15)'),
+              color: canSign ? '#d4c8a8' : '#4a4238',
+              cursor: canSign ? 'pointer' : 'not-allowed',
+            }}
+          >
+            Sign
+          </button>
         ) : (
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] text-[#c4956a]">Pending</span>

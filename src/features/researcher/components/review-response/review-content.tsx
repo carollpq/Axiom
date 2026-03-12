@@ -1,3 +1,5 @@
+import { CriteriaBadge } from '@/src/shared/components/criteria-badge';
+
 export interface ReviewCriterion {
   id: string;
   label: string;
@@ -52,25 +54,7 @@ export function ReviewContent({
                 key={c.id}
                 className="flex gap-3 items-start mb-2 text-[12px]"
               >
-                <span
-                  className="shrink-0 px-2 py-0.5 rounded text-[10px] font-medium"
-                  style={{
-                    background:
-                      ev?.rating === 'Yes'
-                        ? 'rgba(143,188,143,0.2)'
-                        : ev?.rating === 'No'
-                          ? 'rgba(212,100,90,0.2)'
-                          : 'rgba(201,164,74,0.2)',
-                    color:
-                      ev?.rating === 'Yes'
-                        ? '#8fbc8f'
-                        : ev?.rating === 'No'
-                          ? '#d4645a'
-                          : '#c9a44a',
-                  }}
-                >
-                  {ev?.rating ?? '—'}
-                </span>
+                <CriteriaBadge rating={ev?.rating} />
                 <div>
                   <span className="text-[#b0a898]">{c.label}</span>
                   {ev?.comment && (

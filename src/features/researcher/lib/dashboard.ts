@@ -2,11 +2,9 @@ import type {
   SubmissionCard,
   SubmissionDisplayStatus,
   DashboardStats,
-  StatCardData,
 } from '@/src/features/researcher/types/dashboard';
 import type { DbPaperWithRelations } from '@/src/features/papers/queries';
 import { formatDate } from '@/src/shared/lib/format';
-import { Send, Clock, FileCheck, CheckCircle, XCircle } from 'lucide-react';
 
 /**
  * Derives a user-friendly submission status from the DB submission status,
@@ -124,29 +122,4 @@ export function computeStats(cards: SubmissionCard[]): DashboardStats {
       (c) => c.status === 'Rejected' || c.status === 'Desk Reject',
     ).length,
   };
-}
-
-/**
- * Converts DashboardStats to StatCardData array for rendering.
- */
-export function statsToCards(stats: DashboardStats): StatCardData[] {
-  return [
-    {
-      label: 'New Submissions',
-      value: String(stats.newSubmissions),
-      icon: Send,
-    },
-    { label: 'Under Review', value: String(stats.underReview), icon: Clock },
-    {
-      label: 'Reviews Pending',
-      value: String(stats.reviewsPending),
-      icon: FileCheck,
-    },
-    {
-      label: 'Accepted Papers',
-      value: String(stats.accepted),
-      icon: CheckCircle,
-    },
-    { label: 'Rejected Papers', value: String(stats.rejected), icon: XCircle },
-  ];
 }

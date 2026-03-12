@@ -2,22 +2,32 @@
 
 import { useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { SubmissionStage } from '@/src/features/editor/types';
 import { SubmissionCard } from './submission-card';
-
-export interface EditorCarouselCard {
-  id: string;
-  title: string;
-  authors: string;
-  submittedDate: string;
-  stage: SubmissionStage;
-}
+import type { CarouselCard } from './submission-card';
 
 interface Props {
-  cards: EditorCarouselCard[];
+  cards: CarouselCard[];
+  title?: string;
+  emptyMessage?: string;
 }
 
-export function SubmissionCarousel({ cards }: Props) {
+const chevronStyle = {
+  background: 'rgba(45,42,38,0.9)',
+  border: '1px solid rgba(120,110,95,0.3)',
+} as const;
+
+const emptyStyle = {
+  background: 'rgba(45,42,38,0.4)',
+  border: '1px solid rgba(120,110,95,0.15)',
+} as const;
+
+const scrollContainerStyle = { scrollbarWidth: 'none' } as const;
+
+export function SubmissionCarousel({
+  cards,
+  title,
+  emptyMessage = 'No submissions yet.',
+}: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: 'left' | 'right') => {
@@ -31,23 +41,21 @@ export function SubmissionCarousel({ cards }: Props) {
   if (cards.length === 0) {
     return (
       <div
-        className="rounded-md px-6 py-10 text-center text-[13px]"
-        style={{
-          backgroundColor: 'rgba(100,90,75,0.2)',
-          border: '1px solid rgba(180,160,130,0.4)',
-          color: '#8a8070',
-        }}
+        className="rounded-md px-6 py-10 text-center text-[13px] text-[#6a6050]"
+        style={emptyStyle}
       >
-        No submissions yet.
+        {emptyMessage}
       </div>
     );
   }
 
   return (
     <div>
-      <h3 className="text-lg font-bold mb-6" style={{ color: '#d4ccc0' }}>
-        Submission Pipeline
-      </h3>
+      {title && (
+        <h3 className="text-[14px] font-serif text-[#b0a898] mb-3 tracking-[1px]">
+          {title}
+        </h3>
+      )}
       <div className="relative">
         {cards.length > 3 && (
           <>
@@ -55,10 +63,7 @@ export function SubmissionCarousel({ cards }: Props) {
               type="button"
               onClick={() => scroll('left')}
               className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
-              style={{
-                backgroundColor: 'rgba(100,90,75,0.3)',
-                border: '1px solid rgba(180,160,130,0.4)',
-              }}
+              style={chevronStyle}
             >
               <ChevronLeft size={16} className="text-[#b0a898]" />
             </button>
@@ -66,10 +71,7 @@ export function SubmissionCarousel({ cards }: Props) {
               type="button"
               onClick={() => scroll('right')}
               className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
-              style={{
-                backgroundColor: 'rgba(100,90,75,0.3)',
-                border: '1px solid rgba(180,160,130,0.4)',
-              }}
+              style={chevronStyle}
             >
               <ChevronRight size={16} className="text-[#b0a898]" />
             </button>
@@ -78,16 +80,10 @@ export function SubmissionCarousel({ cards }: Props) {
         <div
           ref={scrollRef}
           className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide"
-          style={{ scrollbarWidth: 'none' }}
+          style={scrollContainerStyle}
         >
           {cards.map((card) => (
-            <SubmissionCard
-              key={card.id}
-              title={card.title}
-              authors={card.authors}
-              submittedDate={card.submittedDate}
-              stage={card.stage}
-            />
+            <SubmissionCard key={card.id} card={card} />
           ))}
         </div>
       </div>

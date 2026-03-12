@@ -32,12 +32,4 @@ export interface DashboardStats {
   rejected: number;
 }
 
-import type { LucideIcon } from 'lucide-react';
-
-export interface StatCardData {
-  label: string;
-  value: string;
-  icon: LucideIcon;
-}
-
 export type { NavItemData, UserProfile } from '@/src/shared/types/shared';

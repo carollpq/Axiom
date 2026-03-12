@@ -1,5 +1,3 @@
-'use client';
-
 import {
   URGENCY_LATE,
   URGENCY_WARNING,

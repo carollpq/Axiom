@@ -11,7 +11,7 @@ import {
   formatDaysLeft,
   SidebarField,
   TimelineRow,
-} from '@/src/features/reviewer/components/shared/sidebar-primitives.client';
+} from '@/src/shared/components/sidebar-primitives';
 
 interface InviteSidebarProps {
   paper: AssignedReviewExtended;
