@@ -4,6 +4,7 @@ import type {
   AssignedReviewExtended,
   CompletedReview,
   CompletedReviewExtended,
+  ResearcherInsight,
   ReviewerDisplayStatus,
   ReputationScores,
   ReputationBreakdownItem,
@@ -28,10 +29,12 @@ function resolveEditorName(
   return editorNames?.[wallet.toLowerCase()] ?? truncate(wallet);
 }
 
-function daysUntil(deadline: string | null): number {
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+function daysUntil(deadline: string | null | undefined): number {
   if (!deadline) return 0;
   const diff = new Date(deadline).getTime() - Date.now();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  return Math.ceil(diff / MS_PER_DAY);
 }
 
 export function extractAuthors(
@@ -252,4 +255,67 @@ export function mapDbToAssignedReviewExtended(
     pdfUrl,
     editorName,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Server-page helpers (moved from inline page logic)
+// ---------------------------------------------------------------------------
+
+/** Average days remaining across assignments that have a deadline. */
+export function computeAvgDaysToDeadline(
+  assignments: { deadline?: string | null }[],
+): number {
+  const withDeadlines = assignments.filter((a) => a.deadline);
+  if (withDeadlines.length === 0) return 0;
+  const totalDays = withDeadlines.reduce(
+    (sum, a) => sum + Math.max(0, daysUntil(a.deadline)),
+    0,
+  );
+  return Math.round((totalDays / withDeadlines.length) * 10) / 10;
+}
+
+/** Extract unique journal names from assigned + completed review rows. */
+export function extractJournalNames(
+  assigned: { submission: { journal?: { name?: string } | null } }[],
+  completed: { submission: { journal?: { name?: string } | null } }[],
+): string[] {
+  const names = new Set<string>();
+  for (const a of assigned) {
+    if (a.submission.journal?.name) names.add(a.submission.journal.name);
+  }
+  for (const c of completed) {
+    if (c.submission.journal?.name) names.add(c.submission.journal.name);
+  }
+  return Array.from(names);
+}
+
+/** Map reviewer ratings to ResearcherInsight items (only those with comments). */
+export function mapRatingsToInsights(
+  ratings: {
+    reviewId: string;
+    comment?: string | null;
+    overallRating: number;
+    createdAt: string;
+  }[],
+): ResearcherInsight[] {
+  return ratings
+    .filter(
+      (r): r is typeof r & { comment: string } =>
+        typeof r.comment === 'string' && r.comment.length > 0,
+    )
+    .map((r) => ({
+      reviewId: r.reviewId,
+      comment: r.comment,
+      overallRating: r.overallRating,
+      createdAt: r.createdAt,
+    }));
+}
+
+/** Extract editor wallet addresses from review rows for buildEditorNameMap. */
+export function extractEditorWallets(
+  rows: { submission: { journal?: { editorWallet?: string } | null } }[],
+): string[] {
+  return rows
+    .map((r) => r.submission.journal?.editorWallet)
+    .filter((w): w is string => !!w);
 }

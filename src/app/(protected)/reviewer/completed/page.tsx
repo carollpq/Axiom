@@ -3,16 +3,17 @@ import {
   listCompletedReviewsExtended,
   buildEditorNameMap,
 } from '@/src/features/reviewer/queries';
-import { mapDbToCompletedReviewExtended } from '@/src/features/reviewer/lib/dashboard';
+import {
+  mapDbToCompletedReviewExtended,
+  extractEditorWallets,
+} from '@/src/features/reviewer/lib/dashboard';
 import { CompletedPapersClient } from '@/src/features/reviewer/components/completed/completed-papers.client';
 
 export default async function CompletedPapersPage() {
   const wallet = (await getSession())!;
   const rawCompleted = await listCompletedReviewsExtended(wallet);
   const editorNames = await buildEditorNameMap(
-    rawCompleted
-      .map((a) => a.submission.journal?.editorWallet)
-      .filter((w): w is string => !!w),
+    extractEditorWallets(rawCompleted),
   );
 
   return (

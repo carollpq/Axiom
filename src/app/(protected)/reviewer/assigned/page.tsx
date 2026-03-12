@@ -3,15 +3,14 @@ import {
   listAssignedReviews,
   buildEditorNameMap,
 } from '@/src/features/reviewer/queries';
+import { extractEditorWallets } from '@/src/features/reviewer/lib/dashboard';
 import { PapersUnderReviewClient } from '@/src/features/reviewer/components/assigned/papers-under-review.client';
 
 export default async function PapersUnderReviewPage() {
   const wallet = (await getSession())!;
   const rawAssigned = await listAssignedReviews(wallet);
   const editorNames = await buildEditorNameMap(
-    rawAssigned
-      .map((a) => a.submission.journal?.editorWallet)
-      .filter((w): w is string => !!w),
+    extractEditorWallets(rawAssigned),
   );
 
   return (
