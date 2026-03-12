@@ -1,3 +1,6 @@
+// Pure mapping & utility functions for the editor feature.
+// All DB-to-display transforms live here so page.tsx files stay thin.
+
 import type {
   JournalSubmission,
   SubmissionStage,
@@ -92,6 +95,7 @@ export function deriveStage(
   return 'New';
 }
 
+/** Maps a DB submission row to the display-friendly JournalSubmission shape. */
 export function mapDbToJournalSubmission(
   s: DbJournalSubmission,
   index: number,
@@ -120,6 +124,7 @@ export function mapDbToJournalSubmission(
   };
 }
 
+/** Maps a DB reviewer + optional reputation score to a PoolReviewer display object. */
 export function mapDbToPoolReviewer(
   u: DbReviewer,
   scoreRow?: DbReputationScore | null,
@@ -176,6 +181,7 @@ export function buildReviewerPool(
   );
 }
 
+/** Creates a wallet→displayName lookup from a list of reviewer DB rows. */
 export function buildNameByWallet(
   reviewers: DbReviewer[],
 ): Record<string, string> {
@@ -224,6 +230,7 @@ export function mapDbToReviewerWithStatus(
   };
 }
 
+/** Maps a DB issue (with nested paper joins) to a display-friendly JournalIssue. */
 export function mapDbToJournalIssue(dbIssue: DbJournalIssue): JournalIssue {
   const papers = (dbIssue.papers ?? []).map((ip) => ({
     submissionId: ip.submissionId,
@@ -269,4 +276,55 @@ export function buildPoolReviewersWithStatus(
     institution: row.user?.institution ?? '—',
     poolInviteStatus: row.status as 'pending' | 'accepted' | 'rejected',
   }));
+}
+
+// ---------------------------------------------------------------------------
+// Shared helpers used across multiple editor page.tsx files
+// ---------------------------------------------------------------------------
+
+/** Builds a submissionId → ReviewerWithStatus[] map from submissions.
+ *  When `includeReviewContent` is true, attaches strengths/weaknesses/recommendation
+ *  from completed reviews (used on the accepted page). */
+export function buildReviewStatusMap(
+  submissions: DbJournalSubmission[],
+  nameByWallet: Record<string, string>,
+  options?: { includeReviewContent?: boolean },
+): Record<string, ReviewerWithStatus[]> {
+  const result: Record<string, ReviewerWithStatus[]> = {};
+
+  for (const s of submissions) {
+    if (!s.reviewAssignments?.length) continue;
+
+    // Pre-index review content by assignmentId when needed
+    const reviewByAssignment =
+      options?.includeReviewContent && s.reviews
+        ? Object.fromEntries(
+            s.reviews.map((rev) => [
+              rev.assignmentId,
+              {
+                strengths: rev.strengths,
+                weaknesses: rev.weaknesses,
+                recommendation: rev.recommendation,
+              },
+            ]),
+          )
+        : null;
+
+    result[s.id] = (
+      s.reviewAssignments as {
+        id: string;
+        reviewerWallet: string;
+        status: string;
+      }[]
+    ).map((a) => {
+      const mapped = mapDbToReviewerWithStatus(a, nameByWallet);
+      if (reviewByAssignment) {
+        const content = reviewByAssignment[a.id];
+        if (content) mapped.reviewContent = content;
+      }
+      return mapped;
+    });
+  }
+
+  return result;
 }

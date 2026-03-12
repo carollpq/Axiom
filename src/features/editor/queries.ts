@@ -1,5 +1,6 @@
 import { cache } from 'react';
 import { db } from '@/src/shared/lib/db';
+import { getSession } from '@/src/shared/lib/auth/auth';
 import {
   journals,
   submissions,
@@ -139,3 +140,10 @@ export type DbJournalIssue = Awaited<
 export type DbJournalReviewerWithStatus = Awaited<
   ReturnType<typeof listJournalReviewersWithStatus>
 >[number];
+
+/** Resolves session wallet + journal in one call. Shared across editor content pages. */
+export async function fetchEditorPageData() {
+  const wallet = (await getSession())!;
+  const journal = await getJournalByEditorWallet(wallet);
+  return { journal };
+}

@@ -1,3 +1,7 @@
+// Editor role guard + shell wrapper.
+// Validates the current user has the "editor" role before rendering children.
+// Redirects to the user's first available role dashboard (or login) on mismatch.
+
 import { redirect } from 'next/navigation';
 import { RoleShell } from '@/src/shared/components';
 import { getSession } from '@/src/shared/lib/auth/auth';
@@ -14,9 +18,7 @@ export default async function JournalLayout({
   const wallet = (await getSession())!;
   const user = await getUserByWallet(wallet);
 
-  // Validate user has editor role
   if (!user?.roles?.includes('editor')) {
-    // Redirect to first available role or login
     const fallbackRole = user?.roles?.[0];
     if (fallbackRole && fallbackRole in ROLE_DASHBOARD_ROUTES) {
       redirect(ROLE_DASHBOARD_ROUTES[fallbackRole]);

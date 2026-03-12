@@ -1,3 +1,7 @@
+// Editor dashboard page — shows aggregate stats and a recent-submissions carousel.
+// Server-fetches user profile, journal, and submissions, then hands off to the
+// client component for interactive stat cards and carousel navigation.
+
 import { Suspense } from 'react';
 import { getSession } from '@/src/shared/lib/auth/auth';
 import { getUserByWallet } from '@/src/features/users/queries';

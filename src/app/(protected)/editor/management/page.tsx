@@ -1,8 +1,10 @@
+// Journal management — settings, reviewer pool, and issue management.
+// Unlike content pages, this fetches journal-level data (aims/scope, criteria,
+// pool reviewers with invite status) rather than submission-level data.
+
 import { Suspense } from 'react';
 import { JournalManagement } from '@/src/features/editor/components/journal-management.client';
-import { getSession } from '@/src/shared/lib/auth/auth';
 import {
-  getJournalByEditorWallet,
   listReviewerPool,
   listReputationScores,
   listJournalIssues,
@@ -13,6 +15,7 @@ import {
   mapDbToJournalIssue,
   buildPoolReviewersWithStatus,
 } from '@/src/features/editor/lib/journal';
+import { fetchEditorPageData } from '@/src/features/editor/queries';
 import ManagementLoading from './loading';
 
 const DEFAULT_AIMS_AND_SCOPE =
@@ -22,8 +25,7 @@ const DEFAULT_SUBMISSION_CRITERIA =
   'Submissions must include reproducible methodology, accessible datasets, appropriate statistical analysis, and evidence-supported claims. All papers undergo double-blind peer review against pre-registered criteria published on-chain before review begins.';
 
 async function ManagementContent() {
-  const wallet = (await getSession())!;
-  const journal = await getJournalByEditorWallet(wallet);
+  const { journal } = await fetchEditorPageData();
 
   if (!journal) {
     return (
