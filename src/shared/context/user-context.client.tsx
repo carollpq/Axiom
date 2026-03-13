@@ -68,36 +68,36 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       if (!cancelled) setLoading(true);
     });
 
-    getCurrentUser()
-      .then((data) => {
-        if (!cancelled) {
+    // Retry with backoff — doLogin() cookie may not be committed yet when
+    // Thirdweb updates useActiveAccount().
+    const RETRY_DELAYS = [0, 300, 800, 1500];
+
+    async function fetchWithRetry() {
+      for (const delay of RETRY_DELAYS) {
+        if (cancelled) return;
+        if (delay > 0) await new Promise((r) => setTimeout(r, delay));
+        if (cancelled) return;
+        try {
+          const data = await getCurrentUser();
           if (data) {
-            setUser(data);
-            setLoading(false);
-          } else {
-            // Cookie may not be committed yet — retry once after a short delay
-            setTimeout(() => {
-              if (cancelled) return;
-              getCurrentUser()
-                .then((retryData) => {
-                  if (!cancelled) setUser(retryData);
-                })
-                .catch(() => {
-                  if (!cancelled) setUser(null);
-                })
-                .finally(() => {
-                  if (!cancelled) setLoading(false);
-                });
-            }, 500);
+            if (!cancelled) {
+              setUser(data);
+              setLoading(false);
+            }
+            return;
           }
+        } catch {
+          // continue to next retry
         }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setUser(null);
-          setLoading(false);
-        }
-      });
+      }
+      // All retries exhausted
+      if (!cancelled) {
+        setUser(null);
+        setLoading(false);
+      }
+    }
+
+    fetchWithRetry();
 
     return () => {
       cancelled = true;
