@@ -30,6 +30,22 @@ import { markDeadlineCompleted } from '@/src/shared/lib/hedera/timeline-enforcer
 // Submit Review
 // ---------------------------------------------------------------------------
 
+// TODO: Derive enum values from DB types to maintain a single source of truth
+const submitReviewSchema = z.object({
+  criteriaEvaluations: z.record(z.string(), z.unknown()),
+  strengths: z.string().max(10000),
+  weaknesses: z.string().max(10000),
+  questionsForAuthors: z.string().max(10000),
+  confidentialEditorComments: z.string().max(10000),
+  recommendation: z.enum([
+    'accept',
+    'minor_revision',
+    'major_revision',
+    'reject',
+  ]),
+  reviewHash: z.string(),
+});
+
 /** Creates review, marks assignment submitted, mints reputation token.
  *  Auto-transitions to `reviews_completed` when all active reviewers are done. */
 export async function submitReviewAction(
@@ -45,6 +61,7 @@ export async function submitReviewAction(
   },
 ) {
   const session = await requireSession();
+  submitReviewSchema.parse(input);
 
   const assignment = await getReviewAssignment(assignmentId, session);
   if (!assignment) {

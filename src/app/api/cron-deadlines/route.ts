@@ -14,13 +14,13 @@ import { ROUTES } from '@/src/shared/lib/routes';
 export const runtime = 'nodejs';
 
 export async function GET(req: NextRequest) {
-  // Verify cron secret if configured
+  // Fail closed: always require cron secret
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret) {
-    const auth = req.headers.get('authorization');
-    if (auth !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  if (
+    !cronSecret ||
+    req.headers.get('authorization') !== `Bearer ${cronSecret}`
+  ) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const overdue = await listOverdueAssignments();

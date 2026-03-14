@@ -60,7 +60,7 @@ const signSchema = z.object({
     .string()
     .regex(EVM_ADDRESS_REGEX, 'Invalid wallet address'),
   signature: z.string().regex(HEX_SIGNATURE_REGEX, 'Invalid signature format'),
-  contractHash: z.string().optional(),
+  contractHash: z.string(),
 });
 
 // ---------------------------------------------------------------------------
@@ -85,6 +85,7 @@ export async function addContributorAction(
 ) {
   const wallet = await requireSession();
   const parsed = addContributorSchema.parse(input);
+  await requireContractOwner(parsed.contractId, wallet);
 
   const contributor = await addContributor(parsed);
 
@@ -115,7 +116,8 @@ export async function removeContributorAction(
   contractId: string,
   contributorId: string,
 ) {
-  await requireSession();
+  const wallet = await requireSession();
+  await requireContractOwner(contractId, wallet);
 
   const deleted = await removeContributor(contractId, contributorId);
   if (!deleted) throw new Error('Contributor not found');
@@ -161,17 +163,15 @@ export async function signContractAction(input: z.infer<typeof signSchema>) {
     throw new Error('Session wallet does not match contributor wallet');
   }
 
-  if (contractHash) {
-    try {
-      const isValid = await verifyMessage({
-        address: contributorWallet as `0x${string}`,
-        message: contractHash,
-        signature: signature as `0x${string}`,
-      });
-      if (!isValid) throw new Error('Invalid signature');
-    } catch {
-      throw new Error('Invalid signature');
-    }
+  try {
+    const isValid = await verifyMessage({
+      address: contributorWallet as `0x${string}`,
+      message: contractHash,
+      signature: signature as `0x${string}`,
+    });
+    if (!isValid) throw new Error('Invalid signature');
+  } catch {
+    throw new Error('Invalid signature');
   }
 
   const result = await signContributor({

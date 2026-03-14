@@ -102,6 +102,12 @@ export async function respondToRebuttalAction(
 // Resolve Rebuttal
 // ---------------------------------------------------------------------------
 
+// TODO: Derive enum values from RebuttalResolutionDb type to maintain a single source of truth
+const resolveSchema = z.object({
+  resolution: z.enum(['upheld', 'rejected', 'partial']),
+  editorNotes: z.string().max(10000),
+});
+
 /** Editor resolves rebuttal. Upheld/overturned mints reputation tokens; partial skips minting. */
 export async function resolveRebuttalAction(
   rebuttalId: string,
@@ -109,6 +115,7 @@ export async function resolveRebuttalAction(
   editorNotes: string,
 ) {
   const session = await requireSession();
+  resolveSchema.parse({ resolution, editorNotes });
 
   const rebuttal = await requireRebuttalEditor(rebuttalId, session);
 

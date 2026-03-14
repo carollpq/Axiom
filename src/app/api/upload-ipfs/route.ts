@@ -33,9 +33,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid folder' }, { status: 400 });
   }
 
+  // File size limit: 50MB
+  const MAX_FILE_SIZE = 50 * 1024 * 1024;
+  if (file.size > MAX_FILE_SIZE) {
+    return NextResponse.json(
+      { error: 'File too large (max 50MB)' },
+      { status: 413 },
+    );
+  }
+
+  // Verify hash matches uploaded file (read once, reuse buffer for upload)
+  const arrayBuffer = await file.arrayBuffer();
+  const digest = await crypto.subtle.digest('SHA-256', arrayBuffer);
+  const computedHash = Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+  if (computedHash !== hash) {
+    return NextResponse.json({ error: 'Hash mismatch' }, { status: 400 });
+  }
+
   try {
     const fileName = `${folder}/${hash}`;
-    const cid = await uploadToIPFS(file, fileName);
+    const verified = new File([arrayBuffer], file.name, { type: file.type });
+    const cid = await uploadToIPFS(verified, fileName);
     return NextResponse.json({ cid });
   } catch (err) {
     console.error('[IPFS] Upload failed:', err);

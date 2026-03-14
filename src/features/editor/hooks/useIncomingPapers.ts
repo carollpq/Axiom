@@ -81,7 +81,6 @@ export function useIncomingPapers(
       await makeDecisionAction(selectedId, {
         decision: 'reject',
         comment: deskRejectComment,
-        allCriteriaMet: false,
       });
 
       // Success: remove paper from list, clear selection

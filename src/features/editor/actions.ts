@@ -20,6 +20,7 @@ import { eq } from 'drizzle-orm';
 
 /** Thin wrapper so client components can call the cached query. */
 export async function listJournalsAction() {
+  await requireSession();
   return listJournals();
 }
 

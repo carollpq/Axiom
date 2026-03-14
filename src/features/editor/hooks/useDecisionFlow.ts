@@ -61,7 +61,6 @@ export function useDecisionFlow({
       await makeDecisionAction(selectedId, {
         decision: decision as 'accept' | 'reject' | 'revise',
         comment: editorComment,
-        allCriteriaMet: allReviewsComplete,
       });
 
       onReleasedRef.current(selectedId);

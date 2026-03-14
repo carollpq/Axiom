@@ -71,6 +71,16 @@ export const listUserPapers = cache(async (walletAddress: string) => {
   });
 });
 
+// TODO: Consider extracting a generic requireOwner<T> helper shared with requireContractOwner
+/** Throws if wallet is not the paper owner. Uses the already-joined owner relation. */
+export async function requirePaperOwner(paperId: string, wallet: string) {
+  const paper = await getPaperById(paperId);
+  if (!paper) throw new Error('Paper not found');
+  if (paper.owner?.walletAddress?.toLowerCase() !== wallet.toLowerCase())
+    throw new Error('Forbidden');
+  return paper;
+}
+
 export async function getPaperById(id: string) {
   return (
     (await db.query.papers.findFirst({

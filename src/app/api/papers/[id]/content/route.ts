@@ -19,6 +19,19 @@ export async function GET(
     return NextResponse.json({ error: 'Paper not found' }, { status: 404 });
   }
 
+  // Authorization: owner or co-author only (paper.owner already joined by getPaperById)
+  const isOwner = paper.owner?.walletAddress?.toLowerCase() === session;
+  const isContributor =
+    paper.contracts?.some((c) =>
+      c.contributors?.some(
+        (contrib) => contrib.contributorWallet?.toLowerCase() === session,
+      ),
+    ) ?? false;
+
+  if (!isOwner && !isContributor) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   const latestVersion = paper.versions?.at(-1) ?? null;
   if (!latestVersion?.fileStorageKey) {
     return NextResponse.json(

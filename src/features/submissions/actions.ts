@@ -25,13 +25,18 @@ import {
   updateSubmissionTxId,
   updateAssignmentTimelineIndex,
 } from '@/src/features/submissions/mutations';
-import { listReviewAssignmentsForSubmission } from '@/src/features/reviews/queries';
+import {
+  listReviewAssignmentsForSubmission,
+  listReviewsForSubmission,
+  getPublishedCriteria,
+} from '@/src/features/reviews/queries';
 import {
   createNotification,
   notifyIfWallet,
 } from '@/src/features/notifications/mutations';
 import { openRebuttal } from '@/src/features/rebuttals/mutations';
 import { registerDeadline } from '@/src/shared/lib/hedera/timeline-enforcer';
+import { z } from 'zod';
 import type { ReviewCriterionInput } from '@/src/features/submissions/types';
 
 function daysFromNow(days: number): string {
@@ -113,16 +118,38 @@ export async function assignReviewersAction(
   const session = await requireSession();
   const submission = await requireSubmissionEditor(submissionId, session);
 
+  // State guard: only after criteria published
+  const validAssignStates: SubmissionStatusDb[] = [
+    'criteria_published',
+    'reviewers_assigned',
+  ];
+  if (!validAssignStates.includes(submission.status as SubmissionStatusDb)) {
+    throw new Error(
+      'Reviewers can only be assigned after criteria are published',
+    );
+  }
+
   if (!reviewerWallets || reviewerWallets.length === 0) {
     throw new Error('reviewerWallets is required');
   }
+
+  // Prevent duplicate assignments
+  const existing = await listReviewAssignmentsForSubmission(submissionId);
+  const existingWallets = new Set(
+    existing.map((a) => a.reviewerWallet.toLowerCase()),
+  );
+  const newWallets = reviewerWallets.filter(
+    (w) => !existingWallets.has(w.toLowerCase()),
+  );
+  if (newWallets.length === 0)
+    throw new Error('All reviewers are already assigned');
 
   const resolvedDeadlineDays =
     deadlineDays ?? submission.reviewDeadlineDays ?? 21;
   const deadline = daysFromNow(resolvedDeadlineDays);
 
   const created = await Promise.all(
-    reviewerWallets.map((wallet) =>
+    newWallets.map((wallet) =>
       createReviewAssignment({
         submissionId,
         reviewerWallet: wallet,
@@ -131,10 +158,8 @@ export async function assignReviewersAction(
     ),
   );
 
-  const [, allAssignments] = await Promise.all([
-    updateSubmissionStatus(submissionId, 'reviewers_assigned'),
-    listReviewAssignmentsForSubmission(submissionId),
-  ]);
+  await updateSubmissionStatus(submissionId, 'reviewers_assigned');
+  const allAssignments = [...existing, ...created.filter(Boolean)];
 
   const authorWallet = submission.paper?.owner?.walletAddress;
 
@@ -143,10 +168,10 @@ export async function assignReviewersAction(
       notifyIfWallet(authorWallet, {
         type: 'reviewers_assigned',
         title: 'Reviewers assigned',
-        body: `${reviewerWallets.length} reviewer(s) have been assigned to "${submission.paper.title}".`,
+        body: `${newWallets.length} reviewer(s) have been assigned to "${submission.paper.title}".`,
         link: ROUTES.researcher.root,
       }),
-      ...reviewerWallets.map((wallet) =>
+      ...newWallets.map((wallet) =>
         createNotification({
           userWallet: wallet,
           type: 'reviewers_assigned',
@@ -186,45 +211,83 @@ const STATUS_MAP: Record<Decision, SubmissionStatusDb> = {
   revise: 'revision_requested',
 };
 
+const decisionSchema = z.object({
+  decision: z.enum(['accept', 'reject', 'revise']),
+  comment: z.string(),
+});
+
 /** Reject + allCriteriaMet requires a public justification (anchored on-chain). */
 export async function makeDecisionAction(
   submissionId: string,
   input: {
     decision: Decision;
     comment: string;
-    allCriteriaMet: boolean;
   },
 ) {
   const session = await requireSession();
   const submission = await requireSubmissionEditor(submissionId, session);
 
-  if (!input.decision) {
-    throw new Error('Invalid decision');
+  // State guard: only after reviews are complete
+  const validDecisionStates: SubmissionStatusDb[] = [
+    'reviews_completed',
+    'rebuttal_open',
+    'under_review',
+  ];
+  if (!validDecisionStates.includes(submission.status as SubmissionStatusDb)) {
+    throw new Error('Decision can only be made after reviews are complete');
+  }
+
+  const validated = decisionSchema.parse(input);
+
+  // Server-side allCriteriaMet computation
+  const [reviewsList, publishedCriteria] = await Promise.all([
+    listReviewsForSubmission(submissionId),
+    getPublishedCriteria(submissionId),
+  ]);
+
+  // TODO: Extract allCriteriaMet computation to a shared helper (e.g. reviews/lib.ts)
+  // so it can be reused by future consumers (cron jobs, rebuttal resolution, etc.)
+  let allCriteriaMet = false;
+  if (publishedCriteria?.criteriaJson) {
+    const criteria = JSON.parse(publishedCriteria.criteriaJson) as Array<{
+      id: string;
+      required: boolean;
+    }>;
+    const requiredIds = criteria.filter((c) => c.required).map((c) => c.id);
+
+    allCriteriaMet = reviewsList.every((review) => {
+      if (!review.criteriaEvaluations) return false;
+      const evals = JSON.parse(review.criteriaEvaluations) as Record<
+        string,
+        { value: string }
+      >;
+      return requiredIds.every((id) => evals[id]?.value === 'yes');
+    });
   }
 
   if (
-    input.decision === 'reject' &&
-    input.allCriteriaMet &&
-    !input.comment?.trim()
+    validated.decision === 'reject' &&
+    allCriteriaMet &&
+    !validated.comment?.trim()
   ) {
     throw new Error(
       'A public justification comment is required when rejecting a paper that meets all criteria',
     );
   }
 
-  const newStatus = STATUS_MAP[input.decision];
+  const newStatus = STATUS_MAP[validated.decision];
 
   await updateSubmissionStatus(submissionId, newStatus, {
-    decision: input.decision,
-    decisionJustification: input.comment ?? null,
+    decision: validated.decision,
+    decisionJustification: validated.comment ?? null,
     decidedAt: new Date().toISOString(),
   });
 
   const authorWallet = submission.paper?.owner?.walletAddress;
   const decisionLabel =
-    input.decision === 'accept'
+    validated.decision === 'accept'
       ? 'accepted'
-      : input.decision === 'reject'
+      : validated.decision === 'reject'
         ? 'rejected'
         : 'revision requested';
 
@@ -233,11 +296,11 @@ export async function makeDecisionAction(
       anchorToHcs('HCS_TOPIC_DECISIONS', {
         type: 'editorial_decision',
         submissionId,
-        decision: input.decision,
-        allCriteriaMet: input.allCriteriaMet,
+        decision: validated.decision,
+        allCriteriaMet,
         publicJustification:
-          input.allCriteriaMet && input.decision === 'reject'
-            ? input.comment
+          allCriteriaMet && validated.decision === 'reject'
+            ? validated.comment
             : null,
         timestamp: new Date().toISOString(),
       }),
@@ -303,6 +366,10 @@ export async function acceptAssignmentAction(
   submissionId: string,
   action: 'accept' | 'decline',
 ) {
+  if (action !== 'accept' && action !== 'decline') {
+    throw new Error('Invalid action');
+  }
+
   const session = await requireSession();
 
   const assignment = await db.query.reviewAssignments.findFirst({
@@ -418,6 +485,10 @@ export async function authorResponseAction(
   submissionId: string,
   action: 'accept' | 'request_rebuttal',
 ) {
+  if (action !== 'accept' && action !== 'request_rebuttal') {
+    throw new Error('Invalid action');
+  }
+
   const session = await requireSession();
   const submission = await requireSubmissionAuthor(submissionId, session);
 

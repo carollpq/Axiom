@@ -6,12 +6,19 @@ import { cookies } from 'next/headers';
 
 export const AUTH_COOKIE = 'tw_auth_token';
 
+function getAuthPrivateKey(): string {
+  const key = process.env.AUTH_PRIVATE_KEY;
+  if (!key)
+    throw new Error('AUTH_PRIVATE_KEY environment variable is required');
+  return key;
+}
+
 export const auth = createAuth({
   domain: process.env.NEXT_PUBLIC_APP_DOMAIN ?? 'localhost:3000',
   client,
   adminAccount: privateKeyToAccount({
     client,
-    privateKey: process.env.AUTH_PRIVATE_KEY ?? '',
+    privateKey: getAuthPrivateKey(),
   }),
 });
 

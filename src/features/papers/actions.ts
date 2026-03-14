@@ -14,7 +14,7 @@ import {
   createSubmission,
   updateSubmissionHedera,
 } from '@/src/features/submissions/mutations';
-import { getPaperById } from '@/src/features/papers/queries';
+import { getPaperById, requirePaperOwner } from '@/src/features/papers/queries';
 import { getContractById } from '@/src/features/contracts/queries';
 import { getUserByWallet } from '@/src/features/users/queries';
 import { db } from '@/src/shared/lib/db';
@@ -95,7 +95,8 @@ export async function updatePaperAction(
   id: string,
   input: { title?: string; abstract?: string; status?: PaperStatusDb },
 ) {
-  await requireSession();
+  const wallet = await requireSession();
+  await requirePaperOwner(id, wallet);
 
   const updated = await updatePaper(id, input);
   if (!updated) throw new Error('Not found or no valid fields');
@@ -107,8 +108,9 @@ export async function updatePaperAction(
 export async function registerVersionAction(
   input: z.infer<typeof createVersionSchema>,
 ) {
-  await requireSession();
+  const wallet = await requireSession();
   const parsed = createVersionSchema.parse(input);
+  await requirePaperOwner(parsed.paperId, wallet);
 
   const version = await createPaperVersion(parsed);
   if (!version) throw new Error('Paper not found');
