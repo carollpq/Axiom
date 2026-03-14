@@ -1,21 +1,27 @@
-import { Suspense } from "react";
-import { UnderReviewClient } from "@/src/features/editor/components/under-review.client";
-import { getSession } from "@/src/shared/lib/auth/auth";
+// Under-review — server data fetch for active review pipeline.
+// Includes reviewer assignment statuses, author response tracking, and
+// rebuttal data for submissions in rebuttal_open status.
+
+import { Suspense } from 'react';
+import { UnderReviewClient } from '@/src/features/editor/components/under-review.client';
 import {
-  getJournalByEditorWallet,
   listJournalSubmissions,
   listReviewerPool,
   listReputationScores,
-} from "@/src/features/editor/queries";
-import { mapDbToPaperCardData, mapDbToReviewerWithStatus, buildReviewerPool, buildNameByWallet } from "@/src/features/editor/mappers/journal";
-import { getRebuttalBySubmission } from "@/src/features/rebuttals/queries";
-import type { ReviewerWithStatus } from "@/src/features/editor/types";
-import type { AuthorResponseStatusDb } from "@/src/shared/lib/db/schema";
-import UnderReviewLoading from "./loading";
+} from '@/src/features/editor/queries';
+import {
+  mapDbToPaperCardData,
+  buildReviewerPool,
+  buildNameByWallet,
+  buildReviewStatusMap,
+} from '@/src/features/editor/lib/journal';
+import { fetchEditorPageData } from '@/src/features/editor/queries';
+import { getRebuttalBySubmission } from '@/src/features/rebuttals/queries';
+import type { AuthorResponseStatusDb } from '@/src/shared/lib/db/schema';
+import UnderReviewLoading from './loading';
 
 async function UnderReviewContent() {
-  const wallet = (await getSession())!;
-  const journal = await getJournalByEditorWallet(wallet);
+  const { journal } = await fetchEditorPageData();
 
   if (!journal) {
     return (
@@ -36,40 +42,51 @@ async function UnderReviewContent() {
 
   const nameByWallet = buildNameByWallet(reviewers);
 
+  // Submissions actively in the review pipeline (assigned through rebuttal)
   const underReviewSubs = allSubs.filter(
-    s => s.status === "reviewers_assigned" || s.status === "under_review" || s.status === "reviews_completed" || s.status === "rebuttal_open",
+    (s) =>
+      s.status === 'reviewers_assigned' ||
+      s.status === 'under_review' ||
+      s.status === 'reviews_completed' ||
+      s.status === 'rebuttal_open',
   );
 
   const papers = underReviewSubs.map(mapDbToPaperCardData);
   const reviewerPool = buildReviewerPool(reviewers, scores);
+  const reviewStatuses = buildReviewStatusMap(underReviewSubs, nameByWallet);
 
-  const reviewStatuses: Record<string, ReviewerWithStatus[]> = {};
-  const authorResponseStatuses: Record<string, AuthorResponseStatusDb | null> = {};
+  // Track whether each author has responded to completed reviews
+  const authorResponseStatuses: Record<string, AuthorResponseStatusDb | null> =
+    {};
   for (const s of underReviewSubs) {
-    if (s.reviewAssignments && s.reviewAssignments.length > 0) {
-      reviewStatuses[s.id] = (s.reviewAssignments as { id: string; reviewerWallet: string; status: string }[])
-        .map(a => mapDbToReviewerWithStatus(a, nameByWallet));
-    }
-    authorResponseStatuses[s.id] = (s.authorResponseStatus as AuthorResponseStatusDb | null) ?? null;
+    authorResponseStatuses[s.id] =
+      (s.authorResponseStatus as AuthorResponseStatusDb | null) ?? null;
   }
 
   // Fetch rebuttal data for submissions in rebuttal_open status (in parallel)
   const rebuttalEntries = await Promise.all(
     underReviewSubs
-      .filter(s => s.status === "rebuttal_open")
+      .filter((s) => s.status === 'rebuttal_open')
       .map(async (s) => {
         const rebuttal = await getRebuttalBySubmission(s.id);
         if (!rebuttal) return null;
-        return [s.id, {
-          id: rebuttal.id,
-          submissionId: rebuttal.submissionId,
-          status: rebuttal.status as "open" | "submitted" | "under_review" | "resolved",
-          responses: rebuttal.responses.map(r => ({
-            reviewId: r.reviewId,
-            position: r.position as "agree" | "disagree",
-            justification: r.justification,
-          })),
-        }] as const;
+        return [
+          s.id,
+          {
+            id: rebuttal.id,
+            submissionId: rebuttal.submissionId,
+            status: rebuttal.status as
+              | 'open'
+              | 'submitted'
+              | 'under_review'
+              | 'resolved',
+            responses: rebuttal.responses.map((r) => ({
+              reviewId: r.reviewId,
+              position: r.position as 'agree' | 'disagree',
+              justification: r.justification,
+            })),
+          },
+        ] as const;
       }),
   );
   const rebuttalsBySubmission = Object.fromEntries(

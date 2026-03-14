@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { DashboardGridLayout } from '@/src/shared/components/DashboardGridLayout';
-import { ProfileCard } from '@/src/shared/components/ProfileCard';
+import { DashboardGridLayout } from '@/src/shared/components/dashboard-grid-layout';
+import { ProfileCard } from '@/src/shared/components/profile-card';
 import type {
   AssignedReview,
   CompletedReview,
@@ -10,9 +10,9 @@ import type {
   ReputationBreakdownItem,
   UserProfile,
   ResearcherInsight,
-} from '@/src/features/reviewer/types';
-import { PerformanceMetrics } from '../../reviewer-dashboard/PerformanceMetrics';
-import { ResearchersInsights } from '../../reviewer-dashboard/ResearchersInsights';
+} from '@/src/features/reviewer/types/dashboard';
+import { PerformanceMetrics } from '../../reviewer-dashboard/performance-metrics';
+import { ResearchersInsights } from '../../reviewer-dashboard/researchers-insights';
 
 const DEFAULT_REPUTATION_SCORES: ReputationScores = {
   overall: 4.4,
@@ -54,7 +54,7 @@ export function ReviewerDashboardClient({
 
   const handleCopyLink = async () => {
     if (!userProfile?.walletAddress) return;
-    const url = `${window.location.origin}/verify?reviewer=${userProfile.walletAddress}`;
+    const url = `${window.location.origin}/api/reviewer-reputation?wallet=${userProfile.walletAddress}`;
     await navigator.clipboard.writeText(url);
     setCopied(true);
   };

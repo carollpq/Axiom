@@ -3,8 +3,8 @@ import { RoleShell } from '@/src/shared/components';
 import { getSession } from '@/src/shared/lib/auth/auth';
 import { getUserByWallet } from '@/src/features/users/queries';
 import { reviewerNavItems } from '@/src/features/reviewer/nav';
-import { buildUserProfile } from '@/src/shared/lib/format';
-import { ROLE_DASHBOARD_ROUTES } from '@/src/shared/lib/routes';
+import { buildUserProfile } from '@/src/features/users/lib';
+import { ROUTES, ROLE_DASHBOARD_ROUTES } from '@/src/shared/lib/routes';
 
 export default async function ReviewerLayout({
   children,
@@ -21,7 +21,7 @@ export default async function ReviewerLayout({
     if (fallbackRole && fallbackRole in ROLE_DASHBOARD_ROUTES) {
       redirect(ROLE_DASHBOARD_ROUTES[fallbackRole]);
     }
-    redirect('/login');
+    redirect(ROUTES.login);
   }
 
   const profile = buildUserProfile(wallet, user, 'reviewer');

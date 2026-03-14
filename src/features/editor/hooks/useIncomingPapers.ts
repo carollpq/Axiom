@@ -4,8 +4,14 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useSelection } from '@/src/shared/hooks/useSelection';
+import {
+  markViewedAction,
+  assignReviewersAction,
+  makeDecisionAction,
+} from '@/src/features/submissions/actions';
 import type { PaperCardData, PoolReviewer } from '@/src/features/editor/types';
 
+/** Manages incoming papers: auto-marks viewed on selection, reviewer assignment, and desk reject. */
 export function useIncomingPapers(
   initialPapers: PaperCardData[],
   initialReviewerPool: PoolReviewer[],
@@ -30,9 +36,7 @@ export function useIncomingPapers(
   useEffect(() => {
     if (!selectedId || viewedRef.current.has(selectedId)) return;
     viewedRef.current.add(selectedId);
-    fetch(`/api/submissions/${selectedId}/view`, { method: 'POST' }).catch(
-      () => {},
-    );
+    markViewedAction(selectedId).catch(() => {});
   }, [selectedId]);
 
   function assignReviewer(id: string) {
@@ -53,25 +57,9 @@ export function useIncomingPapers(
     });
 
     try {
-      const response = await fetch(
-        `/api/submissions/${selectedId}/assign-reviewer`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ reviewerWallets, deadlineDays: timelineDays }),
-        },
-      );
-
-      if (!response.ok) {
-        const err = await response
-          .json()
-          .catch(() => ({ error: 'Unknown error' }));
-        console.error('[sendInvites] API error:', err);
-        toast.error(err.error || 'Failed to send invites');
-      } else {
-        setAssignedIds([]);
-        toast.success('Reviewer invites sent');
-      }
+      await assignReviewersAction(selectedId, reviewerWallets, timelineDays);
+      setAssignedIds([]);
+      toast.success('Reviewer invites sent');
     } catch (err) {
       console.error('[sendInvites] Unexpected error:', err);
       toast.error('Failed to send invites');
@@ -90,23 +78,10 @@ export function useIncomingPapers(
     setIsDeskRejecting(true);
 
     try {
-      const response = await fetch(`/api/submissions/${selectedId}/decision`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          decision: 'reject',
-          comment: deskRejectComment,
-          allCriteriaMet: false,
-        }),
+      await makeDecisionAction(selectedId, {
+        decision: 'reject',
+        comment: deskRejectComment,
       });
-
-      if (!response.ok) {
-        const err = await response
-          .json()
-          .catch(() => ({ error: 'Unknown error' }));
-        console.error('[deskReject] API error:', err);
-        return false;
-      }
 
       // Success: remove paper from list, clear selection
       const rejectedId = selectedId;

@@ -1,30 +1,20 @@
-import { redirect } from "next/navigation";
-import { getSession } from "@/src/shared/lib/auth/auth";
-import { getUserRoles } from "@/src/features/users/queries";
+import { redirect } from 'next/navigation';
+import { getSession } from '@/src/shared/lib/auth/auth';
+import { getUserByWallet } from '@/src/features/users/queries';
+import { ROUTES, ROLE_DASHBOARD_ROUTES } from '@/src/shared/lib/routes';
 
 export default async function RootPage() {
   const wallet = await getSession();
 
   if (!wallet) {
-    redirect("/login");
+    redirect(ROUTES.login);
   }
 
-  const roles = await getUserRoles(wallet);
+  const user = await getUserByWallet(wallet);
 
-  if (roles.length === 0) {
-    redirect("/onboarding");
+  if (!user?.roles?.length) {
+    redirect(ROUTES.register);
   }
 
-  const primaryRole = roles[0];
-
-  if (primaryRole === "reviewer") {
-    redirect("/reviewer");
-  }
-
-  if (primaryRole === "editor" || primaryRole === "journal") {
-    redirect("/editor");
-  }
-
-  // Default: researcher / author
-  redirect("/researcher");
+  redirect(ROLE_DASHBOARD_ROUTES[user.roles[0]] ?? ROUTES.researcher.root);
 }

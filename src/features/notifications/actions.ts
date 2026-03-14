@@ -1,49 +1,31 @@
-import { db } from "@/src/shared/lib/db";
-import { notifications } from "@/src/shared/lib/db/schema";
-import { eq, and } from "drizzle-orm";
-import type { NotificationTypeDb } from "@/src/shared/lib/db/schema";
+'use server';
 
-export interface CreateNotificationInput {
-  userWallet: string;
-  type: NotificationTypeDb;
-  title: string;
-  body: string;
-  link?: string;
+import { requireSession } from '@/src/shared/lib/auth/auth';
+import {
+  listNotifications,
+  countUnread,
+} from '@/src/features/notifications/queries';
+import {
+  markAsRead,
+  markAllAsRead,
+} from '@/src/features/notifications/mutations';
+
+export async function getNotificationsAction() {
+  const wallet = await requireSession();
+  const [items, unreadCount] = await Promise.all([
+    listNotifications(wallet),
+    countUnread(wallet),
+  ]);
+  return { items, unreadCount };
 }
 
-export async function createNotification(input: CreateNotificationInput) {
-  return (
-    await db
-      .insert(notifications)
-      .values({
-        userWallet: input.userWallet.toLowerCase(),
-        type: input.type,
-        title: input.title,
-        body: input.body,
-        link: input.link ?? null,
-      })
-      .returning()
-  )[0] ?? null;
+export async function markNotificationReadAction(id: string) {
+  const wallet = await requireSession();
+  const updated = await markAsRead(id, wallet);
+  if (!updated) throw new Error('Not found');
 }
 
-export async function markAsRead(id: string, userWallet: string) {
-  return (
-    await db
-      .update(notifications)
-      .set({ isRead: true })
-      .where(
-        and(
-          eq(notifications.id, id),
-          eq(notifications.userWallet, userWallet.toLowerCase()),
-        ),
-      )
-      .returning()
-  )[0] ?? null;
-}
-
-export async function markAllAsRead(userWallet: string) {
-  return db
-    .update(notifications)
-    .set({ isRead: true })
-    .where(eq(notifications.userWallet, userWallet.toLowerCase()));
+export async function markAllNotificationsReadAction() {
+  const wallet = await requireSession();
+  await markAllAsRead(wallet);
 }

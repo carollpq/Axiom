@@ -1,16 +1,18 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { toast } from 'sonner';
-import { ThreeColumnLayout } from '@/src/shared/components/ThreeColumnLayout';
-import { DynamicPdfViewer as PdfViewer } from '@/src/shared/components/DynamicPdfViewer';
-import { PaperList } from '@/src/shared/components/PaperList';
-import { useAcceptedPapers } from '@/src/features/editor/hooks/useAcceptedPapers';
+import { ThreeColumnLayout } from '@/src/shared/components/three-column-layout';
+import { DynamicPdfViewer as PdfViewer } from '@/src/shared/components/dynamic-pdf-viewer.client';
+import { PaperList } from '@/src/shared/components/paper-list.client';
+import { useSelection } from '@/src/shared/hooks/useSelection';
 import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
 import { useDecryptPaper } from '@/src/shared/hooks/useDecryptPaper';
-import { SelectionPlaceholder } from '@/src/shared/components/SelectionPlaceholder';
+import { SelectionPlaceholder } from '@/src/shared/components/selection-placeholder';
+import { addPaperToIssueAction } from '@/src/features/editor/actions';
+import { getErrorMessage } from '@/src/shared/lib/errors';
 import type {
   PaperCardData,
   ReviewerWithStatus,
@@ -19,7 +21,7 @@ import type {
 
 const ReviewCommentsPanel = dynamic(
   () =>
-    import('./sidebar/ReviewCommentsPanel').then((m) => ({
+    import('./sidebar/review-comments-panel').then((m) => ({
       default: m.ReviewCommentsPanel,
     })),
   {
@@ -30,7 +32,7 @@ const ReviewCommentsPanel = dynamic(
 );
 const AddToIssuePanel = dynamic(
   () =>
-    import('./sidebar/AddToIssuePanel').then((m) => ({
+    import('./sidebar/add-to-issue-panel.client').then((m) => ({
       default: m.AddToIssuePanel,
     })),
   {
@@ -55,14 +57,12 @@ export function AcceptedPapersClient({
 }: AcceptedPapersProps) {
   useCollapseSidebar();
   const router = useRouter();
-  const {
-    selectedId,
-    setSelectedId,
-    selected,
-    currentReviewers,
-    selectedIssue,
-    setSelectedIssue,
-  } = useAcceptedPapers(papers, reviewStatuses);
+  const { selectedId, setSelectedId, selected } = useSelection(papers);
+  const [selectedIssue, setSelectedIssue] = useState('');
+  const currentReviewers = useMemo(
+    () => (selectedId ? (reviewStatuses[selectedId] ?? []) : []),
+    [selectedId, reviewStatuses],
+  );
 
   const { fileUrl: decryptedUrl } = useDecryptPaper(
     selected?.hasLitData ? selected.paperId : null,
@@ -73,25 +73,11 @@ export function AcceptedPapersClient({
     async (issueId: string) => {
       if (!selectedId) return;
       try {
-        const res = await fetch(
-          `/api/journals/${journalId}/issues/${issueId}/papers`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ submissionId: selectedId }),
-          },
-        );
-        if (!res.ok) {
-          const err = await res
-            .json()
-            .catch(() => ({ error: 'Unknown error' }));
-          throw new Error(err.error || 'Failed to assign paper');
-        }
+        await addPaperToIssueAction(journalId, issueId, selectedId);
         toast.success('Paper assigned to issue');
         router.refresh();
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Failed to assign paper';
+        const message = getErrorMessage(err, 'Failed to assign paper');
         toast.error(message);
       }
     },

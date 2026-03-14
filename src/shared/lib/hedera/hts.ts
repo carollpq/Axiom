@@ -1,5 +1,6 @@
-import { TokenMintTransaction, TokenId } from "@hashgraph/sdk";
-import { getHederaClient } from "./client";
+import { TokenMintTransaction, TokenId } from '@hashgraph/sdk';
+import { getHederaClient } from './client';
+import { canonicalJson } from '@/src/shared/lib/hashing';
 
 export interface MintResult {
   serial: string;
@@ -16,7 +17,9 @@ export async function mintReputationToken(
   metadata: Record<string, unknown>,
 ): Promise<MintResult | null> {
   if (!process.env.HTS_REPUTATION_TOKEN_ID) {
-    console.warn("[HTS] HTS_REPUTATION_TOKEN_ID not set — skipping reputation token mint");
+    console.warn(
+      '[HTS] HTS_REPUTATION_TOKEN_ID not set — skipping reputation token mint',
+    );
     return null;
   }
 
@@ -25,7 +28,10 @@ export async function mintReputationToken(
     const tokenId = TokenId.fromString(process.env.HTS_REPUTATION_TOKEN_ID);
 
     const metadataBytes = Buffer.from(
-      JSON.stringify({ reviewerWallet: reviewerWallet.toLowerCase(), ...metadata }),
+      canonicalJson({
+        reviewerWallet: reviewerWallet.toLowerCase(),
+        ...metadata,
+      }),
     );
 
     const mintTx = await new TokenMintTransaction()
@@ -35,12 +41,12 @@ export async function mintReputationToken(
 
     const receipt = await mintTx.getReceipt(client);
     const serials = receipt.serials;
-    const serial = serials.length > 0 ? serials[0].toString() : "0";
+    const serial = serials.length > 0 ? serials[0].toString() : '0';
     const txId = mintTx.transactionId.toString();
 
     return { serial, txId };
   } catch (err) {
-    console.error("[HTS] Reputation token mint failed:", err);
+    console.error('[HTS] Reputation token mint failed:', err);
     return null;
   }
 }

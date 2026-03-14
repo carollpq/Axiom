@@ -1,34 +1,48 @@
-export const runtime = "nodejs";
+export const runtime = 'nodejs';
 
-import { NextRequest, NextResponse } from "next/server";
-import { getPaperById } from "@/src/features/papers/queries";
-import { getFileFromIPFS, isStorageConfigured } from "@/src/shared/lib/storage";
-import { requireSession } from "@/src/shared/lib/api-helpers";
+import { NextRequest, NextResponse } from 'next/server';
+import { getPaperById } from '@/src/features/papers/queries';
+import { getFileFromIPFS, isStorageConfigured } from '@/src/shared/lib/pinata';
+import { getSession } from '@/src/shared/lib/auth/auth';
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await requireSession();
-  if (session instanceof NextResponse) return session;
+  const session = await getSession();
+  if (!session)
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = await params;
   const paper = await getPaperById(id);
   if (!paper) {
-    return NextResponse.json({ error: "Paper not found" }, { status: 404 });
+    return NextResponse.json({ error: 'Paper not found' }, { status: 404 });
+  }
+
+  // Authorization: owner or co-author only (paper.owner already joined by getPaperById)
+  const isOwner = paper.owner?.walletAddress?.toLowerCase() === session;
+  const isContributor =
+    paper.contracts?.some((c) =>
+      c.contributors?.some(
+        (contrib) => contrib.contributorWallet?.toLowerCase() === session,
+      ),
+    ) ?? false;
+
+  if (!isOwner && !isContributor) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const latestVersion = paper.versions?.at(-1) ?? null;
   if (!latestVersion?.fileStorageKey) {
     return NextResponse.json(
-      { error: "No file uploaded for this paper" },
+      { error: 'No file uploaded for this paper' },
       { status: 404 },
     );
   }
 
   if (!isStorageConfigured()) {
     return NextResponse.json(
-      { error: "Storage not available" },
+      { error: 'Storage not available' },
       { status: 503 },
     );
   }
@@ -36,18 +50,18 @@ export async function GET(
   const buffer = await getFileFromIPFS(latestVersion.fileStorageKey);
 
   // Return raw PDF bytes when requested (for non-Lit-encrypted viewing)
-  if (req.nextUrl.searchParams.get("format") === "raw") {
+  if (req.nextUrl.searchParams.get('format') === 'raw') {
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": "inline",
-        "Cache-Control": "private, max-age=300",
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'inline',
+        'Cache-Control': 'private, max-age=300',
       },
     });
   }
 
   return NextResponse.json({
-    ciphertext: buffer.toString("base64"),
+    ciphertext: buffer.toString('base64'),
     dataToEncryptHash: paper.litDataToEncryptHash ?? null,
     accessConditionsJson: paper.litAccessConditionsJson ?? null,
   });

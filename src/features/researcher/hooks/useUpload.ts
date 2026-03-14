@@ -2,12 +2,16 @@
 
 import { useReducer, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
-import { useCurrentUser } from '@/src/shared/hooks/useCurrentUser';
-import { fetchApi } from '@/src/shared/lib/api';
-import { hashFile } from '@/src/shared/lib/hashing';
+import { useUser } from '@/src/shared/context/user-context.client';
+import { sha256 } from '@/src/shared/lib/hashing';
+import { getErrorMessage } from '@/src/shared/lib/errors';
 import { isLitConfigured } from '@/src/shared/lib/lit/config';
-import { uploadToIPFS } from '@/src/shared/lib/upload';
-import type { ApiPaperVersion } from '@/src/shared/types/api';
+import { uploadToIPFS } from '@/src/features/researcher/upload';
+import {
+  createPaperAction,
+  registerVersionAction,
+  updatePaperAction,
+} from '@/src/features/papers/actions';
 import {
   uploadReducer,
   initialUploadState,
@@ -15,6 +19,7 @@ import {
 } from '@/src/features/researcher/reducers/upload';
 import type { StudyTypeDb } from '@/src/shared/lib/db/schema';
 
+/** Lit-encrypts the file if configured; otherwise passes through unchanged. */
 async function encryptFileIfConfigured(
   file: File,
   fileHash: string,
@@ -50,7 +55,7 @@ async function encryptFileIfConfigured(
     const encryptedFile = new File([encrypted.ciphertext], file.name + '.enc', {
       type: 'application/octet-stream',
     });
-    const uploadHash = await hashFile(encryptedFile);
+    const uploadHash = await sha256(encryptedFile);
     return {
       fileToUpload: encryptedFile,
       uploadHash,
@@ -70,10 +75,11 @@ async function encryptFileIfConfigured(
 
 export type UseUploadReturn = ReturnType<typeof useUpload>;
 
+/** Manages paper registration: file hashing, optional Lit encryption, IPFS upload, and DB creation. */
 export function useUpload(
   onRegistered?: (paperId: string, title: string) => void,
 ) {
-  const { user, isConnected, account } = useCurrentUser();
+  const { user, isConnected, account } = useUser();
   const [state, dispatch] = useReducer(uploadReducer, initialUploadState);
   const uploadedFileRef = useRef<File | null>(null);
 
@@ -81,7 +87,7 @@ export function useUpload(
     dispatch({ type: 'FILE_UPLOAD_START', fileName: file.name });
     uploadedFileRef.current = file;
     try {
-      const hash = await hashFile(file);
+      const hash = await sha256(file);
       dispatch({ type: 'FILE_UPLOAD_COMPLETE', fileHash: hash });
     } catch {
       dispatch({ type: 'FILE_UPLOAD_ERROR' });
@@ -129,41 +135,32 @@ export function useUpload(
         'papers',
       );
 
-      const paper = await fetchApi<{ id: string }>('/api/papers', {
-        method: 'POST',
-        body: JSON.stringify({
-          title: state.title,
-          abstract: state.abstract,
-          studyType: state.studyType,
-          litDataToEncryptHash,
-          litAccessConditionsJson,
-        }),
+      const paper = await createPaperAction({
+        title: state.title,
+        abstract: state.abstract,
+        studyType: state.studyType,
+        litDataToEncryptHash,
+        litAccessConditionsJson,
       });
 
-      await fetchApi<ApiPaperVersion>(`/api/papers/${paper.id}/versions`, {
-        method: 'POST',
-        body: JSON.stringify({
-          paperHash: state.fileHash,
-          fileStorageKey,
-          datasetHash: null,
-          codeRepoUrl: null,
-          codeCommitHash: null,
-          envSpecHash: null,
-        }),
+      await registerVersionAction({
+        paperId: paper.id,
+        paperHash: state.fileHash,
+        fileStorageKey,
+        datasetHash: null,
+        codeRepoUrl: null,
+        codeCommitHash: null,
+        envSpecHash: null,
       });
 
-      await fetchApi(`/api/papers/${paper.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: 'registered' }),
-      });
+      await updatePaperAction(paper.id, { status: 'registered' });
 
       dispatch({ type: 'REGISTER_SUCCESS', paperId: paper.id });
       toast.success('Paper registered successfully');
       onRegistered?.(paper.id, state.title);
     } catch (err) {
       console.error('Registration failed:', err);
-      const message =
-        err instanceof Error ? err.message : 'Registration failed';
+      const message = getErrorMessage(err, 'Registration failed');
       dispatch({ type: 'REGISTER_ERROR', error: message });
       toast.error(message);
     }

@@ -1,87 +1,176 @@
-import { db } from "@/src/shared/lib/db";
-import { rebuttals, rebuttalResponses } from "@/src/shared/lib/db/schema";
-import { eq } from "drizzle-orm";
-import type { RebuttalResolutionDb, RebuttalPositionDb } from "@/src/shared/lib/db/schema";
+'use server';
 
-export interface OpenRebuttalInput {
-  submissionId: string;
-  authorWallet: string;
-  deadline: string;
-  hederaTxId?: string;
-}
+import { z } from 'zod';
+import { after } from 'next/server';
+import type {
+  RebuttalPositionDb,
+  RebuttalResolutionDb,
+} from '@/src/shared/lib/db/schema';
+import { canonicalJson, sha256 } from '@/src/shared/lib/hashing';
+import { requireSession } from '@/src/shared/lib/auth/auth';
+import { anchorToHcs } from '@/src/shared/lib/hedera/hcs';
+import {
+  requireRebuttalAuthor,
+  requireRebuttalEditor,
+} from '@/src/features/rebuttals/queries';
+import { recordReputation } from '@/src/features/reviews/mutations';
+import { notifyIfWallet } from '@/src/features/notifications/mutations';
+import { ROUTES } from '@/src/shared/lib/routes';
+import {
+  submitRebuttalResponses,
+  resolveRebuttal,
+  updateRebuttalHedera,
+} from '@/src/features/rebuttals/mutations';
 
-export async function openRebuttal(input: OpenRebuttalInput) {
-  return (
-    await db
-      .insert(rebuttals)
-      .values({
-        submissionId: input.submissionId,
-        authorWallet: input.authorWallet.toLowerCase(),
-        deadline: input.deadline,
-        hederaTxId: input.hederaTxId ?? null,
-      })
-      .returning()
-  )[0] ?? null;
-}
+// ---------------------------------------------------------------------------
+// Respond to Rebuttal
+// ---------------------------------------------------------------------------
 
-export interface RebuttalResponseInput {
-  rebuttalId: string;
-  reviewId: string;
-  criterionId?: string;
-  position: RebuttalPositionDb;
-  justification: string;
-  evidence?: string;
-}
+const respondSchema = z.object({
+  responses: z
+    .array(
+      z.object({
+        reviewId: z.string().min(1),
+        criterionId: z.string().nullish(),
+        position: z.enum(['agree', 'disagree'] as [
+          RebuttalPositionDb,
+          ...RebuttalPositionDb[],
+        ]),
+        justification: z.string().trim().min(10).max(10_000),
+        evidence: z.string().trim().max(10_000).nullish(),
+      }),
+    )
+    .min(1)
+    .max(50),
+});
 
-export async function submitRebuttalResponses(
+/** Author submits per-review agree/disagree responses. Validates deadline hasn't passed. */
+export async function respondToRebuttalAction(
   rebuttalId: string,
-  responses: RebuttalResponseInput[],
-  rebuttalHash: string,
-  hederaTxId?: string,
+  input: z.infer<typeof respondSchema>,
 ) {
-  const rows = responses.map((r) => ({
-    rebuttalId: r.rebuttalId,
-    reviewId: r.reviewId,
-    criterionId: r.criterionId ?? null,
-    position: r.position,
-    justification: r.justification,
-    evidence: r.evidence ?? null,
+  const session = await requireSession();
+
+  const rebuttal = await requireRebuttalAuthor(rebuttalId, session);
+
+  if (rebuttal.status !== 'open') {
+    throw new Error('Rebuttal is not open for responses');
+  }
+
+  if (new Date(rebuttal.deadline) < new Date()) {
+    throw new Error('Rebuttal deadline has passed');
+  }
+
+  const parsed = respondSchema.parse(input);
+  const rebuttalHash = await sha256(canonicalJson(parsed.responses));
+
+  const responses = parsed.responses.map((r) => ({
+    ...r,
+    rebuttalId,
   }));
 
-  await db.insert(rebuttalResponses).values(rows);
+  await submitRebuttalResponses(rebuttalId, responses, rebuttalHash);
 
-  return (
-    await db
-      .update(rebuttals)
-      .set({
-        status: "submitted",
+  const editorWallet = rebuttal.submission?.journal?.editorWallet;
+
+  after(async () => {
+    const [{ txId: hederaTxId }] = await Promise.all([
+      anchorToHcs('HCS_TOPIC_DECISIONS', {
+        type: 'rebuttal_submitted',
+        rebuttalId,
+        submissionId: rebuttal.submissionId,
         rebuttalHash,
-        hederaTxId: hederaTxId ?? null,
-      })
-      .where(eq(rebuttals.id, rebuttalId))
-      .returning()
-  )[0] ?? null;
+        timestamp: new Date().toISOString(),
+      }),
+      notifyIfWallet(editorWallet, {
+        type: 'rebuttal_submitted',
+        title: 'Rebuttal response submitted',
+        body: `The author has responded to the rebuttal for "${rebuttal.submission.paper?.title}".`,
+        link: ROUTES.editor.underReview,
+      }),
+    ]);
+
+    if (hederaTxId) {
+      await updateRebuttalHedera(rebuttalId, hederaTxId);
+    }
+  });
+
+  return { rebuttalHash };
 }
 
-export interface ResolveRebuttalInput {
-  rebuttalId: string;
-  resolution: RebuttalResolutionDb;
-  editorNotes: string;
-  hederaTxId?: string;
-}
+// ---------------------------------------------------------------------------
+// Resolve Rebuttal
+// ---------------------------------------------------------------------------
 
-export async function resolveRebuttal(input: ResolveRebuttalInput) {
-  return (
-    await db
-      .update(rebuttals)
-      .set({
-        status: "resolved",
-        resolution: input.resolution,
-        editorNotes: input.editorNotes,
-        hederaTxId: input.hederaTxId ?? null,
-        resolvedAt: new Date().toISOString(),
-      })
-      .where(eq(rebuttals.id, input.rebuttalId))
-      .returning()
-  )[0] ?? null;
+// TODO: Derive enum values from RebuttalResolutionDb type to maintain a single source of truth
+const resolveSchema = z.object({
+  resolution: z.enum(['upheld', 'rejected', 'partial']),
+  editorNotes: z.string().max(10000),
+});
+
+/** Editor resolves rebuttal. Upheld/overturned mints reputation tokens; partial skips minting. */
+export async function resolveRebuttalAction(
+  rebuttalId: string,
+  resolution: RebuttalResolutionDb,
+  editorNotes: string,
+) {
+  const session = await requireSession();
+  resolveSchema.parse({ resolution, editorNotes });
+
+  const rebuttal = await requireRebuttalEditor(rebuttalId, session);
+
+  if (rebuttal.status !== 'submitted') {
+    throw new Error('Rebuttal must be submitted before resolving');
+  }
+
+  await resolveRebuttal({ rebuttalId, resolution, editorNotes });
+
+  after(async () => {
+    const [{ txId: hederaTxId }] = await Promise.all([
+      anchorToHcs('HCS_TOPIC_DECISIONS', {
+        type: 'rebuttal_resolved',
+        rebuttalId,
+        submissionId: rebuttal.submissionId,
+        resolution,
+        timestamp: new Date().toISOString(),
+      }),
+      notifyIfWallet(rebuttal.authorWallet, {
+        type: 'rebuttal_resolved',
+        title: 'Rebuttal resolved',
+        body: `Your rebuttal has been resolved: ${resolution}. ${editorNotes || ''}`.trim(),
+        link: ROUTES.researcher.rebuttal(rebuttal.submissionId),
+      }),
+    ]);
+
+    if (hederaTxId) {
+      await updateRebuttalHedera(rebuttalId, hederaTxId);
+    }
+
+    // Skip reputation minting for partial resolutions (score is 0, no token needed)
+    if (resolution === 'partial') return;
+
+    const reviewerWallets = new Set(
+      rebuttal.responses.map((r) => r.review.reviewerWallet),
+    );
+
+    const eventType =
+      resolution === 'upheld'
+        ? ('rebuttal_upheld' as const)
+        : ('rebuttal_overturned' as const);
+    const scoreDelta = resolution === 'upheld' ? -2 : 1;
+
+    await Promise.all(
+      [...reviewerWallets].map((reviewerWallet) =>
+        recordReputation(
+          reviewerWallet,
+          eventType,
+          scoreDelta,
+          `Rebuttal ${resolution} for submission ${rebuttal.submissionId}`,
+          { type: eventType, rebuttalId, resolution },
+        ),
+      ),
+    );
+  });
+
+  return { resolution };
 }

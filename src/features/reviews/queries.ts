@@ -1,9 +1,18 @@
-import { cache } from "react";
-import { db } from "@/src/shared/lib/db";
-import { reviewAssignments, reviewCriteria, reviews, reviewerRatings, submissions } from "@/src/shared/lib/db/schema";
-import { eq, and, inArray, lt, isNotNull } from "drizzle-orm";
+import { cache } from 'react';
+import { db } from '@/src/shared/lib/db';
+import {
+  reviewAssignments,
+  reviewCriteria,
+  reviews,
+  submissions,
+} from '@/src/shared/lib/db/schema';
+import { eq, and, inArray, lt, isNotNull } from 'drizzle-orm';
 
-export async function getReviewAssignment(assignmentId: string, reviewerWallet: string) {
+/** Fetches assignment with full submission tree (paper, journal, criteria). */
+export async function getReviewAssignment(
+  assignmentId: string,
+  reviewerWallet: string,
+) {
   return db.query.reviewAssignments.findFirst({
     where: and(
       eq(reviewAssignments.id, assignmentId),
@@ -73,11 +82,44 @@ export const getPublishedCriteria = cache(async (submissionId: string) => {
   });
 });
 
+/** Fetch all assignments and reviews for a set of submission IDs (bulk). */
+export async function listAssignmentsAndReviewsBySubmissionIds(
+  submissionIds: string[],
+) {
+  if (submissionIds.length === 0)
+    return { assignments: [], reviews: [] } as const;
+
+  const [assignmentRows, reviewRows] = await Promise.all([
+    db
+      .select()
+      .from(reviewAssignments)
+      .where(inArray(reviewAssignments.submissionId, submissionIds)),
+    db
+      .select()
+      .from(reviews)
+      .where(inArray(reviews.submissionId, submissionIds)),
+  ]);
+
+  return { assignments: assignmentRows, reviews: reviewRows } as const;
+}
+
+/** Fetch a submission with paper (+ owner) and journal relations. */
+export async function getSubmissionWithPaperAndJournal(submissionId: string) {
+  return db.query.submissions.findFirst({
+    where: eq(submissions.id, submissionId),
+    with: {
+      paper: { with: { owner: true } },
+      journal: true,
+    },
+  });
+}
+
+/** Assignments past deadline that are still assigned/accepted (not submitted). */
 export async function listOverdueAssignments() {
   const now = new Date().toISOString();
   return db.query.reviewAssignments.findMany({
     where: and(
-      inArray(reviewAssignments.status, ["assigned", "accepted"]),
+      inArray(reviewAssignments.status, ['assigned', 'accepted']),
       isNotNull(reviewAssignments.deadline),
       lt(reviewAssignments.deadline, now),
     ),
@@ -89,10 +131,7 @@ export async function listOverdueAssignments() {
   });
 }
 
-/**
- * Public reviews for a paper after a final decision has been made.
- * Excludes confidentialEditorComments — those are NEVER public.
- */
+/** Anonymized reviews after final decision. Excludes confidentialEditorComments. */
 export async function listPublicReviewsForPaper(paperId: string) {
   // Only fetch submissions that have a decision (filter in DB, not JS)
   const subs = await db.query.submissions.findMany({
@@ -123,10 +162,7 @@ export async function listPublicReviewsForPaper(paperId: string) {
   return publicReviews;
 }
 
-/**
- * List all ratings for a reviewer's reviews (anonymized — no author reference).
- * Returns 5-protocol breakdowns + comment.
- */
+/** All 5-protocol ratings for a reviewer. Anonymized — no author reference. */
 export async function listRatingsForReviewer(reviewerWallet: string) {
   const reviewerReviews = await db.query.reviews.findMany({
     where: eq(reviews.reviewerWallet, reviewerWallet.toLowerCase()),
@@ -134,7 +170,10 @@ export async function listRatingsForReviewer(reviewerWallet: string) {
   });
 
   return reviewerReviews
-    .filter((r): r is typeof r & { rating: NonNullable<typeof r.rating> } => r.rating !== null)
+    .filter(
+      (r): r is typeof r & { rating: NonNullable<typeof r.rating> } =>
+        r.rating !== null,
+    )
     .map((r) => ({
       reviewId: r.id,
       submissionId: r.submissionId,
@@ -149,7 +188,40 @@ export async function listRatingsForReviewer(reviewerWallet: string) {
     }));
 }
 
-export type DbReviewAssignment = Awaited<ReturnType<typeof getReviewAssignment>>;
-export type DbSubmissionWithCriteria = Awaited<ReturnType<typeof getSubmissionWithCriteria>>;
-export type PublicReview = Awaited<ReturnType<typeof listPublicReviewsForPaper>>[number];
-export type ReviewerRating = Awaited<ReturnType<typeof listRatingsForReviewer>>[number];
+/** Verifies the caller owns the reviewed paper. Returns the review. */
+export async function requireReviewWithPaperOwner(
+  reviewId: string,
+  wallet: string,
+) {
+  const review = await db.query.reviews.findFirst({
+    where: eq(reviews.id, reviewId),
+    with: {
+      submission: {
+        with: { paper: { with: { owner: true } } },
+      },
+    },
+  });
+
+  if (!review) throw new Error('Review not found');
+  if (
+    review.submission.paper.owner.walletAddress.toLowerCase() !==
+    wallet.toLowerCase()
+  ) {
+    throw new Error('Forbidden');
+  }
+
+  return review;
+}
+
+export type DbReviewAssignment = Awaited<
+  ReturnType<typeof getReviewAssignment>
+>;
+export type DbSubmissionWithCriteria = Awaited<
+  ReturnType<typeof getSubmissionWithCriteria>
+>;
+export type PublicReview = Awaited<
+  ReturnType<typeof listPublicReviewsForPaper>
+>[number];
+export type ReviewerRating = Awaited<
+  ReturnType<typeof listRatingsForReviewer>
+>[number];

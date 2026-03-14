@@ -16,7 +16,8 @@ src/
 ├── features/{domain}/
 │   ├── index.ts                  # Re-exports (server contexts only)
 │   ├── queries.ts                # Drizzle reads (server-only)
-│   ├── actions.ts                # Drizzle writes (server-only)
+│   ├── actions.ts                # 'use server' — auth + validate + write + side effects
+│   ├── mutations.ts              # Drizzle writes (internal, called by actions.ts)
 │   ├── types.ts                  # TypeScript interfaces
 │   ├── hooks/                    # Client-side hooks
 │   ├── reducers/                 # Pure state machines
@@ -88,7 +89,7 @@ Each custom hook accepts `initialData` from the server and owns only UI state:
 export function useDomain(initialData: DomainData[]) {
   // useState for UI-only state (filters, selected item, modal open, etc.)
   // useMemo for derived/filtered values
-  // handler functions for mutations (call API routes, then refresh)
+  // handler functions for mutations (call server actions, then router.refresh())
   return { /* flat object of state + derived + handlers */ };
 }
 ```
@@ -109,9 +110,11 @@ See [data-fetching.md](./data-fetching.md) for the full pattern.
 
 ## Server Actions & Mutations
 
-**Rule**: Feature actions (`src/features/{domain}/actions.ts`) are plain TypeScript Drizzle write functions -- no auth, no HTTP. Auth and input validation live in the API route handler or Next.js Server Action that calls them.
+**Rule**: Each feature domain has two write files:
+- `actions.ts` — `'use server'` functions that handle auth, validation, DB writes, and side effects. This is the public mutation API that client components import.
+- `mutations.ts` — Plain TypeScript Drizzle write functions. Internal only — called by `actions.ts`, never imported from client code.
 
-**Why**: Keeps the DB layer testable and reusable without coupling it to HTTP concerns.
+**Why**: Keeps the DB layer testable and reusable. Server actions handle the full mutation lifecycle (auth → validate → write → side effects) in one place, replacing the old API route pattern.
 
 See [server-actions.md](./server-actions.md) for the full pattern.
 

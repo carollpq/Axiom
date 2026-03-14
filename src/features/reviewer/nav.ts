@@ -1,17 +1,22 @@
 import type { NavItemData } from '@/src/shared/types/shared';
+import { ROUTES } from '@/src/shared/lib/routes';
 
 export const reviewerNavItems: NavItemData[] = [
-  { label: 'Dashboard', href: '/reviewer', icon: 'LayoutDashboard' },
-  { label: 'Pool Invitations', href: '/reviewer/pool-invites', icon: 'Inbox' },
-  { label: 'Incoming Invites', href: '/reviewer/invites', icon: 'Mail' },
+  { label: 'Dashboard', href: ROUTES.reviewer.root, icon: 'LayoutDashboard' },
+  {
+    label: 'Pool Invitations',
+    href: ROUTES.reviewer.poolInvites,
+    icon: 'Inbox',
+  },
+  { label: 'Incoming Invites', href: ROUTES.reviewer.invites, icon: 'Mail' },
   {
     label: 'Papers Under Review',
-    href: '/reviewer/assigned',
+    href: ROUTES.reviewer.assigned,
     icon: 'FileText',
   },
   {
     label: 'Completed Papers',
-    href: '/reviewer/completed',
+    href: ROUTES.reviewer.completed,
     icon: 'CheckCircle',
   },
 ];

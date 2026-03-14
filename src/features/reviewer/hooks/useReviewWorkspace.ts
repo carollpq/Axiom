@@ -1,14 +1,22 @@
 'use client';
 
-import { useReducer, useMemo, useCallback } from 'react';
+import {
+  useReducer,
+  useMemo,
+  useCallback,
+  useState,
+  useTransition,
+} from 'react';
 import { toast } from 'sonner';
 import type {
   CriterionRating,
   GeneralComments,
   Recommendation,
-} from '@/src/features/reviewer/types';
-import { canonicalJson, hashString } from '@/src/shared/lib/hashing';
-import { formatTimestampUtc } from '@/src/shared/lib/format';
+  SubmissionResult,
+} from '@/src/features/reviewer/types/workspace';
+import { canonicalJson, sha256 } from '@/src/shared/lib/hashing';
+import { formatDate, truncate } from '@/src/shared/lib/format';
+import { submitReviewAction } from '@/src/features/reviews/actions';
 import {
   reviewWorkspaceReducer,
   createInitialState,
@@ -19,9 +27,10 @@ import {
 import {
   mapAssignmentToPaper,
   mapAssignmentToCriteria,
-} from '@/src/features/reviewer/mappers/workspace';
-import type { ReviewAssignmentLike } from '@/src/features/reviewer/mappers/workspace';
+} from '@/src/features/reviewer/lib/workspace';
+import type { ReviewAssignmentLike } from '@/src/features/reviewer/lib/workspace';
 
+/** Manages the full review form: per-criterion evaluations, comments, recommendation, and submission. */
 export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
   const paper = useMemo(() => mapAssignmentToPaper(assignment), [assignment]);
 
@@ -36,9 +45,14 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
     createInitialState,
   );
 
+  const [isPending, startTransition] = useTransition();
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submissionResult, setSubmissionResult] =
+    useState<SubmissionResult | null>(null);
+
   const completedCount = selectCompletedCount(state);
   const allCriteriaMet = selectAllCriteriaMet(state);
-  const canSubmit = selectCanSubmit(state);
+  const canSubmit = selectCanSubmit(state) && !isPending;
 
   const setCriterionRating = useCallback(
     (id: number, rating: CriterionRating) => {
@@ -63,9 +77,8 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
     toast.success('Draft saved');
   }, []);
 
-  const submitReview = useCallback(async () => {
+  const submitReview = () => {
     if (!canSubmit) return;
-    dispatch({ type: 'SUBMIT_START' });
 
     let met = 0,
       partial = 0,
@@ -76,7 +89,6 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
       else if (e.rating === 'No') notMet++;
     }
 
-    // Compute review hash (excluding confidentialEditorComments — those never leave the server)
     const reviewPayload = {
       evaluations: state.evaluations,
       recommendation: state.recommendation,
@@ -84,67 +96,38 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
       weaknesses: state.generalComments.weaknesses,
       questionsForAuthors: state.generalComments.questionsForAuthors,
     };
-    const reviewHash = await hashString(canonicalJson(reviewPayload));
+    const confidentialEditorComments =
+      state.generalComments.confidentialEditorComments;
 
-    try {
-      const response = await fetch(`/api/reviews/${assignment.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          criteriaEvaluations: state.evaluations,
-          strengths: state.generalComments.strengths,
-          weaknesses: state.generalComments.weaknesses,
-          questionsForAuthors: state.generalComments.questionsForAuthors,
-          confidentialEditorComments:
-            state.generalComments.confidentialEditorComments,
-          recommendation: state.recommendation,
+    startTransition(async () => {
+      const reviewHash = await sha256(canonicalJson(reviewPayload));
+
+      try {
+        await submitReviewAction(assignment.id, {
+          criteriaEvaluations: reviewPayload.evaluations,
+          strengths: reviewPayload.strengths,
+          weaknesses: reviewPayload.weaknesses,
+          questionsForAuthors: reviewPayload.questionsForAuthors,
+          confidentialEditorComments,
+          recommendation: reviewPayload.recommendation as string,
           reviewHash,
-        }),
-      });
+        });
 
-      if (!response.ok) {
-        const err = await response
-          .json()
-          .catch(() => ({ error: 'Unknown error' }));
-        console.error('[Review submit] API error:', err);
-        toast.error(err.error ?? 'Failed to submit review');
-        dispatch({ type: 'SUBMIT_ERROR' });
-        return;
-      }
-
-      const result = (await response.json()) as {
-        reviewId: string;
-        hederaTxId?: string;
-        hederaTimestamp?: string;
-      };
-
-      toast.success('Review submitted successfully');
-
-      dispatch({
-        type: 'SUBMIT_SUCCESS',
-        submissionResult: {
-          txHash: result.hederaTxId ?? 'pending',
-          timestamp: formatTimestampUtc(
-            result.hederaTimestamp ?? new Date().toISOString(),
-          ),
-          paperHash: paper.provenance[0]?.hash.slice(0, 16) + '...',
-          reviewHash: reviewHash.slice(0, 16) + '...',
+        toast.success('Review submitted successfully');
+        setIsSubmitted(true);
+        setSubmissionResult({
+          txHash: 'pending',
+          timestamp: formatDate(new Date().toISOString(), 'datetime'),
+          paperHash: truncate(paper.provenance[0]?.hash ?? '', 16),
+          reviewHash: truncate(reviewHash, 16),
           criteriaSummary: { met, partial, notMet },
-        },
-      });
-    } catch (err) {
-      console.error('[Review submit] Unexpected error:', err);
-      toast.error('Failed to submit review');
-      dispatch({ type: 'SUBMIT_ERROR' });
-    }
-  }, [
-    assignment,
-    canSubmit,
-    state.evaluations,
-    state.recommendation,
-    state.generalComments,
-    paper.provenance,
-  ]);
+        });
+      } catch (err) {
+        console.error('[Review submit] Unexpected error:', err);
+        toast.error('Failed to submit review');
+      }
+    });
+  };
 
   return {
     paper,
@@ -153,8 +136,8 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
     generalComments: state.generalComments,
     recommendation: state.recommendation,
     isDraft: state.isDraft,
-    isSubmitted: state.isSubmitted,
-    submissionResult: state.submissionResult,
+    isSubmitted,
+    submissionResult,
     criteriaCollapsed: state.criteriaCollapsed,
     setCriteriaCollapsed: (criteriaCollapsed: boolean) =>
       dispatch({ type: 'SET_CRITERIA_COLLAPSED', criteriaCollapsed }),
@@ -168,6 +151,6 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
       dispatch({ type: 'SET_RECOMMENDATION', recommendation }),
     saveDraft,
     submitReview,
-    isSubmitting: state.isSubmitting,
+    isSubmitting: isPending,
   };
 }

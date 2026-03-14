@@ -181,6 +181,8 @@ export const authorshipContracts = pgTable('authorship_contracts', {
     .references(() => users.id),
   hederaTxId: text('hedera_tx_id'),
   hederaTimestamp: text('hedera_timestamp'),
+  hederaScheduleId: text('hedera_schedule_id'),
+  hederaScheduleTxId: text('hedera_schedule_tx_id'),
   createdAt: text('created_at')
     .notNull()
     .default(sql`now()`),
@@ -207,6 +209,7 @@ export const contractContributors = pgTable('contract_contributors', {
     .default('pending'),
   isCreator: boolean('is_creator').notNull().default(false),
   signedAt: text('signed_at'),
+  hederaScheduleSignTxId: text('hedera_schedule_sign_tx_id'),
   inviteToken: text('invite_token').unique(),
   inviteExpiresAt: text('invite_expires_at'),
   createdAt: text('created_at')
@@ -347,6 +350,7 @@ export const reviewAssignments = pgTable('review_assignments', {
   deadline: text('deadline'),
   acceptedAt: text('accepted_at'),
   submittedAt: text('submitted_at'),
+  timelineEnforcerIndex: integer('timeline_enforcer_index'),
 });
 
 export const reviews = pgTable('reviews', {

@@ -1,17 +1,12 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { ThreeColumnLayout } from '@/src/shared/components/ThreeColumnLayout';
-import { SelectionPlaceholder } from '@/src/shared/components/SelectionPlaceholder';
-import { PaperList } from '@/src/shared/components/PaperList';
-import { DynamicPdfViewer } from '@/src/shared/components/DynamicPdfViewer';
-import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
 import type { DbAssignedReview } from '@/src/features/reviewer/queries';
 import {
   mapDbToAssignedReviewExtended,
-  toReviewerPaperListItems,
   type EditorNameMap,
-} from '@/src/features/reviewer/mappers/dashboard';
+} from '@/src/features/reviewer/lib/dashboard';
+import { ReviewerThreeColumnShell } from '../reviewer-three-column-shell.client';
 import { InviteSidebar } from './invite-sidebar.client';
 
 interface Props {
@@ -20,8 +15,6 @@ interface Props {
 }
 
 export function IncomingInvitesClient({ initialRaw, editorNames }: Props) {
-  useCollapseSidebar();
-
   const [removedSubmissionIds, setRemovedSubmissionIds] = useState<Set<string>>(
     new Set(),
   );
@@ -44,56 +37,20 @@ export function IncomingInvitesClient({ initialRaw, editorNames }: Props) {
     [allMapped, removedSubmissionIds],
   );
 
-  const [selectedId, setSelectedId] = useState<string | null>(() =>
-    mapped[0] ? String(mapped[0].id) : null,
-  );
-
-  const paperItems = useMemo(() => toReviewerPaperListItems(mapped), [mapped]);
-
-  const selectedIndex = mapped.findIndex((p) => String(p.id) === selectedId);
-  const selected = selectedIndex >= 0 ? mapped[selectedIndex] : null;
-
-  const handleRemove = useCallback(
-    (submissionId: string) => {
-      setRemovedSubmissionIds((prev) => new Set(prev).add(submissionId));
-      // Auto-select next paper
-      const remaining = mapped.filter((p) => p.submissionId !== submissionId);
-      setSelectedId(remaining[0] ? String(remaining[0].id) : null);
-    },
-    [mapped],
-  );
+  const handleRemove = useCallback((submissionId: string) => {
+    setRemovedSubmissionIds((prev) => new Set(prev).add(submissionId));
+  }, []);
 
   return (
-    <ThreeColumnLayout
+    <ReviewerThreeColumnShell
+      items={mapped}
       title="Incoming Invites"
       countLabel={`${mapped.length} invite${mapped.length !== 1 ? 's' : ''}`}
-      list={
-        <PaperList
-          papers={paperItems}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-          emptyMessage="No pending invitations at this time."
-        />
-      }
-      viewer={
-        selected?.pdfUrl ? (
-          <DynamicPdfViewer fileUrl={selected.pdfUrl} />
-        ) : (
-          <SelectionPlaceholder
-            message={selected ? 'No PDF available' : 'Select an invite to view'}
-          />
-        )
-      }
-      sidebar={
-        selected ? (
-          <InviteSidebar paper={selected} onRemove={handleRemove} />
-        ) : (
-          <div className="p-4 text-[12px] text-[var(--text-faint)]">
-            Select an invite to see details
-          </div>
-        )
-      }
       sidebarTitle="Invite Details"
+      emptyMessage="No pending invitations at this time."
+      renderSidebar={(selected) => (
+        <InviteSidebar paper={selected} onRemove={handleRemove} />
+      )}
     />
   );
 }

@@ -2,61 +2,183 @@
 
 This guide explains how mutations (create, update, delete) are structured in Axiom.
 
-## Two Kinds of "Actions"
+## Two Layers
 
-Axiom uses two distinct layers — don't confuse them:
+Axiom uses two distinct layers for write operations:
 
 | Layer | What it is | Where it lives |
 |-------|-----------|----------------|
-| **Feature actions** | Plain TypeScript functions that write to the DB via Drizzle | `features/{domain}/actions.ts` |
-| **Next.js Server Actions** | `'use server'` functions called directly from forms via `useActionState` | `app/actions/` |
+| **Server Actions** | `'use server'` async functions — auth, validation, DB write, side effects | `features/{domain}/actions.ts` |
+| **Mutations** | Plain TypeScript functions that write to the DB via Drizzle | `features/{domain}/mutations.ts` |
 
-Currently `app/actions/` contains only auth (`doLogin`, `doLogout`). All other mutations go through API routes which call feature actions. As the server-first refactor progresses, form-driven mutations (e.g. profile update, ORCID linking) will move to `app/actions/`.
+Server actions are the **public mutation API** — they're what client components import and call. Mutations are internal implementation details called only by server actions (and occasionally by API routes or other server-side code).
 
-**Reference code**: `src/features/papers/actions.ts`, `src/features/contracts/actions.ts`, `app/actions/auth.ts`
+**Reference code**: `src/features/papers/actions.ts` (server actions), `src/features/papers/mutations.ts` (DB writes), `src/shared/lib/auth/actions.ts` (auth server actions)
 
 ---
 
-## Feature Actions (`features/{domain}/actions.ts`)
-
-These are pure Drizzle write functions — no HTTP, no `'use server'`, no form handling. They are called by API route handlers.
-
-### File structure
+## File Structure
 
 ```
-src/features/
-├── papers/
-│   ├── index.ts        # Re-exports (server contexts only)
-│   ├── queries.ts      # Reads
-│   └── actions.ts      # Writes
-├── contracts/
-│   ├── index.ts
-│   ├── queries.ts
-│   └── actions.ts
-├── reviews/
-│   ├── queries.ts
-│   └── actions.ts
-├── rebuttals/
-│   ├── queries.ts
-│   └── actions.ts
-└── users/
-    ├── index.ts
-    └── queries.ts
+src/features/{domain}/
+├── queries.ts      # DB reads (called from Server Components)
+├── actions.ts      # 'use server' — auth + validate + mutations + side effects
+└── mutations.ts    # Pure Drizzle DB writes (internal, no auth)
 ```
 
-### Naming convention
+Every domain follows this pattern. Client components import from `actions.ts`, never from `mutations.ts` or `queries.ts`.
 
-- **Input types**: `{Verb}{Domain}Input` — e.g. `CreatePaperInput`, `AddContributorInput`
-- **Functions**: `{verb}{Domain}` — e.g. `createPaper`, `signContributor`, `updateContractHedera`
+### Auth server actions
+
+Login/logout live separately in `src/shared/lib/auth/actions.ts` since they're cross-cutting concerns, not domain-specific.
+
+---
+
+## Server Actions (`features/{domain}/actions.ts`)
+
+These are the entry points for all client-initiated mutations. They handle:
+
+1. **Auth** — `requireSession()` from `auth/auth.ts` (throws on failure)
+2. **Validation** — Zod schemas for input
+3. **DB write** — calls mutation functions from `mutations.ts`
+4. **Side effects** — HCS anchoring, HTS minting, notifications (often via `after()`)
 
 ### Basic structure
 
 ```ts
 // src/features/papers/actions.ts
+'use server';
+
+import { z } from 'zod';
+import { requireSession } from '@/src/shared/lib/auth/auth';
+import { createPaper } from '@/src/features/papers/mutations';
+
+const createPaperSchema = z.object({
+  title: z.string().min(1).max(500),
+  abstract: z.string().max(5000),
+  studyType: z.enum(['original', 'negative_result', 'replication']).optional(),
+});
+
+export async function createPaperAction(input: z.infer<typeof createPaperSchema>) {
+  const wallet = await requireSession();
+  const parsed = createPaperSchema.parse(input);
+
+  const paper = await createPaper({ ...parsed, wallet });
+  if (!paper) throw new Error('User not found');
+
+  return paper;
+}
+```
+
+### Naming convention
+
+- **Server actions**: `{verb}{Domain}Action` — e.g. `createPaperAction`, `signContractAction`, `submitReviewAction`
+- **Mutations**: `{verb}{Domain}` — e.g. `createPaper`, `signContributor`, `updateContractHedera`
+
+### Auth pattern
+
+Server actions use `requireSession()` which throws on failure (no `NextResponse`):
+
+```ts
+import { requireSession } from '@/src/shared/lib/auth/auth';
+
+export async function myAction(input: MyInput) {
+  const wallet = await requireSession(); // throws if not authenticated
+  // ... proceed with wallet
+}
+```
+
+This differs from the old API route pattern where `requireSession()` returned `string | NextResponse`.
+
+### Calling from client components
+
+Client components call server actions directly — no `fetch`, no JSON parsing:
+
+```ts
+'use client';
+
+import { createPaperAction } from '@/src/features/papers/actions';
+
+async function handleSubmit() {
+  try {
+    const paper = await createPaperAction({ title, abstract, studyType });
+    toast.success('Paper created');
+    router.refresh(); // revalidate server component data
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Something went wrong';
+    toast.error(message);
+  }
+}
+```
+
+**Key differences from old API route pattern:**
+- No `fetch()` / `res.ok` / `res.json()` — call the function directly
+- Errors are thrown, not returned as HTTP status codes — use `try/catch`
+- Call `router.refresh()` after mutations to revalidate server component data
+
+### Hedera side effects with `after()`
+
+Server actions that perform secondary work (HCS anchoring, HTS minting, notification creation) after the critical DB write use `after()` from `next/server` to defer those operations:
+
+```ts
+'use server';
+
+import { after } from 'next/server';
+import { requireSession } from '@/src/shared/lib/auth/auth';
+import { anchorToHcs } from '@/src/shared/lib/hedera/hcs';
+import { createReview, recordReputation } from '@/src/features/reviews/mutations';
+import { createNotification } from '@/src/features/notifications/mutations';
+
+export async function submitReviewAction(assignmentId: string, input: ReviewInput) {
+  const session = await requireSession();
+
+  // Critical DB write — must complete before returning
+  const review = await createReview({ ...input, reviewerWallet: session });
+  if (!review) throw new Error('Failed to create review');
+
+  // Non-blocking: HCS anchoring, reputation, status transitions run after response
+  after(async () => {
+    await Promise.all([
+      anchorToHcs('HCS_TOPIC_REVIEWS', { ... }),
+      createNotification({ ... }),
+    ]);
+    await recordReputation(session, 'review_completed', 1, ...);
+  });
+
+  return { reviewId: review.id };
+}
+```
+
+**Server actions using `after()`:** `submitReviewAction`, `signContractAction`, `assignReviewersAction`, `makeDecisionAction`, `authorResponseAction`, `resolveRebuttalAction`
+
+### Special case: "already exists" responses
+
+When a mutation would be a no-op (e.g. rating already submitted), return a status flag instead of throwing:
+
+```ts
+export async function rateReviewerAction(reviewId: string, input: RatingInput) {
+  // ...
+  const existing = await db.query.reviewerRatings.findFirst({ ... });
+  if (existing) return { alreadyRated: true }; // don't throw — caller handles gracefully
+
+  // ... proceed with rating
+  return { alreadyRated: false, ratingId, overallRating };
+}
+```
+
+---
+
+## Mutations (`features/{domain}/mutations.ts`)
+
+Pure Drizzle write functions — no `'use server'`, no HTTP, no auth checks. Called by server actions and (rarely) by API routes or cron jobs.
+
+### Basic structure
+
+```ts
+// src/features/papers/mutations.ts
 import { db } from '@/src/shared/lib/db';
 import { papers, users } from '@/src/shared/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import type { StudyTypeDb } from '@/src/shared/lib/db/schema';
 
 export interface CreatePaperInput {
   title: string;
@@ -65,303 +187,165 @@ export interface CreatePaperInput {
   wallet: string;
 }
 
-export function createPaper(input: CreatePaperInput) {
-  // 1. Resolve user from wallet address
-  const user = db
-    .select()
-    .from(users)
-    .where(eq(users.walletAddress, input.wallet.toLowerCase()))
-    .limit(1)
-    .get();
+export async function createPaper(input: CreatePaperInput) {
+  const user = (
+    await db.select().from(users)
+      .where(eq(users.walletAddress, input.wallet.toLowerCase()))
+      .limit(1)
+  )[0];
 
   if (!user) return null;
 
-  // 2. Write to DB
-  return db
-    .insert(papers)
-    .values({
+  return (
+    await db.insert(papers).values({
       title: input.title,
       abstract: input.abstract ?? null,
       studyType: input.studyType ?? 'original',
       ownerId: user.id,
-    })
-    .returning()
-    .get();
+    }).returning()
+  )[0];
 }
 ```
 
+### Naming convention
+
+- **Input types**: `{Verb}{Domain}Input` — e.g. `CreatePaperInput`, `AddContributorInput`
+- **Functions**: `{verb}{Domain}` — e.g. `createPaper`, `signContributor`, `updateContractHedera`
+
 ### Hedera update pattern
 
-Actions that anchor to Hedera HCS follow a two-step write: first create the DB record, then update it with the HCS receipt after submission. Both steps are separate functions:
+Mutations that anchor to Hedera HCS follow a two-step write: first create the DB record, then update it with the HCS receipt. Both steps are separate functions:
 
 ```ts
 // First call: createPaperVersion() → returns version record
-// Then submit to HCS
+// Then submit to HCS (in server action or after() callback)
 // Then call: updatePaperVersionHedera() → stores txId + timestamp
 
-export function updatePaperVersionHedera(
+export async function updatePaperVersionHedera(
   versionId: string,
   hederaTxId: string,
   hederaTimestamp: string,
 ) {
-  return db
-    .update(paperVersions)
-    .set({ hederaTxId, hederaTimestamp })
-    .where(eq(paperVersions.id, versionId))
-    .returning()
-    .get() ?? null;
+  return (
+    await db.update(paperVersions)
+      .set({ hederaTxId, hederaTimestamp })
+      .where(eq(paperVersions.id, versionId))
+      .returning()
+  )[0] ?? null;
 }
-```
-
-This is intentional — the DB record exists before HCS anchoring, and is updated once the receipt arrives. See `app/api/papers/[id]/versions/route.ts` for the full flow.
-
----
-
-## API Route Handlers
-
-Feature actions are called from API routes in `app/api/`. Routes handle auth, input validation, and HTTP response shaping. Feature actions handle only the DB write.
-
-### Auth check
-
-Every mutating route must verify the session first:
-
-```ts
-// app/api/papers/route.ts
-import { getSession } from '@/src/shared/lib/auth/auth';
-
-export async function POST(req: NextRequest) {
-  const wallet = await getSession();
-  if (!wallet) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  // ...
-}
-```
-
-### Input validation
-
-Validate required fields in the route handler before calling the feature action:
-
-```ts
-const body = await req.json();
-const { title } = body;
-
-if (!title) {
-  return NextResponse.json({ error: 'title is required' }, { status: 400 });
-}
-
-const paper = createPaper({ ...body, wallet });
-```
-
-For validation, use `createInsertSchema` from `drizzle-zod` to derive schemas from the DB schema (single source of truth):
-
-```ts
-import { createInsertSchema } from 'drizzle-zod';
-import { papers } from '@/src/shared/lib/db/schema';
-
-const schema = createInsertSchema(papers).pick({ title: true, studyType: true });
-
-const result = schema.safeParse(body);
-if (!result.success) {
-  return NextResponse.json(
-    { error: result.error.flatten().fieldErrors },
-    { status: 400 },
-  );
-}
-```
-
-For fields not in the DB schema, extend with `.extend()`:
-
-```ts
-const schema = createInsertSchema(papers).pick({ title: true }).extend({
-  journalId: z.string().uuid(),
-});
-```
-
-### Hedera SDK routes
-
-Any route that calls the Hedera SDK must opt out of the Edge runtime:
-
-```ts
-export const runtime = 'nodejs'; // Hedera SDK is Node.js only
 ```
 
 ---
 
-## Next.js Server Actions (`app/actions/`)
+## Remaining API Routes
 
-For form-driven mutations that don't need a separate API route, use `'use server'` functions. These are called via `useActionState` in client forms. See [forms.md](./forms.md) for the full form pattern.
+Most mutations have been converted to server actions. The following API routes remain because they require capabilities that server actions don't support:
 
-### Structure
+| Route | Reason |
+|---|---|
+| `GET /api/papers/[id]/content` | Returns binary PDF bytes with custom headers |
+| `GET /api/cron/deadlines` | Called by external cron scheduler with `Authorization: Bearer` |
+| `GET /api/reviews/reputation` | Public endpoint used as external URL |
+| `POST /api/upload/ipfs` | Multipart `FormData` file upload |
 
-```ts
-// app/actions/profile.ts
-'use server';
-
-import { z } from 'zod';
-import { getSession } from '@/src/shared/lib/auth/auth';
-import { updateUser } from '@/src/features/users/actions';
-
-export type State = {
-  errors?: { displayName?: string[] };
-  message: string | null;
-};
-
-const schema = z.object({
-  displayName: z.string().min(2, 'Display name must be at least 2 characters'),
-});
-
-export async function updateProfile(prevState: State, formData: FormData): Promise<State> {
-  // 1. Verify auth
-  const wallet = await getSession();
-  if (!wallet) return { message: 'Not authenticated.' };
-
-  // 2. Validate
-  const result = schema.safeParse({ displayName: formData.get('displayName') });
-  if (!result.success) {
-    return { errors: result.error.flatten().fieldErrors, message: null };
-  }
-
-  // 3. Write via feature action
-  try {
-    await updateUser(wallet, result.data);
-  } catch {
-    return { message: 'Failed to save. Please try again.' };
-  }
-
-  // 4. Redirect outside try/catch (redirect() throws internally)
-  redirect('/dashboard');
-}
-```
-
-### When to use Server Actions vs API routes
-
-| Situation | Use |
-|-----------|-----|
-| Form submit (profile, ORCID, role selection) | `'use server'` in `app/actions/` + `useActionState` |
-| Programmatic mutation (sign contract, upload version) | API route in `app/api/` |
-| Wallet signing flow (requires Thirdweb account) | API route — wallet interaction happens client-side first |
-| Hedera SDK calls | API route with `export const runtime = 'nodejs'` |
+API routes that call mutation functions follow the same pattern — auth via `requireSession()`, then call mutations from `mutations.ts`.
 
 ---
 
-## Non-Blocking Side Effects with `after()`
+## Shared Helpers
 
-API routes that perform secondary work (HCS anchoring, HTS minting, notification creation) after the critical DB write should use `after()` from `next/server` to defer those operations:
+`src/shared/lib/auth/auth.ts` exports `requireSession()` (auth guard — throws if no session).
 
-```ts
-import { after } from "next/server";
+Domain guards and utilities live in their respective feature modules:
 
-export async function POST(req: NextRequest) {
-  // ... auth, validation, critical DB write ...
-  const result = await createReview(input);
+| Helper | Location |
+|---|---|
+| `anchorToHcs(topic, payload)` | `src/shared/lib/hedera/hcs.ts` |
+| `recordReputation(wallet, event, delta, memo, metadata)` | `src/features/reviews/mutations.ts` |
+| `requireJournalEditor(id, session)` | `src/features/editor/queries.ts` |
+| `requireSubmissionEditor(id, session)` | `src/features/submissions/queries.ts` |
+| `requireRebuttalAuthor(id, session)` | `src/features/rebuttals/queries.ts` |
+| `requireRebuttalEditor(id, session)` | `src/features/rebuttals/queries.ts` |
+| `requireReviewWithPaperOwner(id, session)` | `src/features/reviews/queries.ts` |
 
-  // Return response immediately
-  const response = NextResponse.json(result, { status: 201 });
-
-  // Defer non-critical work
-  after(async () => {
-    await submitHcsMessage(topicId, payload);
-    await mintReputationToken(reviewerWallet, "review_completed");
-    await createNotification({ userId, type: "review_submitted", ... });
-  });
-
-  return response;
-}
-```
-
-**Routes using this pattern:** `cron/deadlines`, `reviews/[id]`, `submissions/[id]/decision`, `submissions/[id]/author-response`, `rebuttals/[rebuttalId]/resolve`
+These throw errors instead of returning `NextResponse`.
 
 ---
 
 ## Important Rules
 
-1. **Feature actions are pure DB functions** — no `'use server'`, no HTTP, no auth checks
-2. **Auth lives in the route handler or Server Action**, not in feature actions
-3. **Wallet addresses are always lowercased** — all feature actions call `.toLowerCase()` on wallet inputs
-4. **`redirect()` must be outside try/catch** — it throws `NEXT_REDIRECT` internally, which would be caught as an error
-5. **Hedera SDK routes need `export const runtime = 'nodejs'`**
-6. **Never put `authorDid` or any reviewer identity in `reviewerRatings`** — reviewer anonymity is by design
-7. **Use `after()` for non-critical side effects** — return the response immediately after the DB write; defer HCS, HTS, and notifications
+1. **Mutations are pure DB functions** — no `'use server'`, no HTTP, no auth checks
+2. **Auth lives in server actions**, not in mutations
+3. **Wallet addresses are always lowercased** — mutations call `.toLowerCase()` on wallet inputs
+4. **`redirect()` must be outside try/catch** — it throws `NEXT_REDIRECT` internally
+5. **Never put `authorDid` or any reviewer identity in `reviewerRatings`** — anonymity by design
+6. **Use `after()` for non-critical side effects** — return immediately after the DB write; defer HCS, HTS, and notifications
+7. **All exports in a `'use server'` file must be async** — non-async exports cause Turbopack build errors
 
 ---
 
 ## Common Mistakes
 
-### Auth inside feature actions
+### Auth inside mutations
 
 ```ts
-// DON'T — feature actions don't know about HTTP or sessions
-export function createPaper(input: CreatePaperInput) {
+// DON'T — mutations don't know about sessions
+export async function createPaper(input: CreatePaperInput) {
   const wallet = await getSession(); // wrong layer
 }
 ```
 
 ```ts
-// DO — auth in the route handler, wallet passed as input
-export async function POST(req: NextRequest) {
-  const wallet = await getSession();
-  if (!wallet) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const paper = createPaper({ ...body, wallet });
+// DO — auth in the server action, wallet passed as input
+export async function createPaperAction(input: Input) {
+  const wallet = await requireSession();
+  const paper = await createPaper({ ...input, wallet });
 }
 ```
 
-### Redirect inside try/catch
+### Non-async export in 'use server' file
 
 ```ts
-// DON'T — redirect() throws and gets caught as an error
-try {
-  await updateUser(wallet, data);
-  redirect('/dashboard'); // caught by catch block!
-} catch {
-  return { message: 'Error' };
+// DON'T — Turbopack rejects non-async exports in 'use server' files
+'use server';
+
+export function daysFromNow(days: number): string { // build error!
+  return new Date(Date.now() + days * 86_400_000).toISOString();
 }
 ```
 
 ```ts
-// DO — redirect after the try/catch block
-try {
-  await updateUser(wallet, data);
-} catch {
-  return { message: 'Error' };
+// DO — move utility functions to a separate file, or make them non-exported
+function daysFromNow(days: number): string { // private — not exported
+  return new Date(Date.now() + days * 86_400_000).toISOString();
 }
-
-redirect('/dashboard');
 ```
 
-### Missing `runtime = 'nodejs'` on Hedera routes
+### Importing mutations from client components
 
 ```ts
-// DON'T — Hedera SDK uses Node.js APIs, fails in Edge runtime
-export async function POST(req: NextRequest) {
-  await submitHcsMessage(topicId, payload); // crashes
-}
+// DON'T — mutations.ts uses server-only modules (db, drizzle)
+'use client';
+import { createPaper } from '@/src/features/papers/mutations'; // build failure!
 ```
 
 ```ts
-// DO
-export const runtime = 'nodejs';
-
-export async function POST(req: NextRequest) {
-  await submitHcsMessage(topicId, payload);
-}
+// DO — import server actions (which are 'use server')
+'use client';
+import { createPaperAction } from '@/src/features/papers/actions';
 ```
 
-### Skipping the null check after a feature action
+### Skipping the null check after a mutation
 
-Feature actions return `null` when the user isn't found or the record doesn't exist. Always check:
+Mutations return `null` when the user isn't found or the record doesn't exist. Always check:
 
 ```ts
 // DON'T
-const paper = createPaper({ ...body, wallet });
-return NextResponse.json(paper, { status: 201 }); // could return null
+const paper = await createPaper({ ...input, wallet });
+return paper; // could return null
 
 // DO
-const paper = createPaper({ ...body, wallet });
-if (!paper) {
-  return NextResponse.json({ error: 'user not found' }, { status: 404 });
-}
-return NextResponse.json(paper, { status: 201 });
+const paper = await createPaper({ ...input, wallet });
+if (!paper) throw new Error('User not found');
+return paper;
 ```

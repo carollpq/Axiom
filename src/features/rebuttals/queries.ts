@@ -1,8 +1,9 @@
-import { cache } from "react";
-import { db } from "@/src/shared/lib/db";
-import { rebuttals } from "@/src/shared/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { cache } from 'react';
+import { db } from '@/src/shared/lib/db';
+import { rebuttals } from '@/src/shared/lib/db/schema';
+import { eq, and } from 'drizzle-orm';
 
+/** Returns the most recent rebuttal for a submission, with per-review responses. */
 export const getRebuttalBySubmission = cache(async (submissionId: string) => {
   return db.query.rebuttals.findFirst({
     where: eq(rebuttals.submissionId, submissionId),
@@ -15,6 +16,7 @@ export const getRebuttalBySubmission = cache(async (submissionId: string) => {
   });
 });
 
+/** Full rebuttal with submission tree (paper, journal, owner) and responses. */
 export async function getRebuttalById(rebuttalId: string) {
   return db.query.rebuttals.findFirst({
     where: eq(rebuttals.id, rebuttalId),
@@ -32,10 +34,11 @@ export async function getRebuttalById(rebuttalId: string) {
   });
 }
 
+/** Open rebuttals owned by this wallet — used for pending actions on researcher dashboard. */
 export async function listRebuttalSubmissionsForAuthor(walletAddress: string) {
   const openRebuttals = await db.query.rebuttals.findMany({
     where: and(
-      eq(rebuttals.status, "open"),
+      eq(rebuttals.status, 'open'),
       eq(rebuttals.authorWallet, walletAddress.toLowerCase()),
     ),
     with: {
@@ -51,6 +54,40 @@ export async function listRebuttalSubmissionsForAuthor(walletAddress: string) {
     deadline: r.deadline,
     createdAt: r.createdAt,
   }));
+}
+
+/** Verifies the caller is the rebuttal author. Throws if not found or forbidden. */
+export async function requireRebuttalAuthor(
+  rebuttalId: string,
+  wallet: string,
+) {
+  const rebuttal = await getRebuttalById(rebuttalId);
+
+  if (!rebuttal) throw new Error('Rebuttal not found');
+  if (rebuttal.authorWallet.toLowerCase() !== wallet.toLowerCase()) {
+    throw new Error('Forbidden');
+  }
+
+  return rebuttal;
+}
+
+/** Verifies the caller is the journal editor for this rebuttal's submission. */
+export async function requireRebuttalEditor(
+  rebuttalId: string,
+  wallet: string,
+) {
+  const rebuttal = await getRebuttalById(rebuttalId);
+
+  if (!rebuttal) throw new Error('Rebuttal not found');
+  if (!rebuttal.submission?.journal) throw new Error('Submission not found');
+  if (
+    rebuttal.submission.journal.editorWallet.toLowerCase() !==
+    wallet.toLowerCase()
+  ) {
+    throw new Error('Forbidden');
+  }
+
+  return rebuttal;
 }
 
 export type DbRebuttal = Awaited<ReturnType<typeof getRebuttalBySubmission>>;

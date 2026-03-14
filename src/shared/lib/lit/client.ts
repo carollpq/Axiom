@@ -1,10 +1,7 @@
-"use client";
+'use client';
 
-import { LitNodeClient } from "@lit-protocol/lit-node-client";
-import { LIT_NETWORK } from "@lit-protocol/constants";
-
-// Re-export from config.ts so existing imports keep working
-export { isLitConfigured } from "./config";
+import { LitNodeClient } from '@lit-protocol/lit-node-client';
+import { LIT_NETWORK } from '@lit-protocol/constants';
 
 /**
  * Maps the NEXT_PUBLIC_LIT_NETWORK env value to the LIT_NETWORK enum.
@@ -12,12 +9,17 @@ export { isLitConfigured } from "./config";
  */
 function resolveNetwork() {
   const envVal = process.env.NEXT_PUBLIC_LIT_NETWORK;
-  const networkMap: Record<string, (typeof LIT_NETWORK)[keyof typeof LIT_NETWORK]> = {
+  const networkMap: Record<
+    string,
+    (typeof LIT_NETWORK)[keyof typeof LIT_NETWORK]
+  > = {
     naga: LIT_NETWORK.Naga,
-    "naga-dev": LIT_NETWORK.NagaDev,
-    "naga-test": LIT_NETWORK.NagaTest,
+    'naga-dev': LIT_NETWORK.NagaDev,
+    'naga-test': LIT_NETWORK.NagaTest,
   };
-  return (envVal && networkMap[envVal]) ? networkMap[envVal] : LIT_NETWORK.NagaDev;
+  return envVal && networkMap[envVal]
+    ? networkMap[envVal]
+    : LIT_NETWORK.NagaDev;
 }
 
 let _client: LitNodeClient | null = null;
