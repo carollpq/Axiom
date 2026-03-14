@@ -1,14 +1,18 @@
-import type { TabConfig } from "@/src/shared/types/shared";
+import type { TabConfig } from '@/src/shared/types/shared';
 import type {
   AuthorResponseStatusDb,
   RebuttalStatusDb,
   RebuttalResolutionDb,
   RebuttalPositionDb,
-} from "@/src/shared/lib/db/schema";
+} from '@/src/shared/lib/db/schema';
 
-export type ReviewerDisplayStatus = "Late" | "In Progress" | "Pending" | "Submitted";
+export type ReviewerDisplayStatus =
+  | 'Late'
+  | 'In Progress'
+  | 'Pending'
+  | 'Submitted';
 
-export type ReviewerTab = "dashboard" | "invites" | "assigned" | "completed";
+export type ReviewerTab = 'dashboard' | 'invites' | 'assigned' | 'completed';
 
 export interface AssignedReview {
   id: number;
@@ -25,7 +29,9 @@ export interface AssignedReview {
 export interface AssignedReviewExtended extends AssignedReview {
   abstract?: string;
   authors?: string[];
+  paperId?: string;
   pdfUrl?: string;
+  hasLitData?: boolean;
   editorName?: string;
 }
 
@@ -44,7 +50,9 @@ export interface CompletedReviewExtended extends CompletedReview {
   submissionId?: string;
   abstract?: string;
   authors?: string[];
+  paperId?: string;
   pdfUrl?: string;
+  hasLitData?: boolean;
   editorName?: string;
   reviewContent?: {
     strengths?: string;

@@ -22,16 +22,14 @@ export function Login() {
   const showRolePicker =
     isConnected && !!account?.address && userRoles.length > 1;
 
-  // Redirect once user data is loaded after wallet connection.
-  // Wait for loading to finish — getCurrentUser() may still be in-flight
-  // when useActiveAccount() first returns (cookie not yet committed).
+  // Redirect only if user has no roles yet (new user).
+  // Users with 1-2 roles stay on login to select/add roles.
+  // Users with 3 roles must use the role picker.
   useEffect(() => {
     if (loading || !isConnected || !account?.address || !user) return;
 
     if (userRoles.length === 0) {
       router.push(ROUTES.register);
-    } else if (userRoles.length === 1) {
-      router.push(ROLE_DASHBOARD_ROUTES[userRoles[0]]);
     }
   }, [loading, isConnected, account?.address, user, router, userRoles]);
 
@@ -72,12 +70,12 @@ export function Login() {
         )}
       </div>
 
-      {!showRolePicker && (
+      {userRoles.length < 3 && (
         <p
           className="text-center text-sm mt-6"
           style={{ color: AUTH_COLORS.text.muted }}
         >
-          New here?{' '}
+          {userRoles.length === 0 ? 'New here? ' : 'Want to add another role? '}
           <a
             href={ROUTES.register}
             className="underline"

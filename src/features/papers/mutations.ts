@@ -55,6 +55,7 @@ export interface UpdatePaperInput {
   title?: string;
   abstract?: string;
   status?: PaperStatusDb;
+  litAccessConditionsJson?: string | null;
 }
 
 /** No-ops (returns null) if no fields are provided. Auto-bumps updatedAt. */
@@ -62,7 +63,8 @@ export async function updatePaper(id: string, input: UpdatePaperInput) {
   if (
     input.title === undefined &&
     input.abstract === undefined &&
-    input.status === undefined
+    input.status === undefined &&
+    input.litAccessConditionsJson === undefined
   )
     return null;
 

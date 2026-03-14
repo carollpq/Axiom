@@ -6,14 +6,17 @@ import { SelectionPlaceholder } from '@/src/shared/components/selection-placehol
 import { PaperList } from '@/src/shared/components/paper-list.client';
 import { DynamicPdfViewer } from '@/src/shared/components/dynamic-pdf-viewer.client';
 import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
+import { useDecryptPaper } from '@/src/shared/hooks/useDecryptPaper';
 import { toReviewerPaperListItems } from '@/src/features/reviewer/lib/dashboard';
 
 interface ItemWithPdf {
   id: number;
+  paperId?: string;
   title: string;
   authors?: string[];
   abstract?: string;
   pdfUrl?: string;
+  hasLitData?: boolean;
 }
 
 interface Props<T extends ItemWithPdf> {
@@ -64,6 +67,12 @@ export function ReviewerThreeColumnShell<T extends ItemWithPdf>({
     return { selected: null, selectedIndex: -1, effectiveId: null };
   }, [items, selectedId]);
 
+  // Use decryption hook if paper has Lit data
+  const { fileUrl: decryptedUrl } = useDecryptPaper(
+    selected?.hasLitData && selected?.paperId ? selected.paperId : null,
+    true,
+  );
+
   return (
     <ThreeColumnLayout
       title={title}
@@ -77,8 +86,17 @@ export function ReviewerThreeColumnShell<T extends ItemWithPdf>({
         />
       }
       viewer={
-        selected?.pdfUrl ? (
-          <DynamicPdfViewer fileUrl={selected.pdfUrl} />
+        selected ? (
+          decryptedUrl ? (
+            <DynamicPdfViewer fileUrl={decryptedUrl} title={selected.title} />
+          ) : selected.pdfUrl ? (
+            <DynamicPdfViewer
+              fileUrl={selected.pdfUrl}
+              title={selected.title}
+            />
+          ) : (
+            <SelectionPlaceholder message="No PDF available" />
+          )
         ) : (
           <SelectionPlaceholder
             message={selected ? 'No PDF available' : 'Select a paper to view'}

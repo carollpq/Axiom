@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { getInitials } from '@/src/shared/lib/format';
 import type { PoolReviewer } from '@/src/features/editor/types';
@@ -23,15 +23,19 @@ export function ReviewerSearchModal({
   onSearchChange,
   onAdd,
 }: ReviewerSearchModalProps) {
+  const [minReputation, setMinReputation] = useState(0);
+
   const filtered = useMemo(() => {
     const term = searchTerm.toLowerCase();
-    return available.filter(
-      (r) =>
-        r.name.toLowerCase().includes(term) ||
-        r.field.toLowerCase().includes(term) ||
-        r.institution.toLowerCase().includes(term),
-    );
-  }, [available, searchTerm]);
+    return available
+      .filter(
+        (r) =>
+          r.name.toLowerCase().includes(term) ||
+          r.field.toLowerCase().includes(term) ||
+          r.institution.toLowerCase().includes(term),
+      )
+      .filter((r) => r.score >= minReputation);
+  }, [available, searchTerm, minReputation]);
 
   return (
     <ModalOverlay isOpen={isOpen} onClose={onClose} maxWidth="512px">
@@ -61,6 +65,43 @@ export function ReviewerSearchModal({
             }}
             autoFocus
           />
+
+          {/* Reputation score filter */}
+          <div
+            className="mb-4 p-3 rounded-[6px]"
+            style={{
+              background: 'rgba(30,28,24,0.4)',
+              border: '1px solid rgba(120,110,95,0.15)',
+            }}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-[11px] text-[#8a8070] font-serif">
+                Minimum Score
+              </label>
+              <span className="text-[11px] text-[#c9a44a] font-serif font-bold">
+                {minReputation.toFixed(1)}/5.0
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="50"
+              step="1"
+              value={minReputation * 10}
+              onChange={(e) =>
+                setMinReputation(parseFloat(e.target.value) / 10)
+              }
+              className="w-full h-1.5 rounded cursor-pointer appearance-none"
+              style={{
+                background: 'rgba(201,164,74,0.2)',
+                accentColor: '#c9a44a',
+              }}
+            />
+            <div className="flex justify-between text-[10px] text-[#6a6050] mt-1">
+              <span>0</span>
+              <span>5</span>
+            </div>
+          </div>
 
           <div
             className="space-y-2 max-h-64 overflow-y-auto"

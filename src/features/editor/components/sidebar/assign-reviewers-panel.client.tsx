@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { SearchInput } from '@/src/shared/components/search-input.client';
 import { Button } from '@/src/shared/components/button.client';
 import { SidebarSection } from '@/src/shared/components/sidebar-section';
@@ -31,9 +32,12 @@ export function AssignReviewersPanel({
   onAction,
   isLoading = false,
 }: AssignReviewersPanelProps) {
+  const [minReputation, setMinReputation] = useState(0);
+
   const assigned = reviewerPool.filter((r) => assignedIds.includes(r.id));
   const filtered = reviewerPool
     .filter((r) => !assignedIds.includes(r.id))
+    .filter((r) => r.score >= minReputation)
     .filter(
       (r) =>
         !search ||
@@ -57,6 +61,35 @@ export function AssignReviewersPanel({
           placeholder="Search reviewers..."
         />
 
+        {/* Reputation score filter */}
+        <div className="mt-3 px-1">
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-[11px] text-[#8a8070] font-serif">
+              Min Score
+            </label>
+            <span className="text-[11px] text-[#c9a44a] font-serif font-bold">
+              {minReputation.toFixed(1)}/5.0
+            </span>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="50"
+            step="1"
+            value={minReputation * 10}
+            onChange={(e) => setMinReputation(parseFloat(e.target.value) / 10)}
+            className="w-full h-1.5 rounded cursor-pointer appearance-none"
+            style={{
+              background: 'rgba(201,164,74,0.2)',
+              accentColor: '#c9a44a',
+            }}
+          />
+          <div className="flex justify-between text-[10px] text-[#6a6050] mt-1">
+            <span>0</span>
+            <span>5</span>
+          </div>
+        </div>
+
         {/* Assigned list */}
         {assigned.length > 0 && (
           <div className="mt-3 space-y-1.5">
@@ -69,9 +102,14 @@ export function AssignReviewersPanel({
                   border: '1px solid rgba(120,110,95,0.15)',
                 }}
               >
-                <span className="text-[12px] text-[#d4ccc0] font-serif truncate">
-                  {r.name}
-                </span>
+                <div className="inline-flex items-center gap-2 min-w-0 flex-1">
+                  <span className="text-[12px] text-[#d4ccc0] font-serif truncate">
+                    {r.name}
+                  </span>
+                  <span className="text-[10px] text-[#c9a44a] font-serif font-bold shrink-0">
+                    {r.score.toFixed(1)}
+                  </span>
+                </div>
                 <button
                   onClick={() => onRemove(r.id)}
                   className="text-[#6a6050] hover:text-[#d4645a] text-sm cursor-pointer"
@@ -96,16 +134,21 @@ export function AssignReviewersPanel({
                   border: '1px solid rgba(120,110,95,0.1)',
                 }}
               >
-                <div className="min-w-0 truncate">
-                  <span className="text-[12px] text-[#c9b89e] font-serif">
-                    {r.name}
-                  </span>
-                  <span className="text-[10px] text-[#6a6050] ml-2">
-                    {r.field} &middot; {r.score}
+                <div className="min-w-0 truncate flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12px] text-[#c9b89e] font-serif">
+                      {r.name}
+                    </span>
+                    <span className="text-[10px] text-[#c9a44a] font-serif font-bold shrink-0">
+                      {r.score.toFixed(1)}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-[#6a6050]">
+                    {r.field} &middot; {r.reviews} reviews
                   </span>
                 </div>
-                <span className="text-[10px] text-[#8a8070] shrink-0">
-                  + Assign
+                <span className="text-[10px] text-[#8a8070] shrink-0 ml-2">
+                  + Add
                 </span>
               </button>
             ))}

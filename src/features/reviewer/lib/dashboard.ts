@@ -166,6 +166,7 @@ export function mapDbToCompletedReviewExtended(
     a.submission.journal?.editorWallet,
     editorNames,
   );
+  const hasLitData = Boolean(paper.litAccessConditionsJson);
 
   // Find this reviewer's review from the assignment's reviews
   const myReview = a.reviews?.find(
@@ -209,7 +210,9 @@ export function mapDbToCompletedReviewExtended(
     submissionId: a.submissionId,
     abstract: paper.abstract ?? undefined,
     authors: authors.length > 0 ? authors : undefined,
+    paperId: paper.id,
     pdfUrl,
+    hasLitData,
     editorName,
     reviewContent,
     authorResponseStatus,
@@ -247,12 +250,15 @@ export function mapDbToAssignedReviewExtended(
     a.submission.journal?.editorWallet,
     editorNames,
   );
+  const hasLitData = Boolean(paper.litAccessConditionsJson);
 
   return {
     ...baseReview,
     abstract: paper.abstract,
     authors: authors.length > 0 ? authors : undefined,
+    paperId: paper.id,
     pdfUrl,
+    hasLitData,
     editorName,
   };
 }

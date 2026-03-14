@@ -12,6 +12,8 @@ import { eq, and } from 'drizzle-orm';
 import { canonicalJson, sha256 } from '@/src/shared/lib/hashing';
 import { requireSession } from '@/src/shared/lib/auth/auth';
 import { anchorToHcs } from '@/src/shared/lib/hedera/hcs';
+import { addReviewersToAccessConditions } from '@/src/shared/lib/lit/access-control';
+import { updatePaper } from '@/src/features/papers/mutations';
 import {
   requireSubmissionEditor,
   requireSubmissionAuthor,
@@ -160,6 +162,17 @@ export async function assignReviewersAction(
 
   await updateSubmissionStatus(submissionId, 'reviewers_assigned');
   const allAssignments = [...existing, ...created.filter(Boolean)];
+
+  // Update Lit access conditions to add reviewer wallets
+  if (submission.paper?.litAccessConditionsJson) {
+    const updatedConditionsJson = addReviewersToAccessConditions(
+      submission.paper.litAccessConditionsJson,
+      newWallets,
+    );
+    await updatePaper(submission.paperId, {
+      litAccessConditionsJson: updatedConditionsJson,
+    });
+  }
 
   const authorWallet = submission.paper?.owner?.walletAddress;
 

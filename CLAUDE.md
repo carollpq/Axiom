@@ -10,7 +10,7 @@ Axiom is a blockchain-backed academic publishing and peer review platform built 
 
 ### Project Status
 
-The codebase is a **functional full-stack application**. The researcher and editor sections have full backend integration with DB-backed data. The reviewer section still uses mock data for the dashboard UI but has complete API routes.
+The codebase is a **functional full-stack application** with complete end-to-end integration across all roles (researcher, editor, reviewer). All three role dashboards are DB-backed with real data, all API routes are implemented and working, and all major features are wired together.
 
 **What's working end-to-end:**
 - ✅ **User authentication** — Multi-step login: role selector → wallet connect → ORCID verification → DB save → role-based dashboard routing
@@ -21,6 +21,8 @@ The codebase is a **functional full-stack application**. The researcher and edit
 - ✅ **Journal management** — Editor can update journal aims/scope and submission criteria, create/delete issues, assign papers to issues, and manage a reviewer pool (add/remove reviewers)
 - ✅ **Review criteria publishing** — `POST /api/submissions/[id]/criteria` → canonical JSON hash → HCS anchor → immutable criteria
 - ✅ **Reviewer assignment** — `POST /api/submissions/[id]/assign-reviewer` → `reviewAssignments` row with deadline tracking + on-chain deadline registration via TimelineEnforcer smart contract
+- ✅ **Lit Protocol reviewer gating** — Reviewer wallets automatically added to Lit access conditions on assignment. `addReviewersToAccessConditions()` parses existing conditions, merges reviewer wallets, and updates `papers.litAccessConditionsJson`. Reviewers can now decrypt papers during review phase.
+- ✅ **Lit Protocol decryption UI** — `useDecryptPaper` hook fetches encrypted content from API, decrypts via Lit, and returns blob URL. Wired into editor components (under-review, incoming-papers, accepted-papers) and reviewer components (papers-under-review). Auto-decrypts when paper has Lit data. Falls back to raw PDF for non-encrypted papers.
 - ✅ **Review submission** — `POST /api/reviews/[id]` → per-criterion evaluations → hash → HCS anchor → reputation token minting → TimelineEnforcer `markCompleted` → reputation score recomputation
 - ✅ **Editorial decision** — `POST /api/submissions/[id]/decision` → `allCriteriaMet` computation → HCS anchor → reputation events
 - ✅ **Rebuttal phase** — Researcher-initiated → researcher responds per-review → editor resolves → HCS anchored → reputation tokens minted
@@ -40,15 +42,14 @@ The codebase is a **functional full-stack application**. The researcher and edit
 - ✅ **Mirror Node reads** — `src/shared/lib/hedera/mirror.ts` queries Hedera Mirror Node for NFT data, account lookups, and on-chain reputation verification. `GET /api/reviews/reputation?wallet=0x...` returns DB score + recent events + on-chain NFT data.
 - ✅ **Reputation score computation** — `upsertReputationScore()` computes weighted score (0.30 timeliness + 0.25 editor + 0.25 author + 0.20 publication) via SQL aggregation. Auto-recomputed after every reputation event. Stored in `reputationScores` table.
 - ✅ **Scheduled Transactions** — Fully-signed authorship contracts use `ScheduleCreateTransaction` wrapping HCS message. Operator signs immediately to trigger execution. Schedule ID stored for verification.
-
-**What still uses mock data:**
-- Reviewer dashboard UI (`(reviewer)/`) — API routes exist but dashboard components not yet wired
+- ✅ **Reviewer dashboard** — Dashboard + assigned papers + completed papers + incoming invites + pool invites all wired to real DB data. Components: `listAssignedReviews`, `listCompletedReviewsExtended`, `listPendingInvites`, `listPendingPoolInvites`.
+- ✅ **Reviewer acceptance/decline** — `POST /api/submissions/[id]/accept-assignment` with review assignment state transitions + HCS anchoring + notifications.
+- ✅ **Reviewer search by reputation score** — Editor can filter reviewers by composite reputation score (0–5 scale) when assigning reviews. Slider-based filtering in both inline assignment panel and add-to-pool modal. Reputation scores automatically synced from DB.
 
 **What is not yet implemented:**
-- Lit Protocol decryption (encrypt works; decrypt not wired into UI)
-- Reviewer search by reputation score in assignment UI
+- (all major features complete!)
 
-**Current stack:** Next.js 16 (App Router, Turbopack) · React 19.2 · Tailwind CSS v4 · Thirdweb v5 · TypeScript strict mode · Neon PostgreSQL/Drizzle ORM · Hedera SDK (HCS + HTS + Smart Contracts + Mirror Node + Scheduled Transactions) · ethers v6 (EVM contract interaction) · Lit Protocol SDK (encrypt only, dynamically imported) · web3.storage (IPFS + Filecoin) · react-pdf v10 (pdfjs-dist v5)
+**Current stack:** Next.js 16 (App Router, Turbopack) · React 19.2 · Tailwind CSS v4 · Thirdweb v5 · TypeScript strict mode · Neon PostgreSQL/Drizzle ORM · Hedera SDK (HCS + HTS + Smart Contracts + Mirror Node + Scheduled Transactions) · ethers v6 (EVM contract interaction) · Lit Protocol SDK (encrypt + decrypt, dynamically imported) · web3.storage (IPFS + Filecoin) · react-pdf v10 (pdfjs-dist v5)
 
 ## Common Commands
 
@@ -204,15 +205,16 @@ Each role group has its own layout using `RoleShell` from `src/shared/components
 - ✅ Notifications (DB-backed, polling, integrated across all pipeline stages)
 - ✅ Review transparency (anonymized reviews public after decision)
 - ✅ Anonymous reviewer ratings (no author reference stored)
+- ✅ Lit Protocol reviewer gating (reviewer wallets added to access conditions on assignment)
+- ✅ Lit Protocol decryption UI (wired into editor + reviewer components, auto-decrypt on load)
+- ✅ Reviewer dashboard: wired to real data (dashboard, assigned papers, completed papers, invites, pool invites)
 
 ### Still To Do
-1. **Reviewer dashboard: wire to real data** — Dashboard components exist but still use mock data. API routes are complete.
-2. **Wire Lit decrypt into explorer** — Researchers reading their own private papers.
-3. **Reviewer search by reputation** — Editor searches reviewers filtered by score, field, timeliness.
+1. (none — all major features implemented!)
 
 ### Stretch
-4. **HTS minting via System Contracts** (hybrid HTS + EVM)
-5. **Real ORCID OAuth flow**
+2. **HTS minting via System Contracts** (hybrid HTS + EVM)
+3. **Real ORCID OAuth flow**
 
 ## Key Architecture Decisions
 
@@ -286,11 +288,37 @@ Overdue: reviewer gets `review_late` HTS token. Editor overdue: journal timeline
 
 Lit encrypts paper content during the review phase. On publication, content is decrypted and handed to the journal's existing distribution system. **Axiom does NOT gate published paper access** — journals keep their paywall/subscription model.
 
-| State | Who Decrypts | Condition |
-|---|---|---|
-| Private Draft | Researchers | `wallet IN researcherWallets` |
-| Under Review | Researchers + reviewers + editor | `wallet IN allowedWallets` |
-| Published | Journal's existing model | Decrypted, no longer Lit-gated |
+**Access control by phase:**
+
+| Phase | Who Decrypts | Condition | How Access is Granted |
+|---|---|---|---|
+| Private Draft | Researchers | `wallet IN researcherWallets` | Author's wallet added at paper creation |
+| Under Review | Researchers + reviewers + editor | `wallet IN allowedWallets` | Reviewer wallets added dynamically when assigned; editor wallet added if in scope |
+| Published | Journal's existing model | Decrypted, no longer Lit-gated | Paper is decrypted and redeployed as plaintext |
+
+**Reviewer access flow:**
+
+1. **Paper created** → Encrypted with author wallet only: `buildWalletListConditions([authorWallet])`
+2. **Reviewers assigned** → `assignReviewersAction()` calls `addReviewersToAccessConditions(existingJson, reviewerWallets)`
+   - Extracts existing wallets from access conditions JSON
+   - Merges new reviewer wallets (deduplicates case-insensitive)
+   - Rebuilds access conditions with all wallets
+   - Updates `papers.litAccessConditionsJson` in DB
+3. **Reviewer connects wallet** → Uses `decryptFileWithLit()` with updated conditions
+   - Lit verifies reviewer wallet signature matches an allowed wallet
+   - Decryption succeeds
+
+**Key utilities** (`src/shared/lib/lit/access-control.ts`):
+- `buildWalletListConditions(wallets: string[])` — Creates OR-conditions for wallet list
+- `extractWalletsFromConditions(conditions)` — Parses wallet addresses from existing conditions
+- `addReviewersToAccessConditions(existingJson, reviewerWallets)` — Merges wallets and rebuilds JSON
+
+**Implementation notes:**
+- Conditions are stored as JSON strings in `papers.litAccessConditionsJson`
+- Invalid/unparseable conditions are logged as warnings; system rebuilds from scratch
+- No wallets are duplicated (case-insensitive deduplication)
+- Access condition updates happen synchronously during assignment (not deferred via `after()`)
+- This enables reviewers to decrypt papers immediately after assignment without waiting for notification delivery
 
 ### Review Comment Visibility
 
@@ -329,7 +357,7 @@ src/
 │   ├── auth/                      # Login flow components
 │   ├── researcher/                # Components, hooks, reducers, config, constants, lib, queries, types, nav
 │   ├── editor/                    # Components, hooks, queries, actions, lib, types (fully DB-backed, three-column layouts, sidebar panels)
-│   ├── reviewer/                  # Components, hooks, lib, reducers (mock data still)
+│   ├── reviewer/                  # Components, hooks, query, actions, lib (fully DB-backed, dashboard + three-column layouts)
 │   ├── contracts/                 # DB queries + actions
 │   ├── papers/                    # DB queries + actions
 │   ├── users/                     # DB queries + actions + lib
@@ -461,7 +489,8 @@ NEXT_PUBLIC_LIT_NETWORK
 ### Lit Protocol
 - **Lit + Hedera compatibility:** Highest technical risk. Test EVM-compatible conditions via Hedera JSON-RPC early.
 - **Review phase only:** Lit gates content during draft + review. NOT for published paper access (journals keep their paywall).
-- **Condition updates:** When reviewers assigned, update Lit conditions to include their wallets.
+- **Reviewer access conditions:** When reviewers assigned, `addReviewersToAccessConditions()` parses existing conditions, merges reviewer wallets (dedup case-insensitive), rebuilds conditions, and updates DB. Reviewers can decrypt immediately.
+- **Condition parsing:** If existing JSON is invalid, system logs a warning and rebuilds from scratch with all known wallets.
 - **On publication:** Decrypt content and re-upload as plaintext (or hand off to journal).
 
 ### Contracts & Signatures

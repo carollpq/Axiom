@@ -40,3 +40,60 @@ export function buildWalletListConditions(wallets: string[]): ConditionList {
     ],
   );
 }
+
+/**
+ * Extracts wallet addresses from an existing access conditions list.
+ * Returns deduplicated lowercase wallet addresses.
+ */
+export function extractWalletsFromConditions(
+  conditionList: ConditionList,
+): string[] {
+  const wallets = new Set<string>();
+  for (const condition of conditionList) {
+    if ('returnValueTest' in condition && condition.returnValueTest?.value) {
+      wallets.add(condition.returnValueTest.value.toLowerCase());
+    }
+  }
+  return Array.from(wallets);
+}
+
+/**
+ * Adds reviewer wallets to existing Lit access conditions.
+ * If the conditions JSON is invalid or empty, builds new conditions with all wallets.
+ *
+ * @param existingConditionsJson - Current litAccessConditionsJson from DB (or null)
+ * @param reviewerWallets - New reviewer wallets to add
+ * @returns Updated accessConditionsJson as a JSON string
+ */
+export function addReviewersToAccessConditions(
+  existingConditionsJson: string | null | undefined,
+  reviewerWallets: string[],
+): string {
+  if (!reviewerWallets || reviewerWallets.length === 0) {
+    // No reviewers to add; return existing or empty
+    return existingConditionsJson ?? '';
+  }
+
+  let existingWallets: string[] = [];
+
+  if (existingConditionsJson) {
+    try {
+      const parsed = JSON.parse(existingConditionsJson);
+      if (Array.isArray(parsed)) {
+        existingWallets = extractWalletsFromConditions(parsed);
+      }
+    } catch {
+      // If parsing fails, treat as empty and rebuild from scratch
+      console.warn('[Lit] Failed to parse existing conditions, rebuilding');
+    }
+  }
+
+  // Merge and deduplicate (case-insensitive)
+  const walletSet = new Set(existingWallets.map((w) => w.toLowerCase()));
+  reviewerWallets.forEach((w) => walletSet.add(w.toLowerCase()));
+  const allWallets = Array.from(walletSet);
+
+  // Rebuild conditions with all wallets
+  const updatedConditions = buildWalletListConditions(allWallets);
+  return JSON.stringify(updatedConditions);
+}
