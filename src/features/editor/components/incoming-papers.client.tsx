@@ -105,7 +105,10 @@ export function IncomingPapersClient({
         sidebar={
           selectedId ? (
             <>
-              <CriteriaBuilder submissionId={selectedId} />
+              <CriteriaBuilder
+                submissionId={selectedId}
+                alreadyPublished={selected?.criteriaPublished ?? false}
+              />
               <AssignReviewersPanel
                 reviewerPool={reviewerPool}
                 assignedIds={assignedIds}

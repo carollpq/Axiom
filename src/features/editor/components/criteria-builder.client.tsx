@@ -7,10 +7,12 @@ import { FormSelect } from '@/src/shared/components/form-select.client';
 import { SectionLabel } from '@/src/shared/components/section-label';
 import { Button } from '@/src/shared/components/button.client';
 import { publishCriteriaAction } from '@/src/features/submissions/actions';
+import { getErrorMessage } from '@/src/shared/lib/errors';
 import type { ReviewCriterionInput } from '@/src/features/submissions/types';
 
 interface CriteriaBuilderProps {
   submissionId: string;
+  alreadyPublished?: boolean;
   onPublished?: (criteriaHash: string) => void;
 }
 
@@ -25,13 +27,14 @@ function newCriterion(): ReviewCriterionInput {
 
 export function CriteriaBuilder({
   submissionId,
+  alreadyPublished = false,
   onPublished,
 }: CriteriaBuilderProps) {
   const [criteria, setCriteria] = useState<ReviewCriterionInput[]>([
     newCriterion(),
   ]);
   const [isPublishing, setIsPublishing] = useState(false);
-  const [published, setPublished] = useState(false);
+  const [published, setPublished] = useState(alreadyPublished);
   const [error, setError] = useState<string | null>(null);
 
   const updateCriterion = useCallback(
@@ -63,8 +66,14 @@ export function CriteriaBuilder({
       const result = await publishCriteriaAction(submissionId, criteria);
       setPublished(true);
       onPublished?.(result.criteriaHash);
-    } catch {
-      setError('Network error — please try again');
+    } catch (err) {
+      const msg = getErrorMessage(err, 'Network error — please try again');
+      if (msg.includes('Criteria can only be published')) {
+        setPublished(true);
+        setError(null);
+      } else {
+        setError(msg);
+      }
     } finally {
       setIsPublishing(false);
     }

@@ -89,43 +89,37 @@ export interface CreatePaperVersionInput {
   fileStorageKey?: string | null;
 }
 
-/** Inserts a version row and bumps paper.currentVersion in a single transaction. */
+/** Inserts a version row and bumps paper.currentVersion sequentially. */
 export async function createPaperVersion(input: CreatePaperVersionInput) {
-  return db.transaction(async (tx) => {
-    const paper = (
-      await tx
-        .select()
-        .from(papers)
-        .where(eq(papers.id, input.paperId))
-        .limit(1)
-    )[0];
+  const paper = (
+    await db.select().from(papers).where(eq(papers.id, input.paperId)).limit(1)
+  )[0];
 
-    if (!paper) return null;
+  if (!paper) return null;
 
-    const version = (
-      await tx
-        .insert(paperVersions)
-        .values({
-          paperId: input.paperId,
-          versionNumber: paper.currentVersion,
-          paperHash: input.paperHash,
-          datasetHash: input.datasetHash ?? null,
-          codeRepoUrl: input.codeRepoUrl ?? null,
-          codeCommitHash: input.codeCommitHash ?? null,
-          envSpecHash: input.envSpecHash ?? null,
-          fileStorageKey: input.fileStorageKey ?? null,
-        })
-        .returning()
-    )[0];
-
-    await tx
-      .update(papers)
-      .set({
-        currentVersion: paper.currentVersion + 1,
-        updatedAt: new Date().toISOString(),
+  const version = (
+    await db
+      .insert(paperVersions)
+      .values({
+        paperId: input.paperId,
+        versionNumber: paper.currentVersion,
+        paperHash: input.paperHash,
+        datasetHash: input.datasetHash ?? null,
+        codeRepoUrl: input.codeRepoUrl ?? null,
+        codeCommitHash: input.codeCommitHash ?? null,
+        envSpecHash: input.envSpecHash ?? null,
+        fileStorageKey: input.fileStorageKey ?? null,
       })
-      .where(eq(papers.id, input.paperId));
+      .returning()
+  )[0];
 
-    return version;
-  });
+  await db
+    .update(papers)
+    .set({
+      currentVersion: paper.currentVersion + 1,
+      updatedAt: new Date().toISOString(),
+    })
+    .where(eq(papers.id, input.paperId));
+
+  return version;
 }

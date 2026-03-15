@@ -34,9 +34,10 @@ export function AssignReviewersPanel({
 }: AssignReviewersPanelProps) {
   const [minReputation, setMinReputation] = useState(0);
 
-  const assigned = reviewerPool.filter((r) => assignedIds.includes(r.id));
+  const assignedSet = new Set(assignedIds);
+  const assigned = reviewerPool.filter((r) => assignedSet.has(r.id));
   const filtered = reviewerPool
-    .filter((r) => !assignedIds.includes(r.id))
+    .filter((r) => !assignedSet.has(r.id))
     .filter((r) => r.score >= minReputation)
     .filter(
       (r) =>
@@ -44,6 +45,15 @@ export function AssignReviewersPanel({
         r.name.toLowerCase().includes(search.toLowerCase()) ||
         r.field.toLowerCase().includes(search.toLowerCase()),
     );
+
+  const handleMinReputationChange = (value: number) => {
+    setMinReputation(value);
+    // Auto-remove assigned reviewers that fall below new threshold
+    const toRemove = assigned.filter((r) => r.score < value).map((r) => r.id);
+    for (const id of toRemove) {
+      onRemove(id);
+    }
+  };
 
   return (
     <SidebarSection title="Assign Reviewers">
@@ -77,7 +87,9 @@ export function AssignReviewersPanel({
             max="50"
             step="1"
             value={minReputation * 10}
-            onChange={(e) => setMinReputation(parseFloat(e.target.value) / 10)}
+            onChange={(e) =>
+              handleMinReputationChange(parseFloat(e.target.value) / 10)
+            }
             className="w-full h-1.5 rounded cursor-pointer appearance-none"
             style={{
               background: 'rgba(201,164,74,0.2)',

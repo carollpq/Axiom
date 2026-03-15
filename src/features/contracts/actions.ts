@@ -10,6 +10,7 @@ import {
   createContract,
   addContributor,
   removeContributor,
+  updateContributorFields,
   signContributor,
   resetContractSignatures,
   generateInviteToken,
@@ -52,6 +53,13 @@ const addContributorSchema = z.object({
   contributorName: z.string().trim().max(200).nullish(),
   roleDescription: z.string().trim().max(500).nullish(),
   isCreator: z.boolean().optional(),
+});
+
+const updateContributorFieldsSchema = z.object({
+  contractId: z.string().uuid(),
+  contributorId: z.string().uuid(),
+  contributionPct: z.number().int().min(0).max(100).optional(),
+  roleDescription: z.string().trim().max(500).nullish(),
 });
 
 const signSchema = z.object({
@@ -110,6 +118,26 @@ export async function addContributorAction(
   }
 
   return contributor;
+}
+
+/** Updates contributor percentage and/or role in the DB. */
+export async function updateContributorFieldsAction(
+  input: z.infer<typeof updateContributorFieldsSchema>,
+) {
+  const parsed = updateContributorFieldsSchema.parse(input);
+  const wallet = await requireSession();
+  await requireContractOwner(parsed.contractId, wallet);
+
+  const updated = await updateContributorFields(
+    parsed.contractId,
+    parsed.contributorId,
+    {
+      contributionPct: parsed.contributionPct,
+      roleDescription: parsed.roleDescription,
+    },
+  );
+  if (!updated) throw new Error('Contributor not found');
+  return updated;
 }
 
 export async function removeContributorAction(
@@ -295,5 +323,5 @@ export async function signContractAction(input: z.infer<typeof signSchema>) {
     }
   });
 
-  return result;
+  return { ...result, isFullySigned };
 }

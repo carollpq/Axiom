@@ -1,6 +1,6 @@
 'use client';
 
-import { useReducer, useEffect, useState } from 'react';
+import { useReducer, useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import type {
@@ -9,11 +9,13 @@ import type {
 } from '@/src/features/researcher/types/contract';
 import { useUser } from '@/src/shared/context/user-context.client';
 import { sha256, canonicalJson } from '@/src/shared/lib/hashing';
+import { ROUTES } from '@/src/shared/lib/routes';
 import type { UserSearchResult } from '@/src/shared/types/domain';
 import {
   createContractAction,
   addContributorAction,
   removeContributorAction,
+  updateContributorFieldsAction,
   resetSignaturesAction,
   signContractAction,
   generateInviteLinkAction,
@@ -35,6 +37,9 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
   const [state, dispatch] = useReducer(contractBuilderReducer, initialState);
   const [error, setError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  const updateTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  );
 
   // When a draft is selected, load its pre-mapped contributors
   useEffect(() => {
@@ -108,9 +113,51 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
     value: string | number,
   ) => {
     const wasSignedBefore = hasSigned;
+    const contributor = state.contributors.find((c) => c.id === id);
     dispatch({ type: 'UPDATE_CONTRIBUTOR', id, field, value });
-    // Reset signatures in DB if any were signed before this edit
-    if (wasSignedBefore && state.selectedContractId) {
+
+    // Debounced persist to DB if contract already exists
+    if (state.selectedContractId && contributor?.dbId) {
+      const key = `${id}:${field}`;
+      const prev = updateTimers.current.get(key);
+      if (prev) clearTimeout(prev);
+
+      const contractId = state.selectedContractId;
+      const dbId = contributor.dbId;
+
+      updateTimers.current.set(
+        key,
+        setTimeout(() => {
+          updateTimers.current.delete(key);
+
+          const fields: {
+            contributionPct?: number;
+            roleDescription?: string | null;
+          } = {};
+          if (field === 'pct') fields.contributionPct = Number(value) || 0;
+          if (field === 'role')
+            fields.roleDescription = (value as string) || null;
+
+          const promises: Promise<unknown>[] = [
+            updateContributorFieldsAction({
+              contractId,
+              contributorId: dbId,
+              ...fields,
+            }),
+          ];
+
+          if (wasSignedBefore) {
+            promises.push(resetSignaturesAction(contractId));
+          }
+
+          Promise.all(promises).catch((err) => {
+            console.error('Update contributor fields failed:', err);
+            toast.error('Failed to save changes');
+          });
+        }, 400),
+      );
+    } else if (wasSignedBefore && state.selectedContractId) {
+      // No DB persist needed but signatures still need reset
       resetSignaturesAction(state.selectedContractId).catch((err) => {
         console.error('Reset signatures failed:', err);
         toast.error('Failed to reset signatures');
@@ -209,7 +256,7 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
       const contractHash = await sha256(canonicalJson(contractPayload));
       const signature = await account.signMessage({ message: contractHash });
 
-      await signContractAction({
+      const result = await signContractAction({
         contractId,
         contributorWallet: contributor.wallet,
         signature,
@@ -217,8 +264,16 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
       });
 
       setError(null);
-      router.refresh();
-      toast.success('Contract signed');
+
+      if (result.isFullySigned) {
+        toast.success(
+          'All contributors have signed! Redirecting to create submission…',
+        );
+        router.push(ROUTES.researcher.createSubmission);
+      } else {
+        router.refresh();
+        toast.success('Contract signed');
+      }
     } catch (err) {
       console.error('Signing failed:', err);
       setError('Signing failed. Please try again.');

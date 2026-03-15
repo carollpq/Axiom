@@ -59,6 +59,7 @@ export interface PaperCardData {
   submittedDate: string;
   hasLitData: boolean;
   fileUrl?: string;
+  criteriaPublished: boolean;
 }
 
 export type AssignmentDisplayStatus =

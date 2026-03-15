@@ -57,6 +57,38 @@ export async function addContributor(input: AddContributorInput) {
   )[0];
 }
 
+/** Updates a contributor's percentage and/or role description in the DB. */
+export async function updateContributorFields(
+  contractId: string,
+  contributorId: string,
+  fields: { contributionPct?: number; roleDescription?: string | null },
+) {
+  const updates = {
+    ...(fields.contributionPct !== undefined && {
+      contributionPct: fields.contributionPct,
+    }),
+    ...(fields.roleDescription !== undefined && {
+      roleDescription: fields.roleDescription,
+    }),
+  };
+  if (Object.keys(updates).length === 0) return null;
+
+  return (
+    (
+      await db
+        .update(contractContributors)
+        .set(updates)
+        .where(
+          and(
+            eq(contractContributors.id, contributorId),
+            eq(contractContributors.contractId, contractId),
+          ),
+        )
+        .returning()
+    )[0] ?? null
+  );
+}
+
 export async function removeContributor(
   contractId: string,
   contributorId: string,

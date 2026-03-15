@@ -4,8 +4,11 @@ import {
   papers,
   authorshipContracts,
   contractContributors,
+  submissions,
+  journals,
+  reviewAssignments,
 } from '@/src/shared/lib/db/schema';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, and } from 'drizzle-orm';
 import { getUserByWallet } from '@/src/features/users/queries';
 
 /** Drizzle return type for papers with versions + contracts (no owner). */
@@ -79,6 +82,41 @@ export async function requirePaperOwner(paperId: string, wallet: string) {
   if (paper.owner?.walletAddress?.toLowerCase() !== wallet.toLowerCase())
     throw new Error('Forbidden');
   return paper;
+}
+
+/** Checks if wallet is an editor or assigned reviewer for any submission of this paper. */
+export async function canAccessPaperContent(
+  paperId: string,
+  wallet: string,
+): Promise<boolean> {
+  const [editorRow, reviewerRow] = await Promise.all([
+    db
+      .select({ id: submissions.id })
+      .from(submissions)
+      .innerJoin(journals, eq(submissions.journalId, journals.id))
+      .where(
+        and(
+          eq(submissions.paperId, paperId),
+          eq(journals.editorWallet, wallet),
+        ),
+      )
+      .limit(1),
+    db
+      .select({ id: reviewAssignments.id })
+      .from(reviewAssignments)
+      .innerJoin(
+        submissions,
+        eq(reviewAssignments.submissionId, submissions.id),
+      )
+      .where(
+        and(
+          eq(submissions.paperId, paperId),
+          eq(reviewAssignments.reviewerWallet, wallet),
+        ),
+      )
+      .limit(1),
+  ]);
+  return editorRow.length > 0 || reviewerRow.length > 0;
 }
 
 export async function getPaperById(id: string) {
