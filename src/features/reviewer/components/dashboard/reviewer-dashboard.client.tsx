@@ -14,14 +14,13 @@ import type {
 import { PerformanceMetrics } from '../../reviewer-dashboard/performance-metrics';
 import { ResearchersInsights } from '../../reviewer-dashboard/researchers-insights';
 
-//TODO: please remove any default mock data
-const DEFAULT_REPUTATION_SCORES: ReputationScores = {
-  overall: 4.4,
-  change: 0.05,
-  timeliness: 4.6,
-  editorAvg: 4.4,
-  authorAvg: 4.2,
-  postPub: 4.8,
+const EMPTY_REPUTATION_SCORES: ReputationScores = {
+  overall: 0,
+  change: 0,
+  timeliness: 0,
+  editorAvg: 0,
+  authorAvg: 0,
+  postPub: 0,
 };
 
 interface Props {
@@ -44,7 +43,7 @@ export function ReviewerDashboardClient({
   averageDaysToDeadline = 0,
   researcherInsights = [],
 }: Props) {
-  const reputationScores = initialReputation ?? DEFAULT_REPUTATION_SCORES;
+  const reputationScores = initialReputation ?? EMPTY_REPUTATION_SCORES;
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -55,7 +54,7 @@ export function ReviewerDashboardClient({
 
   const handleCopyLink = async () => {
     if (!userProfile?.walletAddress) return;
-    const url = `${window.location.origin}/api/reviewer-reputation?wallet=${userProfile.walletAddress}`;
+    const url = `${window.location.origin}/reviewer-profile/${userProfile.walletAddress}`;
     await navigator.clipboard.writeText(url);
     setCopied(true);
   };
