@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { useUser } from '@/src/shared/context/user-context.client';
 import { sha256, canonicalJson } from '@/src/shared/lib/hashing';
 import { signContractAction } from '@/src/features/contracts/actions';
+import { ROUTES } from '@/src/shared/lib/routes';
 import { getErrorMessage } from '@/src/shared/lib/errors';
 import { AlertBanner } from '@/src/shared/components/alert-banner';
 import type { ContractContributorView } from '@/src/features/researcher/types/contract';
@@ -49,16 +50,23 @@ export function ContractsToSign({ contracts, currentWallet }: Props) {
       const contractHash = await sha256(canonicalJson(payload));
       const signature = await account.signMessage({ message: contractHash });
 
-      await signContractAction({
+      const result = await signContractAction({
         contractId,
         contributorWallet: currentWallet,
         signature,
         contractHash,
       });
 
-      setDismissed((prev) => new Set(prev).add(contractId));
-      router.refresh();
-      toast.success('Contract signed successfully');
+      if (result.isFullySigned) {
+        toast.success(
+          'All contributors have signed! Redirecting to create submission…',
+        );
+        router.push(ROUTES.researcher.createSubmission);
+      } else {
+        setDismissed((prev) => new Set(prev).add(contractId));
+        router.refresh();
+        toast.success('Contract signed successfully');
+      }
     } catch (err) {
       const message = getErrorMessage(err, 'Signing failed');
       setError(message);
