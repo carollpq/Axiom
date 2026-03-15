@@ -14,6 +14,7 @@ import type {
 import { PerformanceMetrics } from '../../reviewer-dashboard/performance-metrics';
 import { ResearchersInsights } from '../../reviewer-dashboard/researchers-insights';
 
+//TODO: please remove any default mock data
 const DEFAULT_REPUTATION_SCORES: ReputationScores = {
   overall: 4.4,
   change: 0.05,
