@@ -165,6 +165,7 @@ export function mapDbToPaperCardData(s: DbJournalSubmission): PaperCardData {
       !hasLitData && hasFile
         ? `/api/papers/${s.paper.id}/content?format=raw`
         : undefined,
+    criteriaPublished: (s.reviewCriteria?.length ?? 0) > 0,
   };
 }
 

@@ -1,7 +1,10 @@
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getPaperById } from '@/src/features/papers/queries';
+import {
+  getPaperById,
+  canAccessPaperContent,
+} from '@/src/features/papers/queries';
 import { getFileFromIPFS, isStorageConfigured } from '@/src/shared/lib/pinata';
 import { getSession } from '@/src/shared/lib/auth/auth';
 
@@ -19,7 +22,7 @@ export async function GET(
     return NextResponse.json({ error: 'Paper not found' }, { status: 404 });
   }
 
-  // Authorization: owner or co-author only (paper.owner already joined by getPaperById)
+  // Authorization: owner, co-author, or editor of a journal with a submission for this paper
   const isOwner = paper.owner?.walletAddress?.toLowerCase() === session;
   const isContributor =
     paper.contracts?.some((c) =>
@@ -28,7 +31,10 @@ export async function GET(
       ),
     ) ?? false;
 
-  if (!isOwner && !isContributor) {
+  const isAuthorized =
+    isOwner || isContributor || (await canAccessPaperContent(id, session));
+
+  if (!isAuthorized) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
