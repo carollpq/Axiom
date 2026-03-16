@@ -122,15 +122,15 @@ Papers tagged at registration. Recorded on-chain, immutable.
 
 | Topic | Purpose | Message Schema |
 |---|---|---|
-| `papers` | Registrations, versions | `{type, paperHash, authorWallet, studyType, provenanceHashes, timestamp}` |
+| `papers` | Creation, registrations, versions | `{type: 'paper_created'|'register', paperId, paperHash?, authorWallet, studyType, timestamp}` |
 | `contracts` | Authorship creation, signatures | `{type, contractHash, signerWallet, signatures[], contributionSplits[], timestamp}` |
-| `submissions` | Submission events, status transitions | `{type, paperHash, contractHash, journalId, timestamp}` |
+| `submissions` | Submission events, status transitions | `{type: 'submitted'|'viewed_by_editor'|'reviewers_assigned'|'assignment_accepted'|'assignment_declined'|'status_accepted'|'author_response', submissionId, timestamp}` |
 | `criteria` | Review criteria publication | `{type, journalId, submissionId, criteriaHash, criteria[], timestamp}` |
 | `reviews` | Review anchoring + author comments | `{type, reviewHash, reviewerWallet, criteriaEvaluations, timestamp}` |
 | `decisions` | Accept/reject, rebuttal requests | `{type, decision, justification?, allCriteriaMet, timestamp}` |
 | `retractions` | Retraction records | Not yet implemented |
 
-Additional events on existing topics: `viewed_by_editor`, `assignment_accepted`, `author_response`, `rebuttal_requested`, `author_comment`.
+Additional events on existing topics: `paper_created` (papers), `viewed_by_editor`, `reviewers_assigned`, `assignment_accepted/declined`, `status_accepted`, `author_response`, `rebuttal_requested` (submissions), `author_comment`.
 
 ### HCS Message Flow
 

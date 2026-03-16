@@ -178,6 +178,12 @@ export async function assignReviewersAction(
 
   after(async () => {
     await Promise.all([
+      anchorToHcs('HCS_TOPIC_SUBMISSIONS', {
+        type: 'reviewers_assigned',
+        submissionId,
+        reviewerCount: newWallets.length,
+        timestamp: new Date().toISOString(),
+      }),
       notifyIfWallet(authorWallet, {
         type: 'reviewers_assigned',
         title: 'Reviewers assigned',
@@ -305,24 +311,41 @@ export async function makeDecisionAction(
         : 'revision requested';
 
   after(async () => {
-    const [{ txId: hederaTxId }] = await Promise.all([
-      anchorToHcs('HCS_TOPIC_DECISIONS', {
-        type: 'editorial_decision',
-        submissionId,
-        decision: validated.decision,
-        allCriteriaMet,
-        publicJustification:
-          allCriteriaMet && validated.decision === 'reject'
-            ? validated.comment
-            : null,
-        timestamp: new Date().toISOString(),
-      }),
+    const decisionAnchor = anchorToHcs('HCS_TOPIC_DECISIONS', {
+      type: 'editorial_decision',
+      submissionId,
+      decision: validated.decision,
+      allCriteriaMet,
+      publicJustification:
+        allCriteriaMet && validated.decision === 'reject'
+          ? validated.comment
+          : null,
+      timestamp: new Date().toISOString(),
+    });
+
+    const sideEffects: Promise<unknown>[] = [
       notifyIfWallet(authorWallet, {
         type: 'decision_made',
         title: `Paper ${decisionLabel}`,
         body: `Your paper "${submission.paper.title}" has been ${decisionLabel}.`,
         link: ROUTES.researcher.root,
       }),
+    ];
+
+    if (validated.decision === 'accept') {
+      sideEffects.push(
+        anchorToHcs('HCS_TOPIC_SUBMISSIONS', {
+          type: 'status_accepted',
+          submissionId,
+          paperId: submission.paperId,
+          timestamp: new Date().toISOString(),
+        }),
+      );
+    }
+
+    const [{ txId: hederaTxId }] = await Promise.all([
+      decisionAnchor,
+      ...sideEffects,
     ]);
 
     if (hederaTxId) {
