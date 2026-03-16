@@ -11,7 +11,9 @@ import { useSelection } from '@/src/shared/hooks/useSelection';
 import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
 import { useDecryptPaper } from '@/src/shared/hooks/useDecryptPaper';
 import { SelectionPlaceholder } from '@/src/shared/components/selection-placeholder';
+import { Button } from '@/src/shared/components/button.client';
 import { addPaperToIssueAction } from '@/src/features/editor/actions';
+import { publishPaperAction } from '@/src/features/submissions/actions';
 import { getErrorMessage } from '@/src/shared/lib/errors';
 import type {
   PaperCardData,
@@ -69,6 +71,8 @@ export function AcceptedPapersClient({
     true,
   );
 
+  const [isPublishing, setIsPublishing] = useState(false);
+
   const handleAssignToIssue = useCallback(
     async (issueId: string) => {
       if (!selectedId) return;
@@ -83,6 +87,21 @@ export function AcceptedPapersClient({
     },
     [journalId, selectedId, router],
   );
+
+  const handlePublish = useCallback(async () => {
+    if (!selectedId) return;
+    setIsPublishing(true);
+    try {
+      await publishPaperAction(selectedId);
+      toast.success('Paper published successfully');
+      router.refresh();
+    } catch (err) {
+      const message = getErrorMessage(err, 'Failed to publish paper');
+      toast.error(message);
+    } finally {
+      setIsPublishing(false);
+    }
+  }, [selectedId, router]);
 
   return (
     <ThreeColumnLayout
@@ -114,6 +133,16 @@ export function AcceptedPapersClient({
               onIssueChange={setSelectedIssue}
               onAssign={handleAssignToIssue}
             />
+            <div className="p-4">
+              <Button
+                variant="gold"
+                fullWidth
+                onClick={handlePublish}
+                disabled={isPublishing}
+              >
+                {isPublishing ? 'Publishing...' : 'Publish Paper'}
+              </Button>
+            </div>
           </>
         ) : (
           <SelectionPlaceholder message="Select a paper to view details" />

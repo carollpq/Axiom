@@ -118,6 +118,9 @@ Drizzle ORM, Neon PostgreSQL. Schema: `src/shared/lib/db/schema.ts` (16 tables).
 - Token: `AXIOM_REVIEWER_REPUTATION (AXR)`, non-fungible, non-transferable
 - Events: review_completed, review_late, editor_rating, author_rating, paper_published, paper_retracted, rebuttal_upheld/overturned
 - Score: `0.30 timeliness + 0.25 editor + 0.25 author + 0.20 publication`
+- `editor_rating`: minted when editor releases a decision with optional 1–5 star ratings per reviewer (delta = rating − 3)
+- `paper_published`: minted for every reviewer who submitted a review when editor publishes an accepted paper (delta = +1)
+- `paper_retracted`: defined in schema but NOT yet wired up
 
 ### Timeline Enforcement
 | Event | Deadline |

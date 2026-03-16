@@ -25,6 +25,9 @@ export function useDecisionFlow({
   onReleasedRef.current = onDecisionReleased;
   const [editorComment, setEditorComment] = useState('');
   const [decision, setDecision] = useState('');
+  const [reviewerRatings, setReviewerRatings] = useState<
+    Record<string, number>
+  >({});
   const [isReleasingDecision, setIsReleasingDecision] = useState(false);
   const [showDecisionConfirm, setShowDecisionConfirm] = useState(false);
 
@@ -58,14 +61,19 @@ export function useDecisionFlow({
     setIsReleasingDecision(true);
 
     try {
+      const ratingsToSend =
+        Object.keys(reviewerRatings).length > 0 ? reviewerRatings : undefined;
+
       await makeDecisionAction(selectedId, {
         decision: decision as 'accept' | 'reject' | 'revise',
         comment: editorComment,
+        reviewerRatings: ratingsToSend,
       });
 
       onReleasedRef.current(selectedId);
       setEditorComment('');
       setDecision('');
+      setReviewerRatings({});
       setShowDecisionConfirm(false);
       router.refresh();
       return true;
@@ -86,6 +94,8 @@ export function useDecisionFlow({
     setEditorComment,
     decision,
     setDecision,
+    reviewerRatings,
+    setReviewerRatings,
     releaseToAuthor,
     confirmRelease,
     isReleasingDecision,

@@ -1,6 +1,7 @@
 'use client';
 
 import type { AuthorResponseStatusDb } from '@/src/shared/lib/db/schema';
+import type { ReviewerWithStatus } from '@/src/features/editor/types';
 import { WaitingForReviewsPanel } from './waiting-for-reviews-panel';
 import { WaitingForAuthorPanel } from './waiting-for-author-panel';
 import { DecisionReadyPanel } from './decision-ready-panel.client';
@@ -15,6 +16,9 @@ interface FinalDecisionPanelProps {
   authorResponseStatus: AuthorResponseStatusDb | null;
   canMakeDecision: boolean;
   isLoading?: boolean;
+  reviewers?: ReviewerWithStatus[];
+  reviewerRatings?: Record<string, number>;
+  onReviewerRatingChange?: (assignmentId: string, rating: number) => void;
 }
 
 export function FinalDecisionPanel({
@@ -27,6 +31,9 @@ export function FinalDecisionPanel({
   authorResponseStatus,
   canMakeDecision,
   isLoading = false,
+  reviewers,
+  reviewerRatings,
+  onReviewerRatingChange,
 }: FinalDecisionPanelProps) {
   if (!allReviewsComplete) return <WaitingForReviewsPanel />;
   if (!canMakeDecision)
@@ -42,6 +49,9 @@ export function FinalDecisionPanel({
       onRelease={onRelease}
       isLoading={isLoading}
       authorResponseStatus={authorResponseStatus}
+      reviewers={reviewers}
+      reviewerRatings={reviewerRatings}
+      onReviewerRatingChange={onReviewerRatingChange}
     />
   );
 }

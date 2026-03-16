@@ -93,7 +93,8 @@ export type NotificationTypeDb =
   | 'contract_fully_signed'
   | 'pool_added'
   | 'pool_invite_accepted'
-  | 'pool_invite_rejected';
+  | 'pool_invite_rejected'
+  | 'paper_published';
 
 // ── Tables ─────────────────────────────────────────────────────────────────
 
