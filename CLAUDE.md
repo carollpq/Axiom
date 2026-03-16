@@ -33,6 +33,7 @@ npm run contracts:deploy:testnet  # Deploy TimelineEnforcer to Hedera testnet
 4. **Rebuttal phase** — Authors challenge unfair reviews; upheld = negative reviewer reputation
 5. **Enforced timelines** — On-chain deadlines, late = negative reputation tokens
 6. **Transparent reviews** — Anonymized comments public after final decision
+7. **OpenBadges credentials** — OBv3-compliant verifiable badges backed by on-chain Hedera data, shareable to LinkedIn
 
 **Journals keep:** revenue models, paywalls, subscriptions, APCs unchanged.
 
@@ -89,9 +90,9 @@ import { listUserPapers } from '@/src/features/papers/queries'; // ✅
 
 ## Database
 
-Drizzle ORM, Neon PostgreSQL. Schema: `src/shared/lib/db/schema.ts` (16 tables).
+Drizzle ORM, Neon PostgreSQL. Schema: `src/shared/lib/db/schema.ts` (17 tables).
 
-**Tables:** users, papers, paperVersions, authorshipContracts, contractContributors, journals, submissions, reviewCriteria, reviewAssignments, reviews, rebuttals, rebuttalResponses, reviewerRatings, reputationEvents, reputationScores, notifications
+**Tables:** users, papers, paperVersions, authorshipContracts, contractContributors, journals, submissions, reviewCriteria, reviewAssignments, reviews, rebuttals, rebuttalResponses, reviewerRatings, reputationEvents, reputationScores, badges, notifications
 
 **Status pipelines:**
 - Submission: submitted → viewed_by_editor → criteria_published → reviewers_assigned → under_review → reviews_completed → rebuttal_open → revision_requested/accepted/rejected/published
@@ -120,6 +121,15 @@ Drizzle ORM, Neon PostgreSQL. Schema: `src/shared/lib/db/schema.ts` (16 tables).
 - Score: `0.30 timeliness + 0.25 editor + 0.25 author + 0.20 publication`
 - `editor_rating`: minted when editor releases a decision with optional 1–5 star ratings per reviewer (delta = rating − 3)
 - `paper_published`: minted for every reviewer who submitted a review when editor publishes an accepted paper (delta = +1)
+
+### OpenBadges & LinkedIn Integration
+- OBv3 (W3C Verifiable Credential) JSON-LD served at `GET /api/badges/[id]` with Hedera HTS/HCS evidence URLs
+- Badge milestones auto-issued via `checkAndIssueBadges()` after each `recordReputation()` call
+- Types: `first_review`, `five_reviews`, `ten_reviews`, `twentyfive_reviews`, `high_reputation` (score >= 80), `timely_reviewer` (timeliness >= 90)
+- LinkedIn "Add to Profile" deep link (`linkedin.com/profile/add?startTask=CERTIFICATION_NAME&...`) — zero API keys required
+- `badges` table: id, userWallet, badgeType, achievementName, reputationEventId, metadata (JSONB), issuedAt
+- Key files: `src/features/reviewer/lib/badge-definitions.ts`, `src/features/reviewer/lib/linkedin.ts`, `src/features/reviewer/components/dashboard/badge-card.client.tsx`
+- Uses `NEXT_PUBLIC_APP_DOMAIN` for badge `certUrl` (currently `https://axiom-eight-blue.vercel.app`)
 
 ### Timeline Enforcement
 | Event | Deadline |
@@ -156,7 +166,7 @@ src/
 ├── app/
 │   ├── layout.tsx / providers.client.tsx / page.tsx / globals.css
 │   ├── login/ / onboarding/ / invite/[token]/
-│   ├── api/  (contracts/, papers/[id]/content/, submissions/[id]/*, reviews/*, rebuttals/*, cron/deadlines, upload/ipfs)
+│   ├── api/  (badges/[id], contracts/, papers/[id]/content/, submissions/[id]/*, reviews/*, rebuttals/*, cron/deadlines, upload/ipfs)
 │   └── (protected)/  (researcher/, editor/, reviewer/)
 ├── features/  (auth, researcher, editor, reviewer, contracts, papers, users, reviews, rebuttals, notifications)
 └── shared/

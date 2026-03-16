@@ -71,6 +71,14 @@ export type RebuttalPositionDb = 'agree' | 'disagree';
 
 export type PoolInviteStatusDb = 'pending' | 'accepted' | 'rejected';
 
+export type BadgeTypeDb =
+  | 'first_review'
+  | 'five_reviews'
+  | 'ten_reviews'
+  | 'twentyfive_reviews'
+  | 'high_reputation'
+  | 'timely_reviewer';
+
 export type NotificationTypeDb =
   | 'reviewers_assigned'
   | 'criteria_published'
@@ -460,6 +468,23 @@ export const reviewerRatings = pgTable('reviewer_ratings', {
   commentHash: text('comment_hash'),
   ratingHash: text('rating_hash'),
   reputationTokenSerial: text('reputation_token_serial'),
+  createdAt: text('created_at')
+    .notNull()
+    .default(sql`now()`),
+});
+
+export const badges = pgTable('badges', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userWallet: text('user_wallet').notNull(),
+  badgeType: text('badge_type').notNull().$type<BadgeTypeDb>(),
+  achievementName: text('achievement_name').notNull(),
+  reputationEventId: text('reputation_event_id'),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>(),
+  issuedAt: text('issued_at')
+    .notNull()
+    .default(sql`now()`),
   createdAt: text('created_at')
     .notNull()
     .default(sql`now()`),
