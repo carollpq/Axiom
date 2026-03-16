@@ -9,6 +9,7 @@ import {
   authorStatusLabels,
 } from '@/src/shared/lib/status-colors';
 import type { AuthorResponseStatusDb } from '@/src/shared/lib/db/schema';
+import type { ReviewerWithStatus } from '@/src/features/editor/types';
 
 interface DecisionReadyPanelProps {
   comment: string;
@@ -18,7 +19,12 @@ interface DecisionReadyPanelProps {
   onRelease: () => void;
   isLoading?: boolean;
   authorResponseStatus: AuthorResponseStatusDb | null;
+  reviewers?: ReviewerWithStatus[];
+  reviewerRatings?: Record<string, number>;
+  onReviewerRatingChange?: (assignmentId: string, rating: number) => void;
 }
+
+const RATING_OPTIONS = [1, 2, 3, 4, 5] as const;
 
 export function DecisionReadyPanel({
   comment,
@@ -28,9 +34,14 @@ export function DecisionReadyPanel({
   onRelease,
   isLoading = false,
   authorResponseStatus,
+  reviewers,
+  reviewerRatings,
+  onReviewerRatingChange,
 }: DecisionReadyPanelProps) {
   const label = authorStatusLabels[authorResponseStatus ?? 'pending'];
   const statusInfo = getStatusColors(label);
+
+  const completedReviewers = reviewers?.filter((r) => r.status === 'complete');
 
   return (
     <SidebarSection title="Editorial Decision">
@@ -49,6 +60,47 @@ export function DecisionReadyPanel({
           {label}
         </div>
       </div>
+
+      {completedReviewers && completedReviewers.length > 0 && (
+        <div className="mb-3">
+          <div className="text-[10px] text-[#6a6050] uppercase tracking-[1px] mb-2">
+            Rate Reviewers
+          </div>
+          <div className="space-y-2">
+            {completedReviewers.map((reviewer) => (
+              <div
+                key={reviewer.id}
+                className="flex items-center justify-between gap-2"
+              >
+                <span className="text-[12px] text-[#b0a898] truncate font-serif">
+                  {reviewer.name}
+                </span>
+                <div className="flex gap-0.5 shrink-0">
+                  {RATING_OPTIONS.map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() =>
+                        onReviewerRatingChange?.(reviewer.id, star)
+                      }
+                      disabled={isLoading}
+                      className="text-[14px] transition-colors"
+                      style={{
+                        color:
+                          (reviewerRatings?.[reviewer.id] ?? 0) >= star
+                            ? '#c9a44a'
+                            : '#3a3530',
+                      }}
+                    >
+                      &#9733;
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <FormTextarea
         value={comment}

@@ -8,8 +8,7 @@ export type PaperStatusDb =
   | 'submitted'
   | 'under_review'
   | 'revision_requested'
-  | 'published'
-  | 'retracted';
+  | 'published';
 
 export type StudyTypeDb =
   | 'original'
@@ -57,7 +56,6 @@ export type ReputationEventTypeDb =
   | 'editor_rating'
   | 'author_rating'
   | 'paper_published'
-  | 'paper_retracted'
   | 'rebuttal_upheld'
   | 'rebuttal_overturned';
 
@@ -72,6 +70,14 @@ export type RebuttalResolutionDb = 'upheld' | 'rejected' | 'partial';
 export type RebuttalPositionDb = 'agree' | 'disagree';
 
 export type PoolInviteStatusDb = 'pending' | 'accepted' | 'rejected';
+
+export type BadgeTypeDb =
+  | 'first_review'
+  | 'five_reviews'
+  | 'ten_reviews'
+  | 'twentyfive_reviews'
+  | 'high_reputation'
+  | 'timely_reviewer';
 
 export type NotificationTypeDb =
   | 'reviewers_assigned'
@@ -93,7 +99,8 @@ export type NotificationTypeDb =
   | 'contract_fully_signed'
   | 'pool_added'
   | 'pool_invite_accepted'
-  | 'pool_invite_rejected';
+  | 'pool_invite_rejected'
+  | 'paper_published';
 
 // ── Tables ─────────────────────────────────────────────────────────────────
 
@@ -461,6 +468,23 @@ export const reviewerRatings = pgTable('reviewer_ratings', {
   commentHash: text('comment_hash'),
   ratingHash: text('rating_hash'),
   reputationTokenSerial: text('reputation_token_serial'),
+  createdAt: text('created_at')
+    .notNull()
+    .default(sql`now()`),
+});
+
+export const badges = pgTable('badges', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userWallet: text('user_wallet').notNull(),
+  badgeType: text('badge_type').notNull().$type<BadgeTypeDb>(),
+  achievementName: text('achievement_name').notNull(),
+  reputationEventId: text('reputation_event_id'),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>(),
+  issuedAt: text('issued_at')
+    .notNull()
+    .default(sql`now()`),
   createdAt: text('created_at')
     .notNull()
     .default(sql`now()`),

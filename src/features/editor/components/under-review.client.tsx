@@ -11,6 +11,7 @@ import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
 import { useDecryptPaper } from '@/src/shared/hooks/useDecryptPaper';
 import { SelectionPlaceholder } from '@/src/shared/components/selection-placeholder';
 import { ConfirmDialog } from '@/src/shared/components/confirm-dialog.client';
+import { useCallback } from 'react';
 import { toast } from 'sonner';
 import type {
   PaperCardData,
@@ -84,6 +85,8 @@ export function UnderReviewClient({
       setEditorComment,
       decision,
       setDecision,
+      reviewerRatings,
+      setReviewerRatings,
       releaseToAuthor,
       confirmRelease,
       isReleasingDecision,
@@ -102,6 +105,16 @@ export function UnderReviewClient({
   const { fileUrl: decryptedUrl } = useDecryptPaper(
     selected?.hasLitData ? selected.paperId : null,
     true,
+  );
+
+  const handleReviewerRatingChange = useCallback(
+    (assignmentId: string, rating: number) => {
+      setReviewerRatings((prev: Record<string, number>) => ({
+        ...prev,
+        [assignmentId]: rating,
+      }));
+    },
+    [setReviewerRatings],
   );
 
   async function handleConfirmRelease() {
@@ -161,6 +174,9 @@ export function UnderReviewClient({
                   authorResponseStatus={currentAuthorResponseStatus}
                   canMakeDecision={canMakeDecision}
                   isLoading={isReleasingDecision}
+                  reviewers={currentReviewers}
+                  reviewerRatings={reviewerRatings}
+                  onReviewerRatingChange={handleReviewerRatingChange}
                 />
               )}
               <AssignReviewersPanel

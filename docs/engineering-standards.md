@@ -33,7 +33,7 @@ src/
     └── types/                    # Shared TypeScript types
 ```
 
-**Established domains**: `researcher`, `editor`, `reviewer`, `papers`, `contracts`, `reviews`, `rebuttals`, `notifications`, `auth`, `users`, `verify`
+**Established domains**: `researcher`, `editor`, `reviewer`, `papers`, `contracts`, `reviews`, `rebuttals`, `notifications`, `auth`, `users`, `verify`, `badges`
 
 ### Naming conventions
 

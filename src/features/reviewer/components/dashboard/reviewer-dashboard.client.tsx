@@ -11,8 +11,10 @@ import type {
   UserProfile,
   ResearcherInsight,
 } from '@/src/features/reviewer/types/dashboard';
+import { DashboardCard } from '@/src/shared/components/dashboard-card';
 import { PerformanceMetrics } from '../../reviewer-dashboard/performance-metrics';
 import { ResearchersInsights } from '../../reviewer-dashboard/researchers-insights';
+import { BadgeCard, type BadgeData } from './badge-card.client';
 
 const EMPTY_REPUTATION_SCORES: ReputationScores = {
   overall: 0,
@@ -32,6 +34,7 @@ interface Props {
   journalsReviewed?: string[];
   averageDaysToDeadline?: number;
   researcherInsights?: ResearcherInsight[];
+  badges?: BadgeData[];
 }
 
 export function ReviewerDashboardClient({
@@ -42,6 +45,7 @@ export function ReviewerDashboardClient({
   journalsReviewed = [],
   averageDaysToDeadline = 0,
   researcherInsights = [],
+  badges = [],
 }: Props) {
   const reputationScores = initialReputation ?? EMPTY_REPUTATION_SCORES;
   const [copied, setCopied] = useState(false);
@@ -70,6 +74,18 @@ export function ReviewerDashboardClient({
             invites={initialAssigned.length}
             averageDaysToDeadline={averageDaysToDeadline}
           />
+          {badges.length > 0 && (
+            <DashboardCard className="space-y-4">
+              <h3 className="text-lg font-bold" style={{ color: '#d4ccc0' }}>
+                Achievements
+              </h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {badges.map((badge) => (
+                  <BadgeCard key={badge.id} badge={badge} />
+                ))}
+              </div>
+            </DashboardCard>
+          )}
           <ResearchersInsights
             journalsReviewed={journalsReviewed}
             insights={researcherInsights.map((i) => i.comment)}

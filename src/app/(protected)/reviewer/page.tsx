@@ -16,17 +16,19 @@ import {
 import { ReviewerDashboardClient } from '@/src/features/reviewer/components/dashboard/reviewer-dashboard.client';
 import { getUserByWallet } from '@/src/features/users/queries';
 import { listRatingsForReviewer } from '@/src/features/reviews/queries';
+import { getBadgesForWallet } from '@/src/features/reviewer/lib/badge-definitions';
 
 export default async function ReviewerDashboard() {
   const wallet = (await getSession())!;
 
-  const [rawAssigned, rawCompleted, repRow, userProfile, ratings] =
+  const [rawAssigned, rawCompleted, repRow, userProfile, ratings, badgeRows] =
     await Promise.all([
       listAssignedReviews(wallet),
       listCompletedReviews(wallet),
       getReviewerReputation(wallet),
       getUserByWallet(wallet),
       listRatingsForReviewer(wallet),
+      getBadgesForWallet(wallet),
     ]);
 
   return (
@@ -40,6 +42,13 @@ export default async function ReviewerDashboard() {
         journalsReviewed={extractJournalNames(rawAssigned, rawCompleted)}
         averageDaysToDeadline={computeAvgDaysToDeadline(rawAssigned)}
         researcherInsights={mapRatingsToInsights(ratings)}
+        badges={badgeRows.map((b) => ({
+          id: b.id,
+          badgeType: b.badgeType,
+          achievementName: b.achievementName,
+          issuedAt: b.issuedAt,
+          metadata: b.metadata ?? null,
+        }))}
       />
     </div>
   );

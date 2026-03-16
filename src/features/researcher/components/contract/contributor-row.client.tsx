@@ -2,6 +2,7 @@
 
 import type { Contributor } from '@/src/features/researcher/types/contract';
 import { useContractContext } from '@/src/features/researcher/context/contract-context.client';
+import { HashScanLink } from '@/src/shared/components/hashscan-link';
 
 interface ContributorRowProps {
   contributor: Contributor;
@@ -14,6 +15,13 @@ const inputStyle = {
 } as const;
 
 const creatorBadgeStyle = { background: 'rgba(180,160,120,0.15)' } as const;
+
+const onChainBadgeStyle = {
+  color: '#5a7a9a',
+  background: 'rgba(90,122,154,0.1)',
+  border: '1px solid rgba(90,122,154,0.2)',
+  letterSpacing: 0.5,
+} as const;
 
 export function ContributorRow({
   contributor: c,
@@ -84,9 +92,17 @@ export function ContributorRow({
               <span className="text-[#8fbc8f] text-[13px]">{'\u2713'}</span>
               <span className="text-[11px] text-[#8fbc8f]">Signed</span>
             </div>
-            <div className="text-[9px] text-[#5a7a9a] font-mono mt-0.5">
-              {c.txHash}
-            </div>
+            {c.txHash && (
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span
+                  className="text-[8px] uppercase px-1 py-px rounded-sm"
+                  style={onChainBadgeStyle}
+                >
+                  On-chain
+                </span>
+                <HashScanLink txId={c.txHash} />
+              </div>
+            )}
           </div>
         ) : c.status === 'declined' ? (
           <div className="flex items-center gap-1">

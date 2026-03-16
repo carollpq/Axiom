@@ -9,6 +9,7 @@ import {
   notifyIfWallet,
 } from '@/src/features/notifications/mutations';
 import { checkDeadline } from '@/src/shared/lib/hedera/timeline-enforcer';
+import { anchorToHcs } from '@/src/shared/lib/hedera/hcs';
 import { ROUTES } from '@/src/shared/lib/routes';
 
 export const runtime = 'nodejs';
@@ -30,6 +31,7 @@ export async function GET(req: NextRequest) {
 
   // Non-blocking: reputation minting + notifications run after response
   after(async () => {
+    const now = new Date().toISOString();
     for (const assignment of overdue) {
       // Cross-verify with on-chain TimelineEnforcer (chain as source of truth)
       if (assignment.timelineEnforcerIndex != null) {
@@ -57,6 +59,13 @@ export async function GET(req: NextRequest) {
             submissionId: assignment.submissionId,
           },
         ),
+        anchorToHcs('HCS_TOPIC_REVIEWS', {
+          type: 'review_late',
+          assignmentId: assignment.id,
+          reviewerWallet: assignment.reviewerWallet,
+          submissionId: assignment.submissionId,
+          timestamp: now,
+        }).catch(() => {}),
         createNotification({
           userWallet: assignment.reviewerWallet,
           type: 'review_late',

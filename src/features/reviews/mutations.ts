@@ -8,6 +8,7 @@ import {
 } from '@/src/shared/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { mintReputationToken } from '@/src/shared/lib/hedera/hts';
+import { checkAndIssueBadges } from '@/src/features/reviewer/lib/badge-definitions';
 
 export interface CreateReviewInput {
   submissionId: string;
@@ -81,7 +82,7 @@ const EDITOR_TYPES = [
   'rebuttal_overturned',
 ];
 const AUTHOR_TYPES = ['author_rating'];
-const PUBLICATION_TYPES = ['paper_published', 'paper_retracted'];
+const PUBLICATION_TYPES = ['paper_published'];
 
 /** Recomputes weighted reputation score via SQL aggregation and upserts it. */
 export async function upsertReputationScore(wallet: string) {
@@ -208,6 +209,12 @@ export async function recordReputation(
     await upsertReputationScore(wallet);
   } catch (err) {
     console.error('[Reputation] Score computation failed:', err);
+  }
+
+  try {
+    await checkAndIssueBadges(wallet);
+  } catch (err) {
+    console.error('[Badges] Badge issuance check failed:', err);
   }
 
   return { serial, txId };

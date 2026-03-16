@@ -88,6 +88,17 @@ export async function createPaperAction(
   const paper = await createPaper({ ...parsed, wallet });
   if (!paper) throw new Error('User not found');
 
+  after(async () => {
+    await anchorToHcs('HCS_TOPIC_PAPERS', {
+      type: 'paper_created',
+      paperId: paper.id,
+      title: parsed.title,
+      studyType: parsed.studyType ?? 'original',
+      ownerWallet: wallet,
+      timestamp: new Date().toISOString(),
+    });
+  });
+
   return paper;
 }
 

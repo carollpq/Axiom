@@ -1,0 +1,1801 @@
+{
+  "id": "a812aa9b-bce6-4b5c-9271-0a1605c8548e",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.authorship_contracts": {
+      "name": "authorship_contracts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "paper_id": {
+          "name": "paper_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "paper_title": {
+          "name": "paper_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contract_hash": {
+          "name": "contract_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "creator_id": {
+          "name": "creator_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hedera_tx_id": {
+          "name": "hedera_tx_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hedera_timestamp": {
+          "name": "hedera_timestamp",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hedera_schedule_id": {
+          "name": "hedera_schedule_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hedera_schedule_tx_id": {
+          "name": "hedera_schedule_tx_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "authorship_contracts_paper_id_papers_id_fk": {
+          "name": "authorship_contracts_paper_id_papers_id_fk",
+          "tableFrom": "authorship_contracts",
+          "tableTo": "papers",
+          "columnsFrom": [
+            "paper_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "authorship_contracts_creator_id_users_id_fk": {
+          "name": "authorship_contracts_creator_id_users_id_fk",
+          "tableFrom": "authorship_contracts",
+          "tableTo": "users",
+          "columnsFrom": [
+            "creator_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.badges": {
+      "name": "badges",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_wallet": {
+          "name": "user_wallet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "badge_type": {
+          "name": "badge_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "achievement_name": {
+          "name": "achievement_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reputation_event_id": {
+          "name": "reputation_event_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "issued_at": {
+          "name": "issued_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.contract_contributors": {
+      "name": "contract_contributors",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "contract_id": {
+          "name": "contract_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contributor_wallet": {
+          "name": "contributor_wallet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contributor_name": {
+          "name": "contributor_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contribution_pct": {
+          "name": "contribution_pct",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role_description": {
+          "name": "role_description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "signature": {
+          "name": "signature",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "is_creator": {
+          "name": "is_creator",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "signed_at": {
+          "name": "signed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hedera_schedule_sign_tx_id": {
+          "name": "hedera_schedule_sign_tx_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "invite_token": {
+          "name": "invite_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "invite_expires_at": {
+          "name": "invite_expires_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "contract_contributors_contract_id_authorship_contracts_id_fk": {
+          "name": "contract_contributors_contract_id_authorship_contracts_id_fk",
+          "tableFrom": "contract_contributors",
+          "tableTo": "authorship_contracts",
+          "columnsFrom": [
+            "contract_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "contract_contributors_invite_token_unique": {
+          "name": "contract_contributors_invite_token_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "invite_token"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.issue_papers": {
+      "name": "issue_papers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "issue_id": {
+          "name": "issue_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "submission_id": {
+          "name": "submission_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "added_at": {
+          "name": "added_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "issue_papers_issue_id_journal_issues_id_fk": {
+          "name": "issue_papers_issue_id_journal_issues_id_fk",
+          "tableFrom": "issue_papers",
+          "tableTo": "journal_issues",
+          "columnsFrom": [
+            "issue_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "issue_papers_submission_id_submissions_id_fk": {
+          "name": "issue_papers_submission_id_submissions_id_fk",
+          "tableFrom": "issue_papers",
+          "tableTo": "submissions",
+          "columnsFrom": [
+            "submission_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.journal_issues": {
+      "name": "journal_issues",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "journal_id": {
+          "name": "journal_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "label": {
+          "name": "label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "journal_issues_journal_id_journals_id_fk": {
+          "name": "journal_issues_journal_id_journals_id_fk",
+          "tableFrom": "journal_issues",
+          "tableTo": "journals",
+          "columnsFrom": [
+            "journal_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.journal_reviewers": {
+      "name": "journal_reviewers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "journal_id": {
+          "name": "journal_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reviewer_wallet": {
+          "name": "reviewer_wallet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "added_at": {
+          "name": "added_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "responded_at": {
+          "name": "responded_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "journal_reviewers_journal_id_journals_id_fk": {
+          "name": "journal_reviewers_journal_id_journals_id_fk",
+          "tableFrom": "journal_reviewers",
+          "tableTo": "journals",
+          "columnsFrom": [
+            "journal_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.journals": {
+      "name": "journals",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "editor_wallet": {
+          "name": "editor_wallet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reputation_score": {
+          "name": "reputation_score",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'4.3'"
+        },
+        "aims_and_scope": {
+          "name": "aims_and_scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "submission_criteria": {
+          "name": "submission_criteria",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.notifications": {
+      "name": "notifications",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_wallet": {
+          "name": "user_wallet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "link": {
+          "name": "link",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_read": {
+          "name": "is_read",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.paper_versions": {
+      "name": "paper_versions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "paper_id": {
+          "name": "paper_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version_number": {
+          "name": "version_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "paper_hash": {
+          "name": "paper_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dataset_hash": {
+          "name": "dataset_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "code_repo_url": {
+          "name": "code_repo_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "code_commit_hash": {
+          "name": "code_commit_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "env_spec_hash": {
+          "name": "env_spec_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "file_storage_key": {
+          "name": "file_storage_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hedera_tx_id": {
+          "name": "hedera_tx_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hedera_timestamp": {
+          "name": "hedera_timestamp",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "paper_versions_paper_id_papers_id_fk": {
+          "name": "paper_versions_paper_id_papers_id_fk",
+          "tableFrom": "paper_versions",
+          "tableTo": "papers",
+          "columnsFrom": [
+            "paper_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.papers": {
+      "name": "papers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "abstract": {
+          "name": "abstract",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
+        },
+        "study_type": {
+          "name": "study_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'original'"
+        },
+        "current_version": {
+          "name": "current_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "owner_id": {
+          "name": "owner_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lit_data_to_encrypt_hash": {
+          "name": "lit_data_to_encrypt_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lit_access_conditions_json": {
+          "name": "lit_access_conditions_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hedera_tx_id": {
+          "name": "hedera_tx_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hedera_timestamp": {
+          "name": "hedera_timestamp",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "papers_owner_id_users_id_fk": {
+          "name": "papers_owner_id_users_id_fk",
+          "tableFrom": "papers",
+          "tableTo": "users",
+          "columnsFrom": [
+            "owner_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.rebuttal_responses": {
+      "name": "rebuttal_responses",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "rebuttal_id": {
+          "name": "rebuttal_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "review_id": {
+          "name": "review_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "criterion_id": {
+          "name": "criterion_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "position": {
+          "name": "position",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "justification": {
+          "name": "justification",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "evidence": {
+          "name": "evidence",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "rebuttal_responses_rebuttal_id_rebuttals_id_fk": {
+          "name": "rebuttal_responses_rebuttal_id_rebuttals_id_fk",
+          "tableFrom": "rebuttal_responses",
+          "tableTo": "rebuttals",
+          "columnsFrom": [
+            "rebuttal_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "rebuttal_responses_review_id_reviews_id_fk": {
+          "name": "rebuttal_responses_review_id_reviews_id_fk",
+          "tableFrom": "rebuttal_responses",
+          "tableTo": "reviews",
+          "columnsFrom": [
+            "review_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.rebuttals": {
+      "name": "rebuttals",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "submission_id": {
+          "name": "submission_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_wallet": {
+          "name": "author_wallet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'open'"
+        },
+        "deadline": {
+          "name": "deadline",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rebuttal_hash": {
+          "name": "rebuttal_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hedera_tx_id": {
+          "name": "hedera_tx_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resolution": {
+          "name": "resolution",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "editor_notes": {
+          "name": "editor_notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resolved_at": {
+          "name": "resolved_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "rebuttals_submission_id_submissions_id_fk": {
+          "name": "rebuttals_submission_id_submissions_id_fk",
+          "tableFrom": "rebuttals",
+          "tableTo": "submissions",
+          "columnsFrom": [
+            "submission_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.reputation_events": {
+      "name": "reputation_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_wallet": {
+          "name": "user_wallet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "score_delta": {
+          "name": "score_delta",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "details": {
+          "name": "details",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hts_token_serial": {
+          "name": "hts_token_serial",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hedera_tx_id": {
+          "name": "hedera_tx_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.reputation_scores": {
+      "name": "reputation_scores",
+      "schema": "",
+      "columns": {
+        "user_wallet": {
+          "name": "user_wallet",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "overall_score": {
+          "name": "overall_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "timeliness_score": {
+          "name": "timeliness_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "editor_rating_avg": {
+          "name": "editor_rating_avg",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "author_rating_avg": {
+          "name": "author_rating_avg",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "publication_score": {
+          "name": "publication_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "review_count": {
+          "name": "review_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "last_computed_at": {
+          "name": "last_computed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.review_assignments": {
+      "name": "review_assignments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "submission_id": {
+          "name": "submission_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reviewer_wallet": {
+          "name": "reviewer_wallet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'assigned'"
+        },
+        "assigned_at": {
+          "name": "assigned_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deadline": {
+          "name": "deadline",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "accepted_at": {
+          "name": "accepted_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "submitted_at": {
+          "name": "submitted_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "timeline_enforcer_index": {
+          "name": "timeline_enforcer_index",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "review_assignments_submission_id_submissions_id_fk": {
+          "name": "review_assignments_submission_id_submissions_id_fk",
+          "tableFrom": "review_assignments",
+          "tableTo": "submissions",
+          "columnsFrom": [
+            "submission_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.review_criteria": {
+      "name": "review_criteria",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "submission_id": {
+          "name": "submission_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "criteria_json": {
+          "name": "criteria_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "criteria_hash": {
+          "name": "criteria_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hedera_tx_id": {
+          "name": "hedera_tx_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "published_at": {
+          "name": "published_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "review_criteria_submission_id_submissions_id_fk": {
+          "name": "review_criteria_submission_id_submissions_id_fk",
+          "tableFrom": "review_criteria",
+          "tableTo": "submissions",
+          "columnsFrom": [
+            "submission_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.reviewer_ratings": {
+      "name": "reviewer_ratings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "review_id": {
+          "name": "review_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actionable_feedback": {
+          "name": "actionable_feedback",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deep_engagement": {
+          "name": "deep_engagement",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fair_objective": {
+          "name": "fair_objective",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "justified_recommendation": {
+          "name": "justified_recommendation",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "appropriate_expertise": {
+          "name": "appropriate_expertise",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "overall_rating": {
+          "name": "overall_rating",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "comment": {
+          "name": "comment",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "comment_hash": {
+          "name": "comment_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rating_hash": {
+          "name": "rating_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reputation_token_serial": {
+          "name": "reputation_token_serial",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "reviewer_ratings_review_id_reviews_id_fk": {
+          "name": "reviewer_ratings_review_id_reviews_id_fk",
+          "tableFrom": "reviewer_ratings",
+          "tableTo": "reviews",
+          "columnsFrom": [
+            "review_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "reviewer_ratings_review_id_unique": {
+          "name": "reviewer_ratings_review_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "review_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.reviews": {
+      "name": "reviews",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "submission_id": {
+          "name": "submission_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "assignment_id": {
+          "name": "assignment_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reviewer_wallet": {
+          "name": "reviewer_wallet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "review_hash": {
+          "name": "review_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "criteria_evaluations": {
+          "name": "criteria_evaluations",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "strengths": {
+          "name": "strengths",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "weaknesses": {
+          "name": "weaknesses",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "questions_for_authors": {
+          "name": "questions_for_authors",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "confidential_editor_comments": {
+          "name": "confidential_editor_comments",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recommendation": {
+          "name": "recommendation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hedera_tx_id": {
+          "name": "hedera_tx_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "submitted_at": {
+          "name": "submitted_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "reviews_submission_id_submissions_id_fk": {
+          "name": "reviews_submission_id_submissions_id_fk",
+          "tableFrom": "reviews",
+          "tableTo": "submissions",
+          "columnsFrom": [
+            "submission_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "reviews_assignment_id_review_assignments_id_fk": {
+          "name": "reviews_assignment_id_review_assignments_id_fk",
+          "tableFrom": "reviews",
+          "tableTo": "review_assignments",
+          "columnsFrom": [
+            "assignment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.submissions": {
+      "name": "submissions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "paper_id": {
+          "name": "paper_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "journal_id": {
+          "name": "journal_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version_id": {
+          "name": "version_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'submitted'"
+        },
+        "reviewer_wallets": {
+          "name": "reviewer_wallets",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'[]'::jsonb"
+        },
+        "review_deadline": {
+          "name": "review_deadline",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "criteria_hash": {
+          "name": "criteria_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "criteria_tx_id": {
+          "name": "criteria_tx_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "criteria_met": {
+          "name": "criteria_met",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decision": {
+          "name": "decision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decision_justification": {
+          "name": "decision_justification",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decision_tx_id": {
+          "name": "decision_tx_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "review_deadline_days": {
+          "name": "review_deadline_days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 21
+        },
+        "author_response_status": {
+          "name": "author_response_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "author_response_at": {
+          "name": "author_response_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "author_response_tx_id": {
+          "name": "author_response_tx_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hedera_tx_id": {
+          "name": "hedera_tx_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hedera_timestamp": {
+          "name": "hedera_timestamp",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "submitted_at": {
+          "name": "submitted_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "decided_at": {
+          "name": "decided_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "submissions_paper_id_papers_id_fk": {
+          "name": "submissions_paper_id_papers_id_fk",
+          "tableFrom": "submissions",
+          "tableTo": "papers",
+          "columnsFrom": [
+            "paper_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "submissions_journal_id_journals_id_fk": {
+          "name": "submissions_journal_id_journals_id_fk",
+          "tableFrom": "submissions",
+          "tableTo": "journals",
+          "columnsFrom": [
+            "journal_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "submissions_version_id_paper_versions_id_fk": {
+          "name": "submissions_version_id_paper_versions_id_fk",
+          "tableFrom": "submissions",
+          "tableTo": "paper_versions",
+          "columnsFrom": [
+            "version_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "wallet_address": {
+          "name": "wallet_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "did": {
+          "name": "did",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "institution": {
+          "name": "institution",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "orcid_id": {
+          "name": "orcid_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "roles": {
+          "name": "roles",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "research_fields": {
+          "name": "research_fields",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "users_wallet_address_unique": {
+          "name": "users_wallet_address_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "wallet_address"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

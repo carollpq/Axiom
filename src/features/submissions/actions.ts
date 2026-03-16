@@ -6,6 +6,7 @@ import { after } from 'next/server';
 import { db } from '@/src/shared/lib/db';
 import {
   reviewAssignments,
+  reviews,
   type SubmissionStatusDb,
 } from '@/src/shared/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
@@ -32,6 +33,7 @@ import {
   listReviewsForSubmission,
   getPublishedCriteria,
 } from '@/src/features/reviews/queries';
+import { recordReputation } from '@/src/features/reviews/mutations';
 import {
   createNotification,
   notifyIfWallet,
@@ -178,6 +180,12 @@ export async function assignReviewersAction(
 
   after(async () => {
     await Promise.all([
+      anchorToHcs('HCS_TOPIC_SUBMISSIONS', {
+        type: 'reviewers_assigned',
+        submissionId,
+        reviewerCount: newWallets.length,
+        timestamp: new Date().toISOString(),
+      }),
       notifyIfWallet(authorWallet, {
         type: 'reviewers_assigned',
         title: 'Reviewers assigned',
@@ -227,6 +235,9 @@ const STATUS_MAP: Record<Decision, SubmissionStatusDb> = {
 const decisionSchema = z.object({
   decision: z.enum(['accept', 'reject', 'revise']),
   comment: z.string(),
+  reviewerRatings: z
+    .record(z.string(), z.number().int().min(1).max(5))
+    .optional(),
 });
 
 /** Reject + allCriteriaMet requires a public justification (anchored on-chain). */
@@ -235,6 +246,7 @@ export async function makeDecisionAction(
   input: {
     decision: Decision;
     comment: string;
+    reviewerRatings?: Record<string, number>;
   },
 ) {
   const session = await requireSession();
@@ -305,28 +317,85 @@ export async function makeDecisionAction(
         : 'revision requested';
 
   after(async () => {
-    const [{ txId: hederaTxId }] = await Promise.all([
-      anchorToHcs('HCS_TOPIC_DECISIONS', {
-        type: 'editorial_decision',
-        submissionId,
-        decision: validated.decision,
-        allCriteriaMet,
-        publicJustification:
-          allCriteriaMet && validated.decision === 'reject'
-            ? validated.comment
-            : null,
-        timestamp: new Date().toISOString(),
-      }),
+    const decisionAnchor = anchorToHcs('HCS_TOPIC_DECISIONS', {
+      type: 'editorial_decision',
+      submissionId,
+      decision: validated.decision,
+      allCriteriaMet,
+      publicJustification:
+        allCriteriaMet && validated.decision === 'reject'
+          ? validated.comment
+          : null,
+      timestamp: new Date().toISOString(),
+    });
+
+    const sideEffects: Promise<unknown>[] = [
       notifyIfWallet(authorWallet, {
         type: 'decision_made',
         title: `Paper ${decisionLabel}`,
         body: `Your paper "${submission.paper.title}" has been ${decisionLabel}.`,
         link: ROUTES.researcher.root,
       }),
+    ];
+
+    if (validated.decision === 'accept') {
+      sideEffects.push(
+        anchorToHcs('HCS_TOPIC_SUBMISSIONS', {
+          type: 'status_accepted',
+          submissionId,
+          paperId: submission.paperId,
+          timestamp: new Date().toISOString(),
+        }),
+      );
+    }
+
+    // Start assignments query in parallel with HCS anchor if we have ratings
+    const assignmentsPromise = validated.reviewerRatings
+      ? listReviewAssignmentsForSubmission(submissionId)
+      : null;
+
+    const [{ txId: hederaTxId }] = await Promise.all([
+      decisionAnchor,
+      ...sideEffects,
     ]);
 
     if (hederaTxId) {
       await updateSubmissionTxId(submissionId, 'decisionTxId', hederaTxId);
+    }
+
+    // Mint editor_rating reputation tokens for rated reviewers
+    if (validated.reviewerRatings && assignmentsPromise) {
+      const ratingEntries = Object.entries(validated.reviewerRatings);
+      if (ratingEntries.length > 0) {
+        const assignments = await assignmentsPromise;
+        const walletByAssignmentId = new Map(
+          assignments.map((a) => [a.id, a.reviewerWallet]),
+        );
+
+        await Promise.all(
+          ratingEntries.map(([assignmentId, rating]) => {
+            const wallet = walletByAssignmentId.get(assignmentId);
+            if (!wallet) {
+              console.warn(
+                `[editor_rating] No wallet found for assignment ${assignmentId}`,
+              );
+              return Promise.resolve();
+            }
+            return recordReputation(
+              wallet,
+              'editor_rating',
+              rating - 3,
+              `Editor rating: ${rating}/5`,
+              {
+                type: 'editor_rating',
+                rating,
+                submissionId,
+                assignmentId,
+              },
+            );
+          }),
+        );
+      }
     }
   });
 
@@ -595,4 +664,67 @@ export async function authorResponseAction(
     rebuttalId: rebuttal?.id,
     deadline,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Publish Paper
+// ---------------------------------------------------------------------------
+
+/** Transitions accepted → published. Mints paper_published reputation for all reviewers. */
+export async function publishPaperAction(submissionId: string) {
+  const session = await requireSession();
+  const submission = await requireSubmissionEditor(submissionId, session);
+
+  if (submission.status !== 'accepted') {
+    throw new Error('Only accepted papers can be published');
+  }
+
+  await updateSubmissionStatus(submissionId, 'published');
+
+  const authorWallet = submission.paper?.owner?.walletAddress;
+
+  after(async () => {
+    // Run HCS anchor, notification, and reviews query in parallel
+    const [, , submittedReviews] = await Promise.all([
+      anchorToHcs('HCS_TOPIC_SUBMISSIONS', {
+        type: 'paper_published',
+        submissionId,
+        paperId: submission.paperId,
+        timestamp: new Date().toISOString(),
+      }),
+      notifyIfWallet(authorWallet, {
+        type: 'paper_published',
+        title: 'Paper published',
+        body: `Your paper "${submission.paper.title}" has been published.`,
+        link: ROUTES.researcher.root,
+      }),
+      db
+        .select({
+          id: reviews.id,
+          reviewerWallet: reviews.reviewerWallet,
+        })
+        .from(reviews)
+        .where(eq(reviews.submissionId, submissionId)),
+    ]);
+
+    // Mint paper_published reputation tokens for all reviewers who submitted reviews
+    await Promise.all(
+      submittedReviews.map((review) =>
+        recordReputation(
+          review.reviewerWallet,
+          'paper_published',
+          1,
+          `Reviewed paper published`,
+          {
+            type: 'paper_published',
+            reviewId: review.id,
+            submissionId,
+            paperId: submission.paperId,
+          },
+        ),
+      ),
+    );
+  });
+
+  return { status: 'published' as const };
 }

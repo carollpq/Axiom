@@ -43,7 +43,7 @@ Journals join because Axiom: (1) makes them more credible, (2) solves operationa
 |---|---|---|
 | Frontend | Next.js 16 (App Router), React 19.2 | Pages, wallet integration, client-side hashing, Lit encrypt/decrypt |
 | API Layer | Next.js Route Handlers (Vercel) | Business logic, CRUD, Hedera orchestration |
-| Database | PostgreSQL (Neon) / Drizzle ORM | Users, papers, contracts, reviews, reputation, submissions (16 tables) |
+| Database | PostgreSQL (Neon) / Drizzle ORM | Users, papers, contracts, reviews, reputation, badges, submissions (17 tables) |
 | File Storage | IPFS via web3.storage | Lit-encrypted paper PDFs, datasets |
 | Consensus | Hedera HCS | 7 domain topics for immutable audit logs |
 | Tokens | Hedera HTS | Soulbound reputation NFTs |
@@ -102,6 +102,13 @@ interface ReviewCriterion {
 ### 4.5 Reviewer Reputation (FR-5)
 Soulbound HTS NFTs minted per review event. Cross-journal, non-transferable. Auto-recomputed scores stored in `reputationScores`. Public verification via `GET /api/reviews/reputation?wallet=` (DB + Mirror Node). See §6.
 
+### 4.10 OpenBadges & LinkedIn Integration (FR-10)
+OBv3-compliant (W3C Verifiable Credential) achievement badges issued automatically when reviewers reach milestones. Each badge is served as JSON-LD at `GET /api/badges/[id]` with Hedera HTS/HCS evidence URLs. Reviewers can add badges to their LinkedIn profiles via a zero-API-key deep link (`linkedin.com/profile/add?startTask=CERTIFICATION_NAME`).
+
+**Badge milestones:** first_review (1), five_reviews (5), ten_reviews (10), twentyfive_reviews (25), high_reputation (overall >= 80), timely_reviewer (timeliness >= 90). Issuance triggered automatically after each `recordReputation()` call via `checkAndIssueBadges()`.
+
+**Key files:** `src/features/reviewer/lib/badge-definitions.ts` (definitions + issuance logic), `src/features/reviewer/lib/linkedin.ts` (URL builder), `src/features/reviewer/components/dashboard/badge-card.client.tsx` (UI), `src/app/api/badges/[id]/route.ts` (OBv3 endpoint).
+
 ### 4.6 Review Transparency (FR-6)
 Anonymized reviews public after final decision. Confidential editor comments never public. Authors rate reviewers via 5-protocol system (actionable feedback, deep engagement, fair/objective, justified recommendation, appropriate expertise) — NO author reference stored.
 
@@ -122,15 +129,14 @@ Papers tagged at registration. Recorded on-chain, immutable.
 
 | Topic | Purpose | Message Schema |
 |---|---|---|
-| `papers` | Registrations, versions | `{type, paperHash, authorWallet, studyType, provenanceHashes, timestamp}` |
+| `papers` | Creation, registrations, versions | `{type: 'paper_created'|'register', paperId, paperHash?, authorWallet, studyType, timestamp}` |
 | `contracts` | Authorship creation, signatures | `{type, contractHash, signerWallet, signatures[], contributionSplits[], timestamp}` |
-| `submissions` | Submission events, status transitions | `{type, paperHash, contractHash, journalId, timestamp}` |
+| `submissions` | Submission events, status transitions | `{type: 'submitted'|'viewed_by_editor'|'reviewers_assigned'|'assignment_accepted'|'assignment_declined'|'status_accepted'|'author_response', submissionId, timestamp}` |
 | `criteria` | Review criteria publication | `{type, journalId, submissionId, criteriaHash, criteria[], timestamp}` |
 | `reviews` | Review anchoring + author comments | `{type, reviewHash, reviewerWallet, criteriaEvaluations, timestamp}` |
 | `decisions` | Accept/reject, rebuttal requests | `{type, decision, justification?, allCriteriaMet, timestamp}` |
-| `retractions` | Retraction records | Not yet implemented |
 
-Additional events on existing topics: `viewed_by_editor`, `assignment_accepted`, `author_response`, `rebuttal_requested`, `author_comment`.
+Additional events on existing topics: `paper_created` (papers), `viewed_by_editor`, `reviewers_assigned`, `assignment_accepted/declined`, `status_accepted`, `author_response`, `rebuttal_requested` (submissions), `author_comment`.
 
 ### HCS Message Flow
 
@@ -162,7 +168,6 @@ Wallet-based via Thirdweb v5. ORCID format-validated only (OAuth planned for v2)
 | `editor_rating` | Editor rates quality | Variable |
 | `author_rating` | Anonymous 5-protocol rating | Variable |
 | `paper_published` | Reviewed paper published | Positive |
-| `paper_retracted` | Approved paper retracted | Negative |
 | `rebuttal_upheld` | Reviewer was wrong | Negative |
 | `rebuttal_overturned` | Reviewer was right | Positive |
 
@@ -285,7 +290,7 @@ IPFS via web3.storage (pinning + Filecoin archival). Non-public files Lit-encryp
 
 ## 11. Database Schema
 
-PostgreSQL (Neon) via Drizzle ORM. 16 tables.
+PostgreSQL (Neon) via Drizzle ORM. 17 tables.
 
 ```sql
 -- IDENTITY
@@ -300,7 +305,7 @@ CREATE TABLE users (
 CREATE TABLE papers (
     id UUID PRIMARY KEY, title TEXT NOT NULL, abstract TEXT,
     status TEXT NOT NULL DEFAULT 'draft',
-    -- draft → registered → contract_pending → submitted → under_review → rebuttal_open → revision_requested → published → retracted
+    -- draft → registered → contract_pending → submitted → under_review → rebuttal_open → revision_requested → published
     visibility TEXT NOT NULL DEFAULT 'private', current_version INT DEFAULT 1,
     owner_wallet TEXT NOT NULL REFERENCES users(wallet_address),
     journal_id UUID REFERENCES journals(id), contract_id UUID REFERENCES authorship_contracts(id),
@@ -429,6 +434,14 @@ CREATE TABLE reputation_scores (
     last_computed_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- BADGES (OpenBadges v3 achievement credentials)
+CREATE TABLE badges (
+    id UUID PRIMARY KEY, user_wallet TEXT NOT NULL REFERENCES users(wallet_address),
+    badge_type TEXT NOT NULL,  -- first_review|five_reviews|ten_reviews|twentyfive_reviews|high_reputation|timely_reviewer
+    achievement_name TEXT NOT NULL, reputation_event_id UUID REFERENCES reputation_events(id),
+    metadata JSONB, issued_at TIMESTAMPTZ DEFAULT now(), created_at TIMESTAMPTZ DEFAULT now()
+);
+
 -- NOTIFICATIONS
 CREATE TABLE notifications (
     id UUID PRIMARY KEY, user_wallet TEXT NOT NULL, type TEXT NOT NULL,
@@ -455,6 +468,7 @@ CREATE INDEX idx_notifications_user ON notifications(user_wallet, is_read, creat
 
 ```
 app/api/
+├── badges/[id]/         GET (OBv3 JSON-LD credential)
 ├── papers/              GET/POST, [id]/ GET/PATCH, [id]/versions/ POST, [id]/submit/ POST, public/ GET
 ├── contracts/           GET/POST, [id]/ GET/PATCH, [id]/contributors/ POST, [id]/sign/ POST, [id]/reset-signatures/ PATCH
 ├── submissions/[id]/    criteria/ POST, assign-reviewer/ POST, accept-assignment/ POST, view/ POST,
@@ -467,6 +481,17 @@ app/api/
 ```
 
 ### Key API Contracts
+
+**Get Badge (OBv3)** `GET /api/badges/:id`
+```typescript
+Response: {
+  "@context": ["https://www.w3.org/ns/credentials/v2", "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"],
+  type: ["VerifiableCredential", "OpenBadgeCredential"],
+  issuer: { name: "Axiom Academic Review", url: "..." },
+  credentialSubject: { achievement: { name, description, criteria } },
+  evidence: [{ id: "hashscan.io/..." }]  // Hedera HTS/HCS links
+}
+```
 
 **Publish Criteria** `POST /api/submissions/:id/criteria`
 ```typescript
@@ -565,7 +590,7 @@ Vercel: Next.js 16, Node.js runtime (NOT Edge). Cron jobs for deadline enforceme
 
 **Phase 2:** Full ORCID OAuth, `did:hedera`, Sybil-resistant reviewer identity
 **Phase 3:** x402 micropayment paper access ($0.50-$2/paper), automatic revenue splitting (70% authors, 15% reviewers, 10% journal, 5% platform), funder escrow for open access
-**Phase 4:** AI review detection, fraud insurance markets, commercial IP tagging, post-publication commentary, retraction management
+**Phase 4:** AI review detection, fraud insurance markets, commercial IP tagging, post-publication commentary
 
 ---
 
@@ -591,5 +616,7 @@ Vercel: Next.js 16, Node.js runtime (NOT Edge). Cron jobs for deadline enforceme
 | **Scheduled Transactions** | Atomic authorship contract anchoring | Done |
 | **System Contracts** | HTS mint from Solidity | Stretch |
 | **DID** | Wallet-based identity | Done |
+
+| **OpenBadges** | OBv3 verifiable credentials with Hedera evidence | Done |
 
 **All core MVP features implemented.** Remaining stretch: HTS via System Contracts, full ORCID OAuth.

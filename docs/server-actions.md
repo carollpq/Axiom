@@ -50,7 +50,9 @@ These are the entry points for all client-initiated mutations. They handle:
 'use server';
 
 import { z } from 'zod';
+import { after } from 'next/server';
 import { requireSession } from '@/src/shared/lib/auth/auth';
+import { anchorToHcs } from '@/src/shared/lib/hedera/hcs';
 import { createPaper } from '@/src/features/papers/mutations';
 
 const createPaperSchema = z.object({
@@ -65,6 +67,14 @@ export async function createPaperAction(input: z.infer<typeof createPaperSchema>
 
   const paper = await createPaper({ ...parsed, wallet });
   if (!paper) throw new Error('User not found');
+
+  after(async () => {
+    await anchorToHcs('HCS_TOPIC_PAPERS', {
+      type: 'paper_created', paperId: paper.id, title: parsed.title,
+      studyType: parsed.studyType ?? 'original', ownerWallet: wallet,
+      timestamp: new Date().toISOString(),
+    });
+  });
 
   return paper;
 }
@@ -149,7 +159,7 @@ export async function submitReviewAction(assignmentId: string, input: ReviewInpu
 }
 ```
 
-**Server actions using `after()`:** `submitReviewAction`, `signContractAction`, `assignReviewersAction`, `makeDecisionAction`, `authorResponseAction`, `resolveRebuttalAction`
+**Server actions using `after()`:** `createPaperAction`, `submitReviewAction`, `signContractAction`, `assignReviewersAction`, `makeDecisionAction`, `authorResponseAction`, `resolveRebuttalAction`
 
 ### Special case: "already exists" responses
 
