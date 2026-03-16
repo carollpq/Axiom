@@ -15,7 +15,6 @@ const TOPICS = [
   "CRITERIA",
   "REVIEWS",
   "DECISIONS",
-  "RETRACTIONS",
   "EARNINGS",
 ] as const;
 

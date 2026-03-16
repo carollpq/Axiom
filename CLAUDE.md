@@ -116,11 +116,10 @@ Drizzle ORM, Neon PostgreSQL. Schema: `src/shared/lib/db/schema.ts` (16 tables).
 
 ### Reputation (HTS Soulbound)
 - Token: `AXIOM_REVIEWER_REPUTATION (AXR)`, non-fungible, non-transferable
-- Events: review_completed, review_late, editor_rating, author_rating, paper_published, paper_retracted, rebuttal_upheld/overturned
+- Events: review_completed, review_late, editor_rating, author_rating, paper_published, rebuttal_upheld/overturned
 - Score: `0.30 timeliness + 0.25 editor + 0.25 author + 0.20 publication`
 - `editor_rating`: minted when editor releases a decision with optional 1–5 star ratings per reviewer (delta = rating − 3)
 - `paper_published`: minted for every reviewer who submitted a review when editor publishes an accepted paper (delta = +1)
-- `paper_retracted`: defined in schema but NOT yet wired up
 
 ### Timeline Enforcement
 | Event | Deadline |
@@ -175,7 +174,7 @@ NEXT_PUBLIC_THIRDWEB_CLIENT_ID, AUTH_PRIVATE_KEY, NEXT_PUBLIC_APP_DOMAIN, DATABA
 # Hedera (optional — graceful fallback)
 HEDERA_NETWORK, HEDERA_OPERATOR_ID, HEDERA_OPERATOR_KEY, HEDERA_EVM_PRIVATE_KEY
 HCS_TOPIC_PAPERS, HCS_TOPIC_CONTRACTS, HCS_TOPIC_SUBMISSIONS, HCS_TOPIC_CRITERIA
-HCS_TOPIC_REVIEWS, HCS_TOPIC_DECISIONS, HCS_TOPIC_RETRACTIONS
+HCS_TOPIC_REVIEWS, HCS_TOPIC_DECISIONS
 HTS_REPUTATION_TOKEN_ID, TIMELINE_ENFORCER_ADDRESS
 
 # Optional

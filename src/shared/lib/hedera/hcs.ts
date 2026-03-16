@@ -47,8 +47,7 @@ export type HcsTopicEnvVar =
   | 'HCS_TOPIC_SUBMISSIONS'
   | 'HCS_TOPIC_CRITERIA'
   | 'HCS_TOPIC_REVIEWS'
-  | 'HCS_TOPIC_DECISIONS'
-  | 'HCS_TOPIC_RETRACTIONS';
+  | 'HCS_TOPIC_DECISIONS';
 
 /**
  * Anchor a JSON payload to an HCS topic with graceful fallback.

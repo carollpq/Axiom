@@ -128,7 +128,6 @@ Papers tagged at registration. Recorded on-chain, immutable.
 | `criteria` | Review criteria publication | `{type, journalId, submissionId, criteriaHash, criteria[], timestamp}` |
 | `reviews` | Review anchoring + author comments | `{type, reviewHash, reviewerWallet, criteriaEvaluations, timestamp}` |
 | `decisions` | Accept/reject, rebuttal requests | `{type, decision, justification?, allCriteriaMet, timestamp}` |
-| `retractions` | Retraction records | Not yet implemented |
 
 Additional events on existing topics: `paper_created` (papers), `viewed_by_editor`, `reviewers_assigned`, `assignment_accepted/declined`, `status_accepted`, `author_response`, `rebuttal_requested` (submissions), `author_comment`.
 
@@ -162,7 +161,6 @@ Wallet-based via Thirdweb v5. ORCID format-validated only (OAuth planned for v2)
 | `editor_rating` | Editor rates quality | Variable |
 | `author_rating` | Anonymous 5-protocol rating | Variable |
 | `paper_published` | Reviewed paper published | Positive |
-| `paper_retracted` | Approved paper retracted | Negative |
 | `rebuttal_upheld` | Reviewer was wrong | Negative |
 | `rebuttal_overturned` | Reviewer was right | Positive |
 
@@ -300,7 +298,7 @@ CREATE TABLE users (
 CREATE TABLE papers (
     id UUID PRIMARY KEY, title TEXT NOT NULL, abstract TEXT,
     status TEXT NOT NULL DEFAULT 'draft',
-    -- draft → registered → contract_pending → submitted → under_review → rebuttal_open → revision_requested → published → retracted
+    -- draft → registered → contract_pending → submitted → under_review → rebuttal_open → revision_requested → published
     visibility TEXT NOT NULL DEFAULT 'private', current_version INT DEFAULT 1,
     owner_wallet TEXT NOT NULL REFERENCES users(wallet_address),
     journal_id UUID REFERENCES journals(id), contract_id UUID REFERENCES authorship_contracts(id),
@@ -565,7 +563,7 @@ Vercel: Next.js 16, Node.js runtime (NOT Edge). Cron jobs for deadline enforceme
 
 **Phase 2:** Full ORCID OAuth, `did:hedera`, Sybil-resistant reviewer identity
 **Phase 3:** x402 micropayment paper access ($0.50-$2/paper), automatic revenue splitting (70% authors, 15% reviewers, 10% journal, 5% platform), funder escrow for open access
-**Phase 4:** AI review detection, fraud insurance markets, commercial IP tagging, post-publication commentary, retraction management
+**Phase 4:** AI review detection, fraud insurance markets, commercial IP tagging, post-publication commentary
 
 ---
 

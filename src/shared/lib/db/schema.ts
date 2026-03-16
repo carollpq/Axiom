@@ -8,8 +8,7 @@ export type PaperStatusDb =
   | 'submitted'
   | 'under_review'
   | 'revision_requested'
-  | 'published'
-  | 'retracted';
+  | 'published';
 
 export type StudyTypeDb =
   | 'original'
@@ -57,7 +56,6 @@ export type ReputationEventTypeDb =
   | 'editor_rating'
   | 'author_rating'
   | 'paper_published'
-  | 'paper_retracted'
   | 'rebuttal_upheld'
   | 'rebuttal_overturned';
 

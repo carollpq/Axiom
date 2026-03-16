@@ -15,7 +15,6 @@ export type PaperStatus =
   | 'Reviewers Assigned'
   | 'Accepted'
   | 'Rejected'
-  | 'Retracted'
   | 'Draft'
   | 'Submitted';
 
@@ -35,7 +34,6 @@ const statusMap: Record<PaperStatusDb | SubmissionStatusDb, PaperStatus> = {
   accepted: 'Accepted',
   rejected: 'Rejected',
   published: 'Published',
-  retracted: 'Retracted',
 };
 
 export function toDisplayStatus(
@@ -58,7 +56,6 @@ const reverseMap: Record<PaperStatus, string[]> = {
   'Rebuttal Phase': ['rebuttal_open'],
   Accepted: ['accepted'],
   Rejected: ['rejected'],
-  Retracted: ['retracted'],
   Published: ['published'],
 };
 

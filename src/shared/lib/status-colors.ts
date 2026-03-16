@@ -37,11 +37,6 @@ export const statusColors: Record<string, BadgeColorConfig> = {
     text: '#7a9fc7',
     border: 'rgba(130,160,200,0.3)',
   },
-  Retracted: {
-    bg: 'rgba(200,100,90,0.15)',
-    text: '#d4645a',
-    border: 'rgba(200,100,90,0.3)',
-  },
   'Reviews Complete': {
     bg: 'rgba(143,188,143,0.2)',
     text: '#8fbc8f',

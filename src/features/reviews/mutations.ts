@@ -81,7 +81,7 @@ const EDITOR_TYPES = [
   'rebuttal_overturned',
 ];
 const AUTHOR_TYPES = ['author_rating'];
-const PUBLICATION_TYPES = ['paper_published', 'paper_retracted'];
+const PUBLICATION_TYPES = ['paper_published'];
 
 /** Recomputes weighted reputation score via SQL aggregation and upserts it. */
 export async function upsertReputationScore(wallet: string) {
