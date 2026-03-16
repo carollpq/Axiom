@@ -218,7 +218,7 @@ export function mapDbToReviewerWithStatus(
     accepted: 'in_progress',
     submitted: 'complete',
     declined: 'rejected',
-    late: 'in_progress',
+    late: 'late',
   };
   const name =
     nameByWallet?.[assignment.reviewerWallet] ??

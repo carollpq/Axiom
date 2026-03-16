@@ -65,6 +65,7 @@ export interface PaperCardData {
 export type AssignmentDisplayStatus =
   | 'complete'
   | 'in_progress'
+  | 'late'
   | 'rejected'
   | 'pending';
 

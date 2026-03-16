@@ -226,6 +226,7 @@ import type { AssignmentDisplayStatus } from '@/src/features/editor/types';
 export const reviewAssignmentLabels: Record<AssignmentDisplayStatus, string> = {
   complete: 'Complete',
   in_progress: 'In Progress',
+  late: 'Late',
   rejected: 'Rejected',
   pending: 'Pending',
 };

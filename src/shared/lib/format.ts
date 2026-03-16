@@ -1,6 +1,6 @@
-export function truncate(str: string, prefixLen = 6): string {
-  if (str.length <= 10) return str;
-  return `${str.slice(0, prefixLen)}...${str.slice(-4)}`;
+export function truncate(str: string, prefixLen = 6, suffixLen = 4): string {
+  if (str.length <= prefixLen + suffixLen + 3) return str;
+  return `${str.slice(0, prefixLen)}...${str.slice(-suffixLen)}`;
 }
 
 export function getInitials(name: string): string {
