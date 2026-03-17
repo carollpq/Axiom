@@ -1,3 +1,6 @@
+// Mock DB to avoid requiring DATABASE_URL in CI
+jest.mock('@/src/shared/lib/db', () => ({ db: {} }));
+
 import {
   norm,
   computeReputationScore,
