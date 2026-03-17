@@ -190,7 +190,7 @@ describe('submitRebuttalResponses', () => {
 describe('updateRebuttalHedera', () => {
   it('backfills txId (void return)', async () => {
     // updateRebuttalHedera has no .returning() — just update().set().where()
-    mockWhere.mockResolvedValue(undefined);
+    (mockWhere as jest.Mock).mockResolvedValue(undefined);
     await updateRebuttalHedera('rebuttal-1', 'tx-123');
     expect(mockSet).toHaveBeenCalledWith({ hederaTxId: 'tx-123' });
   });
@@ -215,7 +215,10 @@ describe('resolveRebuttal', () => {
       }),
     );
     // resolvedAt should be set
-    expect(mockSet.mock.calls[0][0].resolvedAt).toBeDefined();
+    expect(
+      ((mockSet.mock.calls as unknown[][])[0][0] as Record<string, unknown>)
+        .resolvedAt,
+    ).toBeDefined();
   });
 
   it('returns null when no row matched (wrong id or not in submitted status)', async () => {

@@ -58,7 +58,7 @@ beforeEach(() => {
 describe('notifyIfWallet', () => {
   it.each([null, undefined])('no-ops when wallet is %s', async (wallet) => {
     await notifyIfWallet(wallet, {
-      type: 'submission_received',
+      type: 'submission_viewed',
       title: 'Test',
       body: 'Body',
     });
@@ -67,7 +67,7 @@ describe('notifyIfWallet', () => {
 
   it('calls createNotification when wallet is provided', async () => {
     await notifyIfWallet('0xABC', {
-      type: 'submission_received',
+      type: 'submission_viewed',
       title: 'Test',
       body: 'Body',
     });
@@ -75,7 +75,7 @@ describe('notifyIfWallet', () => {
     expect(mockInsertValues).toHaveBeenCalledWith(
       expect.objectContaining({
         userWallet: '0xabc',
-        type: 'submission_received',
+        type: 'submission_viewed',
         title: 'Test',
         body: 'Body',
       }),
@@ -91,14 +91,14 @@ describe('createNotification', () => {
   it('lowercases wallet and inserts all fields', async () => {
     await createNotification({
       userWallet: '0xABCDEF',
-      type: 'review_assigned',
+      type: 'reviewers_assigned',
       title: 'New Review',
       body: 'You have a review',
       link: '/reviews/1',
     });
     expect(mockInsertValues).toHaveBeenCalledWith({
       userWallet: '0xabcdef',
-      type: 'review_assigned',
+      type: 'reviewers_assigned',
       title: 'New Review',
       body: 'You have a review',
       link: '/reviews/1',
@@ -108,7 +108,7 @@ describe('createNotification', () => {
   it('defaults link to null when omitted', async () => {
     await createNotification({
       userWallet: '0xabc',
-      type: 'submission_received',
+      type: 'submission_viewed',
       title: 'Test',
       body: 'Body',
     });

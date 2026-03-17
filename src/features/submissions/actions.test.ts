@@ -434,8 +434,8 @@ describe('makeDecisionAction', () => {
 
   it('rejects invalid decision via Zod', async () => {
     await expect(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       actions.makeDecisionAction('sub-1', {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         decision: 'invalid' as any,
         comment: '',
       }),

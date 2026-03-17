@@ -269,7 +269,7 @@ describe('computeStats', () => {
       { status: 'Paper Submitted' },
       { status: 'Viewed By Editor' },
       { status: 'Accepted' },
-    ] as Parameters<typeof computeStats>[0];
+    ] as unknown as Parameters<typeof computeStats>[0];
     expect(computeStats(cards).newSubmissions).toBe(2);
   });
 
@@ -277,7 +277,7 @@ describe('computeStats', () => {
     const cards = [
       { status: 'Assigned 3 Reviewers' },
       { status: '2/3 Reviews Completed' },
-    ] as Parameters<typeof computeStats>[0];
+    ] as unknown as Parameters<typeof computeStats>[0];
     expect(computeStats(cards).underReview).toBe(2);
   });
 
@@ -300,7 +300,7 @@ describe('computeStats', () => {
     const cards = [
       { status: 'Rejected' },
       { status: 'Desk Reject' },
-    ] as Parameters<typeof computeStats>[0];
+    ] as unknown as Parameters<typeof computeStats>[0];
     expect(computeStats(cards).rejected).toBe(2);
   });
 

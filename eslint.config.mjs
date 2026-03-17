@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated / vendored files:
+    "contracts/typechain-types/**",
+    "coverage/**",
+    "public/pdf.worker.min.mjs",
   ]),
 ]);
 

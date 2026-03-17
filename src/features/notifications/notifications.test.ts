@@ -1,6 +1,7 @@
 /**
  * Tests for notifications/actions.ts — server actions.
  */
+export {}; // ensure file is treated as a module
 
 // Mock auth
 const mockRequireSession = jest.fn();

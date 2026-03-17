@@ -1,6 +1,7 @@
 /**
  * Tests for updateProfileAction server action.
  */
+export {}; // ensure file is treated as a module
 
 const mockRequireSession = jest.fn();
 const mockRegisterUserRole = jest.fn();

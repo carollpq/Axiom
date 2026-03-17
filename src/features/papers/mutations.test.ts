@@ -161,7 +161,10 @@ describe('updatePaper', () => {
     expect(mockSet).toHaveBeenCalledWith(
       expect.objectContaining({ title: 'New Title' }),
     );
-    expect(mockSet.mock.calls[0][0].updatedAt).toBeDefined();
+    expect(
+      ((mockSet.mock.calls as unknown[][])[0][0] as Record<string, unknown>)
+        .updatedAt,
+    ).toBeDefined();
   });
 
   it('updates abstract', async () => {

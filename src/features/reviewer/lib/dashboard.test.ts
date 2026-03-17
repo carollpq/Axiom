@@ -58,9 +58,9 @@ const makeCompletedRow = (overrides: Record<string, unknown> = {}): any => ({
   ...overrides,
 });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const makeCompletedExtendedRow = (
   overrides: Record<string, unknown> = {},
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): any => ({
   ...makeCompletedRow(),
   reviews: [

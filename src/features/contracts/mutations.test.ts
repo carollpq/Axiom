@@ -290,7 +290,10 @@ describe('updateContractHedera', () => {
         hederaTimestamp: 'ts-456',
       }),
     );
-    expect(mockSet.mock.calls[0][0].updatedAt).toBeDefined();
+    expect(
+      ((mockSet.mock.calls as unknown[][])[0][0] as Record<string, unknown>)
+        .updatedAt,
+    ).toBeDefined();
   });
 
   it('returns null when no row matched', async () => {
@@ -336,11 +339,13 @@ describe('generateInviteToken', () => {
 
 describe('resetContractSignatures', () => {
   it('runs both updates within a transaction', async () => {
-    const calls: unknown[] = [];
-    mockSet.mockImplementation((arg: unknown) => {
-      calls.push(arg);
-      return { where: mockWhere };
-    });
+    const calls: Record<string, unknown>[] = [];
+    (mockSet as jest.Mock).mockImplementation(
+      (arg: Record<string, unknown>) => {
+        calls.push(arg);
+        return { where: mockWhere };
+      },
+    );
     mockWhere.mockReturnValue({ returning: mockReturning });
     mockReturning.mockResolvedValue([
       { id: 'c-1', status: 'pending_signatures' },
@@ -386,7 +391,10 @@ describe('updateContractSchedule', () => {
         hederaScheduleTxId: 'sched-tx-1',
       }),
     );
-    expect(mockSet.mock.calls[0][0].updatedAt).toBeDefined();
+    expect(
+      ((mockSet.mock.calls as unknown[][])[0][0] as Record<string, unknown>)
+        .updatedAt,
+    ).toBeDefined();
   });
 
   it('returns null when no row matched', async () => {
@@ -433,10 +441,12 @@ describe('signContributor', () => {
   /** Sets up mockSet to track all .set() calls and returns the collected args. */
   function trackSetCalls() {
     const setCalls: Record<string, unknown>[] = [];
-    mockSet.mockImplementation((arg: Record<string, unknown>) => {
-      setCalls.push(arg);
-      return { where: mockWhere };
-    });
+    (mockSet as jest.Mock).mockImplementation(
+      (arg: Record<string, unknown>) => {
+        setCalls.push(arg);
+        return { where: mockWhere };
+      },
+    );
     mockWhere.mockReturnValue({ returning: mockReturning });
     return setCalls;
   }

@@ -4,7 +4,10 @@
 
 // --- Drizzle chain mocks ---
 const mockSelectWhere = jest.fn();
-const mockSelectFrom = jest.fn(() => ({ where: mockSelectWhere }));
+const mockSelectFrom = jest.fn(() => ({
+  where: mockSelectWhere,
+  innerJoin: mockInnerJoin,
+}));
 const mockSelect = jest.fn(() => ({ from: mockSelectFrom }));
 const mockInnerJoinLimit = jest.fn();
 const mockInnerJoin = jest.fn(() => ({
@@ -85,7 +88,7 @@ beforeEach(() => {
 
   // Default select chain: contributor rows return empty
   mockSelect.mockReturnValue({ from: mockSelectFrom });
-  mockSelectFrom.mockReturnValue({
+  (mockSelectFrom as jest.Mock).mockReturnValue({
     where: mockSelectWhere,
     innerJoin: mockInnerJoin,
   });
@@ -106,7 +109,7 @@ describe('listUserPapers', () => {
   it('lowercases wallet for lookups', async () => {
     mockGetUserByWallet.mockResolvedValue(null);
     // Contributor rows query
-    mockSelectFrom.mockReturnValue({
+    (mockSelectFrom as jest.Mock).mockReturnValue({
       innerJoin: jest.fn().mockReturnValue({
         where: jest.fn().mockResolvedValue([]),
       }),
@@ -117,7 +120,7 @@ describe('listUserPapers', () => {
 
   it('returns empty array when no papers found', async () => {
     mockGetUserByWallet.mockResolvedValue(null);
-    mockSelectFrom.mockReturnValue({
+    (mockSelectFrom as jest.Mock).mockReturnValue({
       innerJoin: jest.fn().mockReturnValue({
         where: jest.fn().mockResolvedValue([]),
       }),

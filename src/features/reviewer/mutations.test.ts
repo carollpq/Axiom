@@ -82,7 +82,13 @@ describe('respondToPoolInvite', () => {
     await respondToPoolInvite('jr-1', '0xW', 'accepted');
     await respondToPoolInvite('jr-1', '0xW', 'rejected');
     expect(mockSet).toHaveBeenCalledTimes(2);
-    expect(mockSet.mock.calls[0][0].status).toBe('accepted');
-    expect(mockSet.mock.calls[1][0].status).toBe('rejected');
+    expect(
+      ((mockSet.mock.calls as unknown[][])[0][0] as Record<string, unknown>)
+        .status,
+    ).toBe('accepted');
+    expect(
+      ((mockSet.mock.calls as unknown[][])[1][0] as Record<string, unknown>)
+        .status,
+    ).toBe('rejected');
   });
 });
