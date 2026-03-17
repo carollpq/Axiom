@@ -3,7 +3,6 @@ interface ProfileCardProps {
   subtitle: string;
   secondarySubtitle?: string;
   initials?: string;
-  children?: React.ReactNode;
 }
 
 export function ProfileCard({
@@ -11,7 +10,6 @@ export function ProfileCard({
   subtitle,
   secondarySubtitle,
   initials,
-  children,
 }: ProfileCardProps) {
   return (
     <div className="dashboard-card text-center space-y-6">
@@ -30,8 +28,6 @@ export function ProfileCard({
           </p>
         )}
       </div>
-
-      {children}
     </div>
   );
 }

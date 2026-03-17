@@ -130,7 +130,6 @@ Drizzle ORM, Neon PostgreSQL. Schema: `src/shared/lib/db/schema.ts` (17 tables).
 - `badges` table: id, userWallet, badgeType, achievementName, reputationEventId, metadata (JSONB), issuedAt
 - Key files: `src/features/reviewer/lib/badge-definitions.ts`, `src/features/reviewer/lib/linkedin.ts`, `src/features/reviewer/components/dashboard/badge-card.client.tsx`
 - Uses `NEXT_PUBLIC_APP_DOMAIN` for badge `certUrl` (currently `https://axiom-eight-blue.vercel.app`)
-- Public reviewer profile page at `/reviewer-profile/[wallet]` — standalone Server Component (no `RoleShell`), validates wallet format, uses `countCompletedReviews` (lightweight COUNT query) + `getReviewerReputation` + `getBadgesForWallet`
 
 ### Timeline Enforcement
 | Event | Deadline |
@@ -167,7 +166,7 @@ Cron at `/api/cron/deadlines`. Cross-verifies with `TimelineEnforcer.sol` (chain
 src/
 ├── app/
 │   ├── layout.tsx / providers.client.tsx / page.tsx / globals.css
-│   ├── login/ / onboarding/ / invite/[token]/ / reviewer-profile/[wallet]/
+│   ├── login/ / onboarding/ / invite/[token]/
 │   ├── api/  (badges/[id], contracts/, papers/[id]/content/, submissions/[id]/*, reviews/*, rebuttals/*, cron/deadlines, upload/ipfs)
 │   └── (protected)/  (researcher/, editor/, reviewer/)
 ├── features/  (auth, researcher, editor, reviewer, contracts, papers, users, reviews, rebuttals, notifications)
