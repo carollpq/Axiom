@@ -155,32 +155,35 @@ export async function generateInviteToken(
   return { token, expiresAt };
 }
 
-/** Clears all contributor signatures and resets contract to pending_signatures. */
+/** Clears all contributor signatures and resets contract to pending_signatures.
+ *  Wrapped in a transaction to prevent race conditions with concurrent signing. */
 export async function resetContractSignatures(contractId: string) {
   const now = new Date().toISOString();
 
-  await db
-    .update(contractContributors)
-    .set({
-      status: 'pending' as ContributorStatusDb,
-      signature: null,
-      signedAt: null,
-    })
-    .where(eq(contractContributors.contractId, contractId));
+  return db.transaction(async (tx) => {
+    await tx
+      .update(contractContributors)
+      .set({
+        status: 'pending' as ContributorStatusDb,
+        signature: null,
+        signedAt: null,
+      })
+      .where(eq(contractContributors.contractId, contractId));
 
-  return (
-    (
-      await db
-        .update(authorshipContracts)
-        .set({
-          status: 'pending_signatures' as ContractStatusDb,
-          contractHash: null,
-          updatedAt: now,
-        })
-        .where(eq(authorshipContracts.id, contractId))
-        .returning()
-    )[0] ?? null
-  );
+    return (
+      (
+        await tx
+          .update(authorshipContracts)
+          .set({
+            status: 'pending_signatures' as ContractStatusDb,
+            contractHash: null,
+            updatedAt: now,
+          })
+          .where(eq(authorshipContracts.id, contractId))
+          .returning()
+      )[0] ?? null
+    );
+  });
 }
 
 export interface SignContributorInput {
@@ -244,6 +247,8 @@ export async function signContributor(input: SignContributorInput) {
 
   const allSigned = allContribs.every((c) => c.status === 'signed');
 
+  // Only update contract status if it's currently pending_signatures
+  // (prevents overwriting draft/voided/fully_signed states)
   await db
     .update(authorshipContracts)
     .set({
@@ -253,7 +258,15 @@ export async function signContributor(input: SignContributorInput) {
       contractHash: allSigned ? (input.contractHash ?? null) : undefined,
       updatedAt: now,
     })
-    .where(eq(authorshipContracts.id, input.contractId));
+    .where(
+      and(
+        eq(authorshipContracts.id, input.contractId),
+        eq(
+          authorshipContracts.status,
+          'pending_signatures' as ContractStatusDb,
+        ),
+      ),
+    );
 
   return updated;
 }

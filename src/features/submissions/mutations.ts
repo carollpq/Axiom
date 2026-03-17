@@ -7,7 +7,7 @@ import {
   submissions,
   type SubmissionStatusDb,
 } from '@/src/shared/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 
 export interface PublishCriteriaInput {
   submissionId: string;
@@ -15,7 +15,8 @@ export interface PublishCriteriaInput {
   criteriaHash: string;
 }
 
-/** Inserts criteria and transitions submission to `criteria_published`. */
+/** Inserts criteria and transitions submission to `criteria_published`.
+ *  Only allowed when submission is in `submitted` or `viewed_by_editor` status. */
 export async function publishCriteria(input: PublishCriteriaInput) {
   const criteria =
     (
@@ -29,15 +30,30 @@ export async function publishCriteria(input: PublishCriteriaInput) {
         .returning()
     )[0] ?? null;
 
-  if (criteria) {
-    await db
-      .update(submissions)
-      .set({
-        status: 'criteria_published',
-        criteriaHash: input.criteriaHash,
-      })
-      .where(eq(submissions.id, input.submissionId));
-  }
+  if (!criteria) return null;
+
+  // Atomic status guard: only transitions from allowed statuses
+  const updated =
+    (
+      await db
+        .update(submissions)
+        .set({
+          status: 'criteria_published' as SubmissionStatusDb,
+          criteriaHash: input.criteriaHash,
+        })
+        .where(
+          and(
+            eq(submissions.id, input.submissionId),
+            inArray(submissions.status, [
+              'submitted',
+              'viewed_by_editor',
+            ] as SubmissionStatusDb[]),
+          ),
+        )
+        .returning()
+    )[0] ?? null;
+
+  if (!updated) return null;
 
   return criteria;
 }
