@@ -17,7 +17,8 @@
     "contracts:compile": "npm --prefix contracts run compile",
     "contracts:test": "npm --prefix contracts run test",
     "contracts:deploy:testnet": "npm --prefix contracts run deploy:testnet",
-    "prepare": "husky"
+    "prepare": "husky",
+    "postinstall": "cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs public/pdf.worker.min.mjs"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.80.0",

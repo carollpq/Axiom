@@ -11,7 +11,7 @@ interface UseDecryptPaperResult {
   fileUrl: string | undefined;
   status: DecryptStatus;
   error: string | null;
-  decrypt: () => void;
+  decrypt: () => Promise<void>;
 }
 
 /**
@@ -82,7 +82,12 @@ export function useDecryptPaper(
         throw new Error('Missing Lit encryption metadata');
       }
 
-      const conditions = JSON.parse(accessConditionsJson);
+      let conditions;
+      try {
+        conditions = JSON.parse(accessConditionsJson);
+      } catch {
+        throw new Error('Invalid access conditions metadata');
+      }
       const { decryptFileWithLit } =
         await import('@/src/shared/lib/lit/decrypt');
       const decryptedData = await decryptFileWithLit(
@@ -101,7 +106,7 @@ export function useDecryptPaper(
         URL.revokeObjectURL(blobUrlRef.current);
       }
 
-      const blob = new Blob([decryptedData.buffer as ArrayBuffer], {
+      const blob = new Blob([new Uint8Array(decryptedData)], {
         type: 'application/pdf',
       });
       const url = URL.createObjectURL(blob);
