@@ -64,7 +64,7 @@ export function createInitialState(
       confidentialEditorComments: '',
     },
     recommendation: null,
-    isDraft: true,
+    isDraft: false,
     criteriaCollapsed: false,
   };
 }
@@ -85,6 +85,7 @@ export function reviewWorkspaceReducer(
     case 'SET_CRITERION_RATING':
       return {
         ...state,
+        isDraft: false,
         evaluations: {
           ...state.evaluations,
           [action.id]: {
@@ -97,6 +98,7 @@ export function reviewWorkspaceReducer(
     case 'SET_CRITERION_COMMENT':
       return {
         ...state,
+        isDraft: false,
         evaluations: {
           ...state.evaluations,
           [action.id]: {
@@ -109,6 +111,7 @@ export function reviewWorkspaceReducer(
     case 'SET_GENERAL_COMMENT':
       return {
         ...state,
+        isDraft: false,
         generalComments: {
           ...state.generalComments,
           [action.field]: action.value,
@@ -116,7 +119,11 @@ export function reviewWorkspaceReducer(
       };
 
     case 'SET_RECOMMENDATION':
-      return { ...state, recommendation: action.recommendation };
+      return {
+        ...state,
+        isDraft: false,
+        recommendation: action.recommendation,
+      };
 
     case 'SAVE_DRAFT':
       return { ...state, isDraft: true };

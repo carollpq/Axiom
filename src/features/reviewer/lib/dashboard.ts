@@ -64,8 +64,10 @@ export function buildPdfUrl(
 function reviewStatus(
   assignmentStatus: string,
   daysLeft: number,
+  deadline: string | null | undefined,
 ): ReviewerDisplayStatus {
   if (assignmentStatus === 'submitted') return 'Submitted';
+  if (!deadline) return 'Pending';
   if (daysLeft < 0) return 'Late';
   if (daysLeft <= 3) return 'In Progress';
   return 'Pending';
@@ -85,7 +87,7 @@ export function mapDbToAssignedReview(
     journal: a.submission.journal?.name ?? '—',
     assigned: formatDate(a.assignedAt),
     deadline: a.deadline ? formatDate(a.deadline) : '—',
-    status: reviewStatus(a.status, daysLeft),
+    status: reviewStatus(a.status, daysLeft, a.deadline),
     daysLeft,
   };
 }
@@ -105,8 +107,6 @@ export function mapDbToCompletedReview(
     title: a.submission.paper.title,
     journal: a.submission.journal?.name ?? '—',
     submitted: formatDate(a.submittedAt ?? a.assignedAt),
-    editorRating: 0,
-    authorRating: 0,
     hash,
   };
 }
@@ -114,10 +114,11 @@ export function mapDbToCompletedReview(
 /** Converts 0–100 DB scores to 0–5 display scale. */
 export function mapDbToReputationScores(
   row: DbReputationRow,
+  recentDelta: number = 0,
 ): ReputationScores {
   return {
     overall: toFivePointScale(row.overallScore),
-    change: 0, // no historical delta available yet
+    change: recentDelta,
     timeliness: toFivePointScale(row.timelinessScore),
     editorAvg: toFivePointScale(row.editorRatingAvg),
     authorAvg: toFivePointScale(row.authorRatingAvg),

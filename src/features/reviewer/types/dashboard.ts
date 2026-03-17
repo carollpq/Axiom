@@ -40,8 +40,6 @@ export interface CompletedReview {
   title: string;
   journal: string;
   submitted: string;
-  editorRating: number;
-  authorRating: number;
   hash: string;
 }
 

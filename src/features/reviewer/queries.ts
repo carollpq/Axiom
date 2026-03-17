@@ -3,10 +3,11 @@ import { db } from '@/src/shared/lib/db';
 import {
   reviewAssignments,
   reputationScores,
+  reputationEvents,
   users,
   journalReviewers,
 } from '@/src/shared/lib/db/schema';
-import { eq, and, or, inArray } from 'drizzle-orm';
+import { eq, and, or, inArray, gte, sum } from 'drizzle-orm';
 import { displayNameOrWallet } from '@/src/features/users/lib';
 import type { EditorNameMap } from '@/src/features/reviewer/lib/dashboard';
 
@@ -151,6 +152,25 @@ export async function buildEditorNameMap(
   }
   return map;
 }
+
+/** Sum of scoreDelta from recent reputation events (default: last 30 days). */
+export const getRecentReputationDelta = cache(
+  async (wallet: string, days: number = 30): Promise<number> => {
+    const cutoff = new Date(
+      Date.now() - days * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    const [row] = await db
+      .select({ total: sum(reputationEvents.scoreDelta) })
+      .from(reputationEvents)
+      .where(
+        and(
+          eq(reputationEvents.userWallet, wallet.toLowerCase()),
+          gte(reputationEvents.createdAt, cutoff),
+        ),
+      );
+    return Number(row?.total ?? 0);
+  },
+);
 
 export type DbAssignedReview = Awaited<
   ReturnType<typeof listAssignedReviews>

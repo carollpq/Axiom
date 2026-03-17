@@ -3,6 +3,7 @@ import {
   listAssignedReviews,
   listCompletedReviews,
   getReviewerReputation,
+  getRecentReputationDelta,
 } from '@/src/features/reviewer/queries';
 import {
   mapDbToAssignedReview,
@@ -21,22 +22,32 @@ import { getBadgesForWallet } from '@/src/features/reviewer/lib/badge-definition
 export default async function ReviewerDashboard() {
   const wallet = (await getSession())!;
 
-  const [rawAssigned, rawCompleted, repRow, userProfile, ratings, badgeRows] =
-    await Promise.all([
-      listAssignedReviews(wallet),
-      listCompletedReviews(wallet),
-      getReviewerReputation(wallet),
-      getUserByWallet(wallet),
-      listRatingsForReviewer(wallet),
-      getBadgesForWallet(wallet),
-    ]);
+  const [
+    rawAssigned,
+    rawCompleted,
+    repRow,
+    userProfile,
+    ratings,
+    badgeRows,
+    recentDelta,
+  ] = await Promise.all([
+    listAssignedReviews(wallet),
+    listCompletedReviews(wallet),
+    getReviewerReputation(wallet),
+    getUserByWallet(wallet),
+    listRatingsForReviewer(wallet),
+    getBadgesForWallet(wallet),
+    getRecentReputationDelta(wallet),
+  ]);
 
   return (
     <div className="max-w-full mx-auto px-12 py-8">
       <ReviewerDashboardClient
         initialAssigned={rawAssigned.map(mapDbToAssignedReview)}
         initialCompleted={rawCompleted.map(mapDbToCompletedReview)}
-        reputationScores={repRow ? mapDbToReputationScores(repRow) : null}
+        reputationScores={
+          repRow ? mapDbToReputationScores(repRow, recentDelta) : null
+        }
         reputationBreakdown={repRow ? mapDbToReputationBreakdown(repRow) : null}
         userProfile={userProfile}
         journalsReviewed={extractJournalNames(rawAssigned, rawCompleted)}
