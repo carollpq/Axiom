@@ -56,7 +56,7 @@ export function ResponseFormPanel({
 
       {/* Response form (only when open) */}
       {selectedReviewId && !isReadOnly && (
-        <div className="p-4">
+        <div data-testid="rebuttal-response-form" className="p-4">
           <SectionLabel className="mb-3">Your Response</SectionLabel>
 
           <AgreeDisagreeToggle
@@ -64,15 +64,17 @@ export function ResponseFormPanel({
             onChange={(pos) => onSetPosition(selectedReviewId, pos)}
           />
 
-          <FormTextarea
-            value={responses[selectedReviewId]?.justification ?? ''}
-            onChange={(e) =>
-              onSetJustification(selectedReviewId, e.target.value)
-            }
-            placeholder="Provide your justification..."
-            rows={6}
-            className="mb-3"
-          />
+          <div data-testid="justification-input">
+            <FormTextarea
+              value={responses[selectedReviewId]?.justification ?? ''}
+              onChange={(e) =>
+                onSetJustification(selectedReviewId, e.target.value)
+              }
+              placeholder="Provide your justification..."
+              rows={6}
+              className="mb-3"
+            />
+          </div>
 
           {error && (
             <div className="text-[11px] text-[#d4645a] font-serif mb-2">
@@ -81,6 +83,7 @@ export function ResponseFormPanel({
           )}
 
           <Button
+            data-testid="rebuttal-submit-btn"
             variant="gold"
             fullWidth
             onClick={onSubmit}

@@ -175,6 +175,7 @@ export function AssignReviewersPanel({
         </ListRow>
         {onAction && (
           <Button
+            data-testid="send-invites-btn"
             variant="gold"
             onClick={onAction}
             disabled={isLoading}

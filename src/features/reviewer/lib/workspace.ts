@@ -37,22 +37,22 @@ const FALLBACK_CRITERIA: ReviewCriterion[] = [
   {
     id: 1,
     text: 'Methodology is reproducible',
-    onChainHash: '0x3a1f8b2c9d4e5f60a7b8c9d0e1f2a3b4c5d6e7f8',
+    onChainHash: 'unpublished',
   },
   {
     id: 2,
     text: 'Statistical analysis is appropriate',
-    onChainHash: '0x4b2a9c3d0e5f6a71b8c9d0e1f2a3b4c5d6e7f8a9',
+    onChainHash: 'unpublished',
   },
   {
     id: 3,
     text: 'Dataset is accessible and described',
-    onChainHash: '0x5c3b0d4e1f6a7b82c9d0e1f2a3b4c5d6e7f8a9b0',
+    onChainHash: 'unpublished',
   },
   {
     id: 4,
     text: 'Claims are supported by evidence',
-    onChainHash: '0x6d4c1e5f2a7b8c93d0e1f2a3b4c5d6e7f8a9b0c1',
+    onChainHash: 'unpublished',
   },
 ];
 
@@ -112,7 +112,7 @@ export function mapAssignmentToPaper(
     id: 0,
     title: paper.title,
     abstract: paper.abstract ?? '',
-    journal: journal.name,
+    journal: journal?.name ?? '—',
     version: latestVersion ? `v${latestVersion.versionNumber}` : 'v1',
     anonymized: true,
     pdfUrl: latestVersion?.fileStorageKey

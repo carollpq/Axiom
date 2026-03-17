@@ -4,9 +4,8 @@ import { useState, useMemo, type ReactNode } from 'react';
 import { ThreeColumnLayout } from '@/src/shared/components/three-column-layout';
 import { SelectionPlaceholder } from '@/src/shared/components/selection-placeholder';
 import { PaperList } from '@/src/shared/components/paper-list.client';
-import { DynamicPdfViewer } from '@/src/shared/components/dynamic-pdf-viewer.client';
+import { DecryptablePdfViewer } from '@/src/shared/components/decryptable-pdf-viewer.client';
 import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
-import { useDecryptPaper } from '@/src/shared/hooks/useDecryptPaper';
 import { toReviewerPaperListItems } from '@/src/features/reviewer/lib/dashboard';
 
 interface ItemWithPdf {
@@ -67,12 +66,6 @@ export function ReviewerThreeColumnShell<T extends ItemWithPdf>({
     return { selected: null, selectedIndex: -1, effectiveId: null };
   }, [items, selectedId]);
 
-  // Use decryption hook if paper has Lit data
-  const { fileUrl: decryptedUrl } = useDecryptPaper(
-    selected?.hasLitData && selected?.paperId ? selected.paperId : null,
-    true,
-  );
-
   return (
     <ThreeColumnLayout
       title={title}
@@ -87,20 +80,14 @@ export function ReviewerThreeColumnShell<T extends ItemWithPdf>({
       }
       viewer={
         selected ? (
-          decryptedUrl ? (
-            <DynamicPdfViewer fileUrl={decryptedUrl} title={selected.title} />
-          ) : selected.pdfUrl ? (
-            <DynamicPdfViewer
-              fileUrl={selected.pdfUrl}
-              title={selected.title}
-            />
-          ) : (
-            <SelectionPlaceholder message="No PDF available" />
-          )
-        ) : (
-          <SelectionPlaceholder
-            message={selected ? 'No PDF available' : 'Select a paper to view'}
+          <DecryptablePdfViewer
+            paperId={selected.paperId}
+            hasLitData={selected.hasLitData}
+            fallbackFileUrl={selected.pdfUrl}
+            title={selected.title}
           />
+        ) : (
+          <SelectionPlaceholder message="Select a paper to view" />
         )
       }
       sidebar={

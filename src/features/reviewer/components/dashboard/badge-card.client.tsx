@@ -31,6 +31,7 @@ export function BadgeCard({ badge }: { badge: BadgeData }) {
 
   return (
     <div
+      data-testid="badge-card"
       className="rounded-lg border p-4 space-y-3"
       style={{
         backgroundColor: 'var(--surface-stat)',

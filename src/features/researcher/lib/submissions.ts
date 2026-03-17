@@ -3,6 +3,18 @@ import { deriveSubmissionDisplayStatus } from '@/src/features/researcher/lib/das
 import { anonymizeReviews } from '@/src/features/researcher/lib/review';
 import { extractAuthors } from '@/src/features/researcher/lib/paper-utils';
 
+/** Group items by key into a Map (Node 20-compatible alternative to Map.groupBy). */
+function groupBy<T, K>(items: readonly T[], key: (item: T) => K): Map<K, T[]> {
+  const map = new Map<K, T[]>();
+  for (const item of items) {
+    const k = key(item);
+    const arr = map.get(k);
+    if (arr) arr.push(item);
+    else map.set(k, [item]);
+  }
+  return map;
+}
+
 /**
  * Aggregates papers, review assignments, and reviews into the shape
  * consumed by ViewSubmissionsClient.
@@ -26,8 +38,8 @@ export function buildSubmissionViewData(
   }[],
 ) {
   // Index by submissionId for O(1) lookups instead of O(n) filters per submission
-  const assignmentsBySubId = Map.groupBy(assignmentRows, (a) => a.submissionId);
-  const reviewsBySubId = Map.groupBy(reviewRows, (r) => r.submissionId);
+  const assignmentsBySubId = groupBy(assignmentRows, (a) => a.submissionId);
+  const reviewsBySubId = groupBy(reviewRows, (r) => r.submissionId);
   const reviewByAssignmentId = new Map(
     reviewRows.map((r) => [r.assignmentId, r.id]),
   );

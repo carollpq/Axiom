@@ -35,6 +35,7 @@ export async function requireSubmissionEditor(
   wallet: string,
 ) {
   const submission = await fetchSubmission(submissionId);
+  if (!submission.journal) throw new Error('Journal not found');
   if (submission.journal.editorWallet.toLowerCase() !== wallet.toLowerCase()) {
     throw new Error('Forbidden');
   }

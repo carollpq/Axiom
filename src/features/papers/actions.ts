@@ -188,7 +188,7 @@ export async function submitPaperAction(
     );
   }
 
-  if (paper.status !== 'registered') {
+  if (paper.status !== 'registered' && paper.status !== 'contract_pending') {
     throw new Error('Paper must be registered before submitting');
   }
 

@@ -90,6 +90,7 @@ export function InviteSidebar({ paper, onRemove }: InviteSidebarProps) {
 
         <div className="flex gap-3">
           <button
+            data-testid="accept-assignment-btn"
             onClick={() => handleRespond('accept')}
             disabled={isLoading}
             className="flex-1 px-4 py-2 rounded font-serif text-sm font-semibold bg-[var(--accent-green)] text-[var(--surface-base)] transition-all disabled:opacity-50 hover:brightness-110 active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed"
@@ -97,6 +98,7 @@ export function InviteSidebar({ paper, onRemove }: InviteSidebarProps) {
             {isLoading ? '...' : 'Accept'}
           </button>
           <button
+            data-testid="decline-assignment-btn"
             onClick={() => setShowDeclineDialog(true)}
             disabled={isLoading}
             className="flex-1 px-4 py-2 rounded font-serif text-sm bg-[rgba(120,110,95,0.3)] text-[var(--text-secondary)] transition-all disabled:opacity-50 hover:brightness-125 active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed"

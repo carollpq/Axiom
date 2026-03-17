@@ -174,9 +174,8 @@ export async function generateInviteLinkAction(
   const result = await generateInviteToken(contractId, contributorId);
   if (!result) throw new Error('Contributor not found');
 
-  const domain = process.env.NEXT_PUBLIC_APP_DOMAIN ?? 'localhost:3000';
-  const protocol = domain.startsWith('localhost') ? 'http' : 'https';
-  const inviteLink = `${protocol}://${domain}/invite/${result.token}`;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_DOMAIN ?? 'http://localhost:3000';
+  const inviteLink = `${baseUrl}/invite/${result.token}`;
 
   return { inviteLink, expiresAt: result.expiresAt };
 }

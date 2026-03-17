@@ -5,11 +5,10 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { toast } from 'sonner';
 import { ThreeColumnLayout } from '@/src/shared/components/three-column-layout';
-import { DynamicPdfViewer as PdfViewer } from '@/src/shared/components/dynamic-pdf-viewer.client';
+import { DecryptablePdfViewer } from '@/src/shared/components/decryptable-pdf-viewer.client';
 import { PaperList } from '@/src/shared/components/paper-list.client';
 import { useSelection } from '@/src/shared/hooks/useSelection';
 import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
-import { useDecryptPaper } from '@/src/shared/hooks/useDecryptPaper';
 import { SelectionPlaceholder } from '@/src/shared/components/selection-placeholder';
 import { Button } from '@/src/shared/components/button.client';
 import { addPaperToIssueAction } from '@/src/features/editor/actions';
@@ -66,11 +65,6 @@ export function AcceptedPapersClient({
     [selectedId, reviewStatuses],
   );
 
-  const { fileUrl: decryptedUrl } = useDecryptPaper(
-    selected?.hasLitData ? selected.paperId : null,
-    true,
-  );
-
   const [isPublishing, setIsPublishing] = useState(false);
 
   const handleAssignToIssue = useCallback(
@@ -118,8 +112,10 @@ export function AcceptedPapersClient({
         />
       }
       viewer={
-        <PdfViewer
-          fileUrl={decryptedUrl ?? selected?.fileUrl}
+        <DecryptablePdfViewer
+          paperId={selected?.paperId}
+          hasLitData={selected?.hasLitData}
+          fallbackFileUrl={selected?.fileUrl}
           title={selected?.title}
         />
       }

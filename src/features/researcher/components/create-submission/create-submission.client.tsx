@@ -116,13 +116,18 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
       )}
 
       {/* Submission Form */}
-      <div className="rounded-md p-6" style={FORM_CONTAINER_STYLE}>
+      <div
+        data-testid="create-submission-form"
+        className="rounded-md p-6"
+        style={FORM_CONTAINER_STYLE}
+      >
         <FormSelectRow
           label="Paper Title"
           value={selectedPaperId}
           onChange={handlePaperChange}
           disabled={submitting}
           placeholder="Select a paper from your repository"
+          data-testid="paper-select"
         >
           {papers.map((p) => (
             <option key={p.id} value={p.id}>
@@ -137,6 +142,7 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
           onChange={setSelectedVersionId}
           disabled={!selectedPaperId || submitting}
           placeholder="Select a version"
+          data-testid="version-select"
           style={{ opacity: selectedPaperId ? 1 : 0.5 }}
         >
           {versions.map((v) => (
@@ -152,6 +158,7 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
           onChange={setSelectedJournalId}
           disabled={submitting}
           placeholder="Select a journal"
+          data-testid="journal-select"
         >
           {journals.map((j) => (
             <option key={j.id} value={j.id}>
@@ -166,6 +173,7 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
           onChange={setSelectedContractId}
           disabled={submitting}
           placeholder="Select a completed contract"
+          data-testid="contract-select"
         >
           {contracts.map((c) => (
             <option key={c.id} value={c.id}>
@@ -196,6 +204,7 @@ export function CreateSubmissionClient({ papers, journals, contracts }: Props) {
         <div className="flex justify-end">
           <button
             type="button"
+            data-testid="submit-paper-btn"
             onClick={handleSubmit}
             disabled={!canSubmit || submitting}
             className="px-6 py-2.5 rounded-md text-[13px] font-medium cursor-pointer transition-colors"

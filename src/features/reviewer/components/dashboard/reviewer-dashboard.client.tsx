@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { DashboardGridLayout } from '@/src/shared/components/dashboard-grid-layout';
 import { ProfileCard } from '@/src/shared/components/profile-card';
 import type {
@@ -48,21 +48,17 @@ export function ReviewerDashboardClient({
   badges = [],
 }: Props) {
   const reputationScores = initialReputation ?? EMPTY_REPUTATION_SCORES;
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (!copied) return;
-    const timer = setTimeout(() => setCopied(false), 2000);
-    return () => clearTimeout(timer);
-  }, [copied]);
-
-  const handleCopyLink = async () => {
-    if (!userProfile?.walletAddress) return;
-    const url = `${window.location.origin}/reviewer-profile/${userProfile.walletAddress}`;
-    await navigator.clipboard.writeText(url);
-    setCopied(true);
-  };
-
+  const pendingCount = useMemo(
+    () => initialAssigned.filter((a) => a.status === 'Pending').length,
+    [initialAssigned],
+  );
+  const underReviewCount = useMemo(
+    () =>
+      initialAssigned.filter(
+        (a) => a.status === 'In Progress' || a.status === 'Late',
+      ).length,
+    [initialAssigned],
+  );
   return (
     <DashboardGridLayout
       role="reviewer"
@@ -71,7 +67,8 @@ export function ReviewerDashboardClient({
           <PerformanceMetrics
             reliabilityScore={reputationScores.overall}
             completedReviews={initialCompleted.length}
-            invites={initialAssigned.length}
+            invites={pendingCount}
+            underReview={underReviewCount}
             averageDaysToDeadline={averageDaysToDeadline}
           />
           {badges.length > 0 && (
@@ -96,23 +93,7 @@ export function ReviewerDashboardClient({
         <ProfileCard
           name={userProfile?.displayName || 'Reviewer Name'}
           subtitle={userProfile?.institution || 'Affiliation'}
-        >
-          <button
-            onClick={handleCopyLink}
-            className="w-full rounded border px-4 py-2 text-sm font-medium transition-colors hover:opacity-80"
-            style={{
-              backgroundColor: copied
-                ? 'rgba(143,188,143,0.2)'
-                : 'rgba(100,90,75,0.2)',
-              borderColor: copied
-                ? 'rgba(143,188,143,0.6)'
-                : 'rgba(180,160,130,0.4)',
-              color: copied ? '#8fbc8f' : '#b0a898',
-            }}
-          >
-            {copied ? 'Copied!' : 'Copy profile link'}
-          </button>
-        </ProfileCard>
+        />
       }
     />
   );

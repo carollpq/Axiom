@@ -83,7 +83,7 @@ export function TopBar() {
               </div>
               <div className="text-left hidden sm:block">
                 <div
-                  className="text-[12px] font-serif leading-tight"
+                  className="text-[12px] font-serif leading-tight max-w-[160px] truncate"
                   style={{ color: '#c9b89e' }}
                 >
                   {userProfile.displayName ?? userProfile.wallet}

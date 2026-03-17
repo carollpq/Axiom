@@ -107,6 +107,7 @@ export function ReviewResponseClient({
       {reviews.map((review) => (
         <div
           key={review.id}
+          data-testid="review-response-card"
           className="rounded-md p-6 mb-5"
           style={{
             background: 'rgba(45,42,38,0.4)',
@@ -151,6 +152,7 @@ export function ReviewResponseClient({
         <div className="flex gap-3">
           <button
             type="button"
+            data-testid="accept-reviews-btn"
             disabled={submitting}
             onClick={() => handleSubmit('accept')}
             className="px-5 py-2 rounded-md text-[12px] font-medium transition-colors cursor-pointer"
@@ -165,6 +167,7 @@ export function ReviewResponseClient({
           </button>
           <button
             type="button"
+            data-testid="request-rebuttal-btn"
             disabled={submitting}
             onClick={() => handleSubmit('request_rebuttal')}
             className="px-5 py-2 rounded-md text-[12px] font-medium transition-colors cursor-pointer"

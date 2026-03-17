@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useActiveAccount } from 'thirdweb/react';
 import { isLoggedIn } from '@/src/shared/lib/auth/actions';
 import { ROUTES, ROLE_DASHBOARD_ROUTES } from '@/src/shared/lib/routes';
-import type { Role } from '@/src/features/auth/types';
 import { RoleSelector } from './role-selector.client';
 import { OrcidVerificationStep } from './orcid-verification-step.client';
 import { WalletConnectStep } from './wallet-connect-step.client';
@@ -14,46 +13,7 @@ import { AuthHeader } from './auth-header';
 import { updateProfileAction } from '@/src/features/auth/actions';
 import { getErrorMessage } from '@/src/shared/lib/errors';
 import { AUTH_COLORS } from './auth-styles';
-
-type Step = 'role-select' | 'wallet' | 'orcid' | 'complete';
-
-interface State {
-  step: Step;
-  selectedRole?: Role;
-  loading: boolean;
-  error?: string;
-}
-
-type Action =
-  | { type: 'SELECT_ROLE'; role: Role }
-  | { type: 'ADVANCE_TO_ORCID' }
-  | { type: 'BACK' }
-  | { type: 'SUBMIT_START' }
-  | { type: 'SUBMIT_SUCCESS' }
-  | { type: 'SUBMIT_ERROR'; error: string };
-
-function reducer(state: State, action: Action): State {
-  switch (action.type) {
-    case 'SELECT_ROLE':
-      return { ...state, selectedRole: action.role, step: 'wallet' };
-    case 'ADVANCE_TO_ORCID':
-      return { ...state, step: 'orcid' };
-    case 'BACK':
-      if (state.step === 'wallet')
-        return { ...state, step: 'role-select', selectedRole: undefined };
-      if (state.step === 'orcid')
-        return { ...state, step: 'wallet', error: undefined };
-      return state;
-    case 'SUBMIT_START':
-      return { ...state, loading: true, error: undefined };
-    case 'SUBMIT_SUCCESS':
-      return { ...state, step: 'complete', loading: false };
-    case 'SUBMIT_ERROR':
-      return { ...state, loading: false, error: action.error, step: 'orcid' };
-  }
-}
-
-const INITIAL_STATE: State = { step: 'role-select', loading: false };
+import { reducer, INITIAL_STATE } from './registration-reducer';
 
 export function Registration() {
   const router = useRouter();

@@ -3,12 +3,11 @@
 import dynamic from 'next/dynamic';
 import { LazyFallback } from './lazy-fallback';
 import { ThreeColumnLayout } from '@/src/shared/components/three-column-layout';
-import { DynamicPdfViewer as PdfViewer } from '@/src/shared/components/dynamic-pdf-viewer.client';
+import { DecryptablePdfViewer } from '@/src/shared/components/decryptable-pdf-viewer.client';
 import { PaperList } from '@/src/shared/components/paper-list.client';
 import { ReviewStatusPanel } from './sidebar/review-status-panel';
 import { useUnderReview } from '@/src/features/editor/hooks/useUnderReview';
 import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
-import { useDecryptPaper } from '@/src/shared/hooks/useDecryptPaper';
 import { SelectionPlaceholder } from '@/src/shared/components/selection-placeholder';
 import { ConfirmDialog } from '@/src/shared/components/confirm-dialog.client';
 import { useCallback } from 'react';
@@ -102,11 +101,6 @@ export function UnderReviewClient({
     rebuttalsBySubmission,
   });
 
-  const { fileUrl: decryptedUrl } = useDecryptPaper(
-    selected?.hasLitData ? selected.paperId : null,
-    true,
-  );
-
   const handleReviewerRatingChange = useCallback(
     (assignmentId: string, rating: number) => {
       setReviewerRatings((prev: Record<string, number>) => ({
@@ -142,8 +136,10 @@ export function UnderReviewClient({
           />
         }
         viewer={
-          <PdfViewer
-            fileUrl={decryptedUrl ?? selected?.fileUrl}
+          <DecryptablePdfViewer
+            paperId={selected?.paperId}
+            hasLitData={selected?.hasLitData}
+            fallbackFileUrl={selected?.fileUrl}
             title={selected?.title}
           />
         }

@@ -109,7 +109,7 @@ export function PapersTable({ initialPapers }: Props) {
                   : 'none',
             }}
           >
-            <span className="text-[13px] text-[#d4ccc0] leading-[1.4] pr-4">
+            <span className="text-[13px] text-[#d4ccc0] leading-[1.4] pr-4 truncate block">
               {p.title}
             </span>
             <span>

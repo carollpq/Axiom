@@ -89,6 +89,7 @@ export async function canAccessPaperContent(
   paperId: string,
   wallet: string,
 ): Promise<boolean> {
+  const walletLower = wallet.toLowerCase();
   const [editorRow, reviewerRow] = await Promise.all([
     db
       .select({ id: submissions.id })
@@ -97,7 +98,7 @@ export async function canAccessPaperContent(
       .where(
         and(
           eq(submissions.paperId, paperId),
-          eq(journals.editorWallet, wallet),
+          eq(journals.editorWallet, walletLower),
         ),
       )
       .limit(1),
@@ -111,7 +112,7 @@ export async function canAccessPaperContent(
       .where(
         and(
           eq(submissions.paperId, paperId),
-          eq(reviewAssignments.reviewerWallet, wallet),
+          eq(reviewAssignments.reviewerWallet, walletLower),
         ),
       )
       .limit(1),

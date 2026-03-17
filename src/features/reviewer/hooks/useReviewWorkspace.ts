@@ -4,6 +4,7 @@ import {
   useReducer,
   useMemo,
   useCallback,
+  useRef,
   useState,
   useTransition,
 } from 'react';
@@ -16,6 +17,7 @@ import type {
 } from '@/src/features/reviewer/types/workspace';
 import { canonicalJson, sha256 } from '@/src/shared/lib/hashing';
 import { formatDate, truncate } from '@/src/shared/lib/format';
+import { getErrorMessage } from '@/src/shared/lib/errors';
 import { submitReviewAction } from '@/src/features/reviews/actions';
 import {
   reviewWorkspaceReducer,
@@ -30,6 +32,13 @@ import {
 } from '@/src/features/reviewer/lib/workspace';
 import type { ReviewAssignmentLike } from '@/src/features/reviewer/lib/workspace';
 
+const RECOMMENDATION_MAP: Record<string, string> = {
+  Accept: 'accept',
+  'Minor Revisions': 'minor_revision',
+  'Major Revisions': 'major_revision',
+  Reject: 'reject',
+};
+
 /** Manages the full review form: per-criterion evaluations, comments, recommendation, and submission. */
 export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
   const paper = useMemo(() => mapAssignmentToPaper(assignment), [assignment]);
@@ -41,14 +50,15 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
 
   const [state, dispatch] = useReducer(
     reviewWorkspaceReducer,
-    criteria,
-    createInitialState,
+    { criteria, assignmentId: assignment.id },
+    ({ criteria, assignmentId }) => createInitialState(criteria, assignmentId),
   );
 
   const [isPending, startTransition] = useTransition();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submissionResult, setSubmissionResult] =
     useState<SubmissionResult | null>(null);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
 
   const completedCount = selectCompletedCount(state);
   const allCriteriaMet = selectAllCriteriaMet(state);
@@ -72,13 +82,31 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
     [],
   );
 
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
   const saveDraft = useCallback(() => {
     dispatch({ type: 'SAVE_DRAFT' });
+    try {
+      const s = stateRef.current;
+      const draft = {
+        evaluations: s.evaluations,
+        generalComments: s.generalComments,
+        recommendation: s.recommendation,
+      };
+      localStorage.setItem(
+        `review_draft_${assignment.id}`,
+        JSON.stringify(draft),
+      );
+    } catch {
+      // localStorage full or unavailable — silent fail
+    }
     toast.success('Draft saved');
-  }, []);
+  }, [assignment.id]);
 
   const submitReview = () => {
     if (!canSubmit) return;
+    setSubmissionError(null);
 
     let met = 0,
       partial = 0,
@@ -109,10 +137,13 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
           weaknesses: reviewPayload.weaknesses,
           questionsForAuthors: reviewPayload.questionsForAuthors,
           confidentialEditorComments,
-          recommendation: reviewPayload.recommendation as string,
+          recommendation:
+            RECOMMENDATION_MAP[reviewPayload.recommendation as string] ??
+            (reviewPayload.recommendation as string),
           reviewHash,
         });
 
+        localStorage.removeItem(`review_draft_${assignment.id}`);
         toast.success('Review submitted successfully');
         setIsSubmitted(true);
         setSubmissionResult({
@@ -124,7 +155,7 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
         });
       } catch (err) {
         console.error('[Review submit] Unexpected error:', err);
-        toast.error('Failed to submit review');
+        setSubmissionError(getErrorMessage(err, 'Failed to submit review'));
       }
     });
   };
@@ -136,8 +167,10 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
     generalComments: state.generalComments,
     recommendation: state.recommendation,
     isDraft: state.isDraft,
+    hasUnsavedChanges: state.hasUnsavedChanges,
     isSubmitted,
     submissionResult,
+    submissionError,
     criteriaCollapsed: state.criteriaCollapsed,
     setCriteriaCollapsed: (criteriaCollapsed: boolean) =>
       dispatch({ type: 'SET_CRITERIA_COLLAPSED', criteriaCollapsed }),

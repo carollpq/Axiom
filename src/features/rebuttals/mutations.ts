@@ -1,6 +1,6 @@
 import { db } from '@/src/shared/lib/db';
 import { rebuttals, rebuttalResponses } from '@/src/shared/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type {
   RebuttalResolutionDb,
   RebuttalPositionDb,
@@ -38,7 +38,8 @@ export interface RebuttalResponseInput {
   evidence?: string;
 }
 
-/** Inserts per-review responses and transitions rebuttal to `submitted`. */
+/** Inserts per-review responses and transitions rebuttal to `submitted`.
+ *  Only allowed when rebuttal is in `open` status. */
 export async function submitRebuttalResponses(
   rebuttalId: string,
   responses: RebuttalResponseInput[],
@@ -60,7 +61,7 @@ export async function submitRebuttalResponses(
       await db
         .update(rebuttals)
         .set({ status: 'submitted', rebuttalHash })
-        .where(eq(rebuttals.id, rebuttalId))
+        .where(and(eq(rebuttals.id, rebuttalId), eq(rebuttals.status, 'open')))
         .returning()
     )[0] ?? null
   );
@@ -83,7 +84,8 @@ export interface ResolveRebuttalInput {
   editorNotes: string;
 }
 
-/** Sets resolution + editor notes and transitions rebuttal to `resolved`. */
+/** Sets resolution + editor notes and transitions rebuttal to `resolved`.
+ *  Only allowed when rebuttal is in `submitted` status. */
 export async function resolveRebuttal(input: ResolveRebuttalInput) {
   return (
     (
@@ -95,7 +97,12 @@ export async function resolveRebuttal(input: ResolveRebuttalInput) {
           editorNotes: input.editorNotes,
           resolvedAt: new Date().toISOString(),
         })
-        .where(eq(rebuttals.id, input.rebuttalId))
+        .where(
+          and(
+            eq(rebuttals.id, input.rebuttalId),
+            eq(rebuttals.status, 'submitted'),
+          ),
+        )
         .returning()
     )[0] ?? null
   );

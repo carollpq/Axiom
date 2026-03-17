@@ -11,11 +11,13 @@ export interface ReviewWorkspaceState {
   generalComments: GeneralComments;
   recommendation: Recommendation | null;
   isDraft: boolean;
+  hasUnsavedChanges: boolean;
   criteriaCollapsed: boolean;
 }
 
 export function createInitialState(
   criteria: ReviewCriterion[],
+  assignmentId?: string,
 ): ReviewWorkspaceState {
   const evaluations: Record<number, CriterionEvaluation> = {};
   for (const criterion of criteria) {
@@ -25,6 +27,36 @@ export function createInitialState(
       comment: '',
     };
   }
+
+  // Hydrate from localStorage if a draft was previously saved
+  if (assignmentId && typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem(`review_draft_${assignmentId}`);
+      if (saved) {
+        const draft = JSON.parse(saved) as {
+          evaluations?: Record<number, CriterionEvaluation>;
+          generalComments?: GeneralComments;
+          recommendation?: Recommendation | null;
+        };
+        return {
+          evaluations: draft.evaluations ?? evaluations,
+          generalComments: draft.generalComments ?? {
+            strengths: '',
+            weaknesses: '',
+            questionsForAuthors: '',
+            confidentialEditorComments: '',
+          },
+          recommendation: draft.recommendation ?? null,
+          isDraft: true,
+          hasUnsavedChanges: false,
+          criteriaCollapsed: false,
+        };
+      }
+    } catch {
+      // Ignore corrupt localStorage data
+    }
+  }
+
   return {
     evaluations,
     generalComments: {
@@ -34,7 +66,8 @@ export function createInitialState(
       confidentialEditorComments: '',
     },
     recommendation: null,
-    isDraft: true,
+    isDraft: false,
+    hasUnsavedChanges: false,
     criteriaCollapsed: false,
   };
 }
@@ -55,6 +88,7 @@ export function reviewWorkspaceReducer(
     case 'SET_CRITERION_RATING':
       return {
         ...state,
+        hasUnsavedChanges: true,
         evaluations: {
           ...state.evaluations,
           [action.id]: {
@@ -67,6 +101,7 @@ export function reviewWorkspaceReducer(
     case 'SET_CRITERION_COMMENT':
       return {
         ...state,
+        hasUnsavedChanges: true,
         evaluations: {
           ...state.evaluations,
           [action.id]: {
@@ -79,6 +114,7 @@ export function reviewWorkspaceReducer(
     case 'SET_GENERAL_COMMENT':
       return {
         ...state,
+        hasUnsavedChanges: true,
         generalComments: {
           ...state.generalComments,
           [action.field]: action.value,
@@ -86,10 +122,14 @@ export function reviewWorkspaceReducer(
       };
 
     case 'SET_RECOMMENDATION':
-      return { ...state, recommendation: action.recommendation };
+      return {
+        ...state,
+        hasUnsavedChanges: true,
+        recommendation: action.recommendation,
+      };
 
     case 'SAVE_DRAFT':
-      return { ...state, isDraft: true };
+      return { ...state, isDraft: true, hasUnsavedChanges: false };
 
     case 'SET_CRITERIA_COLLAPSED':
       return { ...state, criteriaCollapsed: action.criteriaCollapsed };

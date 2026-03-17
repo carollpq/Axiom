@@ -14,6 +14,7 @@ export function AgreeDisagreeToggle({
       {(['agree', 'disagree'] as const).map((pos) => (
         <button
           key={pos}
+          data-testid={pos === 'agree' ? 'agree-btn' : 'disagree-btn'}
           onClick={() => onChange(pos)}
           className="flex-1 py-2 rounded text-[12px] font-serif cursor-pointer transition-colors"
           style={{

@@ -15,6 +15,7 @@ interface FormSelectRowProps {
   placeholder: string;
   children: ReactNode;
   style?: React.CSSProperties;
+  'data-testid'?: string;
 }
 
 export function FormSelectRow({
@@ -25,9 +26,10 @@ export function FormSelectRow({
   placeholder,
   children,
   style,
+  'data-testid': testId,
 }: FormSelectRowProps) {
   return (
-    <div className="flex items-center gap-6 mb-5">
+    <div className="flex items-center gap-6 mb-5" data-testid={testId}>
       <label className="text-[13px] text-[#b0a898] w-[200px] shrink-0">
         {label}
       </label>

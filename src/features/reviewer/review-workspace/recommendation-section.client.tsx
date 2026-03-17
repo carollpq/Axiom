@@ -44,7 +44,7 @@ export function RecommendationSection({
         </div>
       )}
 
-      <div className="relative">
+      <div data-testid="recommendation-select" className="relative">
         <FormSelect
           value={recommendation ?? ''}
           onChange={(e) => onChange(e.target.value as Recommendation)}

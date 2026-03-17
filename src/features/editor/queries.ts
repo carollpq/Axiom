@@ -143,7 +143,8 @@ export type DbJournalReviewerWithStatus = Awaited<
 
 /** Resolves session wallet + journal in one call. Shared across editor content pages. */
 export async function fetchEditorPageData() {
-  const wallet = (await getSession())!;
+  const wallet = await getSession();
+  if (!wallet) throw new Error('Unauthorized');
   const journal = await getJournalByEditorWallet(wallet);
   return { journal };
 }

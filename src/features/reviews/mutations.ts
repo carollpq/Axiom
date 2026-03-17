@@ -75,32 +75,30 @@ export async function markAssignmentLate(assignmentId: string) {
 
 // Bucket mapping: which event types feed which score dimension.
 // Rebuttal outcomes affect the editor/quality dimension since they reflect review quality.
-const TIMELINESS_TYPES = ['review_completed', 'review_late'];
-const EDITOR_TYPES = [
+export const TIMELINESS_TYPES = ['review_completed', 'review_late'];
+export const EDITOR_TYPES = [
   'editor_rating',
   'rebuttal_upheld',
   'rebuttal_overturned',
 ];
-const AUTHOR_TYPES = ['author_rating'];
-const PUBLICATION_TYPES = ['paper_published'];
+export const AUTHOR_TYPES = ['author_rating'];
+export const PUBLICATION_TYPES = ['paper_published'];
 
-/** Recomputes weighted reputation score via SQL aggregation and upserts it. */
-export async function upsertReputationScore(wallet: string) {
-  const normalizedWallet = wallet.toLowerCase();
+/** Normalize a sum/count pair to a 0-100 score. Default 50 when no data. */
+export function norm(sum: number, count: number): number {
+  return count === 0
+    ? 50
+    : Math.max(0, Math.min(100, Math.round((sum / count) * 50 + 50)));
+}
 
-  // Aggregate in SQL instead of fetching all rows
-  const aggregated = await db
-    .select({
-      eventType: reputationEvents.eventType,
-      sumDelta: sql<number>`cast(sum(${reputationEvents.scoreDelta}) as int)`,
-      count: sql<number>`cast(count(*) as int)`,
-    })
-    .from(reputationEvents)
-    .where(eq(reputationEvents.userWallet, normalizedWallet))
-    .groupBy(reputationEvents.eventType);
+export interface AggregatedEvent {
+  eventType: string;
+  sumDelta: number;
+  count: number;
+}
 
-  if (aggregated.length === 0) return null;
-
+/** Pure computation: takes aggregated event rows and returns reputation scores. */
+export function computeReputationScore(aggregated: AggregatedEvent[]) {
   let timelinessSum = 0,
     timelinessCount = 0;
   let editorSum = 0,
@@ -128,11 +126,6 @@ export async function upsertReputationScore(wallet: string) {
     }
   }
 
-  const norm = (sum: number, count: number) =>
-    count === 0
-      ? 50
-      : Math.max(0, Math.min(100, Math.round((sum / count) * 50 + 50)));
-
   const timeliness = norm(timelinessSum, timelinessCount);
   const editor = norm(editorSum, editorCount);
   const author = norm(authorSum, authorCount);
@@ -141,6 +134,43 @@ export async function upsertReputationScore(wallet: string) {
   const overall = Math.round(
     0.3 * timeliness + 0.25 * editor + 0.25 * author + 0.2 * publication,
   );
+
+  return {
+    overallScore: overall,
+    timeliness,
+    editor,
+    author,
+    publication,
+    reviewCount,
+  };
+}
+
+/** Recomputes weighted reputation score via SQL aggregation and upserts it. */
+export async function upsertReputationScore(wallet: string) {
+  const normalizedWallet = wallet.toLowerCase();
+
+  // Aggregate in SQL instead of fetching all rows
+  const aggregated = await db
+    .select({
+      eventType: reputationEvents.eventType,
+      sumDelta: sql<number>`cast(sum(${reputationEvents.scoreDelta}) as int)`,
+      count: sql<number>`cast(count(*) as int)`,
+    })
+    .from(reputationEvents)
+    .where(eq(reputationEvents.userWallet, normalizedWallet))
+    .groupBy(reputationEvents.eventType);
+
+  if (aggregated.length === 0) return null;
+
+  const scores = computeReputationScore(aggregated);
+  const {
+    overallScore: overall,
+    timeliness,
+    editor,
+    author,
+    publication,
+    reviewCount,
+  } = scores;
 
   await db
     .insert(reputationScores)

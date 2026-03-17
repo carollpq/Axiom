@@ -97,13 +97,14 @@ export function CriteriaBuilder({
   }
 
   return (
-    <div className="px-4 py-3">
+    <div data-testid="criteria-builder" className="px-4 py-3">
       <SectionLabel className="mb-3">Review Criteria</SectionLabel>
 
       <div className="space-y-2 mb-3">
         {criteria.map((c, idx) => (
           <div
             key={c.id}
+            data-testid="criterion-row"
             className="rounded px-3 py-2.5"
             style={FORM_CONTROL_STYLE}
           >
@@ -161,6 +162,7 @@ export function CriteriaBuilder({
       </div>
 
       <button
+        data-testid="add-criterion-btn"
         onClick={addCriterion}
         className="w-full text-[11px] py-2 rounded cursor-pointer font-serif mb-3"
         style={{
@@ -175,6 +177,7 @@ export function CriteriaBuilder({
       {error && <div className="text-[11px] text-[#d4645a] mb-2">{error}</div>}
 
       <Button
+        data-testid="publish-criteria-btn"
         variant="gold"
         fullWidth
         onClick={handlePublish}
