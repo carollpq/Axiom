@@ -43,9 +43,17 @@ export function mapApiPapersToDrafts(
         p.status === 'contract_pending',
     )
     .map((p, i) => {
-      const match = contracts.find((c) =>
-        c.paperId ? c.paperId === p.id : c.paperTitle === p.title,
-      );
+      // Prefer matching by paperId (unique). Fall back to title only when
+      // paperId is null AND no other paper in the batch shares the same title,
+      // to avoid ambiguous matches.
+      const match =
+        contracts.find((c) => c.paperId && c.paperId === p.id) ??
+        contracts.find(
+          (c) =>
+            !c.paperId &&
+            c.paperTitle === p.title &&
+            papers.filter((pp) => pp.title === p.title).length === 1,
+        );
       return {
         id: i + 1,
         dbId: p.id,
