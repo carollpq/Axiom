@@ -32,8 +32,10 @@ export function AssignedReviewSidebar({
     generalComments,
     recommendation,
     isDraft,
+    hasUnsavedChanges,
     isSubmitted,
     submissionResult,
+    submissionError,
     completedCount,
     allCriteriaMet,
     canSubmit,
@@ -43,6 +45,7 @@ export function AssignedReviewSidebar({
     setRecommendation,
     saveDraft,
     submitReview,
+    isSubmitting,
   } = useReviewWorkspace(rawAssignment);
 
   if (isSubmitted && submissionResult) {
@@ -90,7 +93,7 @@ export function AssignedReviewSidebar({
 
       <div className="sidebar-divider" />
 
-      <div>
+      <div data-testid="review-workspace">
         <h3
           className="text-sm font-serif font-normal m-0 mb-4"
           style={{ color: '#e8e0d4' }}
@@ -120,6 +123,9 @@ export function AssignedReviewSidebar({
         <SubmissionActions
           canSubmit={canSubmit}
           isDraft={isDraft}
+          hasUnsavedChanges={hasUnsavedChanges}
+          isSubmitting={isSubmitting}
+          submissionError={submissionError}
           onSaveDraft={saveDraft}
           onSubmit={submitReview}
         />

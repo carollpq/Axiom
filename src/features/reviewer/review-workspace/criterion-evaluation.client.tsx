@@ -26,6 +26,7 @@ export function CriterionEvaluation({
 }: CriterionEvaluationProps) {
   return (
     <div
+      data-testid="criterion-eval"
       className="rounded-lg p-4 mb-3"
       style={{
         background: 'rgba(45,42,38,0.5)',

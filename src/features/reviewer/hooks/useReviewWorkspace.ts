@@ -17,6 +17,7 @@ import type {
 } from '@/src/features/reviewer/types/workspace';
 import { canonicalJson, sha256 } from '@/src/shared/lib/hashing';
 import { formatDate, truncate } from '@/src/shared/lib/format';
+import { getErrorMessage } from '@/src/shared/lib/errors';
 import { submitReviewAction } from '@/src/features/reviews/actions';
 import {
   reviewWorkspaceReducer,
@@ -57,6 +58,7 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submissionResult, setSubmissionResult] =
     useState<SubmissionResult | null>(null);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
 
   const completedCount = selectCompletedCount(state);
   const allCriteriaMet = selectAllCriteriaMet(state);
@@ -104,6 +106,7 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
 
   const submitReview = () => {
     if (!canSubmit) return;
+    setSubmissionError(null);
 
     let met = 0,
       partial = 0,
@@ -152,7 +155,7 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
         });
       } catch (err) {
         console.error('[Review submit] Unexpected error:', err);
-        toast.error('Failed to submit review');
+        setSubmissionError(getErrorMessage(err, 'Failed to submit review'));
       }
     });
   };
@@ -164,8 +167,10 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
     generalComments: state.generalComments,
     recommendation: state.recommendation,
     isDraft: state.isDraft,
+    hasUnsavedChanges: state.hasUnsavedChanges,
     isSubmitted,
     submissionResult,
+    submissionError,
     criteriaCollapsed: state.criteriaCollapsed,
     setCriteriaCollapsed: (criteriaCollapsed: boolean) =>
       dispatch({ type: 'SET_CRITERIA_COLLAPSED', criteriaCollapsed }),

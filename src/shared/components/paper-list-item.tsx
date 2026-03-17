@@ -18,6 +18,7 @@ export function PaperListItem({
 }: PaperListItemProps) {
   return (
     <button
+      data-testid="paper-card"
       onClick={onClick}
       className="w-full text-left p-4 transition-colors"
       style={{

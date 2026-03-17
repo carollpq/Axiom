@@ -137,53 +137,60 @@ describe('reviewWorkspaceReducer', () => {
   });
 
   it('editing clears isDraft, SAVE_DRAFT restores it', () => {
-    // Start: isDraft is false (fresh state)
+    // Start: isDraft is false, hasUnsavedChanges is false (fresh state)
     expect(baseState.isDraft).toBe(false);
+    expect(baseState.hasUnsavedChanges).toBe(false);
 
-    // Save draft → isDraft becomes true
+    // Save draft → isDraft becomes true, hasUnsavedChanges stays false
     const saved = reviewWorkspaceReducer(baseState, { type: 'SAVE_DRAFT' });
     expect(saved.isDraft).toBe(true);
+    expect(saved.hasUnsavedChanges).toBe(false);
 
-    // Edit → isDraft becomes false
+    // Edit → isDraft stays true, hasUnsavedChanges becomes true
     const edited = reviewWorkspaceReducer(saved, {
       type: 'SET_CRITERION_RATING',
       id: 1,
       rating: 'Yes',
     });
-    expect(edited.isDraft).toBe(false);
+    expect(edited.isDraft).toBe(true);
+    expect(edited.hasUnsavedChanges).toBe(true);
 
-    // Save again → isDraft becomes true
+    // Save again → isDraft stays true, hasUnsavedChanges clears
     const reSaved = reviewWorkspaceReducer(edited, { type: 'SAVE_DRAFT' });
     expect(reSaved.isDraft).toBe(true);
+    expect(reSaved.hasUnsavedChanges).toBe(false);
   });
 
-  it('SET_CRITERION_COMMENT clears isDraft', () => {
+  it('SET_CRITERION_COMMENT sets hasUnsavedChanges', () => {
     const saved = reviewWorkspaceReducer(baseState, { type: 'SAVE_DRAFT' });
     const next = reviewWorkspaceReducer(saved, {
       type: 'SET_CRITERION_COMMENT',
       id: 1,
       comment: 'test',
     });
-    expect(next.isDraft).toBe(false);
+    expect(next.isDraft).toBe(true);
+    expect(next.hasUnsavedChanges).toBe(true);
   });
 
-  it('SET_GENERAL_COMMENT clears isDraft', () => {
+  it('SET_GENERAL_COMMENT sets hasUnsavedChanges', () => {
     const saved = reviewWorkspaceReducer(baseState, { type: 'SAVE_DRAFT' });
     const next = reviewWorkspaceReducer(saved, {
       type: 'SET_GENERAL_COMMENT',
       field: 'strengths',
       value: 'Good',
     });
-    expect(next.isDraft).toBe(false);
+    expect(next.isDraft).toBe(true);
+    expect(next.hasUnsavedChanges).toBe(true);
   });
 
-  it('SET_RECOMMENDATION clears isDraft', () => {
+  it('SET_RECOMMENDATION sets hasUnsavedChanges', () => {
     const saved = reviewWorkspaceReducer(baseState, { type: 'SAVE_DRAFT' });
     const next = reviewWorkspaceReducer(saved, {
       type: 'SET_RECOMMENDATION',
       recommendation: 'Accept',
     });
-    expect(next.isDraft).toBe(false);
+    expect(next.isDraft).toBe(true);
+    expect(next.hasUnsavedChanges).toBe(true);
   });
 
   it('SET_CRITERIA_COLLAPSED toggles', () => {

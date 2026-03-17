@@ -98,6 +98,7 @@ export function PoolInvitesClient({
 
               <div className="flex gap-3 ml-6">
                 <button
+                  data-testid="pool-invite-accept"
                   onClick={() => handleRespond(invite.id, 'accepted')}
                   disabled={responding === invite.id}
                   className="flex items-center gap-1.5 px-4 py-2 rounded-[6px] font-serif text-[12px] transition-opacity disabled:opacity-50"
@@ -111,6 +112,7 @@ export function PoolInvitesClient({
                   Accept
                 </button>
                 <button
+                  data-testid="pool-invite-reject"
                   onClick={() => handleRespond(invite.id, 'rejected')}
                   disabled={responding === invite.id}
                   className="flex items-center gap-1.5 px-4 py-2 rounded-[6px] font-serif text-[12px] transition-opacity disabled:opacity-50"

@@ -13,24 +13,28 @@ const FIELDS: {
   placeholder: string;
   rows: number;
   note?: string;
+  testId: string;
 }[] = [
   {
     key: 'strengths',
     label: 'Strengths *',
     placeholder: 'Describe the key strengths of this work...',
     rows: 3,
+    testId: 'strengths-input',
   },
   {
     key: 'weaknesses',
     label: 'Weaknesses',
     placeholder: 'Describe any weaknesses or areas for improvement...',
     rows: 3,
+    testId: 'weaknesses-input',
   },
   {
     key: 'questionsForAuthors',
     label: 'Questions for Authors',
     placeholder: 'Questions or clarifications for the authors...',
     rows: 2,
+    testId: 'questions-input',
   },
   {
     key: 'confidentialEditorComments',
@@ -39,6 +43,7 @@ const FIELDS: {
       'Comments visible only to the editor (not included in on-chain hash)...',
     rows: 2,
     note: 'These comments are stored off-chain only and are never included in the review hash anchored on Hedera.',
+    testId: 'confidential-comments-input',
   },
 ];
 
@@ -57,7 +62,7 @@ export function GeneralCommentsSection({
 
       <div className="flex flex-col gap-4">
         {FIELDS.map((f) => (
-          <div key={f.key}>
+          <div key={f.key} data-testid={f.testId}>
             <label className="input-label">{f.label}</label>
             <textarea
               placeholder={f.placeholder}

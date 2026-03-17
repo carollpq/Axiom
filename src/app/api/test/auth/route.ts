@@ -3,13 +3,14 @@
  * Returns 404 in production. Generates a valid JWT for a given wallet address.
  */
 import { NextResponse } from 'next/server';
+import { getErrorMessage } from '@/src/shared/lib/errors';
+import { testRouteGuard } from '../guard';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
-  if (process.env.NODE_ENV === 'production' || !process.env.ALLOW_TEST_AUTH) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
+  const guardResponse = testRouteGuard();
+  if (guardResponse) return guardResponse;
 
   try {
     const { walletAddress } = await request.json();
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ jwt, cookieName: AUTH_COOKIE });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Unknown error' },
+      { error: getErrorMessage(error) },
       { status: 500 },
     );
   }

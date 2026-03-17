@@ -111,7 +111,10 @@ export function DecisionReadyPanel({
         disabled={isLoading}
       />
 
-      <div className="flex items-center gap-2 min-w-0">
+      <div
+        data-testid="decision-panel"
+        className="flex items-center gap-2 min-w-0"
+      >
         <FormSelect
           value={decision}
           onChange={(e) => onDecisionChange(e.target.value)}
@@ -125,6 +128,7 @@ export function DecisionReadyPanel({
         </FormSelect>
 
         <Button
+          data-testid="release-decision-btn"
           variant="gold"
           onClick={onRelease}
           className="shrink-0"
