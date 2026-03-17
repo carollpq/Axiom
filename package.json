@@ -70,7 +70,7 @@
     "*.{ts,tsx}": [
       "eslint --fix",
       "prettier --write",
-      "jest --bail --findRelatedTests"
+      "jest --bail --passWithNoTests --findRelatedTests"
     ],
     "*.{js,jsx,json,css,md}": [
       "prettier --write"
