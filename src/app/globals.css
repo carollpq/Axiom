@@ -138,6 +138,7 @@ body {
     padding: 1.5rem;
     text-align: center;
     background: var(--surface-stat);
+    overflow: hidden;
   }
 
   .dashboard-stat-value {

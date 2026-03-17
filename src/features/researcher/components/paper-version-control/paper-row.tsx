@@ -35,7 +35,7 @@ export function PaperRow({
         ) : (
           <ChevronRight size={16} className="text-[#8a8070] shrink-0" />
         )}
-        <span className="text-[14px] font-serif text-[#e8e0d4]">
+        <span className="text-[14px] font-serif text-[#e8e0d4] truncate flex-1 min-w-0">
           {paper.title}
         </span>
         <span className="ml-auto text-[11px] text-[#6a6050]">

@@ -364,6 +364,8 @@ See [streaming.md](./streaming.md) for the `error.tsx` pattern.
 
 **Why**: Auth state lives in an httpOnly JWT cookie (managed by `@/src/shared/lib/auth/auth.ts`). UI state lives in React context or component state. Anything persisted across sessions should be in the DB.
 
+**Exception**: Review draft persistence uses `localStorage` (keyed by `review_draft_${assignmentId}`) because drafts are ephemeral client-only state that doesn't warrant a server round-trip. Drafts are cleared on successful submission.
+
 ---
 
 ## Testing

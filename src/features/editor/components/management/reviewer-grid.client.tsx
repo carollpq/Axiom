@@ -143,13 +143,13 @@ export function ReviewerGrid({
                         >
                           {getInitials(r.name)}
                         </div>
-                        <div className="font-serif text-[#e8e0d4]">
+                        <div className="font-serif text-[#e8e0d4] max-w-[180px] truncate">
                           {r.name}
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-[#8a8070]">{r.field}</td>
-                    <td className="px-4 py-3 text-[#8a8070]">
+                    <td className="px-4 py-3 text-[#8a8070] max-w-[180px] truncate">
                       {r.institution}
                     </td>
                     <td className="px-4 py-3 text-center font-serif">

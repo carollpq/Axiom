@@ -4,6 +4,7 @@ import {
   useReducer,
   useMemo,
   useCallback,
+  useRef,
   useState,
   useTransition,
 } from 'react';
@@ -30,6 +31,13 @@ import {
 } from '@/src/features/reviewer/lib/workspace';
 import type { ReviewAssignmentLike } from '@/src/features/reviewer/lib/workspace';
 
+const RECOMMENDATION_MAP: Record<string, string> = {
+  Accept: 'accept',
+  'Minor Revisions': 'minor_revision',
+  'Major Revisions': 'major_revision',
+  Reject: 'reject',
+};
+
 /** Manages the full review form: per-criterion evaluations, comments, recommendation, and submission. */
 export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
   const paper = useMemo(() => mapAssignmentToPaper(assignment), [assignment]);
@@ -41,8 +49,8 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
 
   const [state, dispatch] = useReducer(
     reviewWorkspaceReducer,
-    criteria,
-    createInitialState,
+    { criteria, assignmentId: assignment.id },
+    ({ criteria, assignmentId }) => createInitialState(criteria, assignmentId),
   );
 
   const [isPending, startTransition] = useTransition();
@@ -72,10 +80,27 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
     [],
   );
 
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
   const saveDraft = useCallback(() => {
     dispatch({ type: 'SAVE_DRAFT' });
+    try {
+      const s = stateRef.current;
+      const draft = {
+        evaluations: s.evaluations,
+        generalComments: s.generalComments,
+        recommendation: s.recommendation,
+      };
+      localStorage.setItem(
+        `review_draft_${assignment.id}`,
+        JSON.stringify(draft),
+      );
+    } catch {
+      // localStorage full or unavailable — silent fail
+    }
     toast.success('Draft saved');
-  }, []);
+  }, [assignment.id]);
 
   const submitReview = () => {
     if (!canSubmit) return;
@@ -109,10 +134,13 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
           weaknesses: reviewPayload.weaknesses,
           questionsForAuthors: reviewPayload.questionsForAuthors,
           confidentialEditorComments,
-          recommendation: reviewPayload.recommendation as string,
+          recommendation:
+            RECOMMENDATION_MAP[reviewPayload.recommendation as string] ??
+            (reviewPayload.recommendation as string),
           reviewHash,
         });
 
+        localStorage.removeItem(`review_draft_${assignment.id}`);
         toast.success('Review submitted successfully');
         setIsSubmitted(true);
         setSubmissionResult({

@@ -4,6 +4,7 @@ import { DynamicPdfViewer } from './dynamic-pdf-viewer.client';
 import { SelectionPlaceholder } from './selection-placeholder';
 import { DecryptLoading, DecryptError } from './decrypt-status';
 import { useDecryptPaper } from '@/src/shared/hooks/useDecryptPaper';
+import { useActiveAccount } from 'thirdweb/react';
 
 interface DecryptablePdfViewerProps {
   paperId?: string | null;
@@ -23,6 +24,7 @@ export function DecryptablePdfViewer({
   fallbackFileUrl,
   title,
 }: DecryptablePdfViewerProps) {
+  const account = useActiveAccount();
   const {
     fileUrl: decryptedUrl,
     status,
@@ -31,7 +33,16 @@ export function DecryptablePdfViewer({
   } = useDecryptPaper(hasLitData && paperId ? paperId : null, true);
 
   if (hasLitData && paperId) {
-    if (status === 'loading' || status === 'idle') {
+    // No wallet connected — fall back to raw URL if available
+    if (status === 'idle' && !account) {
+      if (fallbackFileUrl) {
+        return <DynamicPdfViewer fileUrl={fallbackFileUrl} title={title} />;
+      }
+      return (
+        <SelectionPlaceholder message="Connect wallet to decrypt this paper" />
+      );
+    }
+    if (status === 'loading') {
       return <DecryptLoading />;
     }
     if (status === 'error') {

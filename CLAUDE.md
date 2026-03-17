@@ -82,7 +82,7 @@ import { listUserPapers } from '@/src/features/papers/queries'; // ✅
 - `@/` path alias. Import from sub-files, never feature barrels.
 - User lookups: `getUserByWallet()` from `@/src/features/users/queries`. Never inline DB queries.
 - File naming: Components PascalCase, client boundaries `.client.tsx`, hooks camelCase.
-- Dynamic routes: `[id]` not `[paperId]`. No localStorage — React context + httpOnly cookies.
+- Dynamic routes: `[id]` not `[paperId]`. No localStorage — React context + httpOnly cookies. **Exception:** review draft persistence uses localStorage (keyed by `review_draft_${assignmentId}`) since drafts are ephemeral client-only state.
 - Hedera routes: `export const runtime = 'nodejs'`. Graceful fallback if env vars missing.
 - Auth: `getSession()` from `@/src/shared/lib/auth/auth`. Never trust wallet from request body.
 - Validation: `createInsertSchema(table)` from `drizzle-zod`.
@@ -130,6 +130,7 @@ Drizzle ORM, Neon PostgreSQL. Schema: `src/shared/lib/db/schema.ts` (17 tables).
 - `badges` table: id, userWallet, badgeType, achievementName, reputationEventId, metadata (JSONB), issuedAt
 - Key files: `src/features/reviewer/lib/badge-definitions.ts`, `src/features/reviewer/lib/linkedin.ts`, `src/features/reviewer/components/dashboard/badge-card.client.tsx`
 - Uses `NEXT_PUBLIC_APP_DOMAIN` for badge `certUrl` (currently `https://axiom-eight-blue.vercel.app`)
+- Public reviewer profile page at `/reviewer-profile/[wallet]` — standalone Server Component (no `RoleShell`), validates wallet format, uses `countCompletedReviews` (lightweight COUNT query) + `getReviewerReputation` + `getBadgesForWallet`
 
 ### Timeline Enforcement
 | Event | Deadline |
@@ -147,12 +148,13 @@ Cron at `/api/cron/deadlines`. Cross-verifies with `TimelineEnforcer.sol` (chain
 - Review phase only. NOT for published paper access (journals keep paywall).
 - `addReviewersToAccessConditions()` merges wallets on assignment → immediate decryption
 - Conditions stored in `papers.litAccessConditionsJson`. Invalid JSON → rebuild from scratch.
-- `useDecryptPaper` hook: auto-decrypts if Lit data present, falls back to raw PDF.
+- `useDecryptPaper` hook: auto-decrypts if Lit data present, falls back to raw PDF. `DecryptablePdfViewer` checks wallet connection via `useActiveAccount()` — no wallet = fallback to raw URL or "Connect wallet" message (never infinite spinner).
 
 ### Contracts & Signatures
 - Modifying ANY field invalidates ALL signatures
 - Fully-signed → Scheduled Transaction (HCS message wrapped). Falls back to direct HCS.
 - Invite tokens: 7-day expiry, claimed at `/invite/[token]`
+- `NEXT_PUBLIC_APP_DOMAIN` must include protocol (e.g. `https://axiom-eight-blue.vercel.app`). Fallback: `http://localhost:3000`.
 
 ### Review Visibility
 - During review: editor + reviewer only (researcher during rebuttal)
@@ -165,7 +167,7 @@ Cron at `/api/cron/deadlines`. Cross-verifies with `TimelineEnforcer.sol` (chain
 src/
 ├── app/
 │   ├── layout.tsx / providers.client.tsx / page.tsx / globals.css
-│   ├── login/ / onboarding/ / invite/[token]/
+│   ├── login/ / onboarding/ / invite/[token]/ / reviewer-profile/[wallet]/
 │   ├── api/  (badges/[id], contracts/, papers/[id]/content/, submissions/[id]/*, reviews/*, rebuttals/*, cron/deadlines, upload/ipfs)
 │   └── (protected)/  (researcher/, editor/, reviewer/)
 ├── features/  (auth, researcher, editor, reviewer, contracts, papers, users, reviews, rebuttals, notifications)

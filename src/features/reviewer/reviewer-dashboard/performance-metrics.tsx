@@ -5,6 +5,7 @@ interface PerformanceMetricsProps {
   reliabilityScore: number;
   completedReviews: number;
   invites: number;
+  underReview?: number;
   averageDaysToDeadline: number;
 }
 
@@ -12,6 +13,7 @@ export function PerformanceMetrics({
   reliabilityScore,
   completedReviews,
   invites,
+  underReview,
   averageDaysToDeadline,
 }: PerformanceMetricsProps) {
   const formatScore = (score: number) => {
@@ -24,7 +26,7 @@ export function PerformanceMetrics({
         Performance Metrics
       </h3>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         <DashboardStatCard
           value={formatScore(reliabilityScore)}
           label="Review Reliability Score"
@@ -33,7 +35,10 @@ export function PerformanceMetrics({
           value={completedReviews}
           label="Completed Verified Reviews"
         />
-        <DashboardStatCard value={invites} label="Invites" />
+        <DashboardStatCard value={invites} label="Pending Invites" />
+        {underReview !== undefined && (
+          <DashboardStatCard value={underReview} label="Under Review" />
+        )}
         <DashboardStatCard
           value={formatScore(averageDaysToDeadline)}
           label="Average days to deadline"

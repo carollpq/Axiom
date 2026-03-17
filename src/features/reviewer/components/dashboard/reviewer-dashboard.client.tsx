@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { DashboardGridLayout } from '@/src/shared/components/dashboard-grid-layout';
 import { ProfileCard } from '@/src/shared/components/profile-card';
 import type {
@@ -48,6 +48,17 @@ export function ReviewerDashboardClient({
   badges = [],
 }: Props) {
   const reputationScores = initialReputation ?? EMPTY_REPUTATION_SCORES;
+  const pendingCount = useMemo(
+    () => initialAssigned.filter((a) => a.status === 'Pending').length,
+    [initialAssigned],
+  );
+  const underReviewCount = useMemo(
+    () =>
+      initialAssigned.filter(
+        (a) => a.status === 'In Progress' || a.status === 'Late',
+      ).length,
+    [initialAssigned],
+  );
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -71,7 +82,8 @@ export function ReviewerDashboardClient({
           <PerformanceMetrics
             reliabilityScore={reputationScores.overall}
             completedReviews={initialCompleted.length}
-            invites={initialAssigned.length}
+            invites={pendingCount}
+            underReview={underReviewCount}
             averageDaysToDeadline={averageDaysToDeadline}
           />
           {badges.length > 0 && (

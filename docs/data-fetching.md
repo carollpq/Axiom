@@ -1,6 +1,6 @@
 # Data Fetching
 
-This guide explains how to fetch data correctly in Axiom (Next.js 15 App Router).
+This guide explains how to fetch data correctly in Axiom (Next.js 16 App Router).
 
 ## The Target Pattern
 

@@ -112,7 +112,7 @@ export function mapAssignmentToPaper(
     id: 0,
     title: paper.title,
     abstract: paper.abstract ?? '',
-    journal: journal.name,
+    journal: journal?.name ?? '—',
     version: latestVersion ? `v${latestVersion.versionNumber}` : 'v1',
     anonymized: true,
     pdfUrl: latestVersion?.fileStorageKey

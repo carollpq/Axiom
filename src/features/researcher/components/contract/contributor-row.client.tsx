@@ -56,7 +56,7 @@ export function ContributorRow({
             </span>
           )}
         </div>
-        <div className="text-[10px] text-[#5a7a9a] font-mono mt-0.5">
+        <div className="text-[10px] text-[#5a7a9a] font-mono mt-0.5 truncate">
           {c.wallet}
         </div>
       </div>

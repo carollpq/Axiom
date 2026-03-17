@@ -30,7 +30,7 @@ export function SubmissionActions({
         </button>
         {isDraft && (
           <span className="text-xs italic" style={{ color: '#6a6050' }}>
-            Draft saved locally
+            Draft saved
           </span>
         )}
       </div>

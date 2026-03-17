@@ -16,6 +16,7 @@ export interface ReviewWorkspaceState {
 
 export function createInitialState(
   criteria: ReviewCriterion[],
+  assignmentId?: string,
 ): ReviewWorkspaceState {
   const evaluations: Record<number, CriterionEvaluation> = {};
   for (const criterion of criteria) {
@@ -25,6 +26,35 @@ export function createInitialState(
       comment: '',
     };
   }
+
+  // Hydrate from localStorage if a draft was previously saved
+  if (assignmentId && typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem(`review_draft_${assignmentId}`);
+      if (saved) {
+        const draft = JSON.parse(saved) as {
+          evaluations?: Record<number, CriterionEvaluation>;
+          generalComments?: GeneralComments;
+          recommendation?: Recommendation | null;
+        };
+        return {
+          evaluations: draft.evaluations ?? evaluations,
+          generalComments: draft.generalComments ?? {
+            strengths: '',
+            weaknesses: '',
+            questionsForAuthors: '',
+            confidentialEditorComments: '',
+          },
+          recommendation: draft.recommendation ?? null,
+          isDraft: true,
+          criteriaCollapsed: false,
+        };
+      }
+    } catch {
+      // Ignore corrupt localStorage data
+    }
+  }
+
   return {
     evaluations,
     generalComments: {

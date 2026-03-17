@@ -58,6 +58,9 @@ export function computeSubmissionStats(
       case 'published':
         accepted++;
         break;
+      case 'revision_requested':
+        underReview++;
+        break;
       case 'rejected':
         rejected++;
         break;

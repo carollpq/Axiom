@@ -7,7 +7,7 @@ import {
   journalReviewers,
   journals,
 } from '@/src/shared/lib/db/schema';
-import { eq, and, or, inArray } from 'drizzle-orm';
+import { eq, and, or, inArray, sql } from 'drizzle-orm';
 import { displayNameOrWallet } from '@/src/features/users/lib';
 import type { EditorNameMap } from '@/src/features/reviewer/lib/dashboard';
 
@@ -66,6 +66,20 @@ export const listPendingInvites = cache(async (reviewerWallet: string) => {
     },
     orderBy: (a, { asc }) => [asc(a.deadline)],
   });
+});
+
+/** Count-only query for public profile — avoids loading full relational graph. */
+export const countCompletedReviews = cache(async (reviewerWallet: string) => {
+  const [result] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(reviewAssignments)
+    .where(
+      and(
+        eq(reviewAssignments.reviewerWallet, reviewerWallet.toLowerCase()),
+        eq(reviewAssignments.status, 'submitted'),
+      ),
+    );
+  return Number(result?.count ?? 0);
 });
 
 /** Lightweight query for dashboard counts — no contracts/reviews/rebuttals. */
