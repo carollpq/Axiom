@@ -17,6 +17,11 @@
     "contracts:compile": "npm --prefix contracts run compile",
     "contracts:test": "npm --prefix contracts run test",
     "contracts:deploy:testnet": "npm --prefix contracts run deploy:testnet",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "prepare": "husky",
     "postinstall": "cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs public/pdf.worker.min.mjs"
   },
@@ -39,7 +44,10 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@jest/globals": "^30.3.0",
     "@next/bundle-analyzer": "^16.1.6",
+    "@playwright/test": "^1.58.2",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -49,6 +57,7 @@
     "eslint-config-next": "^16.1.6",
     "hardhat": "^3.1.11",
     "husky": "^9.1.7",
+    "jest": "^30.3.0",
     "lint-staged": "^16.3.3",
     "postcss": "^8.5.8",
     "prettier": "^3.6.2",
@@ -59,7 +68,8 @@
   "lint-staged": {
     "*.{ts,tsx}": [
       "eslint --fix",
-      "prettier --write"
+      "prettier --write",
+      "jest --bail --findRelatedTests"
     ],
     "*.{js,jsx,json,css,md}": [
       "prettier --write"
