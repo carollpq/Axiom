@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LandingButton } from './LandingButton';
 
 const NAV_LINKS = [
@@ -14,8 +14,30 @@ export function LandingNav() {
   const [active, setActive] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
 
+  useEffect(() => {
+    const ids = NAV_LINKS.map((l) => l.href.slice(1));
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const idx = ids.indexOf(entry.target.id);
+            if (idx !== -1) setActive(idx);
+          }
+        });
+      },
+      { rootMargin: '-40% 0px -40% 0px' },
+    );
+
+    ids.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <nav className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-5 pt-6 pb-4 sm:px-8 md:px-10 md:pt-10 md:pb-6">
+    <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 pt-6 pb-4 sm:px-8 md:px-10 md:pt-10 md:pb-6">
       {/* Logo */}
       <span
         className="text-base tracking-wide sm:text-lg"
@@ -40,7 +62,12 @@ export function LandingNav() {
           >
             <a
               href={link.href}
-              onClick={() => setActive(i)}
+              onClick={(e) => {
+                e.preventDefault();
+                document
+                  .querySelector(link.href)
+                  ?.scrollIntoView({ behavior: 'smooth' });
+              }}
               className={`group relative pb-3 text-lg tracking-wide transition-opacity duration-300 lg:text-xl ${active === i ? 'opacity-100' : 'opacity-60 hover:opacity-80'}`}
               style={{
                 fontFamily: 'var(--font-tinos), Times New Roman, serif',
@@ -124,9 +151,12 @@ export function LandingNav() {
             <li key={link.label}>
               <a
                 href={link.href}
-                onClick={() => {
-                  setActive(i);
+                onClick={(e) => {
+                  e.preventDefault();
                   setMenuOpen(false);
+                  document
+                    .querySelector(link.href)
+                    ?.scrollIntoView({ behavior: 'smooth' });
                 }}
                 className={`text-lg tracking-wide transition-opacity ${active === i ? 'opacity-100' : 'opacity-60'}`}
                 style={{

@@ -1,5 +1,4 @@
 import { LandingButton } from './LandingButton';
-import { OrbitalBackground } from './OrbitalBackground';
 import { ScrollIndicator } from './ScrollIndicator.client';
 
 export function HeroSection() {
@@ -8,8 +7,6 @@ export function HeroSection() {
       id="home"
       className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-5 sm:px-8"
     >
-      <OrbitalBackground />
-
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center text-center gap-3 sm:gap-5">
         {/* Axiom title — clip-path reveal left-to-right */}
