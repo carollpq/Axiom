@@ -88,7 +88,7 @@ export function deriveStage(
   if (status === 'rejected') return 'Rejected';
   if (status === 'reviews_completed') return 'Decision Pending';
   if (status === 'under_review') {
-    if (criteriaMet !== null || decision !== null) return 'Decision Pending';
+    if (criteriaMet === true || decision !== null) return 'Decision Pending';
     return 'Under Review';
   }
   if (status === 'rebuttal_open') return 'Under Review';
@@ -150,7 +150,7 @@ export function mapDbToPaperCardData(s: DbJournalSubmission): PaperCardData {
   const abstract = s.paper.abstract ?? '';
   const submittedDate = s.submittedAt ? formatDate(String(s.submittedAt)) : '—';
   const hasLitData = !!(
-    s.paper.litDataToEncryptHash && s.paper.litAccessConditionsJson
+    s.paper.litDataToEncryptHash || s.paper.litAccessConditionsJson
   );
   const latestVersion = s.paper.versions?.at(-1);
   const hasFile = !!latestVersion?.fileStorageKey;

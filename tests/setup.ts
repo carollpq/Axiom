@@ -29,16 +29,29 @@ jest.mock('@/src/shared/lib/hedera/schedule', () => ({
   createScheduledTransaction: jest.fn().mockResolvedValue(null),
 }));
 
-// Mock next/server after() to execute immediately
+// Mock next/server after() — collect promises so tests can await them
+const afterPromises: Promise<void>[] = [];
 jest.mock('next/server', () => {
   const actual = jest.requireActual('next/server');
   return {
     ...actual,
     after: (fn: () => void | Promise<void>) => {
-      // Execute immediately so side effects are testable
-      void fn();
+      const p = Promise.resolve().then(fn).then(() => undefined);
+      afterPromises.push(p);
     },
   };
+});
+
+/** Await all pending after() callbacks. Call in tests that assert on side effects. */
+export async function flushAfterCallbacks() {
+  await Promise.all(afterPromises.splice(0));
+}
+
+// Settle any unflushed after() callbacks between tests to prevent leaks
+afterEach(async () => {
+  if (afterPromises.length > 0) {
+    await Promise.allSettled(afterPromises.splice(0));
+  }
 });
 
 // Mock Hedera network config
