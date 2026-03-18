@@ -47,6 +47,11 @@
   --landing-ease: cubic-bezier(0.4, 0, 0.2, 1);
   --landing-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
+  /* Carousel responsive slots */
+  --carousel-offset: 140px;
+  --carousel-scale-side: 0.9;
+  --carousel-scale-center: 1.05;
+
   /* Accents */
   --accent-gold: #c9a44a;
   --accent-green: #8fbc8f;
@@ -84,6 +89,27 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    --carousel-offset: 220px;
+    --carousel-scale-center: 1.1;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --carousel-offset: 320px;
+    --carousel-scale-center: 1.15;
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --carousel-offset: 380px;
+    --carousel-scale-center: 1.2;
   }
 }
 

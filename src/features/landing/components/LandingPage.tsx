@@ -1,6 +1,7 @@
 import { LandingNav } from './LandingNav.client';
 import { HeroSection } from './HeroSection';
 import { AboutSection } from './AboutSection.client';
+import { WhosItForSection } from './WhosItForSection.client';
 import { SpotlightOverlay } from './SpotlightOverlay.client';
 import { SmoothScroll } from './SmoothScroll.client';
 import { OrbitalBackground } from './OrbitalBackground';
@@ -29,6 +30,7 @@ export function LandingPage() {
         <LandingNav />
         <HeroSection />
         <AboutSection />
+        <WhosItForSection />
       </div>
     </main>
   );
