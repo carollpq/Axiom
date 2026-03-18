@@ -2,6 +2,8 @@ import { LandingNav } from './LandingNav.client';
 import { HeroSection } from './HeroSection';
 import { AboutSection } from './AboutSection.client';
 import { SectionCarousel } from './SectionCarousel.client';
+import { CtaSection } from './CtaSection.client';
+import { LandingFooter } from './LandingFooter';
 import { SpotlightOverlay } from './SpotlightOverlay.client';
 import { SmoothScroll } from './SmoothScroll.client';
 import { OrbitalBackground } from './OrbitalBackground';
@@ -31,6 +33,8 @@ export function LandingPage() {
         <HeroSection />
         <AboutSection />
         <SectionCarousel />
+        <CtaSection />
+        <LandingFooter />
       </div>
     </main>
   );

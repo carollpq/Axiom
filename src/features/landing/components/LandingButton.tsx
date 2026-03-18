@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { scrollToHash } from '@/src/features/landing/lib/scroll';
 
 interface LandingButtonProps {
   href: string;
@@ -24,9 +27,19 @@ export function LandingButton({
   bgOpacity = 0.6,
   variant = 'default',
 }: LandingButtonProps) {
+  const isHash = href.startsWith('#');
+
+  const handleClick = isHash
+    ? (e: React.MouseEvent) => {
+        e.preventDefault();
+        scrollToHash(href);
+      }
+    : undefined;
+
   return (
     <Link
       href={href}
+      onClick={handleClick}
       className={`relative overflow-hidden px-6 py-3 text-base tracking-wide transition-all hover:brightness-110 sm:px-8 sm:py-4 sm:text-lg ${className}`}
       style={{
         fontFamily: 'var(--font-tinos), Times New Roman, serif',

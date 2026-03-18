@@ -111,7 +111,7 @@ export function HeroSection() {
             }}
           >
             <LandingButton
-              href="#how"
+              href="#about"
               className="min-w-[180px] text-center sm:min-w-[200px]"
               bgOpacity={0.8}
               variant="outlined"

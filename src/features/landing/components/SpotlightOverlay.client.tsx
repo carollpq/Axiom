@@ -14,6 +14,7 @@ const SECTIONS = [
   { id: 'about', angle: 63, c1: [8, 8, 8], s1: 0, c2: [130, 130, 130], s2: 87 },
   { id: 'who', angle: 63, c1: [8, 8, 8], s1: 0, c2: [130, 130, 130], s2: 87 },
   { id: 'how', angle: 315, c1: [110, 110, 110], s1: 0, c2: [8, 8, 8], s2: 85 },
+  { id: 'cta', angle: 315, c1: [60, 60, 60], s1: 0, c2: [8, 8, 8], s2: 90 },
 ] as const;
 
 const SECTION_IDS = SECTIONS.map((s) => s.id);

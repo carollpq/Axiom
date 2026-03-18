@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { LandingButton } from './LandingButton';
+import { scrollToHash } from '@/src/features/landing/lib/scroll';
 
 const NAV_LINKS = [
   { label: 'Home', href: '#home' },
@@ -68,9 +69,7 @@ export function LandingNav() {
               href={link.href}
               onClick={(e) => {
                 e.preventDefault();
-                document
-                  .querySelector(link.href)
-                  ?.scrollIntoView({ behavior: 'smooth' });
+                scrollToHash(link.href);
               }}
               className={`group relative pb-3 text-lg tracking-wide transition-opacity duration-300 lg:text-xl ${active === i ? 'opacity-100' : 'opacity-60 hover:opacity-80'}`}
               style={{
@@ -158,9 +157,7 @@ export function LandingNav() {
                 onClick={(e) => {
                   e.preventDefault();
                   setMenuOpen(false);
-                  document
-                    .querySelector(link.href)
-                    ?.scrollIntoView({ behavior: 'smooth' });
+                  scrollToHash(link.href);
                 }}
                 className={`text-lg tracking-wide transition-opacity ${active === i ? 'opacity-100' : 'opacity-60'}`}
                 style={{

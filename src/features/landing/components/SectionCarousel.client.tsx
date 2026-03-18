@@ -184,13 +184,13 @@ export function SectionCarousel() {
             lastPhase.current = 1;
           }
         } else if (progress <= PHASE2_END) {
-        /* Phase 2: Horizontal slide */
+          /* Phase 2: Horizontal slide */
           lastPhase.current = 2;
           const slideT = (progress - PHASE1_END) / (PHASE2_END - PHASE1_END); // 0→1
           const eased = 1 - Math.pow(1 - slideT, 3); // ease-out cubic
           track.style.transform = `translateX(${(-eased * 100).toFixed(2)}vw)`;
         } else {
-        /* Phase 3: Step cycling in How It Works */
+          /* Phase 3: Step cycling in How It Works */
           if (lastPhase.current !== 3) {
             track.style.transform = 'translateX(-100vw)';
             lastPhase.current = 3;
@@ -249,7 +249,7 @@ export function SectionCarousel() {
       <div
         id="how"
         className="pointer-events-none absolute left-0 w-px"
-        style={{ top: '45%', height: '55%' }}
+        style={{ top: '60%', height: '40%' }}
       />
 
       {/* Sticky viewport */}
