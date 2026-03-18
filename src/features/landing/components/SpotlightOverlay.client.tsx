@@ -81,12 +81,25 @@ export function SpotlightOverlay() {
         const progress = getSectionProgress();
         if (ref.current) ref.current.style.background = getGradient(progress);
 
-        // Vignette fades in during transition from about (1) to who (2)
+        // Vignette fades in after scrolling ~35% into the "who" section
         if (vignetteRef.current) {
-          const vignetteProgress = Math.max(0, Math.min(1, progress - 1));
-          vignetteRef.current.style.opacity = (vignetteProgress * 0.75).toFixed(
-            3,
-          );
+          const whoEl = document.getElementById('who');
+          let vignetteOpacity = 0;
+          if (whoEl) {
+            const whoRect = whoEl.getBoundingClientRect();
+            const whoScrollable = whoEl.offsetHeight - window.innerHeight;
+            if (whoScrollable > 0 && whoRect.top < window.innerHeight) {
+              const scrolledInto = -whoRect.top;
+              const whoProgress = Math.max(
+                0,
+                Math.min(1, scrolledInto / whoScrollable),
+              );
+              // Start vignette at 10% scroll, fully visible by 40%
+              vignetteOpacity =
+                Math.max(0, Math.min(1, (whoProgress - 0.1) / 0.3)) * 0.75;
+            }
+          }
+          vignetteRef.current.style.opacity = vignetteOpacity.toFixed(3);
         }
 
         ticking = false;
