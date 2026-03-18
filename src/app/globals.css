@@ -142,6 +142,20 @@ body {
   transform: translateY(0);
 }
 
+/* ── About section scroll-driven reveal ── */
+.about-reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition:
+    opacity 1s var(--landing-ease),
+    transform 1s var(--landing-ease);
+}
+
+.about-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 /* ── Hero entrance animations ── */
 @keyframes hero-clip-reveal {
   from {
