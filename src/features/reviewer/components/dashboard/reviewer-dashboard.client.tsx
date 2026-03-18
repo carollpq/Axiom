@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { DashboardGridLayout } from '@/src/shared/components/dashboard-grid-layout';
 import { ProfileCard } from '@/src/shared/components/profile-card';
+import { getInitials } from '@/src/shared/lib/format';
 import type {
   AssignedReview,
   CompletedReview,
@@ -11,10 +12,10 @@ import type {
   UserProfile,
   ResearcherInsight,
 } from '@/src/features/reviewer/types/dashboard';
-import { DashboardCard } from '@/src/shared/components/dashboard-card';
+import { CollapsibleSection } from '@/src/shared/components/collapsible-section.client';
 import { PerformanceMetrics } from '../../reviewer-dashboard/performance-metrics';
 import { ResearchersInsights } from '../../reviewer-dashboard/researchers-insights';
-import { BadgeCard, type BadgeData } from './badge-card.client';
+import { BadgeGrid, type BadgeData } from './badge-card.client';
 
 const EMPTY_REPUTATION_SCORES: ReputationScores = {
   overall: 0,
@@ -71,18 +72,6 @@ export function ReviewerDashboardClient({
             underReview={underReviewCount}
             averageDaysToDeadline={averageDaysToDeadline}
           />
-          {badges.length > 0 && (
-            <DashboardCard className="space-y-4">
-              <h3 className="text-lg font-bold" style={{ color: '#d4ccc0' }}>
-                Achievements
-              </h3>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {badges.map((badge) => (
-                  <BadgeCard key={badge.id} badge={badge} />
-                ))}
-              </div>
-            </DashboardCard>
-          )}
           <ResearchersInsights
             journalsReviewed={journalsReviewed}
             insights={researcherInsights.map((i) => i.comment)}
@@ -93,7 +82,16 @@ export function ReviewerDashboardClient({
         <ProfileCard
           name={userProfile?.displayName || 'Reviewer Name'}
           subtitle={userProfile?.institution || 'Affiliation'}
-        />
+          initials={
+            userProfile?.displayName
+              ? getInitials(userProfile.displayName)
+              : '?'
+          }
+        >
+          <CollapsibleSection title="Achievements" defaultOpen>
+            <BadgeGrid earned={badges} />
+          </CollapsibleSection>
+        </ProfileCard>
       }
     />
   );

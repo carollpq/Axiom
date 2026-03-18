@@ -1,8 +1,11 @@
+import type { ReactNode } from 'react';
+
 interface ProfileCardProps {
   name: string;
   subtitle: string;
   secondarySubtitle?: string;
   initials?: string;
+  children?: ReactNode;
 }
 
 export function ProfileCard({
@@ -10,6 +13,7 @@ export function ProfileCard({
   subtitle,
   secondarySubtitle,
   initials,
+  children,
 }: ProfileCardProps) {
   return (
     <div className="dashboard-card text-center space-y-6">
@@ -28,6 +32,8 @@ export function ProfileCard({
           </p>
         )}
       </div>
+
+      {children}
     </div>
   );
 }

@@ -31,7 +31,7 @@ const GUARANTEES: ReadonlyArray<{
   hashLabel: string;
 }> = [
   {
-    icon: '\u{1F4C4}',
+    icon: '#',
     title: 'Paper integrity verified',
     description:
       'A unique fingerprint of the paper was recorded on-chain. Any future changes to the file would produce a different fingerprint, proving the original was preserved.',
@@ -39,7 +39,7 @@ const GUARANTEES: ReadonlyArray<{
     hashLabel: 'Paper fingerprint',
   },
   {
-    icon: '\u{1F50D}',
+    icon: '\u{25C9}',
     title: 'Review permanently recorded',
     description:
       'Your evaluation \u2014 criteria ratings, comments, and recommendation \u2014 was hashed and anchored to Hedera. It cannot be altered or deleted by anyone.',
@@ -47,7 +47,7 @@ const GUARANTEES: ReadonlyArray<{
     hashLabel: 'Review fingerprint',
   },
   {
-    icon: '\u{26D3}\u{FE0F}',
+    icon: '\u{29BB}',
     title: 'Publicly verifiable on Hedera',
     description:
       'The transaction is recorded on the Hedera Consensus Service. Anyone can independently verify this record using the link below.',
