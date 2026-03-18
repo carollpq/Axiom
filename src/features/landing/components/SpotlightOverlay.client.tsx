@@ -13,6 +13,7 @@ const SECTIONS = [
   },
   { id: 'about', angle: 63, c1: [8, 8, 8], s1: 0, c2: [130, 130, 130], s2: 87 },
   { id: 'who', angle: 63, c1: [8, 8, 8], s1: 0, c2: [130, 130, 130], s2: 87 },
+  { id: 'how', angle: 315, c1: [110, 110, 110], s1: 0, c2: [8, 8, 8], s2: 85 },
 ] as const;
 
 const SECTION_IDS = SECTIONS.map((s) => s.id);
@@ -43,6 +44,12 @@ function getGradient(progress: number) {
   return `linear-gradient(${angle.toFixed(1)}deg, rgb(${r1.toFixed(0)},${g1.toFixed(0)},${b1.toFixed(0)}) ${s1.toFixed(1)}%, rgb(${r2.toFixed(0)},${g2.toFixed(0)},${b2.toFixed(0)}) ${s2.toFixed(1)}%)`;
 }
 
+/* Vignette fade thresholds */
+const VIGNETTE_FADE_IN_START = 0.1;
+const VIGNETTE_FADE_IN_RANGE = 0.3;
+const VIGNETTE_MAX_OPACITY = 0.75;
+const VIGNETTE_FADE_OUT_RANGE = 0.2;
+
 export function SpotlightOverlay() {
   const ref = useRef<HTMLDivElement>(null);
   const vignetteRef = useRef<HTMLDivElement>(null);
@@ -50,55 +57,85 @@ export function SpotlightOverlay() {
   useEffect(() => {
     let ticking = false;
 
-    const getSectionProgress = () => {
-      const vh = window.innerHeight;
-      let progress = 0;
-
-      for (let i = 0; i < SECTION_IDS.length; i++) {
-        const el = document.getElementById(SECTION_IDS[i]);
-        if (!el) continue;
-        const rect = el.getBoundingClientRect();
-        // If this section's top is above the viewport center
-        if (rect.top < vh * 0.5) {
-          const sectionScrollable = el.offsetHeight - vh;
-          const scrolledInto = -rect.top;
-          if (sectionScrollable > 0) {
-            // Sticky section: normalize progress within 0–1
-            progress =
-              i + Math.max(0, Math.min(1, scrolledInto / sectionScrollable));
-          } else {
-            progress = i + Math.max(0, Math.min(1, scrolledInto / vh));
-          }
-        }
-      }
-      return Math.min(progress, SECTIONS.length - 1);
-    };
+    // Cache section DOM elements once — they never change
+    const sectionEls = SECTION_IDS.map((id) => document.getElementById(id));
+    const whoIdx = SECTION_IDS.indexOf('who');
+    const howIdx = SECTION_IDS.indexOf('how');
 
     const onScroll = () => {
       if (ticking) return;
       ticking = true;
       requestAnimationFrame(() => {
-        const progress = getSectionProgress();
-        if (ref.current) ref.current.style.background = getGradient(progress);
+        const vh = window.innerHeight;
 
-        // Vignette fades in after scrolling ~35% into the "who" section
-        if (vignetteRef.current) {
-          const whoEl = document.getElementById('who');
-          let vignetteOpacity = 0;
-          if (whoEl) {
-            const whoRect = whoEl.getBoundingClientRect();
-            const whoScrollable = whoEl.offsetHeight - window.innerHeight;
-            if (whoScrollable > 0 && whoRect.top < window.innerHeight) {
-              const scrolledInto = -whoRect.top;
-              const whoProgress = Math.max(
-                0,
-                Math.min(1, scrolledInto / whoScrollable),
-              );
-              // Start vignette at 10% scroll, fully visible by 40%
-              vignetteOpacity =
-                Math.max(0, Math.min(1, (whoProgress - 0.1) / 0.3)) * 0.75;
+        // Compute section progress + cache rects for who/how
+        let progress = 0;
+        let whoRect: DOMRect | null = null;
+        let whoScrollable = 0;
+        let howRect: DOMRect | null = null;
+        let howScrollable = 0;
+
+        for (let i = 0; i < sectionEls.length; i++) {
+          const el = sectionEls[i];
+          if (!el) continue;
+          const rect = el.getBoundingClientRect();
+          const scrollable = el.offsetHeight - vh;
+
+          // Cache rects for vignette logic — avoids duplicate getBoundingClientRect
+          if (i === whoIdx) {
+            whoRect = rect;
+            whoScrollable = scrollable;
+          } else if (i === howIdx) {
+            howRect = rect;
+            howScrollable = scrollable;
+          }
+
+          if (rect.top < vh * 0.5) {
+            const scrolledInto = -rect.top;
+            if (scrollable > 0) {
+              progress =
+                i + Math.max(0, Math.min(1, scrolledInto / scrollable));
+            } else {
+              progress = i + Math.max(0, Math.min(1, scrolledInto / vh));
             }
           }
+        }
+        progress = Math.min(progress, SECTIONS.length - 1);
+
+        if (ref.current) ref.current.style.background = getGradient(progress);
+
+        // Vignette: fades in during "who", fades out during "how"
+        if (vignetteRef.current) {
+          let vignetteOpacity = 0;
+
+          if (whoRect && whoScrollable > 0 && whoRect.top < vh) {
+            const scrolledInto = -whoRect.top;
+            const whoProgress = Math.max(
+              0,
+              Math.min(1, scrolledInto / whoScrollable),
+            );
+            vignetteOpacity =
+              Math.max(
+                0,
+                Math.min(
+                  1,
+                  (whoProgress - VIGNETTE_FADE_IN_START) /
+                    VIGNETTE_FADE_IN_RANGE,
+                ),
+              ) * VIGNETTE_MAX_OPACITY;
+          }
+
+          if (howRect && howScrollable > 0 && howRect.top < vh) {
+            const scrolledInto = -howRect.top;
+            const howProgress = Math.max(
+              0,
+              Math.min(1, scrolledInto / howScrollable),
+            );
+            const fadeOut =
+              1 - Math.min(1, howProgress / VIGNETTE_FADE_OUT_RANGE);
+            vignetteOpacity = vignetteOpacity * fadeOut;
+          }
+
           vignetteRef.current.style.opacity = vignetteOpacity.toFixed(3);
         }
 
