@@ -8,8 +8,9 @@ import {
   journalIssues,
   journalReviewers,
   users,
+  type SubmissionStatusDb,
 } from '@/src/shared/lib/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, inArray, and } from 'drizzle-orm';
 
 /** Throws if wallet is not the editor of this journal. */
 export async function requireJournalEditor(journalId: string, wallet: string) {
@@ -126,6 +127,32 @@ export const listJournalReviewersWithStatus = cache(
     return rows;
   },
 );
+
+/** Lightweight count of submissions needing editor attention. */
+export const getEditorNavCounts = cache(async (journalId: string) => {
+  const rows = await db
+    .select({
+      status: submissions.status,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(submissions)
+    .where(
+      and(
+        eq(submissions.journalId, journalId),
+        inArray(submissions.status, [
+          'submitted',
+          'reviews_completed',
+        ] satisfies SubmissionStatusDb[]),
+      ),
+    )
+    .groupBy(submissions.status);
+
+  const map = Object.fromEntries(rows.map((r) => [r.status, r.count]));
+  return {
+    incoming: map['submitted'] ?? 0,
+    decisionPending: map['reviews_completed'] ?? 0,
+  };
+});
 
 export type DbJournalSubmission = Awaited<
   ReturnType<typeof listJournalSubmissions>

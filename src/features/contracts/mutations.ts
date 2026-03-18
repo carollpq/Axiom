@@ -5,7 +5,7 @@ import {
   type ContractStatusDb,
   type ContributorStatusDb,
 } from '@/src/shared/lib/db/schema';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { getUserByWallet } from '@/src/features/users/queries';
 
 export interface CreateContractInput {
@@ -247,8 +247,8 @@ export async function signContributor(input: SignContributorInput) {
 
   const allSigned = allContribs.every((c) => c.status === 'signed');
 
-  // Only update contract status if it's currently pending_signatures
-  // (prevents overwriting draft/voided/fully_signed states)
+  // Only update contract status if it's currently draft or pending_signatures
+  // (prevents overwriting voided/fully_signed states)
   await db
     .update(authorshipContracts)
     .set({
@@ -261,10 +261,10 @@ export async function signContributor(input: SignContributorInput) {
     .where(
       and(
         eq(authorshipContracts.id, input.contractId),
-        eq(
-          authorshipContracts.status,
-          'pending_signatures' as ContractStatusDb,
-        ),
+        inArray(authorshipContracts.status, [
+          'draft',
+          'pending_signatures',
+        ] as ContractStatusDb[]),
       ),
     );
 

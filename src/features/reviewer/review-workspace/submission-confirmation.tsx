@@ -1,6 +1,5 @@
 import type { SubmissionResult } from '@/src/features/reviewer/types/workspace';
 import { HashScanLink } from '@/src/shared/components/hashscan-link';
-import { truncate } from '@/src/shared/lib/format';
 
 interface SubmissionConfirmationProps {
   result: SubmissionResult;
@@ -20,41 +19,6 @@ const criteriaSectionStyle = {
   background: 'rgba(30,28,24,0.5)',
   border: '1px solid rgba(120,110,95,0.1)',
 } as const;
-
-type SubmissionHashKey = 'txHash' | 'paperHash' | 'reviewHash';
-
-const GUARANTEES: ReadonlyArray<{
-  icon: string;
-  title: string;
-  description: string;
-  hashKey: SubmissionHashKey;
-  hashLabel: string;
-}> = [
-  {
-    icon: '\u{1F4C4}',
-    title: 'Paper integrity verified',
-    description:
-      'A unique fingerprint of the paper was recorded on-chain. Any future changes to the file would produce a different fingerprint, proving the original was preserved.',
-    hashKey: 'paperHash',
-    hashLabel: 'Paper fingerprint',
-  },
-  {
-    icon: '\u{1F50D}',
-    title: 'Review permanently recorded',
-    description:
-      'Your evaluation \u2014 criteria ratings, comments, and recommendation \u2014 was hashed and anchored to Hedera. It cannot be altered or deleted by anyone.',
-    hashKey: 'reviewHash',
-    hashLabel: 'Review fingerprint',
-  },
-  {
-    icon: '\u{26D3}\u{FE0F}',
-    title: 'Publicly verifiable on Hedera',
-    description:
-      'The transaction is recorded on the Hedera Consensus Service. Anyone can independently verify this record using the link below.',
-    hashKey: 'txHash',
-    hashLabel: 'Hedera transaction',
-  },
-];
 
 const TECHNICAL_ROWS: ReadonlyArray<{
   label: string;
@@ -85,58 +49,17 @@ export function SubmissionConfirmation({
         >
           Review Submitted Successfully
         </h2>
-        <p className="text-sm mb-8" style={{ color: '#8a8070' }}>
+        <p className="text-sm mb-6" style={{ color: '#8a8070' }}>
           Your review is now immutably recorded on the Hedera blockchain
         </p>
 
-        {/* Guarantee cards */}
-        <div className="flex flex-col gap-3 text-left mb-8">
-          {GUARANTEES.map((g) => {
-            const hashValue = result[g.hashKey];
-            return (
-              <div key={g.hashKey} className="rounded-md p-4" style={cardStyle}>
-                <div className="flex items-start gap-3">
-                  <span className="text-lg leading-none mt-0.5">{g.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <div
-                      className="text-sm font-serif mb-1"
-                      style={{ color: '#d4ccc0' }}
-                    >
-                      {g.title}
-                    </div>
-                    <p
-                      className="text-xs leading-relaxed m-0 mb-2"
-                      style={{ color: '#8a8070' }}
-                    >
-                      {g.description}
-                    </p>
-                    {hashValue && (
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="text-[10px] uppercase"
-                          style={{ color: '#6a6050', letterSpacing: 1 }}
-                        >
-                          {g.hashLabel}:
-                        </span>
-                        {g.hashKey === 'txHash' ? (
-                          <HashScanLink txId={hashValue} />
-                        ) : (
-                          <span
-                            className="text-xs font-mono"
-                            style={{ color: '#5a7a9a' }}
-                            title={hashValue}
-                          >
-                            {truncate(hashValue, 10, 8)}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        {/* Transaction link */}
+        {result.txHash && (
+          <div className="flex items-center justify-center gap-2 mb-6 text-xs">
+            <span style={{ color: '#6a6050' }}>Hedera transaction:</span>
+            <HashScanLink txId={result.txHash} />
+          </div>
+        )}
 
         {/* Timestamp */}
         <div
@@ -171,9 +94,9 @@ export function SubmissionConfirmation({
                     color: '#c9b89e',
                     fontFamily: row.mono ? 'monospace' : 'inherit',
                   }}
-                  title={String(result[row.key])}
+                  title={String(result[row.key] ?? '—')}
                 >
-                  {String(result[row.key])}
+                  {String(result[row.key] ?? '—')}
                 </span>
               </div>
             ))}

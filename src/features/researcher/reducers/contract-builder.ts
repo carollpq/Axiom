@@ -2,7 +2,6 @@ import type { Contributor } from '@/src/features/researcher/types/contract';
 
 export interface ContractBuilderState {
   selectedDraft: number | null;
-  newTitle: string;
   contributors: Contributor[];
   showAddRow: boolean;
   showPreview: boolean;
@@ -13,7 +12,6 @@ export interface ContractBuilderState {
 
 export const initialState: ContractBuilderState = {
   selectedDraft: null,
-  newTitle: '',
   contributors: [],
   showAddRow: false,
   showPreview: false,
@@ -29,7 +27,6 @@ export type ContractBuilderAction =
       contributors: Contributor[];
       selectedContractId: string | null;
     }
-  | { type: 'SET_NEW_TITLE'; newTitle: string }
   | {
       type: 'UPDATE_CONTRIBUTOR';
       id: number;
@@ -64,9 +61,6 @@ export function contractBuilderReducer(
         contributors: action.contributors,
         selectedContractId: action.selectedContractId,
       };
-
-    case 'SET_NEW_TITLE':
-      return { ...state, newTitle: action.newTitle };
 
     case 'UPDATE_CONTRIBUTOR': {
       const target = state.contributors.find((c) => c.id === action.id);

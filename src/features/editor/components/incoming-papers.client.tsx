@@ -57,6 +57,7 @@ export function IncomingPapersClient({
     deskRejectComment,
     setDeskRejectComment,
     timelineDays,
+    setTimelineDays,
     sendInvites,
     isSendingInvites,
     submitDeskReject,
@@ -104,6 +105,7 @@ export function IncomingPapersClient({
               <CriteriaBuilder
                 submissionId={selectedId}
                 alreadyPublished={selected?.criteriaPublished ?? false}
+                criteriaTxId={selected?.criteriaTxId}
               />
               <AssignReviewersPanel
                 reviewerPool={reviewerPool}
@@ -113,6 +115,7 @@ export function IncomingPapersClient({
                 onAssign={assignReviewer}
                 onRemove={removeReviewer}
                 timelineDays={timelineDays}
+                onTimelineChange={setTimelineDays}
                 actionLabel="Send Invites"
                 onAction={sendInvites}
                 isLoading={isSendingInvites}

@@ -1,12 +1,12 @@
-import type { ContractContributorView } from '@/src/features/researcher/types/contract';
+import type { ContractWithStatus } from '@/src/features/researcher/types/contract';
+import { HashScanLink } from '@/src/shared/components/hashscan-link';
 
-interface ContractWithStatus {
-  id: string;
-  paperTitle: string;
-  allSigned: boolean;
-  pendingCount: number;
-  contributors: ContractContributorView[];
-}
+const onChainBadgeStyle = {
+  color: '#5a7a9a',
+  background: 'rgba(90,122,154,0.1)',
+  border: '1px solid rgba(90,122,154,0.2)',
+  letterSpacing: 0.5,
+} as const;
 
 interface Props {
   contracts: ContractWithStatus[];
@@ -50,6 +50,17 @@ export function ContractsStatus({ contracts }: Props) {
                   </p>
                 ))}
               </div>
+              {contract.hederaTxId && (
+                <div className="flex items-center gap-1.5 mt-2">
+                  <span
+                    className="text-[8px] uppercase px-1 py-px rounded-sm"
+                    style={onChainBadgeStyle}
+                  >
+                    On-chain
+                  </span>
+                  <HashScanLink txId={contract.hederaTxId} />
+                </div>
+              )}
             </div>
             <div className="shrink-0">
               {contract.allSigned ? (

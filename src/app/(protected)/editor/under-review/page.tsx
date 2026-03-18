@@ -53,7 +53,9 @@ async function UnderReviewContent() {
 
   const papers = underReviewSubs.map(mapDbToPaperCardData);
   const reviewerPool = buildReviewerPool(reviewers, scores);
-  const reviewStatuses = buildReviewStatusMap(underReviewSubs, nameByWallet);
+  const reviewStatuses = buildReviewStatusMap(underReviewSubs, nameByWallet, {
+    includeReviewContent: true,
+  });
 
   // Track whether each author has responded to completed reviews
   const authorResponseStatuses: Record<string, AuthorResponseStatusDb | null> =

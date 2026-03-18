@@ -75,6 +75,9 @@ export function UnderReviewClient({
     reviewerSearch,
     setReviewerSearch,
     timelineDays,
+    setTimelineDays,
+    sendAdditionalInvites,
+    isSendingInvites,
     decisionFlow: {
       currentReviewers,
       allReviewsComplete,
@@ -183,7 +186,10 @@ export function UnderReviewClient({
                 onAssign={assignReviewer}
                 onRemove={removeReviewer}
                 timelineDays={timelineDays}
+                onTimelineChange={setTimelineDays}
                 actionLabel="Assign"
+                onAction={sendAdditionalInvites}
+                isLoading={isSendingInvites}
               />
             </>
           ) : (

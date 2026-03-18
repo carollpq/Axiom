@@ -6,6 +6,7 @@ import {
   listReviewsForSubmission,
   getPublishedCriteria,
   getSubmissionWithPaperAndJournal,
+  getRatedReviewIdsBySubmissionIds,
 } from '@/src/features/reviews/queries';
 import { ReviewResponseClient } from '@/src/features/researcher/components/review-response/review-response.client';
 import { anonymizeReviews } from '@/src/features/researcher/lib/review';
@@ -30,9 +31,10 @@ export default async function ReviewResponsePage({
   if (submission.status !== 'reviews_completed')
     redirect(ROUTES.researcher.root);
 
-  const [reviews, criteria] = await Promise.all([
+  const [reviews, criteria, ratedReviewIds] = await Promise.all([
     listReviewsForSubmission(submissionId),
     getPublishedCriteria(submissionId),
+    getRatedReviewIdsBySubmissionIds([submissionId]),
   ]);
 
   const anonymizedReviews = anonymizeReviews(reviews);
@@ -48,6 +50,7 @@ export default async function ReviewResponsePage({
         paperTitle={submission.paper.title}
         journalName={submission.journal.name}
         reviews={anonymizedReviews}
+        ratedReviewIds={ratedReviewIds}
         criteria={criteriaList}
       />
     </PageContainer>

@@ -3,6 +3,7 @@ import { db } from '@/src/shared/lib/db';
 import {
   reviewAssignments,
   reviewCriteria,
+  reviewerRatings,
   reviews,
   submissions,
 } from '@/src/shared/lib/db/schema';
@@ -74,6 +75,20 @@ export const listReviewsForSubmission = cache(async (submissionId: string) => {
     where: eq(reviews.submissionId, submissionId),
   });
 });
+
+/** Return review IDs that already have author ratings, queried by submission IDs.
+ *  Uses a JOIN so callers don't need to fetch reviews first. */
+export async function getRatedReviewIdsBySubmissionIds(
+  submissionIds: string[],
+) {
+  if (submissionIds.length === 0) return [] as string[];
+  const rows = await db
+    .select({ reviewId: reviewerRatings.reviewId })
+    .from(reviewerRatings)
+    .innerJoin(reviews, eq(reviewerRatings.reviewId, reviews.id))
+    .where(inArray(reviews.submissionId, submissionIds));
+  return rows.map((r) => r.reviewId);
+}
 
 export const getPublishedCriteria = cache(async (submissionId: string) => {
   return db.query.reviewCriteria.findFirst({

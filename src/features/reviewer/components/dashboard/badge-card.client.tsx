@@ -1,6 +1,8 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { buildLinkedInAddUrl } from '@/src/features/reviewer/lib/linkedin';
+import { BADGE_DEFINITIONS } from '@/src/features/reviewer/lib/badge-config';
 
 export interface BadgeData {
   id: string;
@@ -10,17 +12,95 @@ export interface BadgeData {
   metadata: Record<string, unknown> | null;
 }
 
-const BADGE_ICONS: Record<string, string> = {
-  first_review: '1',
-  five_reviews: '5',
-  ten_reviews: '10',
-  twentyfive_reviews: '25',
-  high_reputation: 'S',
-  timely_reviewer: 'T',
-};
+/* ── Hoisted style constants ─────────────────────────────── */
+
+const EARNED_CARD_STYLE = {
+  backgroundColor: 'var(--surface-stat)',
+  borderColor: 'rgba(201,164,74,0.4)',
+} as const;
+
+const EARNED_ICON_STYLE = {
+  backgroundColor: 'rgba(201,164,74,0.2)',
+  color: 'var(--accent-gold)',
+  border: '2px solid rgba(201,164,74,0.5)',
+} as const;
+
+const LOCKED_CARD_STYLE = {
+  backgroundColor: 'var(--surface-stat)',
+  borderColor: 'rgba(120,110,95,0.25)',
+} as const;
+
+const LOCKED_ICON_STYLE = {
+  backgroundColor: 'rgba(120,110,95,0.15)',
+  color: '#6a6050',
+  border: '2px solid rgba(120,110,95,0.3)',
+} as const;
+
+const LINKEDIN_STYLE = {
+  background: 'rgba(90,122,154,0.15)',
+  border: '1px solid rgba(90,122,154,0.3)',
+  color: 'var(--accent-blue)',
+} as const;
+
+/* ── Shared card shell ───────────────────────────────────── */
+
+function BadgeCardShell({
+  icon,
+  name,
+  subtitle,
+  description,
+  locked,
+  actions,
+}: {
+  icon: string;
+  name: string;
+  subtitle: string;
+  description: string;
+  locked?: boolean;
+  actions?: ReactNode;
+}) {
+  return (
+    <div
+      data-testid={locked ? undefined : 'badge-card'}
+      className={`rounded-lg border p-4 space-y-3${locked ? ' opacity-40' : ''}`}
+      style={locked ? LOCKED_CARD_STYLE : EARNED_CARD_STYLE}
+    >
+      <div className="flex items-center gap-3">
+        <div
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold"
+          style={locked ? LOCKED_ICON_STYLE : EARNED_ICON_STYLE}
+        >
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <h4
+            className={`text-sm font-semibold truncate ${locked ? 'text-[var(--text-muted)]' : 'text-[var(--text-secondary)]'}`}
+          >
+            {name}
+          </h4>
+          <p
+            className={`text-xs ${locked ? 'text-[var(--text-faint)]' : 'text-[var(--text-subtle)]'}`}
+          >
+            {subtitle}
+          </p>
+        </div>
+      </div>
+
+      <p
+        className={`text-xs leading-relaxed ${locked ? 'text-[var(--text-faint)]' : 'text-[var(--text-muted)]'}`}
+      >
+        {description}
+      </p>
+
+      {actions}
+    </div>
+  );
+}
+
+/* ── Public components ───────────────────────────────────── */
 
 export function BadgeCard({ badge }: { badge: BadgeData }) {
-  const icon = BADGE_ICONS[badge.badgeType] ?? '?';
+  const def = BADGE_DEFINITIONS.find((d) => d.type === badge.badgeType);
   const description =
     (badge.metadata?.description as string) ?? 'Axiom achievement';
   const linkedInUrl = buildLinkedInAddUrl({
@@ -30,57 +110,50 @@ export function BadgeCard({ badge }: { badge: BadgeData }) {
   });
 
   return (
-    <div
-      data-testid="badge-card"
-      className="rounded-lg border p-4 space-y-3"
-      style={{
-        backgroundColor: 'var(--surface-stat)',
-        borderColor: 'rgba(201,164,74,0.4)',
-      }}
-    >
-      <div className="flex items-center gap-3">
-        <div
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold"
-          style={{
-            backgroundColor: 'rgba(201,164,74,0.2)',
-            color: 'var(--accent-gold)',
-            border: '2px solid rgba(201,164,74,0.5)',
-          }}
+    <BadgeCardShell
+      icon={def?.icon ?? '?'}
+      name={badge.achievementName}
+      subtitle={new Date(badge.issuedAt).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })}
+      description={description}
+      actions={
+        <a
+          href={linkedInUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex w-full items-center justify-center gap-2 rounded px-3 py-1.5 text-[12px] font-serif cursor-pointer hover:opacity-80"
+          style={LINKEDIN_STYLE}
         >
-          {icon}
-        </div>
-        <div className="min-w-0">
-          <h4 className="text-sm font-semibold truncate text-[var(--text-secondary)]">
-            {badge.achievementName}
-          </h4>
-          <p className="text-xs text-[var(--text-subtle)]">
-            {new Date(badge.issuedAt).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric',
-            })}
-          </p>
-        </div>
-      </div>
+          <LinkedInIcon />
+          Add to LinkedIn
+        </a>
+      }
+    />
+  );
+}
 
-      <p className="text-xs leading-relaxed text-[var(--text-muted)]">
-        {description}
-      </p>
-
-      <a
-        href={linkedInUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex w-full items-center justify-center gap-2 rounded px-3 py-1.5 text-[12px] font-serif cursor-pointer hover:opacity-80"
-        style={{
-          background: 'rgba(90,122,154,0.15)',
-          border: '1px solid rgba(90,122,154,0.3)',
-          color: 'var(--accent-blue)',
-        }}
-      >
-        <LinkedInIcon />
-        Add to LinkedIn
-      </a>
+/** Shows all badges — earned ones in full, unearned as locked. */
+export function BadgeGrid({ earned }: { earned: BadgeData[] }) {
+  return (
+    <div className="grid gap-3">
+      {BADGE_DEFINITIONS.map((def) => {
+        const badge = earned.find((b) => b.badgeType === def.type);
+        return badge ? (
+          <BadgeCard key={badge.id} badge={badge} />
+        ) : (
+          <BadgeCardShell
+            key={def.type}
+            icon={def.icon}
+            name={def.name}
+            subtitle="Locked"
+            description={def.description}
+            locked
+          />
+        );
+      })}
     </div>
   );
 }

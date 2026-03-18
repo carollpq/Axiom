@@ -26,7 +26,7 @@ export function useIncomingPapers(
   const [assignedIds, setAssignedIds] = useState<string[]>([]);
   const [reviewerSearch, setReviewerSearch] = useState('');
   const [deskRejectComment, setDeskRejectComment] = useState('');
-  const [timelineDays] = useState(21);
+  const [timelineDays, setTimelineDays] = useState(21);
   const [isSendingInvites, setIsSendingInvites] = useState(false);
   const [isDeskRejecting, setIsDeskRejecting] = useState(false);
   const [showDeskRejectConfirm, setShowDeskRejectConfirm] = useState(false);
@@ -51,14 +51,24 @@ export function useIncomingPapers(
     if (!selectedId || assignedIds.length === 0) return;
     setIsSendingInvites(true);
 
-    const reviewerWallets = assignedIds.map((id) => {
-      const reviewer = initialReviewerPool.find((r) => r.id === id);
-      return reviewer?.wallet ?? id;
-    });
+    const reviewerWallets = assignedIds
+      .map((id) => initialReviewerPool.find((r) => r.id === id)?.wallet)
+      .filter((w): w is string => !!w);
+
+    if (reviewerWallets.length === 0) {
+      setIsSendingInvites(false);
+      toast.error('No valid reviewers selected');
+      return;
+    }
 
     try {
       await assignReviewersAction(selectedId, reviewerWallets, timelineDays);
+      const sentId = selectedId;
+      setPapers((prev) => prev.filter((p) => p.id !== sentId));
+      setSelectedId(null);
       setAssignedIds([]);
+      setReviewerSearch('');
+      router.refresh();
       toast.success('Reviewer invites sent');
     } catch (err) {
       console.error('[sendInvites] Unexpected error:', err);
@@ -113,6 +123,7 @@ export function useIncomingPapers(
     deskRejectComment,
     setDeskRejectComment,
     timelineDays,
+    setTimelineDays,
     sendInvites,
     submitDeskReject,
     confirmDeskReject,

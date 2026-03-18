@@ -1,6 +1,6 @@
 // Shared type definitions used across multiple domains
-import type { LucideIcon } from "lucide-react";
-import type { Role } from "@/src/features/auth/types";
+import type { LucideIcon } from 'lucide-react';
+import type { Role } from '@/src/features/auth/types';
 
 /** Unified badge color config — replaces StageColorConfig and StatusColor */
 export interface BadgeColorConfig {
@@ -30,6 +30,7 @@ export interface NavItemData {
   label: string;
   href: string;
   icon?: string;
+  badge?: boolean;
 }
 
 /** User profile for TopBar display */

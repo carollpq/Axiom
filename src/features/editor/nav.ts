@@ -20,3 +20,19 @@ export const journalNavItems: NavItemData[] = [
     icon: 'Settings',
   },
 ];
+
+/** Clones static nav items and sets badge flags based on submission counts. */
+export function buildEditorNavItems(counts: {
+  incoming: number;
+  decisionPending: number;
+}): NavItemData[] {
+  return journalNavItems.map((item) => {
+    if (item.href === ROUTES.editor.incoming && counts.incoming > 0) {
+      return { ...item, badge: true };
+    }
+    if (item.href === ROUTES.editor.underReview && counts.decisionPending > 0) {
+      return { ...item, badge: true };
+    }
+    return item;
+  });
+}

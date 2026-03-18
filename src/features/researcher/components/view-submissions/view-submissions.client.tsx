@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { toast } from 'sonner';
@@ -36,9 +36,13 @@ interface SubmissionData {
 
 interface Props {
   submissions: SubmissionData[];
+  ratedReviewIds?: string[];
 }
 
-export function ViewSubmissionsClient({ submissions }: Props) {
+export function ViewSubmissionsClient({
+  submissions,
+  ratedReviewIds = [],
+}: Props) {
   const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | null>(
     submissions[0]?.id ?? null,
@@ -47,6 +51,15 @@ export function ViewSubmissionsClient({ submissions }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const selected = submissions.find((s) => s.id === selectedId);
+
+  // Filter ratedReviewIds to only the selected submission's reviews
+  const ratedIdsSet = useMemo(() => new Set(ratedReviewIds), [ratedReviewIds]);
+  const selectedRatedReviewIds = useMemo(() => {
+    if (!selected) return [];
+    return selected.reviews
+      .filter((r) => ratedIdsSet.has(r.id))
+      .map((r) => r.id);
+  }, [selected, ratedIdsSet]);
 
   const handleAcceptReviews = async () => {
     if (!selected) return;
@@ -96,7 +109,10 @@ export function ViewSubmissionsClient({ submissions }: Props) {
         reviewId,
         body as Parameters<typeof rateReviewerAction>[1],
       );
-      if (result.alreadyRated) return;
+      if (result.alreadyRated) {
+        toast.info('Reviewer already rated');
+        return;
+      }
       toast.success('Rating submitted');
     } catch (err) {
       const message = getErrorMessage(err, 'Rating failed');
@@ -229,6 +245,7 @@ export function ViewSubmissionsClient({ submissions }: Props) {
               {selected.allReviewsComplete && (
                 <ReviewerFeedback
                   reviews={selected.reviews}
+                  ratedReviewIds={selectedRatedReviewIds}
                   onRate={handleRateReviewer}
                 />
               )}

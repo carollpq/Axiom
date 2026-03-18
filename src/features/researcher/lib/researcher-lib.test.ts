@@ -81,6 +81,7 @@ function makeContract(overrides: Partial<Contract> = {}): Contract {
     paperId: 'paper-1',
     status: 'pending_signatures',
     contractHash: null,
+    hederaTxId: null,
     createdAt: '2025-01-01',
     contributors: [makeContractContributor()],
     ...overrides,

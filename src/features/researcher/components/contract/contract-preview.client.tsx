@@ -12,9 +12,7 @@ import { getErrorMessage } from '@/src/shared/lib/errors';
 export function ContractPreview() {
   const { state, actions, meta } = useContractContext();
   const { contributors, isValid, signedCount } = state;
-  const { draft, newTitle, allSigned, selectedContractId, paperId } = meta;
-
-  const title = newTitle;
+  const { draft, allSigned, selectedContractId, paperId } = meta;
   const contractId = selectedContractId;
   const remaining = contributors.length - signedCount;
   const canGenerate = isValid && contributors.length > 0;
@@ -85,7 +83,7 @@ export function ContractPreview() {
             }}
           >
             <div className="text-sm text-[#e8e0d4] italic mb-4">
-              {draft ? draft.title : title || 'Untitled Paper'}
+              {draft?.title ?? 'Select a paper above'}
             </div>
 
             <div className="text-[10px] text-[#6a6050] uppercase tracking-[1px] mb-2.5">

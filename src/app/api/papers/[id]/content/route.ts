@@ -53,7 +53,19 @@ export async function GET(
     );
   }
 
-  const buffer = await getFileFromIPFS(latestVersion.fileStorageKey);
+  let buffer: Buffer;
+  try {
+    buffer = await getFileFromIPFS(latestVersion.fileStorageKey);
+  } catch (err) {
+    console.error(
+      `[papers/${id}/content] IPFS fetch failed for CID ${latestVersion.fileStorageKey}:`,
+      err,
+    );
+    return NextResponse.json(
+      { error: 'Failed to fetch paper content from storage' },
+      { status: 502 },
+    );
+  }
 
   // Return raw PDF bytes when requested (for non-Lit-encrypted viewing)
   if (req.nextUrl.searchParams.get('format') === 'raw') {

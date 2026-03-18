@@ -78,7 +78,7 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
 
   async function handleCreateContract(): Promise<string | null> {
     if (!user) return null;
-    const titleForContract = draft?.title ?? state.newTitle.trim();
+    const titleForContract = draft?.title;
     if (!titleForContract) return null;
 
     const newContract = await createContractAction({
@@ -245,7 +245,7 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
       }
 
       const contractPayload = {
-        paperTitle: draft?.title ?? state.newTitle,
+        paperTitle: draft?.title ?? '',
         contributors: state.contributors.map((c) => ({
           wallet: c.wallet,
           name: c.name,
@@ -305,7 +305,6 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
   return {
     // State
     selectedDraft: state.selectedDraft,
-    newTitle: state.newTitle,
     contributors: state.contributors,
     showAddRow: state.showAddRow,
     showPreview: state.showPreview,
@@ -326,8 +325,6 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
     // Handlers
     setSelectedDraft: (selectedDraft: number | null) =>
       dispatch({ type: 'SET_SELECTED_DRAFT', selectedDraft }),
-    setNewTitle: (newTitle: string) =>
-      dispatch({ type: 'SET_NEW_TITLE', newTitle }),
     setShowAddRow: (showAddRow: boolean) =>
       dispatch({ type: 'SET_SHOW_ADD_ROW', showAddRow }),
     setShowPreview: (showPreview: boolean) =>
@@ -342,7 +339,7 @@ export function useContractBuilder(initialDrafts: ExistingDraft[]) {
         setGenerating(true);
         const id = await handleCreateContract();
         if (!id) {
-          setError('Please select a paper or enter a title first.');
+          setError('Please select a paper first.');
         } else {
           toast.success('Contract created');
         }

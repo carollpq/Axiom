@@ -1,7 +1,4 @@
-// Mock DB to avoid requiring DATABASE_URL in CI
-jest.mock('@/src/shared/lib/db', () => ({ db: {} }));
-
-import { BADGE_DEFINITIONS, type ReviewerStats } from './badge-definitions';
+import { BADGE_DEFINITIONS, type ReviewerStats } from './badge-config';
 
 // Extract check functions by type for targeted testing
 const findBadge = (type: string) =>

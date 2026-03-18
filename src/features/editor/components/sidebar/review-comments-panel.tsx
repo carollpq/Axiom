@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { FORM_CONTROL_STYLE } from '@/src/shared/components/form-styles';
+import { ReviewContentBlock } from '@/src/shared/components/review-content-block';
 import type { ReviewerWithStatus } from '@/src/features/editor/types';
 import { SidebarSection } from '@/src/shared/components/sidebar-section';
 import { ListRow } from '@/src/shared/components/list-row';
@@ -48,43 +49,7 @@ export function ReviewCommentsPanel({ reviewers }: ReviewCommentsPanelProps) {
                   className="mt-1 rounded px-3 py-2.5 space-y-2"
                   style={FORM_CONTROL_STYLE}
                 >
-                  {r.reviewContent.strengths && (
-                    <div>
-                      <div className="text-[9px] text-[#6a6050] uppercase tracking-[1px] mb-0.5">
-                        Strengths
-                      </div>
-                      <p className="text-[11px] text-[#b0a898] leading-relaxed">
-                        {r.reviewContent.strengths}
-                      </p>
-                    </div>
-                  )}
-                  {r.reviewContent.weaknesses && (
-                    <div>
-                      <div className="text-[9px] text-[#6a6050] uppercase tracking-[1px] mb-0.5">
-                        Weaknesses
-                      </div>
-                      <p className="text-[11px] text-[#b0a898] leading-relaxed">
-                        {r.reviewContent.weaknesses}
-                      </p>
-                    </div>
-                  )}
-                  {r.reviewContent.recommendation && (
-                    <div>
-                      <div className="text-[9px] text-[#6a6050] uppercase tracking-[1px] mb-0.5">
-                        Recommendation
-                      </div>
-                      <p className="text-[11px] text-[#b0a898] leading-relaxed">
-                        {r.reviewContent.recommendation}
-                      </p>
-                    </div>
-                  )}
-                  {!r.reviewContent.strengths &&
-                    !r.reviewContent.weaknesses &&
-                    !r.reviewContent.recommendation && (
-                      <p className="text-[11px] text-[#6a6050] italic">
-                        No detailed comments available.
-                      </p>
-                    )}
+                  <ReviewContentBlock content={r.reviewContent} />
                 </div>
               )}
             </div>

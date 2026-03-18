@@ -104,49 +104,49 @@ export async function submitReviewAction(
 
   const editorWallet = assignment.submission.journal?.editorWallet;
 
+  // Anchor to HCS inline so we can return the txId to the client
+  const { txId: hederaTxId } = await anchorToHcs('HCS_TOPIC_REVIEWS', {
+    type: 'review_submitted',
+    reviewHash: input.reviewHash,
+    reviewerWallet: session,
+    submissionId: assignment.submissionId,
+    paperHash: latestVersion?.paperHash ?? null,
+    timestamp: new Date().toISOString(),
+  });
+
+  if (hederaTxId) {
+    await updateReviewHedera(review.id, hederaTxId);
+  }
+
   after(async () => {
-    const [{ txId: hederaTxId }] = await Promise.all([
-      anchorToHcs('HCS_TOPIC_REVIEWS', {
-        type: 'review_submitted',
-        reviewHash: input.reviewHash,
-        reviewerWallet: session,
-        submissionId: assignment.submissionId,
-        paperHash: latestVersion?.paperHash ?? null,
-        timestamp: new Date().toISOString(),
-      }),
+    await Promise.all([
       notifyIfWallet(editorWallet, {
         type: 'review_submitted',
         title: 'Review submitted',
         body: `A reviewer has submitted their review for "${assignment.submission.paper.title}".`,
         link: ROUTES.editor.underReview,
       }),
+      recordReputation(
+        session,
+        'review_completed',
+        1,
+        canonicalJson({
+          reviewId: review.id,
+          submissionId: assignment.submissionId,
+        }),
+        {
+          type: 'review_completed',
+          reviewId: review.id,
+          submissionId: assignment.submissionId,
+        },
+      ),
+      assignment.timelineEnforcerIndex != null
+        ? markDeadlineCompleted(
+            assignment.submissionId,
+            assignment.timelineEnforcerIndex,
+          )
+        : Promise.resolve(),
     ]);
-
-    if (hederaTxId) {
-      await updateReviewHedera(review.id, hederaTxId);
-    }
-
-    await recordReputation(
-      session,
-      'review_completed',
-      1,
-      canonicalJson({
-        reviewId: review.id,
-        submissionId: assignment.submissionId,
-      }),
-      {
-        type: 'review_completed',
-        reviewId: review.id,
-        submissionId: assignment.submissionId,
-      },
-    );
-
-    if (assignment.timelineEnforcerIndex != null) {
-      await markDeadlineCompleted(
-        assignment.submissionId,
-        assignment.timelineEnforcerIndex,
-      );
-    }
 
     const allAssignments = await listReviewAssignmentsForSubmission(
       assignment.submissionId,
@@ -174,7 +174,7 @@ export async function submitReviewAction(
     }
   });
 
-  return { reviewId: review.id };
+  return { reviewId: review.id, hederaTxId: hederaTxId ?? null };
 }
 
 // ---------------------------------------------------------------------------

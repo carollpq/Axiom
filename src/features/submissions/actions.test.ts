@@ -83,6 +83,10 @@ jest.mock('@/src/features/notifications/mutations', () => ({
   notifyIfWallet: mockNotifyIfWallet,
 }));
 
+jest.mock('next/cache', () => ({
+  revalidatePath: jest.fn(),
+}));
+
 jest.mock('@/src/shared/lib/routes', () => ({
   ROUTES: {
     researcher: { root: '/researcher', rebuttal: () => '/researcher/rebuttal' },

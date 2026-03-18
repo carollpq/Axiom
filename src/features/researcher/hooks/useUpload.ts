@@ -10,7 +10,6 @@ import { uploadToIPFS } from '@/src/features/researcher/upload';
 import {
   createPaperAction,
   registerVersionAction,
-  updatePaperAction,
 } from '@/src/features/papers/actions';
 import {
   uploadReducer,
@@ -152,8 +151,6 @@ export function useUpload(
         codeCommitHash: null,
         envSpecHash: null,
       });
-
-      await updatePaperAction(paper.id, { status: 'registered' });
 
       dispatch({ type: 'REGISTER_SUCCESS', paperId: paper.id });
       toast.success('Paper registered successfully');

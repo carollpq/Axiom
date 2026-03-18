@@ -22,15 +22,15 @@ export function Login() {
   const showRolePicker =
     isConnected && !!account?.address && userRoles.length > 1;
 
-  // Redirect only if user has no roles yet (new user).
-  // Users with 1-2 roles stay on login to select/add roles.
-  // Users with 3 roles must use the role picker.
   useEffect(() => {
     if (loading || !isConnected || !account?.address || !user) return;
 
     if (userRoles.length === 0) {
       router.push(ROUTES.register);
+    } else if (userRoles.length === 1) {
+      router.push(ROLE_DASHBOARD_ROUTES[userRoles[0]]);
     }
+    // Users with 2+ roles see the role picker
   }, [loading, isConnected, account?.address, user, router, userRoles]);
 
   return (

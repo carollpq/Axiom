@@ -1,6 +1,10 @@
-export type CriterionRating = "Yes" | "No" | "Partially";
+export type CriterionRating = 'Yes' | 'No' | 'Partially';
 
-export type Recommendation = "Accept" | "Minor Revisions" | "Major Revisions" | "Reject";
+export type Recommendation =
+  | 'Accept'
+  | 'Minor Revisions'
+  | 'Major Revisions'
+  | 'Reject';
 
 export interface ProvenanceEntry {
   label: string;
@@ -40,7 +44,7 @@ export interface GeneralComments {
 }
 
 export interface SubmissionResult {
-  txHash: string;
+  txHash: string | null;
   timestamp: string;
   paperHash: string;
   reviewHash: string;

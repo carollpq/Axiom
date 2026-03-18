@@ -31,10 +31,10 @@ interface ContractContextActions {
 
 interface ContractContextMeta {
   draft: ExistingDraft | undefined;
-  newTitle: string;
   allSigned: boolean;
   selectedContractId: string | null;
   paperId: string | undefined;
+  hederaTxId: string | null;
 }
 
 export interface ContractContextValue {
