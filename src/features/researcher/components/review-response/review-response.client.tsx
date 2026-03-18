@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { ReviewContent, type ReviewCriterion } from './review-content';
 import { ReviewerRatingCard } from './reviewer-rating-card.client';
 import { AlertBanner } from '@/src/shared/components/alert-banner';
+import { RatedBadge } from '@/src/shared/components/rated-badge';
 import { rateReviewerAction } from '@/src/features/reviews/actions';
 import { authorResponseAction } from '@/src/features/submissions/actions';
 import { ROUTES } from '@/src/shared/lib/routes';
@@ -21,6 +22,7 @@ interface Props {
   paperTitle: string;
   journalName: string;
   reviews: AnonymizedReview[];
+  ratedReviewIds: string[];
   criteria: ReviewCriterion[];
 }
 
@@ -29,11 +31,15 @@ export function ReviewResponseClient({
   paperTitle,
   journalName,
   reviews,
+  ratedReviewIds,
   criteria,
 }: Props) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ratedIds] = useState<Set<string>>(() => new Set(ratedReviewIds));
+
+  const unratedReviews = reviews.filter((r) => !ratedIds.has(r.id));
 
   // Per-review ratings state (lazy initializers avoid re-computing on every render)
   const [ratings, setRatings] = useState<Record<string, ProtocolRatings>>(() =>
@@ -59,17 +65,15 @@ export function ReviewResponseClient({
     setError(null);
 
     try {
-      // Submit ratings for each review
+      // Submit ratings for unrated reviews only
       await Promise.all(
-        reviews.map(async (r) => {
+        unratedReviews.map(async (r) => {
           const body: Record<string, unknown> = { ...ratings[r.id] };
           if (comments[r.id]?.trim()) body.comment = comments[r.id].trim();
-          const result = await rateReviewerAction(
+          await rateReviewerAction(
             r.id,
             body as Parameters<typeof rateReviewerAction>[1],
           );
-          // Ignore "already rated" — proceed with author response
-          if (result.alreadyRated) return;
         }),
       );
 
@@ -100,8 +104,9 @@ export function ReviewResponseClient({
       {error && <AlertBanner variant="error">{error}</AlertBanner>}
 
       <p className="text-[12px] text-[#6a6050] mb-6">
-        All reviews are complete. Please rate each reviewer and then accept the
-        reviews or request a rebuttal.
+        {unratedReviews.length > 0
+          ? 'All reviews are complete. Please rate each reviewer and then accept the reviews or request a rebuttal.'
+          : 'All reviewers have been rated. Accept the reviews or request a rebuttal.'}
       </p>
 
       {reviews.map((review) => (
@@ -124,15 +129,21 @@ export function ReviewResponseClient({
             label={review.label}
           />
 
-          <ReviewerRatingCard
-            reviewId={review.id}
-            ratings={ratings[review.id]}
-            comment={comments[review.id] ?? ''}
-            onRatingChange={(key, value) => updateRating(review.id, key, value)}
-            onCommentChange={(value) =>
-              setComments((prev) => ({ ...prev, [review.id]: value }))
-            }
-          />
+          {ratedIds.has(review.id) ? (
+            <RatedBadge className="mt-4" />
+          ) : (
+            <ReviewerRatingCard
+              reviewId={review.id}
+              ratings={ratings[review.id]}
+              comment={comments[review.id] ?? ''}
+              onRatingChange={(key, value) =>
+                updateRating(review.id, key, value)
+              }
+              onCommentChange={(value) =>
+                setComments((prev) => ({ ...prev, [review.id]: value }))
+              }
+            />
+          )}
         </div>
       ))}
 
