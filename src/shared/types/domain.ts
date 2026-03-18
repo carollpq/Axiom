@@ -33,6 +33,7 @@ export interface Contract {
   paperId: string | null;
   status: string;
   contractHash: string | null;
+  hederaTxId: string | null;
   createdAt: string;
   contributors: ContractContributor[];
 }

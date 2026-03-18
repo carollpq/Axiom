@@ -27,7 +27,7 @@ export function ContributorRow({
   contributor: c,
   isLast,
 }: ContributorRowProps) {
-  const { state, actions } = useContractContext();
+  const { state, actions, meta } = useContractContext();
   const isCurrentUser = c.wallet === state.currentUserWallet;
   const canSign = state.isValid && !state.disabled;
 
@@ -92,7 +92,7 @@ export function ContributorRow({
               <span className="text-[#8fbc8f] text-[13px]">{'\u2713'}</span>
               <span className="text-[11px] text-[#8fbc8f]">Signed</span>
             </div>
-            {c.txHash && (
+            {meta.hederaTxId && (
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span
                   className="text-[8px] uppercase px-1 py-px rounded-sm"
@@ -100,7 +100,7 @@ export function ContributorRow({
                 >
                   On-chain
                 </span>
-                <HashScanLink txId={c.txHash} />
+                <HashScanLink txId={meta.hederaTxId} />
               </div>
             )}
           </div>

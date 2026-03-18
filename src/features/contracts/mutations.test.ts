@@ -76,6 +76,7 @@ jest.mock('@/src/shared/lib/db/schema', () => ({
 jest.mock('drizzle-orm', () => ({
   eq: jest.fn((a: unknown, b: unknown) => ({ _eq: [a, b] })),
   and: jest.fn((...args: unknown[]) => ({ _and: args })),
+  inArray: jest.fn((a: unknown, b: unknown) => ({ _inArray: [a, b] })),
 }));
 
 const mockGetUserByWallet = jest.fn();

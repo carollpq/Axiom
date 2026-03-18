@@ -18,8 +18,12 @@ import { getPaperById, requirePaperOwner } from '@/src/features/papers/queries';
 import { getContractById } from '@/src/features/contracts/queries';
 import { getUserByWallet } from '@/src/features/users/queries';
 import { db } from '@/src/shared/lib/db';
-import { paperVersions, type PaperStatusDb } from '@/src/shared/lib/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import {
+  papers,
+  paperVersions,
+  type PaperStatusDb,
+} from '@/src/shared/lib/db/schema';
+import { and, eq, desc } from 'drizzle-orm';
 import { SHA256_REGEX } from '@/src/shared/lib/validation';
 import {
   STUDY_TYPE_VALUES,
@@ -125,6 +129,20 @@ export async function registerVersionAction(
 
   const version = await createPaperVersion(parsed);
   if (!version) throw new Error('Paper not found');
+
+  // Auto-advance draft papers to registered (atomic, race-safe)
+  await db
+    .update(papers)
+    .set({
+      status: 'registered' as PaperStatusDb,
+      updatedAt: new Date().toISOString(),
+    })
+    .where(
+      and(
+        eq(papers.id, parsed.paperId),
+        eq(papers.status, 'draft' as PaperStatusDb),
+      ),
+    );
 
   // Anchor on Hedera HCS
   const { txId, consensusTimestamp } = await anchorToHcs('HCS_TOPIC_PAPERS', {

@@ -87,16 +87,6 @@ describe('contractBuilderReducer', () => {
     });
   });
 
-  describe('SET_NEW_TITLE', () => {
-    it('sets newTitle', () => {
-      const result = contractBuilderReducer(initialState, {
-        type: 'SET_NEW_TITLE',
-        newTitle: 'My Paper',
-      });
-      expect(result.newTitle).toBe('My Paper');
-    });
-  });
-
   describe('UPDATE_CONTRIBUTOR', () => {
     it('updates pct for existing contributor', () => {
       const state = stateWith({

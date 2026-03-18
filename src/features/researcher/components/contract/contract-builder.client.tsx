@@ -21,7 +21,6 @@ export function ContractBuilderClient({
 }: ContractBuilderClientProps) {
   const {
     selectedDraft,
-    newTitle,
     contributors,
     showAddRow,
     showInviteModal,
@@ -38,7 +37,6 @@ export function ContractBuilderClient({
     drafts,
     currentUserWallet,
     setSelectedDraft,
-    setNewTitle,
     setShowAddRow,
     generating,
     updateContributor,
@@ -74,10 +72,10 @@ export function ContractBuilderClient({
       },
       meta: {
         draft,
-        newTitle,
         allSigned,
         selectedContractId: selectedContractId ?? null,
         paperId: draft?.dbId,
+        hederaTxId: draft?.hederaTxId ?? null,
       },
     }),
     [
@@ -98,7 +96,6 @@ export function ContractBuilderClient({
       setShowAddRow,
       generateContract,
       draft,
-      newTitle,
       allSigned,
       selectedContractId,
     ],
@@ -115,12 +112,10 @@ export function ContractBuilderClient({
 
         <PaperSelection
           selectedDraft={selectedDraft}
-          newTitle={newTitle}
           drafts={drafts}
           draft={draft}
           disabled={generating}
           onSelectDraft={setSelectedDraft}
-          onNewTitle={setNewTitle}
         />
 
         <ContractContext value={contextValue}>

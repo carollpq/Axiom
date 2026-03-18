@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import type {
   ExistingDraft,
   ContractContributorView,
+  ContractWithStatus,
 } from '@/src/features/researcher/types/contract';
 import { ContractsStatus } from './contracts-status';
 
@@ -31,14 +32,6 @@ interface ContractForSigning {
   id: string;
   paperTitle: string;
   contributors: (ContractContributorView & { wallet: string })[];
-}
-
-interface ContractWithStatus {
-  id: string;
-  paperTitle: string;
-  allSigned: boolean;
-  pendingCount: number;
-  contributors: ContractContributorView[];
 }
 
 interface Props {

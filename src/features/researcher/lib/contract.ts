@@ -62,6 +62,7 @@ export function mapApiPapersToDrafts(
         registered:
           p.status === 'registered' || p.status === 'contract_pending',
         contractId: match?.id,
+        hederaTxId: match?.hederaTxId ?? null,
         contributors: match?.contributors.length
           ? mapApiContributors(match.contributors)
           : undefined,
@@ -109,6 +110,7 @@ export function mapOwnedContractsForStatus(contracts: Contract[]) {
       id: c.id,
       paperTitle: c.paperTitle,
       allSigned: c.status === 'fully_signed',
+      hederaTxId: c.hederaTxId ?? null,
       pendingCount,
       contributors: c.contributors.map(mapContributorSummary),
     };

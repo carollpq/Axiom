@@ -58,17 +58,22 @@ jest.mock('@/src/shared/lib/hedera/hcs', () => ({
   anchorToHcs: mockAnchorToHcs,
 }));
 
-// Mock db for submitPaperAction's version lookup
+// Mock db for submitPaperAction's version lookup and registerVersionAction's status update
 const mockDbSelectLimit = jest.fn();
 const mockDbSelectOrderBy = jest.fn(() => ({ limit: mockDbSelectLimit }));
 const mockDbSelectWhere = jest.fn(() => ({ orderBy: mockDbSelectOrderBy }));
 const mockDbSelectFrom = jest.fn(() => ({ where: mockDbSelectWhere }));
+const mockDbUpdateWhere = jest.fn().mockResolvedValue(undefined);
+const mockDbUpdateSet = jest.fn(() => ({ where: mockDbUpdateWhere }));
 jest.mock('@/src/shared/lib/db', () => ({
-  db: { select: jest.fn(() => ({ from: mockDbSelectFrom })) },
+  db: {
+    select: jest.fn(() => ({ from: mockDbSelectFrom })),
+    update: jest.fn(() => ({ set: mockDbUpdateSet })),
+  },
 }));
 jest.mock('@/src/shared/lib/db/schema', () => ({
   paperVersions: { paperId: 'paperId', versionNumber: 'versionNumber' },
-  papers: {},
+  papers: { id: 'id', status: 'status' },
   STUDY_TYPE_VALUES: [
     'original',
     'negative_result',
@@ -78,6 +83,7 @@ jest.mock('@/src/shared/lib/db/schema', () => ({
   ],
 }));
 jest.mock('drizzle-orm', () => ({
+  and: jest.fn(),
   eq: jest.fn(),
   desc: jest.fn(),
 }));

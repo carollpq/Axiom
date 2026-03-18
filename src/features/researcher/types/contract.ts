@@ -22,6 +22,7 @@ export interface ExistingDraft {
   hash: string;
   registered: boolean; // true if paper has been uploaded & hashed
   contractId?: string; // DB UUID of the matching authorship contract, if one exists
+  hederaTxId?: string | null; // Hedera HCS transaction ID for the fully-signed contract
   contributors?: Contributor[]; // pre-mapped contributors for that contract
 }
 
@@ -32,6 +33,16 @@ export interface ContractContributorView {
   pct: number;
   status: string;
   wallet?: string;
+}
+
+/** Contract summary with signing status for the "Your Contracts Status" tab. */
+export interface ContractWithStatus {
+  id: string;
+  paperTitle: string;
+  allSigned: boolean;
+  hederaTxId: string | null;
+  pendingCount: number;
+  contributors: ContractContributorView[];
 }
 
 export interface KnownUser {
