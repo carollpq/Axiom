@@ -16,6 +16,10 @@ export const metadata: Metadata = {
   title: 'Axiom',
   description:
     'Blockchain-backed academic peer review. Fair, transparent, accountable.',
+  icons: {
+    icon: '/axiom-logo.png',
+    apple: '/axiom-logo.png',
+  },
 };
 
 export default function RootLayout({

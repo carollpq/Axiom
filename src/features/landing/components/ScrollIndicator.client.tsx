@@ -29,7 +29,7 @@ export function ScrollIndicator() {
         className="text-xs tracking-[0.2em] uppercase"
         style={{
           fontFamily: 'var(--font-tinos), Times New Roman, serif',
-          color: 'rgba(212, 204, 192, 0.7)',
+          color: 'rgba(212, 204, 192, 0.9)',
         }}
       >
         Scroll
@@ -43,7 +43,7 @@ export function ScrollIndicator() {
       >
         <path
           d="M8 0 L8 20 M2 14 L8 20 L14 14"
-          stroke="rgba(212, 204, 192, 0.6)"
+          stroke="rgba(212, 204, 192, 0.8)"
           strokeWidth="1.5"
           strokeLinecap="round"
           strokeLinejoin="round"

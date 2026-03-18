@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { LandingButton } from './LandingButton';
 
 const NAV_LINKS = [
@@ -11,16 +12,14 @@ export function LandingNav() {
   return (
     <nav className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-10 py-6">
       {/* Logo */}
-      <span
-        className="text-lg tracking-wide"
-        style={{
-          fontFamily: 'var(--font-tinos), Times New Roman, serif',
-          color: '#ffffff',
-          opacity: 0.8,
-        }}
-      >
-        Logo
-      </span>
+      <Image
+        src="/axiom-logo.png"
+        alt="Axiom"
+        width={120}
+        height={40}
+        className="h-8 w-auto sm:h-10"
+        priority
+      />
 
       {/* Center links */}
       <ul className="absolute left-1/2 -translate-x-1/2 flex items-center gap-10">

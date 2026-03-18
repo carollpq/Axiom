@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { LandingButton } from './LandingButton';
 
 const NAV_LINKS = [
@@ -39,17 +40,20 @@ export function LandingNav() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 pt-6 pb-4 sm:px-8 md:px-10 md:pt-10 md:pb-6">
       {/* Logo */}
-      <span
-        className="text-base tracking-wide sm:text-lg"
+      <div
         style={{
-          fontFamily: 'var(--font-tinos), Times New Roman, serif',
-          color: '#ffffff',
-          opacity: 0.8,
           animation: 'hero-fade-up 0.6s var(--landing-ease) 0.3s both',
         }}
       >
-        Logo
-      </span>
+        <Image
+          src="/axiom-logo.png"
+          alt="Axiom"
+          width={120}
+          height={40}
+          className="h-8 w-auto sm:h-10"
+          priority
+        />
+      </div>
 
       {/* Center links — hidden on mobile */}
       <ul className="absolute left-1/2 -translate-x-1/2 hidden items-center gap-10 md:flex">
