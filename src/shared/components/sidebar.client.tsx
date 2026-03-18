@@ -23,7 +23,10 @@ import {
   SIDEBAR_WIDTH_EXPANDED,
   SIDEBAR_WIDTH_COLLAPSED,
 } from '@/src/shared/context/sidebar-context.client';
+import type { CSSProperties } from 'react';
 import type { NavItemData, UserProfile } from '@/src/shared/types/shared';
+
+const BADGE_DOT_STYLE: CSSProperties = { background: '#d4645a' };
 
 const ICON_MAP: Record<string, LucideIcon> = {
   LayoutDashboard,
@@ -70,16 +73,31 @@ function NavItem({
       }}
     >
       {Icon && (
-        <Icon
-          size={20}
-          style={{ color: active ? '#c9a44a' : '#7a7a7a', flexShrink: 0 }}
-        />
+        <span className="relative flex-shrink-0">
+          <Icon size={20} style={{ color: active ? '#c9a44a' : '#7a7a7a' }} />
+          {collapsed && item.badge && (
+            <span
+              className="absolute -top-1 -right-1 block h-2 w-2 rounded-full"
+              style={BADGE_DOT_STYLE}
+            />
+          )}
+        </span>
       )}
-      {!collapsed && <span className="truncate">{item.label}</span>}
+      {!collapsed && (
+        <>
+          <span className="truncate">{item.label}</span>
+          {item.badge && (
+            <span
+              className="ml-auto block h-2 w-2 flex-shrink-0 rounded-full"
+              style={BADGE_DOT_STYLE}
+            />
+          )}
+        </>
+      )}
 
       {/* Tooltip — always in DOM, visible only when collapsed + hovered */}
       <span
-        className={`pointer-events-none absolute left-full ml-2 whitespace-nowrap rounded px-2 py-1 text-xs transition-opacity duration-150 ${collapsed ? 'opacity-0 group-hover:opacity-100' : 'invisible opacity-0'}`}
+        className={`pointer-events-none absolute left-full ml-2 flex items-center gap-1.5 whitespace-nowrap rounded px-2 py-1 text-xs transition-opacity duration-150 ${collapsed ? 'opacity-0 group-hover:opacity-100' : 'invisible opacity-0'}`}
         style={{
           background: 'rgba(35,32,28,0.98)',
           color: '#c9b89e',
@@ -88,6 +106,12 @@ function NavItem({
         }}
       >
         {item.label}
+        {item.badge && (
+          <span
+            className="inline-block h-2 w-2 rounded-full"
+            style={BADGE_DOT_STYLE}
+          />
+        )}
       </span>
     </Link>
   );

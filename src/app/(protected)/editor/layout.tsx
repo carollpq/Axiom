@@ -6,9 +6,16 @@ import { redirect } from 'next/navigation';
 import { RoleShell } from '@/src/shared/components';
 import { getSession } from '@/src/shared/lib/auth/auth';
 import { getUserByWallet } from '@/src/features/users/queries';
-import { journalNavItems } from '@/src/features/editor/nav';
+import {
+  journalNavItems,
+  buildEditorNavItems,
+} from '@/src/features/editor/nav';
 import { buildUserProfile } from '@/src/features/users/lib';
 import { ROUTES, ROLE_DASHBOARD_ROUTES } from '@/src/shared/lib/routes';
+import {
+  getJournalByEditorWallet,
+  getEditorNavCounts,
+} from '@/src/features/editor/queries';
 
 export default async function JournalLayout({
   children,
@@ -28,8 +35,13 @@ export default async function JournalLayout({
 
   const profile = buildUserProfile(wallet, user, 'editor');
 
+  const journal = await getJournalByEditorWallet(wallet);
+  const navItems = journal
+    ? buildEditorNavItems(await getEditorNavCounts(journal.id))
+    : journalNavItems;
+
   return (
-    <RoleShell navItems={journalNavItems} user={profile}>
+    <RoleShell navItems={navItems} user={profile}>
       {children}
     </RoleShell>
   );
