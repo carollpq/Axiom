@@ -2,12 +2,13 @@ import { redirect } from 'next/navigation';
 import { getSession } from '@/src/shared/lib/auth/auth';
 import { getUserByWallet } from '@/src/features/users/queries';
 import { ROUTES, ROLE_DASHBOARD_ROUTES } from '@/src/shared/lib/routes';
+import { LandingPage } from '@/src/features/landing/components/LandingPage';
 
 export default async function RootPage() {
   const wallet = await getSession();
 
   if (!wallet) {
-    redirect(ROUTES.login);
+    return <LandingPage />;
   }
 
   const user = await getUserByWallet(wallet);
