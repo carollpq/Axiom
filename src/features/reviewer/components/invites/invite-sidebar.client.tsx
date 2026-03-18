@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/src/shared/components/confirm-dialog.client';
 import { acceptAssignmentAction } from '@/src/features/submissions/actions';
+import { ROUTES } from '@/src/shared/lib/routes';
 import type { AssignedReviewExtended } from '@/src/features/reviewer/types/dashboard';
 import {
   getUrgencyColor,
@@ -32,7 +33,11 @@ export function InviteSidebar({ paper, onRemove }: InviteSidebarProps) {
       try {
         await acceptAssignmentAction(paper.submissionId, action);
         onRemove(paper.submissionId);
-        router.refresh();
+        if (action === 'accept') {
+          router.push(ROUTES.reviewer.assigned);
+        } else {
+          router.refresh();
+        }
         toast.success(
           action === 'accept' ? 'Invitation accepted' : 'Invitation declined',
         );

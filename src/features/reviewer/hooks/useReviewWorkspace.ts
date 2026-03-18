@@ -131,7 +131,7 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
       const reviewHash = await sha256(canonicalJson(reviewPayload));
 
       try {
-        await submitReviewAction(assignment.id, {
+        const result = await submitReviewAction(assignment.id, {
           criteriaEvaluations: reviewPayload.evaluations,
           strengths: reviewPayload.strengths,
           weaknesses: reviewPayload.weaknesses,
@@ -147,7 +147,7 @@ export function useReviewWorkspace(assignment: ReviewAssignmentLike) {
         toast.success('Review submitted successfully');
         setIsSubmitted(true);
         setSubmissionResult({
-          txHash: 'pending',
+          txHash: result.hederaTxId,
           timestamp: formatDate(new Date().toISOString(), 'datetime'),
           paperHash: truncate(paper.provenance[0]?.hash ?? '', 16),
           reviewHash: truncate(reviewHash, 16),
