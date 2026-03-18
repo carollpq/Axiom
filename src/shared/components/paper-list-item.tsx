@@ -3,6 +3,7 @@ export interface PaperListItemData {
   title: string;
   authors?: string;
   abstractSnippet?: string;
+  status?: string;
 }
 
 interface PaperListItemProps {
@@ -27,8 +28,22 @@ export function PaperListItem({
         borderBottom: '1px solid rgba(120,110,95,0.1)',
       }}
     >
-      <div className="font-serif text-sm text-[#e8e0d4] mb-1 leading-snug">
-        {paper.title}
+      <div className="flex items-start justify-between gap-2 mb-1">
+        <div className="font-serif text-sm text-[#e8e0d4] leading-snug">
+          {paper.title}
+        </div>
+        {paper.status === 'published' && (
+          <span
+            className="shrink-0 text-[10px] font-serif px-2 py-0.5 rounded-full"
+            style={{
+              background: 'rgba(120,180,120,0.2)',
+              border: '1px solid rgba(120,180,120,0.4)',
+              color: '#8fbc8f',
+            }}
+          >
+            Published
+          </span>
+        )}
       </div>
       {paper.authors && (
         <div className="text-[11px] text-[#8a8070] mb-2">{paper.authors}</div>

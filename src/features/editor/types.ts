@@ -61,6 +61,7 @@ export interface PaperCardData {
   fileUrl?: string;
   criteriaPublished: boolean;
   criteriaTxId?: string;
+  status?: 'accepted' | 'published';
 }
 
 export type AssignmentDisplayStatus =

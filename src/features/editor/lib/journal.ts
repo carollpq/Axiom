@@ -170,6 +170,10 @@ export function mapDbToPaperCardData(s: DbJournalSubmission): PaperCardData {
         : undefined,
     criteriaPublished: (s.reviewCriteria?.length ?? 0) > 0,
     criteriaTxId: s.criteriaTxId ?? undefined,
+    status:
+      s.status === 'published' || s.status === 'accepted'
+        ? s.status
+        : undefined,
   };
 }
 
