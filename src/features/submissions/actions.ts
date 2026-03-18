@@ -3,6 +3,7 @@
 'use server';
 
 import { after } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { db } from '@/src/shared/lib/db';
 import {
   reviewAssignments,
@@ -82,6 +83,8 @@ export async function publishCriteriaAction(
   });
 
   if (!result) throw new Error('Failed to publish criteria');
+
+  revalidatePath('/editor', 'layout');
 
   const authorWallet = submission.paper?.owner?.walletAddress;
 
@@ -163,6 +166,7 @@ export async function assignReviewersAction(
   );
 
   await updateSubmissionStatus(submissionId, 'reviewers_assigned');
+  revalidatePath('/editor', 'layout');
   const allAssignments = [...existing, ...created.filter(Boolean)];
 
   // Update Lit access conditions to add reviewer wallets
@@ -252,52 +256,63 @@ export async function makeDecisionAction(
   const session = await requireSession();
   const submission = await requireSubmissionEditor(submissionId, session);
 
-  // State guard: only after reviews are complete
-  const validDecisionStates: SubmissionStatusDb[] = [
+  const validated = decisionSchema.parse(input);
+
+  // State guard: desk reject allowed at any stage; other decisions require reviews
+  const deskRejectStates: SubmissionStatusDb[] = [
+    'submitted',
+    'viewed_by_editor',
+    'criteria_published',
+    'reviewers_assigned',
+  ];
+  const postReviewStates: SubmissionStatusDb[] = [
     'reviews_completed',
     'rebuttal_open',
     'under_review',
   ];
-  if (!validDecisionStates.includes(submission.status as SubmissionStatusDb)) {
+  const status = submission.status as SubmissionStatusDb;
+  const isDeskReject =
+    validated.decision === 'reject' && deskRejectStates.includes(status);
+  if (!isDeskReject && !postReviewStates.includes(status)) {
     throw new Error('Decision can only be made after reviews are complete');
   }
 
-  const validated = decisionSchema.parse(input);
-
-  // Server-side allCriteriaMet computation
-  const [reviewsList, publishedCriteria] = await Promise.all([
-    listReviewsForSubmission(submissionId),
-    getPublishedCriteria(submissionId),
-  ]);
-
-  // TODO: Extract allCriteriaMet computation to a shared helper (e.g. reviews/lib.ts)
-  // so it can be reused by future consumers (cron jobs, rebuttal resolution, etc.)
+  // Server-side allCriteriaMet computation (skip for desk rejects — no reviews exist yet)
   let allCriteriaMet = false;
-  if (publishedCriteria?.criteriaJson) {
-    const criteria = JSON.parse(publishedCriteria.criteriaJson) as Array<{
-      id: string;
-      required: boolean;
-    }>;
-    const requiredIds = criteria.filter((c) => c.required).map((c) => c.id);
+  if (!isDeskReject) {
+    const [reviewsList, publishedCriteria] = await Promise.all([
+      listReviewsForSubmission(submissionId),
+      getPublishedCriteria(submissionId),
+    ]);
 
-    allCriteriaMet = reviewsList.every((review) => {
-      if (!review.criteriaEvaluations) return false;
-      const evals = JSON.parse(review.criteriaEvaluations) as Record<
-        string,
-        { value: string }
-      >;
-      return requiredIds.every((id) => evals[id]?.value === 'yes');
-    });
-  }
+    // TODO: Extract allCriteriaMet computation to a shared helper (e.g. reviews/lib.ts)
+    // so it can be reused by future consumers (cron jobs, rebuttal resolution, etc.)
+    if (publishedCriteria?.criteriaJson) {
+      const criteria = JSON.parse(publishedCriteria.criteriaJson) as Array<{
+        id: string;
+        required: boolean;
+      }>;
+      const requiredIds = criteria.filter((c) => c.required).map((c) => c.id);
 
-  if (
-    validated.decision === 'reject' &&
-    allCriteriaMet &&
-    !validated.comment?.trim()
-  ) {
-    throw new Error(
-      'A public justification comment is required when rejecting a paper that meets all criteria',
-    );
+      allCriteriaMet = reviewsList.every((review) => {
+        if (!review.criteriaEvaluations) return false;
+        const evals = JSON.parse(review.criteriaEvaluations) as Record<
+          string,
+          { value: string }
+        >;
+        return requiredIds.every((id) => evals[id]?.value === 'yes');
+      });
+    }
+
+    if (
+      validated.decision === 'reject' &&
+      allCriteriaMet &&
+      !validated.comment?.trim()
+    ) {
+      throw new Error(
+        'A public justification comment is required when rejecting a paper that meets all criteria',
+      );
+    }
   }
 
   const newStatus = STATUS_MAP[validated.decision];
@@ -307,6 +322,8 @@ export async function makeDecisionAction(
     decisionJustification: validated.comment ?? null,
     decidedAt: new Date().toISOString(),
   });
+
+  revalidatePath('/editor', 'layout');
 
   const authorWallet = submission.paper?.owner?.walletAddress;
   const decisionLabel =
@@ -417,6 +434,8 @@ export async function markViewedAction(submissionId: string) {
 
   await updateSubmissionStatus(submissionId, 'viewed_by_editor');
 
+  revalidatePath('/editor', 'layout');
+
   const authorWallet = submission.paper.owner?.walletAddress;
 
   after(async () => {
@@ -519,6 +538,7 @@ export async function acceptAssignmentAction(
 
   if (shouldTransitionToUnderReview) {
     await updateSubmissionStatus(submissionId, 'under_review');
+    revalidatePath('/editor', 'layout');
   }
 
   after(async () => {
@@ -587,6 +607,8 @@ export async function authorResponseAction(
       authorResponseAt: now,
     });
 
+    revalidatePath('/editor', 'layout');
+
     after(async () => {
       const [{ txId }] = await Promise.all([
         anchorToHcs('HCS_TOPIC_SUBMISSIONS', {
@@ -619,6 +641,8 @@ export async function authorResponseAction(
     authorResponseStatus: 'rebuttal_requested',
     authorResponseAt: now,
   });
+
+  revalidatePath('/editor', 'layout');
 
   const rebuttal = await openRebuttal({
     submissionId,
@@ -680,6 +704,8 @@ export async function publishPaperAction(submissionId: string) {
   }
 
   await updateSubmissionStatus(submissionId, 'published');
+
+  revalidatePath('/editor', 'layout');
 
   const authorWallet = submission.paper?.owner?.walletAddress;
 

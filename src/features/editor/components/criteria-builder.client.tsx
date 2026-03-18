@@ -8,11 +8,13 @@ import { SectionLabel } from '@/src/shared/components/section-label';
 import { Button } from '@/src/shared/components/button.client';
 import { publishCriteriaAction } from '@/src/features/submissions/actions';
 import { getErrorMessage } from '@/src/shared/lib/errors';
+import { HashScanLink } from '@/src/shared/components/hashscan-link';
 import type { ReviewCriterionInput } from '@/src/features/submissions/types';
 
 interface CriteriaBuilderProps {
   submissionId: string;
   alreadyPublished?: boolean;
+  criteriaTxId?: string;
   onPublished?: (criteriaHash: string) => void;
 }
 
@@ -28,6 +30,7 @@ function newCriterion(): ReviewCriterionInput {
 export function CriteriaBuilder({
   submissionId,
   alreadyPublished = false,
+  criteriaTxId,
   onPublished,
 }: CriteriaBuilderProps) {
   const [criteria, setCriteria] = useState<ReviewCriterionInput[]>([
@@ -91,6 +94,14 @@ export function CriteriaBuilder({
           }}
         >
           Criteria published on-chain. Immutable for this submission.
+          {criteriaTxId && (
+            <div className="mt-2 flex items-center gap-1.5">
+              <span className="text-[10px]" style={{ color: '#6a6050' }}>
+                TX:
+              </span>
+              <HashScanLink txId={criteriaTxId} />
+            </div>
+          )}
         </div>
       </div>
     );

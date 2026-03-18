@@ -60,6 +60,7 @@ export interface PaperCardData {
   hasLitData: boolean;
   fileUrl?: string;
   criteriaPublished: boolean;
+  criteriaTxId?: string;
 }
 
 export type AssignmentDisplayStatus =

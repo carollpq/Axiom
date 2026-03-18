@@ -15,6 +15,7 @@ interface AssignReviewersPanelProps {
   onAssign: (id: string) => void;
   onRemove: (id: string) => void;
   timelineDays: number;
+  onTimelineChange?: (days: number) => void;
   actionLabel?: string;
   onAction?: () => void;
   isLoading?: boolean;
@@ -28,6 +29,7 @@ export function AssignReviewersPanel({
   onAssign,
   onRemove,
   timelineDays,
+  onTimelineChange,
   actionLabel = 'Send Invites',
   onAction,
   isLoading = false,
@@ -169,17 +171,45 @@ export function AssignReviewersPanel({
       </div>
 
       {/* Timeline + action */}
-      <div className="mt-3 flex items-center gap-2">
-        <ListRow className="px-3 py-2 text-[11px] text-[#8a8070] font-serif">
-          Assigned Timeline: {timelineDays} days
-        </ListRow>
+      <div className="mt-3 space-y-2">
+        <div className="flex items-center gap-2">
+          <label className="text-[11px] text-[#8a8070] font-serif whitespace-nowrap">
+            Review Deadline:
+          </label>
+          {onTimelineChange ? (
+            <div className="flex items-center gap-1.5">
+              <input
+                type="number"
+                min={7}
+                max={90}
+                value={timelineDays}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value, 10);
+                  if (!isNaN(v)) onTimelineChange(Math.max(7, Math.min(90, v)));
+                }}
+                className="w-14 px-2 py-1 rounded text-[11px] font-serif text-[#d4ccc0] text-center"
+                style={{
+                  background: 'rgba(30,28,24,0.6)',
+                  border: '1px solid rgba(120,110,95,0.25)',
+                }}
+              />
+              <span className="text-[11px] text-[#8a8070] font-serif">
+                days
+              </span>
+            </div>
+          ) : (
+            <span className="text-[11px] text-[#d4ccc0] font-serif">
+              {timelineDays} days
+            </span>
+          )}
+        </div>
         {onAction && (
           <Button
             data-testid="send-invites-btn"
             variant="gold"
             onClick={onAction}
             disabled={isLoading}
-            className="text-[11px]"
+            className="text-[11px] w-full"
           >
             {isLoading ? 'Sending...' : actionLabel}
           </Button>
