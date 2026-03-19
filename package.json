@@ -23,7 +23,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "prepare": "husky",
-    "postinstall": "cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs public/pdf.worker.min.mjs"
+    "postinstall": "cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs public/pdf.worker.min.mjs && cp -r node_modules/pdfjs-dist/cmaps public/cmaps && cp -r node_modules/pdfjs-dist/standard_fonts public/standard_fonts"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.80.0",

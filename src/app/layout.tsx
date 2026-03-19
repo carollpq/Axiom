@@ -29,6 +29,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link
+          rel="preload"
+          href="/pdf.worker.min.mjs"
+          as="worker"
+          type="text/javascript"
+        />
+      </head>
       <body className={`${inter.className} ${tinos.variable}`}>
         <Providers>{children}</Providers>
       </body>
