@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
     "ethers",
   ],
   experimental: {
-    optimizePackageImports: ["thirdweb", "lucide-react"],
+    optimizePackageImports: ["thirdweb", "lucide-react", "react-pdf"],
   },
 };
 

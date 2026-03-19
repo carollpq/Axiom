@@ -78,9 +78,16 @@ export async function GET(
     });
   }
 
-  return NextResponse.json({
-    ciphertext: buffer.toString('base64'),
-    dataToEncryptHash: paper.litDataToEncryptHash ?? null,
-    accessConditionsJson: paper.litAccessConditionsJson ?? null,
-  });
+  return NextResponse.json(
+    {
+      ciphertext: buffer.toString('base64'),
+      dataToEncryptHash: paper.litDataToEncryptHash ?? null,
+      accessConditionsJson: paper.litAccessConditionsJson ?? null,
+    },
+    {
+      headers: {
+        'Cache-Control': 'private, max-age=300',
+      },
+    },
+  );
 }

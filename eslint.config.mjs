@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     "contracts/typechain-types/**",
     "coverage/**",
     "public/pdf.worker.min.mjs",
+    "public/cmaps/**",
+    "public/standard_fonts/**",
   ]),
 ]);
 

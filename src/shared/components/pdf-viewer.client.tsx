@@ -7,6 +7,12 @@ import 'react-pdf/dist/Page/TextLayer.css';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs`;
 
+const PDF_OPTIONS = {
+  cMapUrl: '/cmaps/',
+  cMapPacked: true,
+  standardFontDataUrl: '/standard_fonts/',
+};
+
 export interface PdfViewerProps {
   fileUrl?: string;
   title?: string;
@@ -123,6 +129,7 @@ export function PdfViewer({ fileUrl, title }: PdfViewerProps) {
       >
         <Document
           file={fileUrl}
+          options={PDF_OPTIONS}
           onLoadSuccess={({ numPages }) => {
             setNumPages(numPages);
             setPageNumber(1);
