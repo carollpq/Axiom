@@ -3,7 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { ConnectButton } from 'thirdweb/react';
 import { useUser } from '@/src/shared/context/user-context.client';
+import { client } from '@/src/shared/lib/thirdweb';
+import { CONNECT_AUTH } from '@/src/shared/lib/auth/connect-auth';
 import { sha256, canonicalJson } from '@/src/shared/lib/hashing';
 import { signContractAction } from '@/src/features/contracts/actions';
 import { ROUTES } from '@/src/shared/lib/routes';
@@ -30,7 +33,7 @@ export function InviteClaimClient({
   contractId,
   contract,
 }: InviteClaimClientProps) {
-  const { user, account } = useUser();
+  const { user, account, loading } = useUser();
   const router = useRouter();
   const [signing, setSigning] = useState(false);
   const [signed, setSigned] = useState(false);
@@ -92,14 +95,25 @@ export function InviteClaimClient({
     );
   }
 
+  if (loading) {
+    return (
+      <div className="text-center py-6">
+        <div className="text-[13px] text-[#8a8070]">Loading session…</div>
+      </div>
+    );
+  }
+
   if (!connectedWallet) {
     return (
       <div className="text-center py-6">
-        <div className="text-[13px] text-[#8a8070] mb-3">
+        <div className="text-[13px] text-[#8a8070] mb-4">
           Connect your wallet to sign this contract.
         </div>
-        <div className="text-[11px] text-[#5a5040] font-mono">
-          {contributorWallet}
+        <div className="text-[11px] text-[#5a5040] font-mono mb-4">
+          Expected: {contributorWallet}
+        </div>
+        <div className="flex justify-center">
+          <ConnectButton client={client} auth={CONNECT_AUTH} theme="dark" />
         </div>
       </div>
     );
@@ -121,6 +135,21 @@ export function InviteClaimClient({
           This invite is for{' '}
           <span className="font-mono text-[#8a8070]">{contributorWallet}</span>.
           Connect the correct wallet to proceed.
+        </div>
+      </div>
+    );
+  }
+
+  // Wallet matches via session but Thirdweb account not yet rehydrated —
+  // the user needs to reconnect their wallet client-side to sign.
+  if (!account) {
+    return (
+      <div className="text-center py-6">
+        <div className="text-[13px] text-[#8a8070] mb-4">
+          Reconnect your wallet to sign this contract.
+        </div>
+        <div className="flex justify-center">
+          <ConnectButton client={client} auth={CONNECT_AUTH} theme="dark" />
         </div>
       </div>
     );
