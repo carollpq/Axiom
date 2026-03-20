@@ -46,8 +46,12 @@ export async function uploadToIPFS(
  * Handles both file CIDs and directory CIDs (where the file is inside a folder).
  */
 export async function getFileFromIPFS(cid: string): Promise<Buffer> {
+  const authHeaders = PINATA_JWT
+    ? { Authorization: `Bearer ${PINATA_JWT}` }
+    : {};
+
   const res = await fetch(`${PINATA_GATEWAY}/ipfs/${cid}`, {
-    headers: PINATA_JWT ? { Authorization: `Bearer ${PINATA_JWT}` } : {},
+    headers: authHeaders,
   });
 
   if (res.ok) {
@@ -55,35 +59,22 @@ export async function getFileFromIPFS(cid: string): Promise<Buffer> {
     if (!ct.includes('text/html')) {
       return Buffer.from(await res.arrayBuffer());
     }
-  }
 
-  // The CID might be a directory pin (caused by filenames with slashes).
-  // Try listing the directory and fetching the first file inside it.
-  const pinRes = await fetch(
-    `https://api.pinata.cloud/data/pinList?hashContains=${cid}&status=pinned`,
-    { headers: { Authorization: `Bearer ${PINATA_JWT}` } },
-  );
+    // Directory pin — the gateway returns an HTML listing.
+    // Parse it to find the inner file link: href="/ipfs/<cid>/<innerName>"
+    const html = await res.text();
+    const escaped = cid.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const match = html.match(new RegExp(`href="/ipfs/${escaped}/([^"?]+)"`));
 
-  if (pinRes.ok) {
-    const pinData = (await pinRes.json()) as {
-      rows: Array<{ metadata: { name: string }; mime_type: string }>;
-    };
-    const pin = pinData.rows[0];
-
-    if (pin?.mime_type === 'directory' && pin.metadata.name) {
-      // metadata.name is the original path like "papers/<hash>"
-      // The inner file is at cid/<last-segment>
-      const segments = pin.metadata.name.split('/');
-      const innerName = segments[segments.length - 1];
-
-      const dirRes = await fetch(`${PINATA_GATEWAY}/ipfs/${cid}/${innerName}`, {
-        headers: PINATA_JWT ? { Authorization: `Bearer ${PINATA_JWT}` } : {},
-      });
-
-      if (dirRes.ok) {
-        const ct = dirRes.headers.get('content-type') ?? '';
-        if (!ct.includes('text/html')) {
-          return Buffer.from(await dirRes.arrayBuffer());
+    if (match) {
+      const innerRes = await fetch(
+        `${PINATA_GATEWAY}/ipfs/${cid}/${match[1]}`,
+        { headers: authHeaders },
+      );
+      if (innerRes.ok) {
+        const ict = innerRes.headers.get('content-type') ?? '';
+        if (!ict.includes('text/html')) {
+          return Buffer.from(await innerRes.arrayBuffer());
         }
       }
     }
