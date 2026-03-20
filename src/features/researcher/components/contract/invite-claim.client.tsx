@@ -22,6 +22,7 @@ interface ContractSummary {
   }>;
 }
 
+//
 interface InviteClaimClientProps {
   contributorWallet: string;
   contractId: string;
