@@ -21,6 +21,7 @@ export interface RebuttalData {
   id: string;
   submissionId: string;
   status: 'open' | 'submitted' | 'under_review' | 'resolved';
+  authorReason: string | null;
   deadline: string;
   resolution?: 'upheld' | 'rejected' | 'partial' | null;
   editorNotes?: string | null;
