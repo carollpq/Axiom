@@ -422,6 +422,7 @@ export const rebuttals = pgTable('rebuttals', {
   authorWallet: text('author_wallet').notNull(),
   status: text('status').notNull().$type<RebuttalStatusDb>().default('open'),
   deadline: text('deadline').notNull(),
+  authorReason: text('author_reason'),
   rebuttalHash: text('rebuttal_hash'),
   hederaTxId: text('hedera_tx_id'),
   resolution: text('resolution').$type<RebuttalResolutionDb>(),

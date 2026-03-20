@@ -586,6 +586,7 @@ export async function acceptAssignmentAction(
 export async function authorResponseAction(
   submissionId: string,
   action: 'accept' | 'request_rebuttal',
+  reason?: string,
 ) {
   if (action !== 'accept' && action !== 'request_rebuttal') {
     throw new Error('Invalid action');
@@ -648,6 +649,7 @@ export async function authorResponseAction(
     submissionId,
     authorWallet: session,
     deadline,
+    authorReason: reason?.trim() ?? null,
   });
 
   after(async () => {
@@ -657,6 +659,7 @@ export async function authorResponseAction(
         submissionId,
         authorWallet: session,
         deadline,
+        authorReason: reason?.trim() ?? null,
         timestamp: now,
       }),
       anchorToHcs('HCS_TOPIC_SUBMISSIONS', {
@@ -664,6 +667,14 @@ export async function authorResponseAction(
         submissionId,
         action: 'request_rebuttal',
         authorWallet: session,
+        authorReason: reason?.trim() ?? null,
+        timestamp: now,
+      }),
+      anchorToHcs('HCS_TOPIC_REVIEWS', {
+        type: 'rebuttal_requested',
+        submissionId,
+        authorWallet: session,
+        authorReason: reason?.trim() ?? null,
         timestamp: now,
       }),
       notifyIfWallet(editorWallet, {

@@ -82,6 +82,7 @@ async function UnderReviewContent() {
               | 'submitted'
               | 'under_review'
               | 'resolved',
+            authorReason: rebuttal.authorReason ?? null,
             responses: rebuttal.responses.map((r) => ({
               reviewId: r.reviewId,
               position: r.position as 'agree' | 'disagree',

@@ -83,7 +83,7 @@ export function ViewSubmissionsClient({
     setSubmitting(true);
     setError(null);
     try {
-      await authorResponseAction(selected.id, 'request_rebuttal');
+      await authorResponseAction(selected.id, 'request_rebuttal', comment);
       toast.success('Rebuttal requested');
       router.refresh();
     } catch (err) {

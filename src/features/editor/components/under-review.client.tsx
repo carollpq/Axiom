@@ -6,6 +6,7 @@ import { ThreeColumnLayout } from '@/src/shared/components/three-column-layout';
 import { DecryptablePdfViewer } from '@/src/shared/components/decryptable-pdf-viewer.client';
 import { PaperList } from '@/src/shared/components/paper-list.client';
 import { ReviewStatusPanel } from './sidebar/review-status-panel';
+import { RebuttalReasonPanel } from './sidebar/rebuttal-reason-panel';
 import { useUnderReview } from '@/src/features/editor/hooks/useUnderReview';
 import { useCollapseSidebar } from '@/src/shared/hooks/useCollapseSidebar';
 import { SelectionPlaceholder } from '@/src/shared/components/selection-placeholder';
@@ -150,6 +151,12 @@ export function UnderReviewClient({
           selectedId ? (
             <>
               <ReviewStatusPanel reviewers={currentReviewers} />
+              {currentRebuttal && (
+                <RebuttalReasonPanel
+                  authorReason={currentRebuttal.authorReason}
+                  status={currentRebuttal.status}
+                />
+              )}
               {currentRebuttal && currentRebuttal.status === 'submitted' ? (
                 <ResolveRebuttalPanel
                   rebuttalId={currentRebuttal.id}

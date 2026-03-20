@@ -106,7 +106,7 @@ export type RebuttalResponseInfo = Pick<
 
 export type RebuttalInfo = Pick<
   RebuttalData,
-  'id' | 'submissionId' | 'status'
+  'id' | 'submissionId' | 'status' | 'authorReason'
 > & {
   responses: RebuttalResponseInfo[];
 };

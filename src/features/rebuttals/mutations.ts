@@ -10,6 +10,7 @@ export interface OpenRebuttalInput {
   submissionId: string;
   authorWallet: string;
   deadline: string;
+  authorReason?: string;
   hederaTxId?: string;
 }
 
@@ -23,6 +24,7 @@ export async function openRebuttal(input: OpenRebuttalInput) {
           submissionId: input.submissionId,
           authorWallet: input.authorWallet.toLowerCase(),
           deadline: input.deadline,
+          authorReason: input.authorReason ?? null,
           hederaTxId: input.hederaTxId ?? null,
         })
         .returning()
