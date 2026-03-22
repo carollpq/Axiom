@@ -69,20 +69,20 @@ Axiom moves the critical trust infrastructure of academic publishing onto Hedera
         │ HTTPS (API Routes)   │ Wallet Signing │ Lit Network
         ▼                      ▼               ▼
 ┌────────────────────┐  ┌──────────────┐  ┌──────────────────┐
-│  NEXT.JS API LAYER │  │    HEDERA     │  │  LIT PROTOCOL    │
-│  (Vercel Serverless)│  │   NETWORK    │  │   NETWORK        │
+│  NEXT.JS API LAYER │  │    HEDERA    │  │  LIT PROTOCOL    │
+│ (Vercel Serverless)│  │   NETWORK    │  │   NETWORK        │
 │                    │  │              │  │                  │
 │  Business Logic    │  │  HCS Topics  │  │  Threshold MPC   │
-│  Review Pipeline   │  │  HTS Tokens  │  │  Access Control   │
-│  Reputation System │  │  Smart Ctrts │  │  Encrypt/Decrypt  │
+│  Review Pipeline   │  │  HTS Tokens  │  │  Access Control  │
+│  Reputation System │  │  Smart Ctrts │  │  Encrypt/Decrypt │
 │  Cron Jobs         │  │  Mirror Node │  │                  │
 │                    │  │  Scheduled Tx│  │                  │
 └────────┬───────────┘  └──────────────┘  └──────────────────┘
          │
          ▼
 ┌──────────────────────────────────────────────────────────────┐
-│                   OFF-CHAIN DATA LAYER                         │
-│  Neon PostgreSQL (structured) · IPFS/Pinata (encrypted files)  │
+│                 OFF-CHAIN DATA LAYER                         │
+│ Neon PostgreSQL (structured) · IPFS/Pinata (encrypted files) │
 └──────────────────────────────────────────────────────────────┘
 ```
 
