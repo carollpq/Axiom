@@ -33,6 +33,7 @@ Axiom moves the critical trust infrastructure of academic publishing onto Hedera
 6. **Transparent post-decision reviews** — After final decision, anonymized review comments become public.
 7. **Authorship contracts** — All contributors cryptographically sign contribution splits before submission. Fully-signed contracts anchored via Hedera Scheduled Transactions.
 8. **Paper registration** — Research drafts timestamped on-chain, proving first disclosure.
+9. **OpenBadges credentials** — OBv3-compliant (W3C Verifiable Credential) badges backed by on-chain Hedera data. Auto-issued at milestones (first review, 5/10/25 reviews, high reputation, timely reviewer). Shareable to LinkedIn via deep link — zero API keys required.
 
 **What we do NOT change:** Journal revenue models, paywalls, subscriptions, or APCs. Journals gain tools without losing revenue.
 
@@ -48,10 +49,10 @@ Axiom moves the critical trust infrastructure of academic publishing onto Hedera
 | Wallets | Thirdweb v5 (MetaMask, HashPack) |
 | Access Control | Lit Protocol (threshold encryption) |
 | Database | Neon PostgreSQL / Drizzle ORM |
-| File Storage | IPFS via web3.storage (Filecoin archival) |
+| File Storage | IPFS via Pinata |
 | PDF Viewing | react-pdf v10 / pdfjs-dist v5 |
 | Deployment | Vercel |
-| Identity | ORCID verification |
+| Identity | ORCID iD — global researcher identifier for verified scholarly identity |
 | Smart Contracts | ethers v6 + Hardhat (TimelineEnforcer on Hedera EVM) |
 | Performance | Suspense streaming, `after()` non-blocking side effects, dynamic imports |
 
@@ -81,7 +82,7 @@ Axiom moves the critical trust infrastructure of academic publishing onto Hedera
          ▼
 ┌──────────────────────────────────────────────────────────────┐
 │                   OFF-CHAIN DATA LAYER                         │
-│  Neon PostgreSQL (structured) · IPFS/Filecoin (encrypted files)│
+│  Neon PostgreSQL (structured) · IPFS/Pinata (encrypted files)  │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -104,13 +105,13 @@ For the full architecture document, see [`docs/architecture.md`](docs/architectu
 - **Review response** — View anonymized reviews, rate each reviewer on 5 quality protocols (actionable feedback, deep engagement, fair/objective, justified recommendation, appropriate expertise), and accept reviews or request rebuttal
 - **Rebuttal workspace** — Challenge specific reviewer comments (agree/disagree + justification per review). Researcher-initiated — authors decide when to invoke rebuttal.
 - **Public explorer** — Search/filter/sort public papers in grid view, detail view with tabs (overview, provenance, versions, reviews), Lit decrypt for private papers
-- **Notifications** — Real-time updates at every pipeline stage (including "Viewed by Editor" status)
+- **Notifications** — Bell icon with unread count badge, 30-second polling, mark-as-read. Updates at every pipeline stage (viewed by editor, criteria published, reviewers assigned, review submitted, decision made, rebuttal opened, paper published).
 
 ### Editor
 - **Dashboard** — Stats overview (submissions by status) + recent submission carousel. Fully DB-backed.
 - **Incoming papers** — Three-column layout (paper list → PDF viewer → contextual sidebar). Sidebar panels: criteria builder, reviewer assignment with reputation scores, desk reject. Auto-triggers "viewed by editor" status on selection.
 - **Under review** — Three-column layout. Sidebar panels: review status tracking, final decision (accept/reject/revise with `allCriteriaMet` computation), rebuttal resolution, additional reviewer assignment. Shows author response status (accepted / rebuttal requested).
-- **Accepted papers** — Three-column layout. Sidebar panels: review comments display, add-to-issue for journal issue management.
+- **Accepted papers** — Three-column layout. Sidebar panels: review comments display, add-to-issue for journal issue management, publish dialog (makes paper publicly available and mints reputation tokens for all reviewers).
 - **Journal management** — Update aims/scope and submission criteria, create/delete journal issues, assign papers to issues, manage reviewer pool (add/remove reviewers with search/filter).
 - **Criteria builder** — Publish structured review criteria (immutable on HCS). Integrated as sidebar panel in incoming papers view.
 - **Reviewer assignment** — Assign from reviewer pool with reputation scores. Minimum 2 reviewers must accept before submission transitions to "under review".
@@ -118,10 +119,14 @@ For the full architecture document, see [`docs/architecture.md`](docs/architectu
 - **Rebuttal management** — Review author responses per-review, resolve with reputation impact (upheld/rejected/partial → HTS tokens minted)
 
 ### Reviewer
-- **Dashboard** — Assigned reviews, deadlines, reputation score breakdown with 5-protocol feedback display
-- **Assignment acceptance** — Accept or decline review assignments via API
-- **Review workspace** — Evaluate paper against published criteria with structured feedback
+- **Dashboard** — Reputation score breakdown with 5-protocol feedback display, badge showcase
+- **Assigned reviews** — Papers currently under review with deadline tracking, three-column layout with PDF viewer and sidebar
+- **Completed reviews** — Archive of submitted reviews with three-column layout
+- **Invites** — Accept or decline review assignment invitations, with paper details sidebar
+- **Pool invites** — Browse and respond to open reviewer pool invitations
+- **Review workspace** — Evaluate paper against published criteria with structured per-criterion feedback
 - **Reputation** — Soulbound HTS tokens tracking review quality across journals with 5-dimensional quality data. Public verification via `GET /api/reviews/reputation?wallet=` (DB score + Mirror Node on-chain data)
+- **OpenBadges & LinkedIn** — Earn OBv3 verifiable credential badges at milestones (`first_review`, `five_reviews`, `ten_reviews`, `twentyfive_reviews`, `high_reputation`, `timely_reviewer`). Badges include Hedera HTS/HCS evidence URLs and are shareable to LinkedIn via "Add to Profile" deep link.
 
 ### Public
 - **Review transparency** — After final decision, anonymized reviews become publicly visible
@@ -136,6 +141,7 @@ For the full architecture document, see [`docs/architecture.md`](docs/architectu
 - npm
 - A Hedera testnet account ([portal.hedera.com](https://portal.hedera.com))
 - MetaMask or HashPack browser extension
+- An ORCID iD ([orcid.org/register](https://orcid.org/register)) — free, takes ~30 seconds. ORCID is the global researcher identifier used across academic publishing. Axiom requires it during onboarding to link your wallet to a verified scholarly identity, preventing sybil accounts and enabling co-author lookup in authorship contracts.
 
 ### Environment Variables
 
@@ -145,7 +151,7 @@ Create a `.env.local` file in the project root:
 # Auth (required)
 NEXT_PUBLIC_THIRDWEB_CLIENT_ID=your_thirdweb_client_id
 AUTH_PRIVATE_KEY=your-auth-private-key
-NEXT_PUBLIC_APP_DOMAIN=localhost:3000
+NEXT_PUBLIC_APP_DOMAIN=https://your-domain.vercel.app  # Must include protocol
 
 # Database (required)
 DATABASE_URL=postgresql://user:pass@host/dbname
@@ -173,12 +179,12 @@ TIMELINE_ENFORCER_ADDRESS=0x...
 # Cron (optional)
 CRON_SECRET=your-cron-secret
 
-# IPFS / web3.storage (optional — graceful fallback)
-W3_PRINCIPAL_KEY=your_ed25519_principal_key
-W3_DELEGATION_PROOF=base64_encoded_delegation_proof
+# IPFS / Pinata (optional — graceful fallback)
+PINATA_JWT=your_pinata_jwt_token
+NEXT_PUBLIC_PINATA_GATEWAY_URL=https://gateway.pinata.cloud
 
 # Lit Protocol (optional — graceful fallback)
-NEXT_PUBLIC_LIT_NETWORK=cayenne
+NEXT_PUBLIC_LIT_NETWORK=naga
 ```
 
 ### Installation
@@ -225,39 +231,49 @@ src/
 │   ├── providers.client.tsx        # Client boundary: ThirdwebProvider + UserProvider
 │   ├── page.tsx                    # Landing page
 │   ├── login/                      # Multi-step auth flow
-│   ├── api/
-│   │   ├── auth/                   # Authentication endpoints
-│   │   ├── papers/                 # Paper CRUD + submit + reviews
-│   │   ├── contracts/              # Authorship contract CRUD + signing
-│   │   ├── submissions/[id]/       # criteria + assign-reviewer + accept-assignment + view + author-response + decision
-│   │   ├── reviews/[id]/           # Review submission + rating
-│   │   ├── rebuttals/[rebuttalId]/ # Respond + resolve
-│   │   ├── notifications/          # List + mark read
-│   │   ├── cron/deadlines/         # Deadline enforcement
+│   ├── register/                   # New user registration
+│   ├── invite/[token]/             # Collaborator invite claim (7-day expiry)
+│   ├── api/                        # API routes (mutations use server actions in features/)
+│   │   ├── badges/[id]/            # OpenBadges OBv3 JSON-LD endpoint
+│   │   ├── papers/[id]/content/    # Paper PDF content retrieval
+│   │   ├── reviewer-reputation/    # Public reputation lookup (DB + Mirror Node)
+│   │   ├── upload-ipfs/            # IPFS file upload (Pinata)
+│   │   ├── cron-deadlines/         # Deadline enforcement cron job
+│   │   └── test/                   # Test-only routes (auth, seed, cleanup)
 │   └── (protected)/
-│       ├── researcher/             # Dashboard, authorship-contracts, create-submission, view-submissions, paper-version-control (includes paper registration), rebuttal/[submissionId], review-response/[submissionId]
-│       ├── editor/                 # Dashboard, incoming, under-review, accepted, management (all DB-backed, three-column layouts)
-│       └── reviewer/               # Reviewer dashboard + workspace
+│       ├── researcher/             # Dashboard, authorship-contracts, create-submission, view-submissions, paper-version-control, rebuttal/[submissionId], review-response/[submissionId]
+│       ├── editor/                 # Dashboard, incoming, under-review, accepted, management
+│       └── reviewer/               # Dashboard, assigned, completed, invites, pool-invites
 ├── features/
-│   ├── researcher/                 # Researcher UI (components, hooks, reducers, config, constants, mappers, queries, types, nav)
-│   ├── editor/                     # Editor UI (components, hooks, queries, actions, mappers, sidebar panels)
-│   ├── reviewer/                   # Reviewer UI (components, hooks, reducers)
-│   ├── reviews/                    # Review DB queries + actions
+│   ├── auth/                       # Auth components (login, registration, ORCID verification, wallet connect)
+│   ├── landing/                    # Landing page (hero, sections, carousel, orbital background)
+│   ├── researcher/                 # Researcher UI (components, hooks, reducers, config, types, nav)
+│   ├── editor/                     # Editor UI (components, hooks, queries, actions, sidebar panels)
+│   ├── reviewer/                   # Reviewer UI (components, hooks, reducers, badge system, LinkedIn)
+│   ├── submissions/                # Submission DB queries, actions, mutations
+│   ├── reviews/                    # Review DB queries, actions, mutations
 │   ├── rebuttals/                  # Rebuttal DB + hooks + components
 │   ├── notifications/              # Notification DB + NotificationBell
 │   ├── contracts/                  # Contract DB queries + actions
 │   ├── papers/                     # Paper DB queries + actions
-│   └── users/                      # User DB queries
+│   └── users/                      # User DB queries + mutations
 └── shared/
-    ├── components/                 # Shared UI (TopBar, RoleShell, DashboardHeader, PdfViewer)
+    ├── components/                 # ~50 shared UI components (layout shells, forms, modals, cards, badges, PDF viewers, skeletons)
     ├── context/                    # UserContext (wallet + session)
     └── lib/
-        ├── auth/                   # JWT utilities
-        ├── db/schema.ts            # Drizzle schema (16 tables)
+        ├── auth/                   # JWT + session utilities
+        ├── db/schema.ts            # Drizzle schema (20 tables)
         ├── hedera/                 # HCS + HTS + Mirror Node + Scheduled Txs + TimelineEnforcer
-        ├── lit/                    # Lit Protocol encryption
+        ├── lit/                    # Lit Protocol encryption (config, client, encrypt, decrypt, access-control)
         ├── hashing.ts              # SHA-256 + canonical JSON
-        └── storage.ts              # IPFS upload/fetch (web3.storage)
+        ├── pinata.ts               # IPFS upload/fetch (Pinata)
+        ├── validation.ts           # Input validation (ORCID, wallet, etc.)
+        ├── format.ts               # Display formatting utilities
+        ├── routes.ts               # Route constants
+        ├── errors.ts               # Error handling utilities
+        ├── thirdweb.ts             # Thirdweb client config
+        ├── status-colors.ts        # Status → color mappings
+        └── status-map.ts           # Status label mappings
 ```
 
 ---

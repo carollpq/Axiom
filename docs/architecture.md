@@ -43,8 +43,8 @@ Journals join because Axiom: (1) makes them more credible, (2) solves operationa
 |---|---|---|
 | Frontend | Next.js 16 (App Router), React 19.2 | Pages, wallet integration, client-side hashing, Lit encrypt/decrypt |
 | API Layer | Next.js Route Handlers (Vercel) | Business logic, CRUD, Hedera orchestration |
-| Database | PostgreSQL (Neon) / Drizzle ORM | Users, papers, contracts, reviews, reputation, badges, submissions (17 tables) |
-| File Storage | IPFS via web3.storage | Lit-encrypted paper PDFs, datasets |
+| Database | PostgreSQL (Neon) / Drizzle ORM | Users, papers, contracts, reviews, reputation, badges, submissions (20 tables) |
+| File Storage | IPFS via Pinata | Lit-encrypted paper PDFs, datasets |
 | Consensus | Hedera HCS | 7 domain topics for immutable audit logs |
 | Tokens | Hedera HTS | Soulbound reputation NFTs |
 | Smart Contracts | Hedera EVM + ethers v6 | TimelineEnforcer: deadline registration/completion/verification |
@@ -69,7 +69,7 @@ Journals join because Axiom: (1) makes them more credible, (2) solves operationa
 └────────┬───────────┘  └──────────────┘  └──────────────────┘
          ▼
 ┌──────────────────────────────────────────────────────────────┐
-│  PostgreSQL (structured) · IPFS/Filecoin (encrypted files)   │
+│  PostgreSQL (structured) · IPFS/Pinata (encrypted files)     │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -282,15 +282,15 @@ Uses Hashio JSON-RPC (`testnet.hashio.io/api`). Graceful fallback if not configu
 
 ## 10. Off-Chain Storage
 
-IPFS via web3.storage (pinning + Filecoin archival). Non-public files Lit-encrypted. Referenced by CID.
+IPFS via Pinata. Non-public files Lit-encrypted. Referenced by CID.
 
-**Upload flow:** Client SHA-256 → Lit encrypt → POST `/api/upload/ipfs` → pin → store CID + original hash + Lit metadata. On-chain hash = ORIGINAL file.
+**Upload flow:** Client SHA-256 → Lit encrypt → POST `/api/upload-ipfs` → pin → store CID + original hash + Lit metadata. On-chain hash = ORIGINAL file.
 
 ---
 
 ## 11. Database Schema
 
-PostgreSQL (Neon) via Drizzle ORM. 17 tables.
+PostgreSQL (Neon) via Drizzle ORM. 20 tables.
 
 ```sql
 -- IDENTITY
@@ -347,6 +347,25 @@ CREATE TABLE journals (
     editor_wallet TEXT NOT NULL REFERENCES users(wallet_address),
     reputation_score DECIMAL(3,2) DEFAULT 0, timeline_score DECIMAL(3,2) DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- JOURNAL MANAGEMENT
+CREATE TABLE journal_issues (
+    id UUID PRIMARY KEY, journal_id UUID NOT NULL REFERENCES journals(id),
+    label TEXT NOT NULL, created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE issue_papers (
+    id UUID PRIMARY KEY, issue_id UUID NOT NULL REFERENCES journal_issues(id),
+    submission_id UUID NOT NULL REFERENCES submissions(id),
+    added_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE journal_reviewers (
+    id UUID PRIMARY KEY, journal_id UUID NOT NULL REFERENCES journals(id),
+    reviewer_wallet TEXT NOT NULL,
+    status TEXT DEFAULT 'pending',  -- pending|accepted|declined
+    added_at TIMESTAMPTZ DEFAULT now(), responded_at TIMESTAMPTZ
 );
 
 -- SUBMISSIONS & REVIEW PIPELINE
@@ -467,17 +486,22 @@ CREATE INDEX idx_notifications_user ON notifications(user_wallet, is_read, creat
 ## 12. API Design
 
 ```
-app/api/
-├── badges/[id]/         GET (OBv3 JSON-LD credential)
-├── papers/              GET/POST, [id]/ GET/PATCH, [id]/versions/ POST, [id]/submit/ POST, public/ GET
-├── contracts/           GET/POST, [id]/ GET/PATCH, [id]/contributors/ POST, [id]/sign/ POST, [id]/reset-signatures/ PATCH
-├── submissions/[id]/    criteria/ POST, assign-reviewer/ POST, accept-assignment/ POST, view/ POST,
-│                        author-response/ POST, decision/ POST, open-rebuttal/ POST (deprecated→410)
-├── reviews/             GET, [id]/ GET/POST, [id]/rate/ POST, reputation/ GET
-├── rebuttals/           [rebuttalId]/respond/ POST, [rebuttalId]/resolve/ POST
-├── notifications/       GET/PATCH
-├── upload/ipfs/         POST
-└── cron/deadlines/      GET
+app/api/                              # API routes (most mutations are server actions in features/)
+├── badges/[id]/                      GET (OBv3 JSON-LD credential)
+├── papers/[id]/content/              GET (PDF content retrieval)
+├── reviewer-reputation/              GET (DB score + Mirror Node on-chain data)
+├── upload-ipfs/                      POST (Pinata upload)
+├── cron-deadlines/                   GET (deadline enforcement, CRON_SECRET-gated)
+└── test/                             auth/ seed/ cleanup/ (dev-only, NODE_ENV-gated)
+
+Server actions (features/):           # Mutations via 'use server' actions
+├── papers/actions.ts                 create, register, submit
+├── submissions/actions.ts            publishCriteria, assignReviewer, acceptAssignment, recordDecision, authorResponse
+├── reviews/actions.ts                submitReview, rateReviewer
+├── rebuttals/actions.ts              respondToRebuttal, resolveRebuttal
+├── contracts/actions.ts              create, sign, resetSignatures
+├── notifications/actions.ts          markRead
+└── users/actions.ts                  create, update
 ```
 
 ### Key API Contracts
@@ -557,7 +581,7 @@ Author                  Lit Network       API            Hedera      IPFS
   │ Create condition ──►│                 │               │           │
   │◄── key shares ──────│                 │               │           │
   │ Encrypt client-side │                 │               │           │
-  │── POST /upload/ipfs ────────────────►│── pin ────────┼──────────►│
+  │── POST /upload-ipfs ─────────────────►│── pin ────────┼──────────►│
   │◄── { cid } ─────────────────────────│               │           │
   │── POST /api/papers ─────────────────►│── HCS msg ──►│           │
   │◄── { paperId, txId } ───────────────│               │           │
