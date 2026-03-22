@@ -90,9 +90,9 @@ import { listUserPapers } from '@/src/features/papers/queries'; // ✅
 
 ## Database
 
-Drizzle ORM, Neon PostgreSQL. Schema: `src/shared/lib/db/schema.ts` (17 tables).
+Drizzle ORM, Neon PostgreSQL. Schema: `src/shared/lib/db/schema.ts` (20 tables).
 
-**Tables:** users, papers, paperVersions, authorshipContracts, contractContributors, journals, submissions, reviewCriteria, reviewAssignments, reviews, rebuttals, rebuttalResponses, reviewerRatings, reputationEvents, reputationScores, badges, notifications
+**Tables:** users, papers, paperVersions, authorshipContracts, contractContributors, journals, journalIssues, issuePapers, journalReviewers, submissions, reviewCriteria, reviewAssignments, reviews, rebuttals, rebuttalResponses, reviewerRatings, reputationEvents, reputationScores, badges, notifications
 
 **Status pipelines:**
 - Submission: submitted → viewed_by_editor → criteria_published → reviewers_assigned → under_review → reviews_completed → rebuttal_open → revision_requested/accepted/rejected/published
@@ -141,7 +141,7 @@ Drizzle ORM, Neon PostgreSQL. Schema: `src/shared/lib/db/schema.ts` (17 tables).
 | Rebuttal response | 14d from opening |
 | Rebuttal resolution | 7d from submission |
 
-Cron at `/api/cron/deadlines`. Cross-verifies with `TimelineEnforcer.sol` (chain = source of truth).
+Cron at `/api/cron-deadlines`. Cross-verifies with `TimelineEnforcer.sol` (chain = source of truth).
 
 ### Lit Protocol
 - Review phase only. NOT for published paper access (journals keep paywall).
@@ -166,14 +166,14 @@ Cron at `/api/cron/deadlines`. Cross-verifies with `TimelineEnforcer.sol` (chain
 src/
 ├── app/
 │   ├── layout.tsx / providers.client.tsx / page.tsx / globals.css
-│   ├── login/ / onboarding/ / invite/[token]/
-│   ├── api/  (badges/[id], contracts/, papers/[id]/content/, submissions/[id]/*, reviews/*, rebuttals/*, cron/deadlines, upload/ipfs)
+│   ├── login/ / register/ / invite/[token]/
+│   ├── api/  (badges/[id], papers/[id]/content/, reviewer-reputation/, upload-ipfs/, cron-deadlines/, test/)
 │   └── (protected)/  (researcher/, editor/, reviewer/)
-├── features/  (auth, researcher, editor, reviewer, contracts, papers, users, reviews, rebuttals, notifications)
+├── features/  (auth, landing, researcher, editor, reviewer, submissions, contracts, papers, users, reviews, rebuttals, notifications)
 └── shared/
-    ├── components/  (TopBar, Footer, RoleShell, DashboardHeader, PdfViewer)
+    ├── components/  (~50 shared UI: layout shells, forms, modals, cards, badges, PDF viewers, skeletons)
     ├── context/UserContext.tsx / hooks/useCurrentUser.ts
-    └── lib/  (auth/, db/schema.ts, hedera/*, lit/, hashing.ts, storage.ts)
+    └── lib/  (auth/, db/schema.ts, hedera/*, lit/, pinata.ts, hashing.ts, validation.ts, format.ts, errors.ts, routes.ts, thirdweb.ts, status-colors.ts, status-map.ts)
 ```
 
 ## Environment Variables
