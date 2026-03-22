@@ -53,7 +53,7 @@ Axiom moves the critical trust infrastructure of academic publishing onto Hedera
 | PDF Viewing | react-pdf v10 / pdfjs-dist v5 |
 | Deployment | Vercel |
 | Identity | ORCID iD — global researcher identifier for verified scholarly identity |
-| Smart Contracts | ethers v6 + Hardhat (TimelineEnforcer on Hedera EVM) |
+| Smart Contracts | Solidity + thirdweb (TimelineEnforcer on Hedera EVM) |
 | Performance | Suspense streaming, `after()` non-blocking side effects, dynamic imports |
 
 ---
