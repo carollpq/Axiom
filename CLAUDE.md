@@ -20,7 +20,7 @@ npm run lint                      # ESLint
 npm run format                    # Prettier
 npm run contracts:compile         # Compile Solidity (contracts/ has own package.json)
 npm run contracts:test            # Hardhat tests
-npm run contracts:deploy:testnet  # Deploy TimelineEnforcer to Hedera testnet
+npm run contracts:deploy:testnet  # Deploy TimelineEnforcer to Hedera  testnet
 ```
 
 ## Architecture
