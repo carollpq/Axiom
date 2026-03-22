@@ -1,7 +1,7 @@
 # Architecture Design Document v3
 ## Axiom — Blockchain-Backed Review Fairness for Academic Publishing
 
-**Version:** 3.0 | **Stack:** Next.js 16 · React 19.2 · Hedera (HCS + HTS + Smart Contracts + Mirror Node + Scheduled Txs) · ethers v6 · Lit Protocol · Vercel
+**Version:** 3.0 | **Stack:** Next.js 16 · React 19.2 · Hedera (HCS + HTS + Smart Contracts + Mirror Node + Scheduled Txs) · thirdweb · Lit Protocol · Vercel
 **Date:** February 2026 | **Hackathon:** Hedera Hello Future: Apex
 
 ---
@@ -47,7 +47,7 @@ Journals join because Axiom: (1) makes them more credible, (2) solves operationa
 | File Storage | IPFS via Pinata | Lit-encrypted paper PDFs, datasets |
 | Consensus | Hedera HCS | 7 domain topics for immutable audit logs |
 | Tokens | Hedera HTS | Soulbound reputation NFTs |
-| Smart Contracts | Hedera EVM + ethers v6 | TimelineEnforcer: deadline registration/completion/verification |
+| Smart Contracts | Hedera EVM + thirdweb | TimelineEnforcer: deadline registration/completion/verification |
 | Scheduling | Hedera Scheduled Txs | Atomic multi-party authorship contract anchoring |
 | Reads | Hedera Mirror Node | Public NFT queries, reputation verification |
 | Encryption | Lit Protocol | Decentralized access control during review phase |
@@ -260,7 +260,7 @@ interface RebuttalResponse {
 **Consequences:** Reviewer late → `review_late` HTS token (negative). Editor late → journal timeline score drops + author notified. Rebuttal expired → closes automatically.
 
 ### Smart Contract (TimelineEnforcer.sol)
-Deployed to Hedera EVM. Integrated via ethers v6 (`src/shared/lib/hedera/timeline-enforcer.ts`).
+Deployed to Hedera EVM. Integrated via thirdweb (`src/shared/lib/hedera/timeline-enforcer.ts`).
 
 ```solidity
 contract TimelineEnforcer {
